@@ -23,7 +23,11 @@ Rs = data.R[0]
 rho_sph = np.array(data.rho)
 rho_sph = np.flip(rho_sph, axis = 0)
 
-rho, times = spipgen_func.main(10, rho_sph, Rs, spipgen_func.granite, 4, 300, 0)
+
+Tw = 4
+K = 300
+alpha = 0
+rho, times = spipgen_func.main(10, rho_sph, Rs, spipgen_func.granite, Tw, K, alpha)
 
 np.save('profile', rho)
 np.save("exec_times", times)
