@@ -16,6 +16,9 @@ import spipgen_plot
 import matplotlib.pyplot as plt
 from swift_io import *
 import seagen
+import spipgen
+from scipy.interpolate import RectBivariateSpline
+from scipy.optimize import fsolve
 
 # Load spining profile
 rho = np.load("profile.npy")
@@ -103,7 +106,7 @@ for k in range(m.shape[0]):
     rho[k] = rho_grid[i,j]
     #rho[k] = rho[k] + (rc - i*dr)/dr*(rho_grid[i + 1, j] - rho_grid[i, j])
     #rho[k] = rho[k] + (z[k] - j*dr)/dr*(rho_grid[i, j + 1] - rho_grid[i, j])
-    u[k] = spipgen_func.ucold(rho[k], spipgen_func.granite, 10000) + spipgen_func.granite[11]*Ts
+    u[k] = spipgen.ucold(rho[k], spipgen.granite, 10000) + spipgen.granite[11]*Ts
 
 
 ## Smoothing lengths, crudely estimated from the densities
@@ -135,5 +138,67 @@ plt.show()
 plt.hist(m, bins = int(m.shape[0]/1000))
 plt.show()
 
+##################
+##################
+##################
+# model densities
+rho = np.load("profile.npy")
+rho_grid = rho[-1,:,:]
+Re = (np.sum(rho_grid[:, 0] > 0) - 1)*dr
 
+data = pd.read_csv("1layer_n100.csv", header=0)
+Rs = data.R[0]
+Ts = data['T'][0]
+dr = data.R[0] - data.R[1]
 
+r = np.arange(0, rho_grid.shape[0]*dr, dr)
+z = np.arange(0, rho_grid.shape[1]*dr, dr)
+rho_model = RectBivariateSpline(r, z, rho_grid, kx = 2, ky = 2)
+
+# plot the model density
+rM = np.linspace(0, r[-1], 1000)
+zM = np.linspace(0, z[-1], 1000)
+X, Y = np.meshgrid(rM, zM)
+Z = rho_model.ev(X, Y)
+
+plt.contour(X, Y, Z, levels = np.arange(0, 8000, 500))
+plt.xlim(1,1.2)
+plt.ylim(0,0.3)
+plt.show()
+
+# Get equatorial profile
+radii = np.arange(0, Re, dr/10)
+densities = rho_model.ev(radii,0)
+
+# Generate seagen sphere
+N = 10**5
+particles = seagen.GenSphere(N, radii[1:], densities[1:])
+
+def _eq_density(x, y, z, radii, densities):
+    rho = np.zeros(x.shape[0])
+    r = np.sqrt(x*x + y*y + z*z)
+    dr = radii[1] - radii[0]
+    for i in range(x.shape[0]):
+        k = int(r[i]/dr)
+        rho[i] = densities[k] + (densities[k + 1] - densities[k])*(r[i] - k*dr)/dr 
+    return rho
+
+rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
+
+zP = np.zeros(particles.m.shape[0])
+
+for i in range(particles.m.shape[0]):
+    rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)
+    rho_spherical = rho_seagen[i]
+    z = particles.z[i]
+    f = lambda z: rho_model.ev(rc, z) - rho_spherical
+    zP[i] = fsolve(f, x0 = z)[0]
+    
+rc0 = np.sqrt(particles.x[1000]**2 + particles.y[1000]**2)
+rho_spherical0 = rho_seagen[1000]
+z0 = particles.z[1000]
+f = lambda z: rho_model.ev(rc0, np.abs(z)) - rho_spherical0
+fsolve(f, x0 = z)
+
+plt.scatter(particles.z, zP, s =1)
+plt.show()
