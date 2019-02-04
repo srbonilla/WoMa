@@ -19,6 +19,7 @@ import seagen
 import spipgen
 from scipy.interpolate import RectBivariateSpline
 from scipy.optimize import fsolve
+from numba import jit
 
 # Load spining profile
 rho = np.load("profile.npy")
@@ -142,19 +143,19 @@ plt.show()
 ##################
 ##################
 # model densities
-rho = np.load("profile.npy")
-rho_grid = rho[-1,:,:]
-Re = (np.sum(rho_grid[:, 0] > 0) - 1)*dr
-
 data = pd.read_csv("1layer_n100.csv", header=0)
 Rs = data.R[0]
 Ts = data['T'][0]
 dr = data.R[0] - data.R[1]
 
+rho = np.load("profile.npy")
+rho_grid = rho[-1,:,:]
+Re = (np.sum(rho_grid[:, 0] > 0) - 1)*dr
+
 r = np.arange(0, rho_grid.shape[0]*dr, dr)
 z = np.arange(0, rho_grid.shape[1]*dr, dr)
 rho_model = RectBivariateSpline(r, z, rho_grid, kx = 2, ky = 2)
-
+"""
 # plot the model density
 rM = np.linspace(0, r[-1], 1000)
 zM = np.linspace(0, z[-1], 1000)
@@ -165,7 +166,7 @@ plt.contour(X, Y, Z, levels = np.arange(0, 8000, 500))
 plt.xlim(1,1.2)
 plt.ylim(0,0.3)
 plt.show()
-
+"""
 # Get equatorial profile
 radii = np.arange(0, Re, dr/10)
 densities = rho_model.ev(radii,0)
@@ -183,6 +184,19 @@ def _eq_density(x, y, z, radii, densities):
         rho[i] = densities[k] + (densities[k + 1] - densities[k])*(r[i] - k*dr)/dr 
     return rho
 
+def _bisection(f,a,b,tol = 0.00001):
+	c = (a+b)/2.0
+	while (b-a)/2.0 > tol:
+		if f(c) == 0:
+			return c
+		elif f(a)*f(c) < 0:
+			b = c
+		else :
+			a = c
+		c = (a+b)/2.0
+		
+	return c
+
 rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
 
 zP = np.zeros(particles.m.shape[0])
@@ -191,14 +205,73 @@ for i in range(particles.m.shape[0]):
     rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)
     rho_spherical = rho_seagen[i]
     z = particles.z[i]
-    f = lambda z: rho_model.ev(rc, z) - rho_spherical
-    zP[i] = fsolve(f, x0 = z)[0]
+    f = lambda z: rho_model.ev(rc, np.abs(z)) - rho_spherical
+    if z < 0:
+        zP[i] = _bisection(f, z, 0.5*z)
+    else:
+        zP[i] = _bisection(f, 0.5*z, z)
     
-rc0 = np.sqrt(particles.x[1000]**2 + particles.y[1000]**2)
-rho_spherical0 = rho_seagen[1000]
-z0 = particles.z[1000]
-f = lambda z: rho_model.ev(rc0, np.abs(z)) - rho_spherical0
-fsolve(f, x0 = z)
+#plt.scatter(particles.z, zP, s = 1)
+#plt.show()
 
-plt.scatter(particles.z, zP, s =1)
+mP = particles.m*zP/particles.z
+
+#plt.hist(mP, bins = 100)
+#plt.show()
+
+# velocities
+
+Tw = 4 # in hours
+# v = w x r (units of R_earth/hour)  
+vx = np.zeros(mP.shape[0])
+vy = np.zeros(mP.shape[0])
+vz = np.zeros(mP.shape[0])
+
+wz = 2*np.pi/Tw 
+for i in range(mP.shape[0]):
+    vx[i] = -particles.y[i]*wz
+    vy[i] = particles.x[i]*wz
+    
+vx = vx*R_earth/hour_to_s
+vy = vy*R_earth/hour_to_s
+
+# model densities and internal energy
+rho = np.zeros((mP.shape[0]))
+u = np.zeros((mP.shape[0]))
+
+x = particles.x
+y = particles.y
+
+for k in range(mP.shape[0]):
+    rc = np.sqrt(x[k]*x[k] + y[k]*y[k])
+    rho[k] = rho_model.ev(rc, zP[k])
+    u[k] = spipgen.ucold(rho[k], spipgen.granite, 10000) + spipgen.granite[11]*Ts
+    
+## Smoothing lengths, crudely estimated from the densities
+num_ngb = 48    # Desired number of neighbours
+w_edge  = 2     # r/h at which the kernel goes to zero
+A1_h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
+
+A1_P = np.ones((mP.shape[0],))
+A1_id = np.arange(mP.shape[0])
+A1_mat_id = np.ones((mP.shape[0],))*Di_mat_id['Til_granite']
+
+swift_to_SI = Conversions(M_earth, R_earth, 1)
+
+# save profile
+filename = 'init_test_iso.hdf5'
+with h5py.File(filename, 'w') as f:
+    save_picle_data(f, np.array([x, y, zP]).T, np.array([vx, vy, vz]).T,
+                    mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id,
+                    4*Rs, swift_to_SI)
+
+#######
+fig_size = plt.rcParams["figure.figsize"]
+fig_size[0] = 8
+fig_size[1] = 8
+plt.rcParams["figure.figsize"] = fig_size
+plt.scatter(x, zP, alpha=0.2, s = 2.5)
+plt.scatter(1, 1, s = 0)
+plt.scatter(-1, -1, s = 0)
 plt.show()
+
