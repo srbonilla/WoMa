@@ -18,8 +18,6 @@ from swift_io import *
 import seagen
 import spipgen
 from scipy.interpolate import RectBivariateSpline
-from scipy.optimize import fsolve
-from numba import jit
 
 # Load spining profile
 rho = np.load("profile.npy")
@@ -168,7 +166,7 @@ plt.ylim(0,0.3)
 plt.show()
 """
 # Get equatorial profile
-radii = np.arange(0, Re, dr/10)
+radii = np.arange(0, Re, dr/100)
 densities = rho_model.ev(radii,0)
 
 # Generate seagen sphere
@@ -207,13 +205,16 @@ for i in range(particles.m.shape[0]):
     z = particles.z[i]
     f = lambda z: rho_model.ev(rc, np.abs(z)) - rho_spherical
     if z < 0:
-        zP[i] = _bisection(f, z, 0.5*z)
+        zP[i] = _bisection(f, z, 0.*z)
     else:
-        zP[i] = _bisection(f, 0.5*z, z)
-    
-#plt.scatter(particles.z, zP, s = 1)
-#plt.show()
-
+        zP[i] = _bisection(f, 0.*z, z)
+ 
+"""
+plt.scatter(particles.z, zP, s = 1)
+plt.xlabel(r"$z$ $[R_{earth}]$")
+plt.ylabel(r"$z'$ $[R_{earth}]$")
+plt.show()
+"""
 mP = particles.m*zP/particles.z
 
 #plt.hist(mP, bins = 100)
@@ -259,7 +260,7 @@ A1_mat_id = np.ones((mP.shape[0],))*Di_mat_id['Til_granite']
 swift_to_SI = Conversions(M_earth, R_earth, 1)
 
 # save profile
-filename = 'init_test_iso.hdf5'
+filename = 'init_test_iso_2.hdf5'
 with h5py.File(filename, 'w') as f:
     save_picle_data(f, np.array([x, y, zP]).T, np.array([vx, vy, vz]).T,
                     mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id,
