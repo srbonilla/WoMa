@@ -152,7 +152,7 @@ Re = (np.sum(rho_grid[:, 0] > 0) - 1)*dr
 
 r = np.arange(0, rho_grid.shape[0]*dr, dr)
 z = np.arange(0, rho_grid.shape[1]*dr, dr)
-rho_model = RectBivariateSpline(r, z, rho_grid, kx = 2, ky = 2)
+rho_model = RectBivariateSpline(r, z, rho_grid, kx = 1, ky = 1)
 """
 # plot the model density
 rM = np.linspace(0, r[-1], 1000)
@@ -172,7 +172,7 @@ densities = rho_model.ev(radii,0)
 # Generate seagen sphere
 N = 10**5
 particles = seagen.GenSphere(N, radii[1:], densities[1:])
-
+"""
 def _eq_density(x, y, z, radii, densities):
     rho = np.zeros(x.shape[0])
     r = np.sqrt(x*x + y*y + z*z)
@@ -181,21 +181,33 @@ def _eq_density(x, y, z, radii, densities):
         k = int(r[i]/dr)
         rho[i] = densities[k] + (densities[k + 1] - densities[k])*(r[i] - k*dr)/dr 
     return rho
+"""
 
-def _bisection(f,a,b,tol = 0.00001):
-	c = (a+b)/2.0
-	while (b-a)/2.0 > tol:
-		if f(c) == 0:
-			return c
-		elif f(a)*f(c) < 0:
-			b = c
-		else :
-			a = c
-		c = (a+b)/2.0
-		
-	return c
+def _bisection(f,a,b,N = 10):
+    if f(a)*f(b) >= 0:
+        # print("Bisection method fails.")
+        return None
+    a_n = a
+    b_n = b
+    for n in range(1,N+1):
+        m_n = (a_n + b_n)/2
+        f_m_n = f(m_n)
+        if f(a_n)*f_m_n < 0:
+            a_n = a_n
+            b_n = m_n
+        elif f(b_n)*f_m_n < 0:
+            a_n = m_n
+            b_n = b_n
+        elif f_m_n == 0:
+            # print("Found exact solution.")
+            return m_n
+        else:
+            print("Bisection method fails.")
+            return None
+    return (a_n + b_n)/2
 
-rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
+#rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
+rho_seagen = particles.A1_rho
 
 zP = np.zeros(particles.m.shape[0])
 
@@ -205,17 +217,28 @@ for i in range(particles.m.shape[0]):
     z = particles.z[i]
     f = lambda z: rho_model.ev(rc, np.abs(z)) - rho_spherical
     if z < 0:
-        zP[i] = _bisection(f, z, 0.*z)
+        zP[i] = _bisection(f, z, 0.)
+        #if np.isnan(zP[i]):
+        #    zP[i] = _bisection(f, 100*z, z)
     else:
-        zP[i] = _bisection(f, 0.*z, z)
+        zP[i] = _bisection(f, 0., z)
+        #if np.isnan(zP[i]):
+        #    zP[i] = _bisection(f, z, 100*z)
  
 """
 plt.scatter(particles.z, zP, s = 1)
+plt.plot(particles.z, particles.z, c = 'r', linewidth = 0.1)
 plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'$ $[R_{earth}]$")
 plt.show()
 """
-mP = particles.m*zP/particles.z
+mask = np.isfinite(zP)
+slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
+zP[np.isnan(zP)] = particles.z[np.isnan(zP)]*slope
+mP = particles.m*slope
+
+
+#mP = particles.m*zP/particles.z
 
 #plt.hist(mP, bins = 100)
 #plt.show()
@@ -260,11 +283,11 @@ A1_mat_id = np.ones((mP.shape[0],))*Di_mat_id['Til_granite']
 swift_to_SI = Conversions(M_earth, R_earth, 1)
 
 # save profile
-filename = 'init_test_iso_2.hdf5'
+filename = 'init_test_linear.hdf5'
 with h5py.File(filename, 'w') as f:
     save_picle_data(f, np.array([x, y, zP]).T, np.array([vx, vy, vz]).T,
                     mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id,
-                    4*Rs, swift_to_SI)
+                    4*Rs, swift_to_SI)  
 
 #######
 fig_size = plt.rcParams["figure.figsize"]
