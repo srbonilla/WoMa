@@ -166,22 +166,22 @@ plt.ylim(0,0.3)
 plt.show()
 """
 # Get equatorial profile
-radii = np.arange(0, Re, dr/100)
+radii = np.arange(0, Re, dr/100000)
 densities = rho_model.ev(radii,0)
 
 # Generate seagen sphere
 N = 10**5
 particles = seagen.GenSphere(N, radii[1:], densities[1:])
-"""
+
 def _eq_density(x, y, z, radii, densities):
     rho = np.zeros(x.shape[0])
     r = np.sqrt(x*x + y*y + z*z)
     dr = radii[1] - radii[0]
     for i in range(x.shape[0]):
         k = int(r[i]/dr)
-        rho[i] = densities[k] + (densities[k + 1] - densities[k])*(r[i] - k*dr)/dr 
+        rho[i] = densities[k] #+ (densities[k + 1] - densities[k])*(r[i] - k*dr)/dr 
     return rho
-"""
+
 
 def _bisection(f,a,b,N = 10):
     if f(a)*f(b) >= 0:
@@ -206,8 +206,8 @@ def _bisection(f,a,b,N = 10):
             return None
     return (a_n + b_n)/2
 
-#rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
-rho_seagen = particles.A1_rho
+rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
+#rho_seagen = particles.A1_rho
 
 zP = np.zeros(particles.m.shape[0])
 
@@ -226,15 +226,19 @@ for i in range(particles.m.shape[0]):
         #    zP[i] = _bisection(f, z, 100*z)
  
 """
+mask = np.isfinite(zP)
+slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
 plt.scatter(particles.z, zP, s = 1)
 plt.plot(particles.z, particles.z, c = 'r', linewidth = 0.1)
+plt.plot(particles.z, slope*particles.z, c = 'g', linewidth = 0.3)
 plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'$ $[R_{earth}]$")
 plt.show()
 """
 mask = np.isfinite(zP)
 slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
-zP[np.isnan(zP)] = particles.z[np.isnan(zP)]*slope
+#zP[np.isnan(zP)] = particles.z[np.isnan(zP)]*slope
+zP = particles.z*slope
 mP = particles.m*slope
 
 
@@ -283,7 +287,7 @@ A1_mat_id = np.ones((mP.shape[0],))*Di_mat_id['Til_granite']
 swift_to_SI = Conversions(M_earth, R_earth, 1)
 
 # save profile
-filename = 'init_test_linear.hdf5'
+filename = 'init_test_linear2.hdf5'
 with h5py.File(filename, 'w') as f:
     save_picle_data(f, np.array([x, y, zP]).T, np.array([vx, vy, vz]).T,
                     mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id,
@@ -299,3 +303,34 @@ plt.scatter(1, 1, s = 0)
 plt.scatter(-1, -1, s = 0)
 plt.show()
 
+#######
+###### test: spherical case
+data = pd.read_csv("1layer_n10k.csv", header=0)
+Rs = data.R[0]
+Ts = data['T'][0]
+dr = data.R[0] - data.R[1]
+
+radii = np.flip(np.array(data.R))
+densities = np.flip(np.array(data.rho))
+
+# Generate seagen sphere
+N = 10**5
+particles = seagen.GenSphere(N, radii[1:], densities[1:])
+
+vx = np.zeros(particles.m.shape[0])
+vy = np.zeros(particles.m.shape[0])
+vz = np.zeros(particles.m.shape[0])
+
+A1_P = np.ones((particles.m.shape[0],))
+A1_id = np.arange(particles.m.shape[0])
+A1_mat_id = np.ones((particles.m.shape[0],))*Di_mat_id['Til_granite']
+## Smoothing lengths, crudely estimated from the densities
+
+num_ngb = 48    # Desired number of neighbours
+w_edge  = 2     # r/h at which the kernel goes to zero
+A1_h    = np.cbrt(num_ngb * particles.m / (4/3*np.pi * particles.rho)) / w_edge
+filename = 'init_test_spherical.hdf5'
+with h5py.File(filename, 'w') as f:
+    save_picle_data(f, np.array([particles.x, particles.y, particles.z]).T, np.array([vz, vz, vz]).T,
+                    particles.m, A1_h, particles.rho, A1_P, u, A1_id, A1_mat_id,
+                    4*Rs, swift_to_SI) 
