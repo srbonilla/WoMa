@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 import spipgen
 
-data = pd.read_csv("1layer_n100.csv", header=0)
+data = pd.read_csv("1layer_n200.csv", header=0)
 
 Rs = data.R[0]
 rho_sph = np.array(data.rho)

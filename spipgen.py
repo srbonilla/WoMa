@@ -21,6 +21,7 @@ import scipy.integrate
 from numba import jit, njit
 from mpi4py import MPI
 import time
+from scipy import interpolate
 
 # Material constants for Tillotson EoS + material code and specific capacity (SI units)
 iron = np.array([0.5, 1.5, 1.279E11, 1.05E11, 7860, 9.5E6, 1.42E6, 8.45E6, 5, 5, 0, 449])
@@ -342,19 +343,19 @@ def rho_rz_sph(rc, z, rho_sph, Rs):
             
     Returns:
         rho (float):
-            Interoplated ensity (SI).
+            Interoplated density (SI).
     """
     N = rho_sph.shape[0]
     r = np.sqrt(rc**2 + z**2)
     dr = Rs / (N - 1)
     rho = 0.
     
-    if r > Rs: 
+    if r >= Rs: 
         return 0.
     else:
         alpha = int(r/dr)
         rho = rho_sph[alpha] + (rho_sph[alpha + 1] - rho_sph[alpha])*(r - alpha*dr)/dr
-    
+        
     return rho
 
 # Compute rho0 given the spherical radii profile (from high to low as in function before)
@@ -561,16 +562,33 @@ def _fillrho(V_grid, Rs, prev_rho_grid, rho_s, material, K, alpha, ucold_table):
     Ps = P_rho(rho_s, material, K, alpha)
     
     rho_grid[0,0] = prev_rho_grid[0,0]
-    rho_grid[1,0] = prev_rho_grid[1,0]
-    rho_grid[0,1] = prev_rho_grid[0,1]
-    rho_grid[1,1] = prev_rho_grid[1,1]
+    #rho_grid[1,0] = prev_rho_grid[1,0]
+    #rho_grid[0,1] = prev_rho_grid[0,1]
+    #rho_grid[1,1] = prev_rho_grid[1,1]
+    ##############
+    gradV = -(V_grid[0, 1] - V_grid[0, 0])
+    gradP = rho_grid[0, 0]*gradV
+    P = gradP + P_rho(rho_grid[0, 0], material, K, alpha)
+    rho_grid[0,1] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[0,0], ucold_table)
+    
+    gradV = -(V_grid[1, 0] - V_grid[0, 0])
+    gradP = rho_grid[0, 0]*gradV
+    P = gradP + P_rho(rho_grid[0, 0], material, K, alpha)
+    rho_grid[1,0] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[0,0], ucold_table)
+    
+    gradV = -(V_grid[1, 1] - V_grid[1, 0])
+    gradP = rho_grid[1, 0]*gradV
+    P = gradP + P_rho(rho_grid[1, 0], material, K, alpha)
+    rho_grid[1,1] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[0,0], ucold_table)
+    
+    ##############
     
     # fill polar radii
     for i in range(2):
         for j in range(1, rho_grid.shape[1] - 1):
             gradV = -(V_grid[i, j + 1] - V_grid[i, j - 1])
-            P = rho_grid[i, j]*gradV
-            P = P + P_rho(rho_grid[i, j - 1], material, K, alpha)
+            gradP = rho_grid[i, j]*gradV
+            P = gradP + P_rho(rho_grid[i, j - 1], material, K, alpha)
             if P >= Ps:
                 rho_grid[i, j + 1] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[i,j], ucold_table)
             else:
