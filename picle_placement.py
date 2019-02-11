@@ -238,14 +238,22 @@ plt.axes().axhline(color = 'black')
 plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'$ $[R_{earth}]$")
 plt.show()
+"""
+zPPP = np.zeros(particles.m.shape[0])
+for i in range(zP.shape[0]):
+    if np.isnan(zP[i]) or np.abs(zP[i]) < dr:
+        zPPP[i] = zPP[i]
+    else:
+        zPPP[i] = zP[i]
 
-
+"""
 plt.scatter(particles.z, particles.z/zPP, s =1, color = 'red', alpha = 0.5)
 plt.scatter(particles.z, particles.z/zP, s =1, color = 'green', alpha = 0.5)
+plt.scatter(particles.z, particles.z/zPPP, s =1, color = 'blue', alpha = 0.5)
 plt.show()
 """
 
-mP = particles.m*zPP/particles.z
+mP = particles.m*zPPP/particles.z
 # velocities
 Tw = 4 # in hours
 # v = w x r (units of R_earth/hour)  
@@ -270,7 +278,7 @@ y = particles.y
 
 for k in range(mP.shape[0]):
     rc = np.sqrt(x[k]*x[k] + y[k]*y[k])
-    rho[k] = rho_model.ev(rc, zPP[k])
+    rho[k] = rho_model.ev(rc, zPPP[k])
     u[k] = spipgen.ucold(rho[k], spipgen.granite, 10000) + spipgen.granite[11]*Ts
     
 ## Smoothing lengths, crudely estimated from the densities
@@ -287,7 +295,7 @@ swift_to_SI = Conversions(M_earth, R_earth, 1)
 # save profile
 filename = 'init_test_linear3.hdf5'
 with h5py.File(filename, 'w') as f:
-    save_picle_data(f, np.array([x, y, zPP]).T, np.array([vx, vy, vz]).T,
+    save_picle_data(f, np.array([x, y, zPPP]).T, np.array([vx, vy, vz]).T,
                     mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id,
                     4*Rs, swift_to_SI) 
 
