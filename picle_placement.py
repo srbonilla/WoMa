@@ -87,17 +87,17 @@ densities = rho_model.ev(radii,0)
 
 # Generate seagen sphere
 N = 10**5
-particles = seagen.GenSphere(N, radii[1:], densities[1:])
+particles = seagen.GenSphere(N, radii[1:]*R_earth, densities[1:])
 
-rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
+rho_seagen = _eq_density(particles.x/R_earth, particles.y/R_earth, particles.z/R_earth, radii, densities)
 #rho_seagen = particles.A1_rho
 
 zP = np.zeros(particles.m.shape[0])
 
 for i in range(particles.m.shape[0]):
-    rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)
+    rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)/R_earth
     rho_spherical = rho_seagen[i]
-    z = particles.z[i]
+    z = particles.z[i]/R_earth
     f = lambda z: rho_model.ev(rc, np.abs(z)) - rho_spherical
     if z < 0:
         zP[i] = _bisection(f, z, 0.)
@@ -108,7 +108,7 @@ for i in range(particles.m.shape[0]):
 """
 mask = np.isfinite(zP)
 slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
-plt.scatter(particles.z, zP, s = 1, alpha = 0.15)
+plt.scatter(particles.z/R_earth, zP, s = 1, alpha = 0.15)
 plt.plot(particles.z, particles.z, c = 'r', linewidth = 0.1)
 plt.plot(particles.z, slope*particles.z, c = 'g', linewidth = 0.3)
 plt.axes().axhline(color = 'black')
@@ -122,8 +122,8 @@ plt.show()
 mask = np.isfinite(zP)
 slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
 #zP[np.isnan(zP)] = particles.z[np.isnan(zP)]*slope
-zP = particles.z*slope
-mP = particles.m*slope
+zP = particles.z*slope*R_earth
+mP = particles.m*slope*R_earth
 
 
 #mP = particles.m*zP/particles.z
@@ -139,13 +139,12 @@ vx = np.zeros(mP.shape[0])
 vy = np.zeros(mP.shape[0])
 vz = np.zeros(mP.shape[0])
 
-wz = 2*np.pi/Tw 
+wz = 2*np.pi/Tw/hour_to_s 
 for i in range(mP.shape[0]):
     vx[i] = -particles.y[i]*wz
     vy[i] = particles.x[i]*wz
     
-vx = vx*R_earth/hour_to_s
-vy = vy*R_earth/hour_to_s
+
 
 # model densities and internal energy
 rho = np.zeros((mP.shape[0]))
@@ -155,8 +154,8 @@ x = particles.x
 y = particles.y
 
 for k in range(mP.shape[0]):
-    rc = np.sqrt(x[k]*x[k] + y[k]*y[k])
-    rho[k] = rho_model.ev(rc, zP[k])
+    rc = np.sqrt(x[k]*x[k] + y[k]*y[k])/R_earth
+    rho[k] = rho_model.ev(rc, zP[k]/R_earth)
     u[k] = spipgen.ucold(rho[k], spipgen.granite, 10000) + spipgen.granite[11]*Ts
     
 ## Smoothing lengths, crudely estimated from the densities
@@ -168,14 +167,14 @@ A1_P = np.ones((mP.shape[0],))
 A1_id = np.arange(mP.shape[0])
 A1_mat_id = np.ones((mP.shape[0],))*Di_mat_id['Til_granite']
 
-swift_to_SI = Conversions(M_earth, R_earth, 1)
+swift_to_SI = Conversions(1, 1, 1)
 
 # save profile
 filename = 'init_test_linear2.hdf5'
 with h5py.File(filename, 'w') as f:
     save_picle_data(f, np.array([x, y, zP]).T, np.array([vx, vy, vz]).T,
                     mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id,
-                    4*Rs, swift_to_SI)  
+                    4*Rs*R_earth, swift_to_SI)  
 
 #######
 ####### layer by layer
@@ -312,7 +311,7 @@ densities = np.flip(np.array(data.rho))
 
 # Generate seagen sphere
 N = 10**5
-particles = seagen.GenSphere(N, radii[1:], densities[1:])
+particles = seagen.GenSphere(N, radii[1:]*R_earth, densities[1:])
 
 vx = np.zeros(particles.m.shape[0])
 vy = np.zeros(particles.m.shape[0])
@@ -332,10 +331,12 @@ num_ngb = 48    # Desired number of neighbours
 w_edge  = 2     # r/h at which the kernel goes to zero
 A1_h    = np.cbrt(num_ngb * particles.m / (4/3*np.pi * particles.rho)) / w_edge
 
-swift_to_SI = Conversions(M_earth, R_earth, 1)
+# units
+
+swift_to_SI = Conversions(1, 1, 1)
 
 filename = 'init_test_spherical.hdf5'
 with h5py.File(filename, 'w') as f:
     save_picle_data(f, np.array([particles.x, particles.y, particles.z]).T, np.array([vz, vz, vz]).T,
                     particles.m, A1_h, particles.rho, A1_P, u, A1_id, A1_mat_id,
-                    4*Rs, swift_to_SI) 
+                    4*Rs*R_earth, swift_to_SI) 
