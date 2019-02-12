@@ -155,7 +155,7 @@ y = particles.y
 
 for k in range(mP.shape[0]):
     rc = np.sqrt(x[k]*x[k] + y[k]*y[k])/R_earth
-    rho[k] = rho_model.ev(rc, zP[k]/R_earth)
+    rho[k] = rho_model.ev(rc, np.abs(zP[k]/R_earth))
     u[k] = spipgen.ucold(rho[k], spipgen.granite, 10000) + spipgen.granite[11]*Ts
     
 ## Smoothing lengths, crudely estimated from the densities
