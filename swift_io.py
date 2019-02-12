@@ -171,6 +171,7 @@ def save_picle_data(f, A2_pos, A2_vel, A1_m, A1_h, A1_rho, A1_P, A1_u, A1_id,
     num_picle   = len(A1_id)
 
     # Convert to file units
+    """
     SI_to_file  = file_to_SI.inv()
     A2_pos      *= R_earth * SI_to_file.l
     A2_vel      *= SI_to_file.v
@@ -180,7 +181,16 @@ def save_picle_data(f, A2_pos, A2_vel, A1_m, A1_h, A1_rho, A1_P, A1_u, A1_id,
     A1_u        *= SI_to_file.u
     A1_h        *= R_earth * SI_to_file.l
     boxsize     *= R_earth * SI_to_file.l
-
+    """
+    SI_to_file  = file_to_SI.inv()
+    A2_pos      *= SI_to_file.l
+    A2_vel      *= SI_to_file.v
+    A1_m        *= SI_to_file.m
+    A1_rho      *= SI_to_file.rho
+    A1_P        *= SI_to_file.P
+    A1_u        *= SI_to_file.u
+    A1_h        *= SI_to_file.l
+    boxsize     *= SI_to_file.l
     # Shift coordinates such that the origin is at the box corner and all
     # positions are positive, instead of the origin in the centre
     A2_pos  += boxsize / 2.0
