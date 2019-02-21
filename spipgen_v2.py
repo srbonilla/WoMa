@@ -61,6 +61,7 @@ def _P_EoS_Till(u, rho, mat_id):
     iron = np.array([0.5, 1.5, 1.279E11, 1.05E11, 7860, 9.5E6, 1.42E6, 8.45E6, 5, 5, 0, 449])
     granite = np.array([0.5, 1.3, 1.8E10, 1.8E10, 2700, 1.6E7, 3.5E6, 1.8E7, 5, 5, 1, 790])
     water = np.array([0.5, 0.9, 2.0E10, 1.0E10, 1000, 2.0E6, 4.0E5, 2.0E6, 5, 5, 2, 4186])
+    
     if (mat_id == 100):
         material = iron
     elif (mat_id == 101):
@@ -69,7 +70,7 @@ def _P_EoS_Till(u, rho, mat_id):
         material = water
     else:
         print("Material not implemented")
-        return -1
+        return None
         
     a = material[0]
     b = material[1]
@@ -133,10 +134,76 @@ def P_EoS(u, rho, mat_id):
         return _P_EoS_Till(u, rho, mat_id)
     else:
         print("Material not implemented")
-        return -1
+        return None
+
+@jit(nopython=True)
+def _rho0(mat_id):
+    """Returns rho_0 for a given material id
+    
+    Args:          
+        mat_id ([int])
+            Material id.
+    
+    """
+    if (mat_id == 100):     # Tillotson iron
+        return 7860
+    elif (mat_id == 101):   # Tillotson granite   
+        return 2700
+    elif (mat_id == 102):   # Tillotson water
+        return 1000
+    elif (mat_id == 200):   # H&M80 H-He atmosphere
+        return None
+    elif (mat_id == 201):   # H&M80 H-He ice mix
+        return None
+    elif (mat_id == 202):   # H&M80 H-He rock mix
+        return None
+    elif (mat_id == 300):   # SESAME iron
+        return 7902
+    elif (mat_id == 301):   # SESAME basalt
+        return 2902
+    elif (mat_id == 302):   # SESAME water
+        return 1402
+    elif (mat_id == 303):   # SS08 like-SESAME water
+        return 1002
+    else:
+        print("Material not implemented")
+        return None
     
 @jit(nopython=True)
-def ucold(rho, material, N):
+def _spec_c(mat_id):
+    """Returns specific capacity for a given material id
+    
+    Args:          
+        mat_id ([int])
+            Material id.
+    
+    """
+    if (mat_id == 100):     # Tillotson iron
+        return 449
+    elif (mat_id == 101):   # Tillotson granite   
+        return 790
+    elif (mat_id == 102):   # Tillotson water
+        return 4186
+    elif (mat_id == 200):
+        return None
+    elif (mat_id == 201):
+        return None
+    elif (mat_id == 202):
+        return None
+    elif (mat_id == 300):   # SESAME iron
+        return 449
+    elif (mat_id == 301):   # SESAME basalt
+        return 790
+    elif (mat_id == 302):   # SESAME water
+        return 4186
+    elif (mat_id == 303):   # SS08 like-SESAME water
+        return 4186
+    else:
+        print("Material not implemented")
+        return None
+    
+@jit(nopython=True)
+def ucold(rho, mat_id, N):
     """
     Computes internal energy cold.
     
@@ -144,8 +211,8 @@ def ucold(rho, material, N):
         rho (float) 
             Density (SI).
         
-        material ([float])
-            Material constants (SI).
+        mat_id ([int])
+            Material id.
             
         N (int)
             Number of subdivisions for the numerical integral.
@@ -155,38 +222,46 @@ def ucold(rho, material, N):
             Cold internal energy (SI).
     """
 
-    rho0 = material[4]
+    rho0 = _rho0(mat_id)
     drho = (rho - rho0)/N
     x = rho0
     uc = 0
 
     for j in range(N):
         x += drho
-        uc += P_EoS(uc, x, material)*drho/x**2
+        uc += P_EoS(uc, x, mat_id)*drho/x**2
 
     return uc
 
 @jit(nopython=True)
-def T_of_rho(rho, K, alpha):
+def T_rho(rho, T_rho_id, args_T_rho):
     """
-    Computes temperature given density (T = K*rho**alpha).
+    Computes temperature given density (T = f(rho)).
     
     Args:
         rho (float)
             Density (SI).
             
-        K, alpha (float)
-            Parameters of the equation (SI).
+        T_rho_id (int)
+            Relation between T and rho to be used.
+            
+        args_T_rho (list):
+            Extra arguments to determine the relation
             
     Returns:
-        K*rho**alpha (float)
+        Temperature (SI)
             
     """
-    return K*rho**alpha
+    if (T_rho_id == 1):  # T = K*rho**alpha, args_T_rho = [K, alpha]
+        K = args_T_rho[0]
+        alpha = args_T_rho[1]
+        return K*rho**alpha
+    else:
+        print("relation_id not implemented")
+        return None
 
-# Compute Tillotson P, given rho. Also needed: material, K and alpha (from the relation T = K*rho**alpha)
 @jit(nopython=True)
-def P_rho(rho, material, K, alpha):
+def P_rho(rho, mat_id, T_rho_id, args_T_rho):
     """
     Computes pressure using Tillotson EoS, and
     internal energy = internal energy cold + c*Temperature 
@@ -196,22 +271,24 @@ def P_rho(rho, material, K, alpha):
         rho (float) 
             Density (SI).
         
-        material ([float])
-            Material constants (SI).
+        mat_id ([float])
+            Material id.
             
-        K, alpha (float)
-            parameters from the relation between density and temperature
-            T = K*rho**alpha.
+        T_rho_id (int)
+            Relation between T and rho to be used.
+            
+        args_T_rho (list):
+            Extra arguments to determine the relation
             
     Returns:
-        P (float)
+        P (float):
             Pressure (SI).
     """
     
     N = 10000
-    c = material[11]
-    u = ucold(rho, material, N) + c*T_of_rho(rho, K, alpha)
-    P = P_EoS(u, rho, material)
+    c = _spec_c(mat_id)
+    u = ucold(rho, mat_id, N) + c*T_rho(rho, T_rho_id, args_T_rho)
+    P = P_EoS(u, rho, mat_id)
 
     return P
 
