@@ -137,7 +137,7 @@ def P_EoS(u, rho, mat_id):
         return None
 
 @jit(nopython=True)
-def _rho0(mat_id):
+def _rho0_material(mat_id):
     """Returns rho_0 for a given material id
     
     Args:          
@@ -222,7 +222,7 @@ def ucold(rho, mat_id, N):
             Cold internal energy (SI).
     """
 
-    rho0 = _rho0(mat_id)
+    rho0 = _rho0_material(mat_id)
     drho = (rho - rho0)/N
     x = rho0
     uc = 0
@@ -234,7 +234,7 @@ def ucold(rho, mat_id, N):
     return uc
 
 @jit(nopython=True)
-def T_rho(rho, T_rho_id, args_T_rho):
+def T_rho(rho, T_rho_id, T_rho_args):
     """
     Computes temperature given density (T = f(rho)).
     
@@ -245,23 +245,23 @@ def T_rho(rho, T_rho_id, args_T_rho):
         T_rho_id (int)
             Relation between T and rho to be used.
             
-        args_T_rho (list):
+        T_rho_args (list):
             Extra arguments to determine the relation
             
     Returns:
         Temperature (SI)
             
     """
-    if (T_rho_id == 1):  # T = K*rho**alpha, args_T_rho = [K, alpha]
-        K = args_T_rho[0]
-        alpha = args_T_rho[1]
+    if (T_rho_id == 1):  # T = K*rho**alpha, T_rho_args = [K, alpha]
+        K = T_rho_args[0]
+        alpha = T_rho_args[1]
         return K*rho**alpha
     else:
         print("relation_id not implemented")
         return None
 
 @jit(nopython=True)
-def P_rho(rho, mat_id, T_rho_id, args_T_rho):
+def P_rho(rho, mat_id, T_rho_id, T_rho_args):
     """
     Computes pressure using Tillotson EoS, and
     internal energy = internal energy cold + c*Temperature 
@@ -277,7 +277,7 @@ def P_rho(rho, mat_id, T_rho_id, args_T_rho):
         T_rho_id (int)
             Relation between T and rho to be used.
             
-        args_T_rho (list):
+        T_rho_args (list):
             Extra arguments to determine the relation
             
     Returns:
@@ -287,24 +287,27 @@ def P_rho(rho, mat_id, T_rho_id, args_T_rho):
     
     N = 10000
     c = _spec_c(mat_id)
-    u = ucold(rho, mat_id, N) + c*T_rho(rho, T_rho_id, args_T_rho)
+    u = ucold(rho, mat_id, N) + c*T_rho(rho, T_rho_id, T_rho_args)
     P = P_EoS(u, rho, mat_id)
 
     return P
 
 @jit(nopython=True)
-def _create_ucold_table():
+def _create_ucold_array(mat_id):
     """
     Computes values of the cold internal energy and stores it to save 
     computation time in future calculations.
+    
+    Args:
+        mat_id (int):
+            Material id.
             
     Returns:
-        ucold_table ([[float]])
-            Pressure (SI).
+        ucold_array ([float])
     """
 
     nrow = 10000
-    ucold_table = np.zeros((nrow,3))
+    ucold_array = np.zeros((nrow,))
     rho_min = 100
     rho_max = 100000
     Nucold = 10000
@@ -312,28 +315,15 @@ def _create_ucold_table():
     rho = rho_min
     drho = (rho_max - rho_min)/(nrow - 1)
     
-    # material 0: iron
     rho = rho_min
     for i in range(nrow):
-        ucold_table[i,0] = ucold(rho, iron, Nucold)
+        ucold_array[i] = ucold(rho, mat_id, Nucold)
         rho = rho + drho
     
-    # material 1: granite
-    rho = rho_min
-    for i in range(nrow):
-        ucold_table[i,1] = ucold(rho, granite, Nucold)
-        rho = rho + drho
-    
-    # material 2: water
-    rho = rho_min
-    for i in range(nrow):
-        ucold_table[i,2] = ucold(rho, water, Nucold)
-        rho = rho + drho
-    
-    return ucold_table
+    return ucold_array
 
 @jit(nopython=True)
-def _ucold_tab(rho, material, ucold_table):
+def _ucold_tab(rho, ucold_array):
     """
     Fast computation of cold internal energy using the table previously
     computed.
@@ -342,23 +332,18 @@ def _ucold_tab(rho, material, ucold_table):
         rho (float):
             Density (SI).
             
-        material ([float]):
-            Material constants (SI).
-            
-        ucold_table ([[float]])
-            Precomputed values of cold internal energy
-            with function create_ucold_table() (SI).
+        ucold_array ([float])
+            Precomputed values of cold internal energy for a particular material
+            with function _create_ucold_array() (SI).
             
     Returns:
         interpolation (float):
             cold internal energy (SI).
     """
 
-    nrow = ucold_table.shape[0]
+    nrow = ucold_array.shape[0]
     rho_min = 100
     rho_max = 100000
-
-    material_code = int(material[10])
 
     drho = (rho_max - rho_min)/(nrow - 1)
 
@@ -366,19 +351,19 @@ def _ucold_tab(rho, material, ucold_table):
     b = a + 1
 
     if a >= 0 and a < (nrow - 1):
-        interpolation = ucold_table[a,material_code]
-        interpolation += ((ucold_table[b,material_code] - ucold_table[a,material_code])/drho)*(rho - rho_min - a*drho)
+        interpolation = ucold_array[a]
+        interpolation += ((ucold_array[b] - ucold_array[a])/drho)*(rho - rho_min - a*drho)
 
     elif rho < rho_min:
-        interpolation = ucold(rho, material, 10000)
+        interpolation = ucold_array[0]
     else:
-        interpolation = ucold_table[int(nrow - 1),material_code]
-        interpolation += ((ucold_table[int(nrow - 1),material_code] - ucold_table[int(nrow) - 2][material_code])/drho)*(rho - rho_max)
+        interpolation = ucold_array[int(nrow - 1)]
+        interpolation += ((ucold_array[int(nrow - 1)] - ucold_array[int(nrow) - 2])/drho)*(rho - rho_max)
 
     return interpolation
 
 @jit(nopython=True)
-def _find_rho(Ps, material, K, alpha, rho0, rho1, ucold_table):
+def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
     """
     Root finder of the density for Tillotson EoS using 
     tabulated values of cold internal energy
@@ -387,12 +372,14 @@ def _find_rho(Ps, material, K, alpha, rho0, rho1, ucold_table):
         Ps (float):
             Pressure (SI).
             
-        material ([float]):
-            Material constants (SI).
+        mat_id (int):
+            Material id (SI).
         
-        K, alpha (float):
-            Parameters from the relation between density and temperature
-            T = K*rho**alpha.
+        T_rho_id (int)
+            Relation between T and rho to be used.
+            
+        T_rho_args (list):
+            Extra arguments to determine the relation
             
         rho0 (float):
             Lower bound for where to look the root (SI).
@@ -400,9 +387,9 @@ def _find_rho(Ps, material, K, alpha, rho0, rho1, ucold_table):
         rho1 (float):
             Upper bound for where to look the root (SI).
         
-        ucold_table ([[float]])
+        ucold_array ([float])
             Precomputed values of cold internal energy
-            with function create_ucold_table() (SI).
+            with function _create_ucold_array() (SI).
             
     Returns:
         rho2 (float):
@@ -410,21 +397,21 @@ def _find_rho(Ps, material, K, alpha, rho0, rho1, ucold_table):
             (SI).
     """
 
-    c = material[11]
+    c = _spec_c(mat_id)
     rho2 = (rho0 + rho1)/2
     tolerance = 1E-7
 
-    f0 = Ps - P_EoS((_ucold_tab(rho0, material, ucold_table) + c*T_of_rho(rho0, K, alpha)), rho0, material)
-    f1 = Ps - P_EoS((_ucold_tab(rho1, material, ucold_table) + c*T_of_rho(rho1, K, alpha)), rho1, material)
+    f0 = Ps - P_EoS((_ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)), rho0, mat_id)
+    f1 = Ps - P_EoS((_ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)), rho1, mat_id)
 
     if f0*f1 > 0:
         #print("Cannot find a 0 in the interval\n")
         rho2 = rho1;
     else:
         while np.abs(rho1 - rho0) > tolerance:
-            f0 = Ps - P_EoS((_ucold_tab(rho0, material, ucold_table) + c*T_of_rho(rho0, K, alpha)), rho0, material)
-            f1 = Ps - P_EoS((_ucold_tab(rho1, material, ucold_table) + c*T_of_rho(rho1, K, alpha)), rho1, material)
-            f2 = Ps - P_EoS((_ucold_tab(rho2, material, ucold_table) + c*T_of_rho(rho2, K, alpha)), rho2, material)
+            f0 = Ps - P_EoS((_ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)), rho0, mat_id)
+            f1 = Ps - P_EoS((_ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)), rho1, mat_id)
+            f2 = Ps - P_EoS((_ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)), rho2, mat_id)
 
             if f0*f2 > 0:
                 rho0 = rho2
@@ -439,77 +426,56 @@ def _find_rho(Ps, material, K, alpha, rho0, rho1, ucold_table):
 
 # Especial functions for the initial spherical case
 
-@jit(nopython=True)
-def rho_rz_sph(rc, z, rho_sph, Rs):
-    """
-    Computes density given any cylindrical coordinates, and a particular
-    radial density profile.
-    
-    Args:
-        rc (float):
-            Cylindrical radii (distance from z axis) (R_earth).
-            
-        z (float):
-            z coordinate (R_earth).
-            
-        rho_sph ([float]):
-            Radial density profile (SI). First component must be 
-            central density, and hence the last component must be
-            the surface density.
-            
-        Rs (float):
-            Length which covers the radial density profile (R_earth).
-            
-    Returns:
-        rho (float):
-            Interoplated density (SI).
-    """
-    N = rho_sph.shape[0]
-    r = np.sqrt(rc**2 + z**2)
-    dr = Rs / (N - 1)
-    rho = 0.
-    
-    if r >= Rs: 
-        return 0.
-    else:
-        alpha = int(r/dr)
-        rho = rho_sph[alpha] + (rho_sph[alpha + 1] - rho_sph[alpha])*(r - alpha*dr)/dr
-        
-    return rho
-
 # Compute rho0 given the spherical radii profile (from high to low as in function before)
 # Rs in Earth radii units
-@njit
-def rho0(rho_sph, Rs):
+def _rho0_grid(radii_sph, densities_sph, r_array = None, z_array = None):
     """
     Creates 2-d array density profile out of a 1-d array radial
     density profile (spherical).
     
-    Args:            
-        rho_sph ([float]):
-            Radial density profile (SI). First component must be 
-            central density, and hence the last component must be
-            the surface density.
+    Args: 
+        radii_sph ([float]):
+            Radii profile (SI). From center to surface.
             
-        Rs (float):
-            Length which covers the radial density profile (R_earth).
+        densities_sph ([float]):
+            Radial density profile (SI). From center to surface.
+            
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
+            
+        r_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
             
     Returns:
         rho0 ([[float]]):
             2-d spherical density profile (SI).
     """
-    
-    N = rho_sph.shape[0]
-    rho_grid = np.zeros((2*N, N))
-    dr = Rs/(N - 1)
 
-    for i in range(rho_grid.shape[0]):
-        for j in range(rho_grid.shape[1]):
-            rho_grid[i,j] = rho_rz_sph(i*dr, j*dr, rho_sph, Rs)
+    radii_sph = np.sort(radii_sph)
+    densities_sph = np.flip(np.sort(densities_sph))
+    
+    if r_array == None:
+        r_array = np.arange(0, 1.5*np.max(radii_sph), 1.5*np.max(radii_sph)/100)
+        
+    if z_array == None:
+        z_array = np.arange(0, 1.1*np.max(radii_sph), 1.1*np.max(radii_sph)/100)
+        
+    rho_model_sph = interpolate.interp1d(radii_sph, densities_sph, kind = 'quadratic')
+    
+    rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    
+    for i in range(r_array.shape[0]):
+        for j in range(z_array.shape[0]):
+            r = np.sqrt(r_array[i]**2 + z_array[j]**2)
+            if r > np.max(radii_sph):
+                rho_grid[i,j] = 0.
+            else:
+                rho_grid[i,j] = rho_model_sph(r)
             
-    return rho_grid
+            
+    return rho_grid, r_array, z_array
      
-def _create_I_tab():
+def _create_I_array():
     """
     Tabulates the integral respect to angle phi' inside the 3-d
     integral of the gravitational potential.
