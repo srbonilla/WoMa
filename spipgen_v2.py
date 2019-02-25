@@ -442,9 +442,11 @@ def _rho0_grid(radii_sph, densities_sph, r_array = None, z_array = None):
             
         r_array ([float]):
             Array of distances from the z axis to build the grid (SI).
+            First element must be 0.
             
-        r_array ([float]):
+        z_array ([float]):
             Array of distances in the z direction to build the grid (SI).
+            First element must be 0.
             
     Returns:
         rho0 ([[float]]):
@@ -517,9 +519,63 @@ def _I_tab(gamma, I_array):
     i = int((gamma)*prec)
     return I_array[i]
 
+@jit(nopython=True)
+def _dS(r_array, z_array):
+    """Computes de differential of surface for any point i, j of the 2d density grid 
+    
+    """
+    
+    dS = np.zeros((r_array.shape[0], z_array.shape[0]))
+    
+    for i in range(r_array.shape[0]):
+        for j in range(z_array.shape[0]):
+            
+            if i == 0 and j == 0:
+                dS[i,j] = r_array[1]*z_array[1]/4
+                
+            elif i == 0 and j == z_array.shape[0] - 1:
+                dS[i,j] = (r_array[1] - r_array[0])/2*(z_array[j] - z_array[j - 1])/2
+                
+            elif i == r_array.shape[0] - 1 and j == 0:
+                dS[i,j] = (r_array[i] - r_array[i - 1])/2*(z_array[1] - z_array[0])/2
+                
+            elif i == r_array.shape[0] - 1 and j == z_array.shape[0] - 1:
+                dS[i,j] = (r_array[i] - r_array[i - 1])/2*(z_array[j] - z_array[j - 1])/2
+                
+            elif i == 0:
+                top = (z_array[j + 1] + z_array[j])/2 
+                bottom = (z_array[j] + z_array[j - 1])/2 
+                dS[i,j] = (r_array[1] - r_array[0])/2*(top - bottom)
+            
+            elif j == 0:
+                right = (r_array[i + 1] + r_array[i])/2 
+                left = (r_array[i] + r_array[i - 1])/2 
+                dS[i,j] = (z_array[1] - z_array[0])/2*(right - left)
+            
+            elif i == r_array.shape[0] - 1:
+                top = (z_array[j + 1] + z_array[j])/2 
+                bottom = (z_array[j] + z_array[j - 1])/2 
+                dS[i,j] = (r_array[i] - r_array[i - 1])/2*(top - bottom)
+            
+            elif j == z_array.shape[0] - 1:
+                right = (r_array[i + 1] + r_array[i])/2 
+                left = (r_array[i] + r_array[i - 1])/2 
+                dS[i,j] = (z_array[j] - z_array[j - 1])/2*(right - left)
+            
+            else:
+                top = (z_array[j + 1] + z_array[j])/2 
+                bottom = (z_array[j] + z_array[j - 1])/2 
+                right = (r_array[i + 1] + r_array[i])/2 
+                left = (r_array[i] + r_array[i - 1])/2 
+                dS[i,j] = (top - bottom)*(right - left)
+                
+    return dS
+            
+        
+
 # Computes the gravitational potential given a density grid at some point rc, z
 @jit(nopython=True)
-def _Vg(rc, z, rho_grid, Rs, I_array):
+def _Vg(rc, z, rho_grid, r_array, z_array, I_array, S_grid):
     """
     Computes the gravitational potential given a 2-d density grid at any point
     rc, z.
@@ -534,8 +590,17 @@ def _Vg(rc, z, rho_grid, Rs, I_array):
         rho_grid ([[float]]):
             2-d density grid (SI) of a planet.
             
-        Rs (float):
-            Initial radius of the planet (R_earth).
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
+            
+        z_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
+            
+        I_array ([float]):
+            Values of the integral for gamma from 0 to 1.
+            
+        S_grid ([[float]]):
+            Differential of surface for every element i,j of the density grid.
             
     Returns:
         
@@ -545,37 +610,32 @@ def _Vg(rc, z, rho_grid, Rs, I_array):
             
     """
     
-    N = rho_grid.shape[1]
-    dr = Rs/(N - 1)
     Vsum = 0
-    
     err = 1e-10
     
-    for i in range(rho_grid.shape[0] - int(N/2)):
-        rcp = i*dr
+    for i in range(rho_grid.shape[0]):
+        rcp = r_array[i]
         for j in range(rho_grid.shape[1]):
-            zp = j*dr
+            zp = z_array[j]
             
             a2 = rcp*rcp + zp*zp + rc*rc + z*z
             alpha = 1 - 2*z*zp/(a2 + err)
             beta = 2*rc*rcp/(a2 + err)
-                
             gamma = beta/alpha 
             
-            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha)
+            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha)*S_grid[i,j]
             
-            #if j != 0:
-            zp = -j*dr
+            zp = -z_array[j]
             alpha = 1 - 2*z*zp/(a2 + err)
             gamma = beta/alpha      
-            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha)
+            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha)*S_grid[i,j]
       
-    V = -G*Vsum*dr*dr*R_earth*R_earth
+    V = -G*Vsum
     
     return V
 
 @jit(nopython=True)
-def _fillV(rho_grid, Rs, Tw, I_array):
+def _fillV(rho_grid, r_array, z_array, I_array, S_grid, Tw):
     """
     Computes a 2-d potential grid given a 2-d density grid of a rotating planet.
     
@@ -583,28 +643,34 @@ def _fillV(rho_grid, Rs, Tw, I_array):
         rho_grid ([[float]]):
             2-d density grid (SI) of the planet.
             
-        Rs (float):
-            Initial radius of the planet (R_earth).
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
+            
+        z_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
+            
+        I_array ([float]):
+            Values of the integral for gamma from 0 to 1.
+            
+        S_grid ([[float]]):
+            Differential of surface for every element i,j of the density grid.
             
         Tw (float):
             Period of the planet (hours).
-            
-        I_array ([float]):
-            Tabulated values of the integral of phi' for gamma from 0 to 1.
     
     Returns:
         V_grid ([[float]]):
             2-d grid of the total potential (SI).
     
     """
-    N = rho_grid.shape[1]
-    V_grid = np.zeros((2*N, N))
+
+    V_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
     #Tw in hours
     W = 2*np.pi/Tw/60/60
-    dr = Rs/(N - 1)
+    
     for i in range(V_grid.shape[0]):
         for j in range(V_grid.shape[1]):
-            V_grid[i,j] = _Vg(i*dr, j*dr, rho_grid, Rs, I_array) - (1/2)*(W*i*dr*R_earth)**2
+            V_grid[i,j] = _Vg(r_array[i], z_array[j], rho_grid, r_array, z_array, I_array, S_grid) - (1/2)*(W*r_array[i])**2
             
     return V_grid
 
