@@ -621,14 +621,14 @@ def _Vg(rc, z, rho_grid, r_array, z_array, I_array, S_grid):
             a2 = rcp*rcp + zp*zp + rc*rc + z*z
             alpha = 1 - 2*z*zp/(a2 + err)
             beta = 2*rc*rcp/(a2 + err)
-            gamma = beta/alpha 
+            gamma = beta/(alpha + err) 
             
-            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha)*S_grid[i,j]
+            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha + err)*S_grid[i,j]
             
             zp = -z_array[j]
             alpha = 1 - 2*z*zp/(a2 + err)
-            gamma = beta/alpha      
-            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha)*S_grid[i,j]
+            gamma = beta/(alpha + err)      
+            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha + err)*S_grid[i,j]
       
     V = -G*Vsum
     
@@ -674,9 +674,10 @@ def _fillV(rho_grid, r_array, z_array, I_array, S_grid, Tw):
             
     return V_grid
 
-# attempt 2, from center to surface
+# From center to surface
 @jit(nopython=True)
-def _fillrho(V_grid, Rs, prev_rho_grid, rho_s, material, K, alpha, ucold_table):
+def _fillrho(V_grid, r_array, z_array, P_c, P_s, rho_c, rho_s,
+             mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core):
     """
     Update 2-d density grid given a 2-d potential grid of the planet.
     
@@ -684,206 +685,137 @@ def _fillrho(V_grid, Rs, prev_rho_grid, rho_s, material, K, alpha, ucold_table):
         V_grid ([[float]]):
             2-d grid of the total potential (SI).
             
-        Rs (float):
-            Initial radius of the planet (R_earth).
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
             
-        prev_rho_grid ([[float]]):
-            2-d density grid (SI) to be updated.
+        z_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
+            
+        P_c (float):
+            Central pressure of the planet (SI).
+            
+        P_s (float):
+            Surface pressure of the planet (SI).
+            
+        rho_c (float):
+            Central density of the planet (SI).
             
         rho_s (float):
             Surface density of the planet (SI).
             
-        material ([float]):
-            Material constants (SI).
+        mat_id_core ([int]):
+            Material id.
             
-        K, alpha (float):
-            Parameters from the relation between density and temperature
-            T = K*rho**alpha.
+        T_rho_id_core (int)
+            Relation between T and rho to be used for core material.
+            
+        T_rho_args_core (list):
+            Extra arguments to determine the relation for core material
         
-        ucold_table ([[float]]):
-            Tabulated values of cold internal energy.
+        ucold_array_core ([[float]]):
+            Tabulated values of cold internal energy for core material
             
     Returns:
         rho_grid ([[float]]):
             Updated 2-d density grid (SI).
     """
     
-    N = V_grid.shape[1]
-    rho_grid = np.zeros((2*N, N))
-    Ps = P_rho(rho_s, material, K, alpha)
-    
-    rho_grid[0,0] = prev_rho_grid[0,0]
-    #rho_grid[1,0] = prev_rho_grid[1,0]
-    #rho_grid[0,1] = prev_rho_grid[0,1]
-    #rho_grid[1,1] = prev_rho_grid[1,1]
-    ##############
-    gradV = -(V_grid[0, 1] - V_grid[0, 0])
-    gradP = rho_grid[0, 0]*gradV
-    P = gradP + P_rho(rho_grid[0, 0], material, K, alpha)
-    rho_grid[0,1] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[0,0], ucold_table)
-    
-    gradV = -(V_grid[1, 0] - V_grid[0, 0])
-    gradP = rho_grid[0, 0]*gradV
-    P = gradP + P_rho(rho_grid[0, 0], material, K, alpha)
-    rho_grid[1,0] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[0,0], ucold_table)
-    
-    gradV = -(V_grid[1, 1] - V_grid[1, 0])
-    gradP = rho_grid[1, 0]*gradV
-    P = gradP + P_rho(rho_grid[1, 0], material, K, alpha)
-    rho_grid[1,1] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[0,0], ucold_table)
-    
-    ##############
-    
-    # fill polar radii
-    for i in range(2):
-        for j in range(1, rho_grid.shape[1] - 1):
-            gradV = -(V_grid[i, j + 1] - V_grid[i, j - 1])
-            gradP = rho_grid[i, j]*gradV
-            P = gradP + P_rho(rho_grid[i, j - 1], material, K, alpha)
-            if P >= Ps:
-                rho_grid[i, j + 1] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[i,j], ucold_table)
-            else:
-                rho_grid[i, j + 1] = 0
-                break       
+    rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
         
-    # fill the rest
-    for j in range(0, rho_grid.shape[1]):
-        for i in range(1, rho_grid.shape[0] - 1):
-            if rho_grid[i - 1, j] == 0:
+    rho_grid[0,0] = rho_c
+    
+    # Fill pole
+    for j in range(0, rho_grid.shape[1] - 1):
+        gradV = (V_grid[0, j + 1] - V_grid[0, j])
+        gradP = -rho_grid[0, j]*gradV
+        P = P_rho(rho_grid[0, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
+        
+        if P > P_s:
+            rho_grid[0, j + 1] = _find_rho(P, mat_id_core, T_rho_id_core, T_rho_args_core,
+                                           rho_s - 10, rho_grid[0, j], ucold_array_core)
+        else:
+            rho_grid[0, j + 1] = 0.
+            break
+        
+    
+        
+    for i in range(0, rho_grid.shape[0] - 1):
+        for j in range(0, rho_grid.shape[1]):
+            if rho_grid[i, j] == 0:
                 break
+
+            gradV = (V_grid[i + 1, j] - V_grid[i, j])
+            gradP = -rho_grid[i, j]*gradV
+            P = P_rho(rho_grid[i, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
             
-            if (i >= 2 and i < 2*N - 2):
-                gradV = -(- V_grid[i+2, j] + 8*V_grid[i+1,j] - 8*V_grid[i-1,j] + V_grid[i-2,j])/6
-            else:    
-                gradV = -(V_grid[i + 1, j] - V_grid[i - 1, j])
-                
-            P = rho_grid[i, j]*gradV
-            P = P + P_rho(rho_grid[i - 1, j], material, K, alpha)
-            if P >= Ps:
-                rho_grid[i + 1, j] = _find_rho(P, material, K, alpha, rho_s - 10, rho_grid[i,j], ucold_table)
+            if P > P_s:
+                rho_grid[i + 1, j] = _find_rho(P, mat_id_core, T_rho_id_core, T_rho_args_core,
+                                               rho_s - 10, rho_grid[i, j], ucold_array_core)
             else:
-                rho_grid[i + 1, j] = 0
+                rho_grid[i + 1, j] = 0.
                 break
-       
+        
     return rho_grid
 
-
-# Compute V grid (parallelized) ###########
-@jit(nopython=True)
-def _fillV_rows(rho_grid, Rs, I_array, lower, upper, rank, subsize, N, W, dr):
+def _fillV_parallel(rho_grid, r_array, z_array, I_array, S_grid, Tw):
     """
-    Partially complete the computation of the total potential.
+    Computes a 2-d potential grid given a 2-d density grid of a rotating planet.
     
     Args:
         rho_grid ([[float]]):
             2-d density grid (SI) of the planet.
             
-        Rs (float):
-            Initial radius of the planet (R_earth).
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
+            
+        z_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
             
         I_array ([float]):
-            Tabulated values of the integral of phi' for gamma from 0 to 1.
+            Values of the integral for gamma from 0 to 1.
             
-        lower (int):
-            Row from which to start the computation.
-            
-        upper (int):
-            Row from which to end the computation (not included).
-            
-        rank (int):
-            Identifier of the processor.
-            
-        subsize (int):
-            int(N/size).
-            
-        N (int):
-            Number of integration steps from the initial density profile.
-            
-        W (float):
-            Angular velocity (SI).
-            
-        dr (float):
-            Rs/(N - 1).
-            
-    Returns:
-        rows ([[float]]):
-            2-d potential grid (SI) for the rows specified.
-        
-    """
-    
-    rows = np.zeros((2*N, upper - lower))
-    for i in range(2*N):
-        for j in range(upper - lower):
-            rows[i, j] = _Vg(i*dr, (rank*subsize + j)*dr, rho_grid, Rs, I_array) - (1/2)*(W*i*dr*R_earth)**2
-    
-    return rows
-
-def _fillV_par(rho_grid, Rs, Tw, I_array):
-    """
-    Parallel computation of 2-d potential grid given 
-    a 2-d density grid of a rotating planet.
-    
-    Args:
-        rho_grid ([[float]]):
-            2-d density grid (SI) of the planet.
-            
-        Rs (float):
-            Initial radius of the planet (R_earth).
+        S_grid ([[float]]):
+            Differential of surface for every element i,j of the density grid.
             
         Tw (float):
             Period of the planet (hours).
-            
-        I_array ([float]):
-            Tabulated values of the integral of phi' for gamma from 0 to 1.
     
     Returns:
         V_grid ([[float]]):
             2-d grid of the total potential (SI).
     
     """
-
+    
     # parallel set-up
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()
-    
-    N = rho_grid.shape[1]
+
+    V_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    #Tw in hours
     W = 2*np.pi/Tw/60/60
-    dr = Rs/(N - 1)
     
-    # partitioning the work
-    subsize = int(N/size)
-    partition = [0, subsize]
+    N_rows = z_array.shape[0] 
     
-    for i in range(2, size):
-        partition.append(i*subsize)
-    
-    partition.append(N)
-    partition = np.array(partition)
-    
-    # send the work to each precessor
-    lower = partition[rank]
-    upper = partition[rank + 1]
-        
-    V_subgrid = _fillV_rows(rho_grid, Rs, I_array, lower, upper, rank, subsize, N, W, dr)
-    #V_subgrid = np.flip(V_subgrid, 1)
-    
-    V_raw = comm.gather(V_subgrid, root=0)
-    V_grid = np.zeros((2*N, N))
+    # Essential: N_rows is a multiple of size (the number of processors). N_rows = 100 by default 
+    for i in range(V_grid.shape[0]):
+        for j in range(rank*int(N_rows/size), (rank + 1)*int(N_rows/size)):
+            V_grid[i,j] = _Vg(r_array[i], z_array[j], rho_grid, r_array, z_array, I_array, S_grid) - (1/2)*(W*r_array[i])**2
+            
+    V_raw = comm.gather(V_grid)
+    V_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
     
     if rank == 0:
         for I in range(size):
-            V_grid[:, partition[I]:partition[I + 1]] = V_raw[I]
+            V_grid[:,:] = V_grid[:,:] + V_raw[I]
         #V_grid = np.flip(V_grid, 1)
         
     V_grid = comm.bcast(V_grid, root=0)
-    #V_grid = V_grid.reshape((2*N, N))
     
     return V_grid
-
-###############################################################################
     
-def spin(iterations, rho_sph, Rs, material, Tw, K, alpha):
+def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
+               P_c, P_s, rho_c, rho_s, r_array = None, z_array = None):
     """
     Spining of a radial planetary profile
     
@@ -913,26 +845,27 @@ def spin(iterations, rho_sph, Rs, material, Tw, K, alpha):
     
     start = time.time()
     
-    N = rho_sph.shape[0]
-    rho_s = rho_sph[-1]
-    I_array = _create_I_tab()
-    ucold_table = _create_ucold_table()
-
-    rho = np.zeros((iterations + 1, 2*N, N))
-    rho[0] = rho0(rho_sph, Rs)
+    ucold_array = _create_ucold_array(mat_id)
+    I_array = _create_I_array()
+    
+    rho_grid, r_array, z_array = _rho0_grid(radii, densities, r_array, z_array)
+    rho = np.zeros((iterations + 1, r_array.shape[0], z_array.shape[0]))
+    rho[0] = rho_grid
     
     end = time.time()
     print("Running time for creating I_array and u_cold_table:", end - start)
     
+    dS = _dS(r_array, z_array)
+    
     for i in range(1, iterations + 1):
         
         start = time.time()
-        V1 = _fillV_par(rho[i - 1], Rs, Tw, I_array)
+        V1 = _fillV_parallel(rho[i - 1], r_array, z_array, I_array, dS, Tw)
         end = time.time()
         times[i - 1, 0] = end - start
         start = time.time()
-        rho[i] = _fillrho(V1, Rs, rho[i - 1], rho_s, material, K, alpha, ucold_table)
+        rho[i] = _fillrho(V1, r_array, z_array, P_c, P_s, rho_c, rho_s, mat_id, T_rho_id, T_rho_args, ucold_array)
         end = time.time()
         times[i - 1, 1] = end - start
         
-    return rho, times
+    return rho, r_array, z_array, times

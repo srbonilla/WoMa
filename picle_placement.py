@@ -19,6 +19,7 @@ import seagen
 import spipgen
 from scipy.interpolate import RectBivariateSpline
 
+R_earth = 6371000;
 ##################
 ##################
 def _eq_density(x, y, z, radii, densities):
@@ -27,7 +28,7 @@ def _eq_density(x, y, z, radii, densities):
     dr = radii[1] - radii[0]
     for i in range(x.shape[0]):
         k = int(r[i]/dr)
-        rho[i] = densities[k] #+ (densities[k + 1] - densities[k])*(r[i] - k*dr)/dr 
+        rho[i] = densities[k] + (densities[k + 1] - densities[k])*(r[i] - k*dr)/dr 
     return rho
 
 
@@ -55,49 +56,46 @@ def _bisection(f,a,b,N = 10):
     return (a_n + b_n)/2
 ################## particle by particle
 # model densities
-data = pd.read_csv("1layer_n200.csv", header=0)
+data = pd.read_csv("1layer_n10k.csv", header=0)
 Rs = data.R[0]
 Ts = data['T'][0]
-dr = data.R[0] - data.R[1]
 
-rho = np.load("profile_n200.npy")
+rho = np.load("profile_parallel.npy")
+r_array = np.load('r_array.npy')
+z_array = np.load('z_array.npy')
 rho_grid = rho[-1,:,:]
-Re = (np.sum(rho_grid[:, 0] > 0) - 1)*dr
+Re = np.max(r_array[rho_grid[:,0] > 0])
 
-r = np.arange(0, rho_grid.shape[0]*dr, dr)
-z = np.arange(0, rho_grid.shape[1]*dr, dr)
-rho_model = RectBivariateSpline(r, z, rho_grid, kx = 1, ky = 1)
+rho_model = RectBivariateSpline(r_array, z_array, rho_grid, kx = 1, ky = 1)
 
-spipgen_plot.plotrho(rho[-1], Rs)
+spipgen_plot.plotrho(rho[-1], r_array, z_array)
 """
 # plot the model density
-rM = np.linspace(0, r[-1], 1000)
-zM = np.linspace(0, z[-1], 1000)
+rM = np.linspace(0, r_array[-1], 1000)
+zM = np.linspace(0, z_array[-1], 1000)
 X, Y = np.meshgrid(rM, zM)
 Z = rho_model.ev(X, Y)
 
 plt.contour(X, Y, Z, levels = np.arange(0, 8000, 500))
-plt.xlim(1,1.2)
-plt.ylim(0,0.3)
 plt.show()
 """
 # Get equatorial profile
-radii = np.arange(0, Re, dr/100000)
+radii = np.arange(0, Re, Re/100000)
 densities = rho_model.ev(radii,0)
 
 # Generate seagen sphere
 N = 10**5
-particles = seagen.GenSphere(N, radii[1:]*R_earth, densities[1:])
+particles = seagen.GenSphere(N, radii[1:], densities[1:])
 
-rho_seagen = _eq_density(particles.x/R_earth, particles.y/R_earth, particles.z/R_earth, radii, densities)
+rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
 #rho_seagen = particles.A1_rho
 
 zP = np.zeros(particles.m.shape[0])
 
 for i in range(particles.m.shape[0]):
-    rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)/R_earth
+    rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)
     rho_spherical = rho_seagen[i]
-    z = particles.z[i]/R_earth
+    z = particles.z[i]
     f = lambda z: rho_model.ev(rc, np.abs(z)) - rho_spherical
     if z < 0:
         zP[i] = _bisection(f, z, 0.)
@@ -108,9 +106,9 @@ for i in range(particles.m.shape[0]):
 """
 mask = np.isfinite(zP)
 slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
-plt.scatter(particles.z/R_earth, zP, s = 1, alpha = 0.15)
-plt.plot(particles.z, particles.z, c = 'r', linewidth = 0.1)
-plt.plot(particles.z, slope*particles.z, c = 'g', linewidth = 0.3)
+plt.scatter(particles.z/R_earth, zP/R_earth, s = 5, alpha = 0.15)
+plt.plot(particles.z/R_earth, particles.z/R_earth, c = 'r', linewidth = 0.1)
+plt.plot(particles.z/R_earth, slope*particles.z/R_earth, c = 'g', linewidth = 0.3)
 plt.axes().axhline(color = 'black')
 plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'$ $[R_{earth}]$")
@@ -340,3 +338,92 @@ with h5py.File(filename, 'w') as f:
     save_picle_data(f, np.array([particles.x, particles.y, particles.z]).T, np.array([vz, vz, vz]).T,
                     particles.m, A1_h, particles.rho, A1_P, u, A1_id, A1_mat_id,
                     4*Rs*R_earth, swift_to_SI) 
+
+
+############ plot
+data = pd.read_csv("1layer_n200.csv", header=0)
+Rs = data.R[0]
+Ts = data['T'][0]
+dr = data.R[0] - data.R[1]
+
+rho = np.load("profile_n200.npy")
+rho_grid = rho[-1,:,:]
+Re = (np.sum(rho_grid[:, 0] > 0) - 1)*dr
+
+r = np.arange(0, rho_grid.shape[0]*dr, dr)
+z = np.arange(0, rho_grid.shape[1]*dr, dr)
+rho_model = RectBivariateSpline(r, z, rho_grid, kx = 1, ky = 1)    
+
+# Get equatorial profile
+radii = np.arange(0, Re, dr/100000)
+densities = rho_model.ev(radii,0)
+
+# Generate seagen sphere
+N = 10**5
+particles = seagen.GenSphere(N, radii[1:]*R_earth, densities[1:])
+
+rho_seagen = _eq_density(particles.x/R_earth, particles.y/R_earth, particles.z/R_earth, radii, densities)
+#rho_seagen = particles.A1_rho
+
+zP = np.zeros(particles.m.shape[0])
+
+for i in range(particles.m.shape[0]):
+    rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)/R_earth
+    rho_spherical = rho_seagen[i]
+    z = particles.z[i]/R_earth
+    f = lambda z: rho_model.ev(rc, np.abs(z)) - rho_spherical
+    if z < 0:
+        zP[i] = _bisection(f, z, 0.)
+        
+    else:
+        zP[i] = _bisection(f, 0., z)
+        
+mask = np.isfinite(zP)
+plt.scatter(particles.z/R_earth, zP, s = 1, alpha = 0.15, color = 'blue', label = 'model grid 400x200')
+plt.axes().axhline(color = 'black')
+plt.xlabel(r"$z$ $[R_{earth}]$")
+plt.ylabel(r"$z'$ $[R_{earth}]$")
+##
+data = pd.read_csv("1layer_n100.csv", header=0)
+Rs = data.R[0]
+Ts = data['T'][0]
+dr = data.R[0] - data.R[1]
+
+rho = np.load("profile_n100.npy")
+rho_grid = rho[-1,:,:]
+Re = (np.sum(rho_grid[:, 0] > 0) - 1)*dr
+
+r = np.arange(0, rho_grid.shape[0]*dr, dr)
+z = np.arange(0, rho_grid.shape[1]*dr, dr)
+rho_model = RectBivariateSpline(r, z, rho_grid, kx = 1, ky = 1)    
+
+# Get equatorial profile
+radii = np.arange(0, Re, dr/100000)
+densities = rho_model.ev(radii,0)
+
+# Generate seagen sphere
+N = 10**5
+particles = seagen.GenSphere(N, radii[1:]*R_earth, densities[1:])
+
+rho_seagen = _eq_density(particles.x/R_earth, particles.y/R_earth, particles.z/R_earth, radii, densities)
+#rho_seagen = particles.A1_rho
+
+zP = np.zeros(particles.m.shape[0])
+
+for i in range(particles.m.shape[0]):
+    rc = np.sqrt(particles.x[i]**2 + particles.y[i]**2)/R_earth
+    rho_spherical = rho_seagen[i]
+    z = particles.z[i]/R_earth
+    f = lambda z: rho_model.ev(rc, np.abs(z)) - rho_spherical
+    if z < 0:
+        zP[i] = _bisection(f, z, 0.)
+        
+    else:
+        zP[i] = _bisection(f, 0., z)
+        
+mask = np.isfinite(zP)
+plt.scatter(particles.z/R_earth, zP, s = 1, alpha = 0.15, color = 'red', label = 'model grid 200x100')
+lgnd = plt.legend(loc="lower left", scatterpoints=1, fontsize=10)
+lgnd.legendHandles[0]._sizes = [30]
+lgnd.legendHandles[1]._sizes = [30]
+plt.show()

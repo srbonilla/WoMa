@@ -12,8 +12,9 @@ sys.path.append(path)
 
 import pandas as pd
 import numpy as np
-
 import spipgen
+import spipgen_plot
+
 import spipgen_v2
 
 G = 6.67408E-11
@@ -22,31 +23,38 @@ M_earth = 5.972E24
 
 data = pd.read_csv("1layer_n10k.csv", header=0)
 
-iterations = 10
-radii = np.flip(np.array(data.R))
-densities = np.flip(np.array(data.rho))
-Tw = 4
-mat_id = np.ones(radii.shape[0])*100
-T_rho_id = [1, None, None]
-T_rho_params = [[300, 0], [], []]
-
-r_grid_rc = np.arange(0, 1.5, 1.5/100)*R_earth
-r_grid_z = np.arange(0, 1.2, 1.2/200)*R_earth
-
-spipgen_v2._P_EoS_Till(1, 1000, 102)
-spipgen.P_EoS(1, 1000, spipgen.water)
-##
 densities = np.array(data.rho)
 radii = np.array(data.R)*R_earth
 
-rho_grid, r_array, z_array = spipgen_v2._rho0_grid(radii, densities)
+P_c = np.max(data.P)
+P_s = np.min(data.P)
+rho_c = np.max(data.rho)
+rho_s = np.min(data.rho)
 
+rho, r_array, z_array, times = spipgen_v2.spin1layer(10, radii, densities, 4, 101, 1, [300,0], P_c, P_s, rho_c, rho_s)
+
+np.save('profile_parallel', rho)
+np.save('r_array', r_array)
+np.save('z_array', z_array)
+np.save("exec_times", times)
+
+####### Analysis
+rho_par = np.load('profile_parallel.npy')
+r_array = np.load('r_array.npy')
+z_array = np.load('z_array.npy')
+
+spipgen_plot.plotrho(rho_par[10][1:,:], r_array[1:]/R_earth, z_array/R_earth)
+
+
+###### test
+ucold_array = spipgen_v2._create_ucold_array(101)
 I_array = spipgen_v2._create_I_array()
+    
+rho_grid, r_array, z_array = spipgen_v2._rho0_grid(radii, densities)
+rho = np.zeros((10 + 1, r_array.shape[0], z_array.shape[0]))
+rho[0] = rho_grid
 
 dS = spipgen_v2._dS(r_array, z_array)
 
-V_model = spipgen_v2._Vg(R_earth, 0, rho_grid, r_array, z_array, I_array, dS)
-
-V_true = -8.725783e-01*M_earth/R_earth*G
-
-print((V_model - V_true)/V_true)
+V1 = spipgen_v2._fillV(rho[0], r_array, z_array, I_array, dS, 4)
+rho[1] = spipgen_v2._fillrho(V1, r_array, z_array, P_c, P_s, rho_c, rho_s, 101, 1, [300,0], ucold_array)

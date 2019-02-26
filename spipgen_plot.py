@@ -8,22 +8,26 @@ Created on Tue Dec 18 11:44:39 2018
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plotrho(rho_grid, Rs, save_name = 0):
+R_earth = 6371000;
+
+def plotrho(rho_grid, r_array, z_array, save_name = 0):
     fig_size = plt.rcParams["figure.figsize"]
  
     fig_size[0] = 10
     fig_size[1] = 5
     plt.rcParams["figure.figsize"] = fig_size
-
-    N = rho_grid.shape[1]
-    dr = Rs/(N - 1)
-
-    x = np.arange(0, 2*Rs + 2*dr, dr)
-    y = np.arange(0, Rs + dr, dr)
+    
+    # units
+    if np.max(r_array > 10000): r_array = r_array/R_earth
+    if np.max(z_array > 10000): z_array = z_array/R_earth
+    
+    x = r_array
+    y = z_array
     X, Y = np.meshgrid(x, y)
     Z = rho_grid.T
 
     plt.figure()
+    plt.axes().set_aspect('equal')
     CS = plt.contour(X, Y, Z)
     plt.clabel(CS, inline=1, fontsize=10)
     plt.xlabel('R (Earth radii)')
