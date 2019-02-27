@@ -31,13 +31,27 @@ P_s = np.min(data.P)
 rho_c = np.max(data.rho)
 rho_s = np.min(data.rho)
 
-rho, r_array, z_array, times = spipgen_v2.spin1layer(10, radii, densities, 4, 101, 1, [300,0], P_c, P_s, rho_c, rho_s)
+## linear + linear
+z_array_1 = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/100)
+z_array_2 = np.arange(0, z_array_1[10], z_array_1[10]/20)
+z_array_3 = np.arange(0, z_array_2[10], z_array_2[10]/20)
+
+z_array = np.hstack((z_array_3, z_array_2[10:], z_array_1[10:]))
+z_array = np.unique(z_array)
+z_array = np.sort(z_array)
+
+"""
+##linear scale
+z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/100)
+"""
+rho, r_array, z_array, times = spipgen_v2.spin1layer(10, radii, densities, 4, 101, 1, [300,0], 
+                                                     P_c, P_s, rho_c, rho_s, np.nan, z_array)
 
 np.save('profile_parallel', rho)
 np.save('r_array', r_array)
 np.save('z_array', z_array)
 np.save("exec_times", times)
-
+"""
 ####### Analysis
 rho_par = np.load('profile_parallel.npy')
 r_array = np.load('r_array.npy')
@@ -58,3 +72,4 @@ dS = spipgen_v2._dS(r_array, z_array)
 
 V1 = spipgen_v2._fillV(rho[0], r_array, z_array, I_array, dS, 4)
 rho[1] = spipgen_v2._fillrho(V1, r_array, z_array, P_c, P_s, rho_c, rho_s, 101, 1, [300,0], ucold_array)
+"""

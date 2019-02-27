@@ -104,8 +104,9 @@ for i in range(particles.m.shape[0]):
         zP[i] = _bisection(f, 0., z)
  
 """
-mask = np.isfinite(zP)
-slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
+np.isnan(zP).sum()
+
+slope = np.linalg.lstsq(particles.z.reshape((-1,1)), zP, rcond=None)[0][0]
 plt.scatter(particles.z/R_earth, zP/R_earth, s = 5, alpha = 0.15)
 plt.plot(particles.z/R_earth, particles.z/R_earth, c = 'r', linewidth = 0.1)
 plt.plot(particles.z/R_earth, slope*particles.z/R_earth, c = 'g', linewidth = 0.3)
@@ -114,17 +115,17 @@ plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'$ $[R_{earth}]$")
 plt.show()
 
-plt.scatter(particles.z, particles.z/zP, s =1)
+plt.scatter(particles.z/R_earth, zP/particles.z, s =1)
+plt.xlabel(r"$z$ $[R_{earth}]$")
+plt.ylabel(r"$z'/z$")
+plt.show()
+
+np.sum(zP/particles.z < 0.8)/N*100
+
+plt.scatter(particles.z/R_earth, particles.z/zP, s =1)
 plt.show()
 """
-mask = np.isfinite(zP)
-slope = np.linalg.lstsq(particles.z[mask].reshape((-1,1)), zP[mask], rcond=None)[0][0]
-#zP[np.isnan(zP)] = particles.z[np.isnan(zP)]*slope
-zP = particles.z*slope*R_earth
-mP = particles.m*slope*R_earth
-
-
-#mP = particles.m*zP/particles.z
+mP = particles.m*zP/particles.z
 
 #plt.hist(mP, bins = 100)
 #plt.show()
@@ -142,8 +143,6 @@ for i in range(mP.shape[0]):
     vx[i] = -particles.y[i]*wz
     vy[i] = particles.x[i]*wz
     
-
-
 # model densities and internal energy
 rho = np.zeros((mP.shape[0]))
 u = np.zeros((mP.shape[0]))
@@ -168,7 +167,7 @@ A1_mat_id = np.ones((mP.shape[0],))*Di_mat_id['Til_granite']
 swift_to_SI = Conversions(1, 1, 1)
 
 # save profile
-filename = 'init_test_linear2.hdf5'
+filename = 'init_test_linear.hdf5'
 with h5py.File(filename, 'w') as f:
     save_picle_data(f, np.array([x, y, zP]).T, np.array([vx, vy, vz]).T,
                     mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id,

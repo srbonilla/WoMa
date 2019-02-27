@@ -428,7 +428,7 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
 
 # Compute rho0 given the spherical radii profile (from high to low as in function before)
 # Rs in Earth radii units
-def _rho0_grid(radii_sph, densities_sph, r_array = None, z_array = None):
+def _rho0_grid(radii_sph, densities_sph, r_array = np.nan, z_array = np.nan):
     """
     Creates 2-d array density profile out of a 1-d array radial
     density profile (spherical).
@@ -456,10 +456,10 @@ def _rho0_grid(radii_sph, densities_sph, r_array = None, z_array = None):
     radii_sph = np.sort(radii_sph)
     densities_sph = np.flip(np.sort(densities_sph))
     
-    if r_array == None:
+    if np.isnan(np.array(r_array)).any():
         r_array = np.arange(0, 1.5*np.max(radii_sph), 1.5*np.max(radii_sph)/100)
         
-    if z_array == None:
+    if np.isnan(np.array(z_array)).any():
         z_array = np.arange(0, 1.1*np.max(radii_sph), 1.1*np.max(radii_sph)/100)
         
     rho_model_sph = interpolate.interp1d(radii_sph, densities_sph, kind = 'quadratic')
@@ -846,14 +846,19 @@ def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
     start = time.time()
     
     ucold_array = _create_ucold_array(mat_id)
-    I_array = _create_I_array()
+    #I_array = _create_I_array()
+    I_array = np.load('I_array.npy')
     
     rho_grid, r_array, z_array = _rho0_grid(radii, densities, r_array, z_array)
     rho = np.zeros((iterations + 1, r_array.shape[0], z_array.shape[0]))
     rho[0] = rho_grid
     
     end = time.time()
-    print("Running time for creating I_array and u_cold_table:", end - start)
+    
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    
+    if rank == 0: print("Running time for creating I_array and u_cold_table:", end - start)
     
     dS = _dS(r_array, z_array)
     
@@ -867,5 +872,7 @@ def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
         rho[i] = _fillrho(V1, r_array, z_array, P_c, P_s, rho_c, rho_s, mat_id, T_rho_id, T_rho_args, ucold_array)
         end = time.time()
         times[i - 1, 1] = end - start
+        
+        if rank == 0: print(f"Iteration {i} complete")
         
     return rho, r_array, z_array, times
