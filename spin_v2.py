@@ -33,15 +33,20 @@ rho_s = np.min(data.rho)
 
 ## linear + linear
 z_array_1 = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/100)
-z_array_2 = np.arange(0, z_array_1[10], z_array_1[10]/20)
-z_array_3 = np.arange(0, z_array_2[10], z_array_2[10]/20)
+#z_array_2 = np.arange(0, z_array_1[10], z_array_1[10]/20)
+#z_array_3 = np.arange(0, z_array_2[10], z_array_2[10]/20)
 
-z_array = np.hstack((z_array_3, z_array_2[10:], z_array_1[10:]))
+#z_array = np.hstack((z_array_3, z_array_2[10:], z_array_1[10:]))
+
+z_array_2 = np.arange(0, z_array_1[15], z_array_1[10]/40)
+z_array = np.hstack((z_array_2, z_array_1[15:]))
+
 z_array = np.unique(z_array)
 z_array = np.sort(z_array)
 
 """
 ##linear scale
+#r_array = np.arange(0, 1.5*np.max(radii), 1.5*np.max(radii)/120)
 z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/100)
 """
 rho, r_array, z_array, times = spipgen_v2.spin1layer(10, radii, densities, 4, 101, 1, [300,0], 

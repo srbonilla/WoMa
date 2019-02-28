@@ -102,7 +102,11 @@ for i in range(particles.m.shape[0]):
         
     else:
         zP[i] = _bisection(f, 0., z)
- 
+
+z_fine_r = np.load('z_fine_r.npy')
+z_P_fine_r = np.load('zP_fine_r.npy')
+z_fine = np.load('z_array_fine.npy')
+z_P_fine = np.load('z_array_p_fine.npy')
 """
 np.isnan(zP).sum()
 
@@ -115,9 +119,12 @@ plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'$ $[R_{earth}]$")
 plt.show()
 
-plt.scatter(particles.z/R_earth, zP/particles.z, s =1)
+
+plt.scatter(z_fine_r/R_earth, z_P_fine_r/z_fine_r, s = 0.1, label = 'fine-r-grid and normal', c = 'green')
+plt.scatter(particles.z/R_earth, zP/particles.z, s = 0.1, label = 'fine-z-grid', c = 'red')
 plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'/z$")
+plt.legend()
 plt.show()
 
 np.sum(zP/particles.z < 0.8)/N*100
@@ -151,8 +158,8 @@ x = particles.x
 y = particles.y
 
 for k in range(mP.shape[0]):
-    rc = np.sqrt(x[k]*x[k] + y[k]*y[k])/R_earth
-    rho[k] = rho_model.ev(rc, np.abs(zP[k]/R_earth))
+    rc = np.sqrt(x[k]*x[k] + y[k]*y[k])
+    rho[k] = rho_model.ev(rc, np.abs(zP[k]))
     u[k] = spipgen.ucold(rho[k], spipgen.granite, 10000) + spipgen.granite[11]*Ts
     
 ## Smoothing lengths, crudely estimated from the densities
