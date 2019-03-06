@@ -225,7 +225,7 @@ def ucold(rho, mat_id, N):
     rho0 = _rho0_material(mat_id)
     drho = (rho - rho0)/N
     x = rho0
-    uc = 0
+    uc = 1e-9
 
     for j in range(N):
         x += drho
@@ -398,29 +398,73 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
     """
 
     c = _spec_c(mat_id)
-    rho2 = (rho0 + rho1)/2
     tolerance = 1E-7
+    
+    u0 = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
+    P0 = P_EoS(u0, rho0, mat_id)
+    u1 = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
+    P1 = P_EoS(u1, rho1, mat_id)
+    rho2 = (rho0 + rho1)/2.
+    u2 = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
+    P2 = P_EoS(u2, rho2, mat_id)
+    
+    rho_aux = rho0 + 0.1
+    u_aux = _ucold_tab(rho_aux, ucold_array) + c*T_rho(rho_aux, T_rho_id, T_rho_args)
+    P_aux = P_EoS(u_aux, rho_aux, mat_id)
 
-    f0 = Ps - P_EoS((_ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)), rho0, mat_id)
-    f1 = Ps - P_EoS((_ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)), rho1, mat_id)
-
-    if f0*f1 > 0:
-        #print("Cannot find a 0 in the interval\n")
-        rho2 = rho1;
-    else:
+    if ((P0 < Ps and Ps < P1) or (P0 > Ps and Ps > P1)):
         while np.abs(rho1 - rho0) > tolerance:
-            f0 = Ps - P_EoS((_ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)), rho0, mat_id)
-            f1 = Ps - P_EoS((_ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)), rho1, mat_id)
-            f2 = Ps - P_EoS((_ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)), rho2, mat_id)
-
+            u0 = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
+            P0 = P_EoS(u0, rho0, mat_id)
+            u1 = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
+            P1 = P_EoS(u1, rho1, mat_id)
+            u2 = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
+            P2 = P_EoS(u2, rho2, mat_id)
+            
+            f0 = Ps - P0
+            #f1 = Ps - P1
+            f2 = Ps - P2
+            
             if f0*f2 > 0:
                 rho0 = rho2
-            elif f0*f2 < 0: 
-                rho1 = rho2
             else:
-                return rho2
-
-            rho2 = (rho0 + rho1)/2
+                rho1 = rho2
+                
+            rho2 = (rho0 + rho1)/2.
+            
+        return rho2
+    elif (P0 == Ps and P_aux == Ps and P1 != Ps):
+        while np.abs(rho1 - rho0) > tolerance:
+            rho2 = (rho0 + rho1)/2.
+            u0 = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
+            P0 = P_EoS(u0, rho0, mat_id)
+            u1 = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
+            P1 = P_EoS(u1, rho1, mat_id)
+            rho2 = (rho0 + rho1)/2.
+            u2 = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
+            P2 = P_EoS(u2, rho2, mat_id)
+            
+            if P2 == Ps:
+                rho0 = rho2
+            else:
+                rho1 = rho2
+            
+            rho2 = rho2 = (rho0 + rho1)/2.
+            
+        return rho2
+    
+    elif Ps < P0 and P0 < P1:
+        print("Exception 1\n")
+        #print("P0: %.2f P1 %.2f Ps %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(Ps/1e9,2)))
+        return rho0
+    elif Ps > P1 and P0 < P1:
+        print("Exception 2\n")
+        #print("P0: %.2f P1 %.2f Ps %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(Ps/1e9,2)))
+        return rho1
+    else:
+        print("Exception 3\n")
+        #print("P0: %.2f P1 %.2f Ps %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(Ps/1e9,2)))
+        return rho2
 
     return rho2;
 
@@ -582,10 +626,10 @@ def _Vg(rc, z, rho_grid, r_array, z_array, I_array, S_grid):
     
     Args:
         rc (float):
-            Cylindrical radii (distance from z axis) (R_earth).
+            Cylindrical radii (distance from z axis) (SI).
             
         z (float):
-            z coordinate (R_earth).
+            z coordinate (SI).
             
         rho_grid ([[float]]):
             2-d density grid (SI) of a planet.
@@ -618,18 +662,24 @@ def _Vg(rc, z, rho_grid, r_array, z_array, I_array, S_grid):
         for j in range(rho_grid.shape[1]):
             zp = z_array[j]
             
-            a2 = rcp*rcp + zp*zp + rc*rc + z*z
-            alpha = 1 - 2*z*zp/(a2 + err)
-            beta = 2*rc*rcp/(a2 + err)
-            gamma = beta/(alpha + err) 
-            
-            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha + err)*S_grid[i,j]
-            
+            if rcp != rc or zp != z:
+                a2 = rcp*rcp + zp*zp + rc*rc + z*z
+                alpha = 1 - 2*z*zp/(a2 + err)
+                beta = 2*rc*rcp/(a2 + err)
+                gamma = beta/(alpha + err) 
+                    
+                Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha + err)*S_grid[i,j]
+                
             zp = -z_array[j]
-            alpha = 1 - 2*z*zp/(a2 + err)
-            gamma = beta/(alpha + err)      
-            Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha + err)*S_grid[i,j]
-      
+            
+            if rcp != rc or zp != z:
+                a2 = rcp*rcp + zp*zp + rc*rc + z*z
+                alpha = 1 - 2*z*zp/(a2 + err)
+                beta = 2*rc*rcp/(a2 + err)
+                gamma = beta/(alpha + err) 
+                    
+                Vsum = Vsum + rho_grid[i,j]*rcp*_I_tab(gamma, I_array)/np.sqrt(a2 + err)/np.sqrt(alpha + err)*S_grid[i,j]
+                
     V = -G*Vsum
     
     return V
@@ -737,8 +787,7 @@ def _fillrho(V_grid, r_array, z_array, P_c, P_s, rho_c, rho_s,
             rho_grid[0, j + 1] = 0.
             break
         
-    
-        
+    # Fill to the right
     for i in range(0, rho_grid.shape[0] - 1):
         for j in range(0, rho_grid.shape[1]):
             if rho_grid[i, j] == 0:

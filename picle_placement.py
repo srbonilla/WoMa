@@ -85,10 +85,10 @@ densities = rho_model.ev(radii,0)
 
 # Generate seagen sphere
 N = 10**5
-particles = seagen.GenSphere(N, radii[1:], densities[1:])
+particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=2)
 
 rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
-#rho_seagen = particles.A1_rho
+rho_seagen_2 = particles.A1_rho
 
 zP = np.zeros(particles.m.shape[0])
 
@@ -220,7 +220,7 @@ N = 10**5
 particles = seagen.GenSphere(N, radii[1:], densities[1:])
 
 rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
-#rho_seagen_2 = particles.A1_rho
+#rho_seagen = particles.A1_rho
 
 zP = np.zeros(particles.m.shape[0])
 #linear (for meeting)
@@ -264,7 +264,7 @@ zpz_grid[:, 0] = zpz_grid[:, 3]
 zpz_grid[:, 1] = zpz_grid[:, 3]
 zpz_grid[:, 2] = zpz_grid[:, 3]
 
-zpz_grid[0,:] = zpz_grid[1,:]
+#zpz_grid[0,:] = zpz_grid[1,:]
 
 zP = np.zeros(particles.m.shape[0])
 
