@@ -19,10 +19,21 @@ import seagen
 import spipgen
 from scipy.interpolate import RectBivariateSpline
 from scipy.interpolate import interp1d
+from numba import jit, njit
 
 R_earth = 6371000;
 ##################
 ##################
+@jit(nopython=True)
+def _interp_density(x, y, z, radii, densities):
+    r = np.sqrt(x*x + y*y + z*z)
+    rho = np.zeros(r.shape[0])
+    for i in range(r.shape[0]):
+        k = np.sum(radii < r[i]) - 1
+        rho[i] = (densities[k + 1] - densities[k])*(r[i] - radii[k])/(radii[k + 1] - radii[k]) + densities[k]
+    return rho
+
+@jit(nopython=False)
 def _eq_density(x, y, z, radii, densities):
     rho = np.zeros(x.shape[0])
     r = np.sqrt(x*x + y*y + z*z)
@@ -186,7 +197,7 @@ with h5py.File(filename, 'w') as f:
                     4*Rs*R_earth, swift_to_SI)  
 
 #######
-####### particle by particle 2
+####### particle by particle 2#################################################
 # model densities
 data = pd.read_csv("1layer_n10k.csv", header=0)
 Rs = data.R[0]
@@ -212,15 +223,15 @@ plt.contour(X, Y, Z, levels = np.arange(0, 8000, 500))
 plt.show()
 """
 # Get equatorial profile
-radii = np.arange(0, Re, Re/100000)
+radii = np.arange(0, Re, Re/1000000)
 densities = rho_model.ev(radii,0)
 
 # Generate seagen sphere
-N = 10**5
+N = 10**6
 particles = seagen.GenSphere(N, radii[1:], densities[1:])
 
 rho_seagen = _eq_density(particles.x, particles.y, particles.z, radii, densities)
-#rho_seagen = particles.A1_rho
+#rho_seagen = _interp_density(particles.x, particles.y, particles.z, radii, densities)
 
 zP = np.zeros(particles.m.shape[0])
 #linear (for meeting)
@@ -259,10 +270,18 @@ for i in range(0, zpz_grid.shape[0]):
             zpz_grid[i, j] = (z_array[k] - z_array[k + 1])*(rho_spherical - rho_slice[k])
             zpz_grid[i, j] = zpz_grid[i, j]/(rho_slice[k] - rho_slice[k + 1]) + z_array[k]
             zpz_grid[i, j] = zpz_grid[i, j]/z
+            
 
-zpz_grid[:, 0] = zpz_grid[:, 3]
-zpz_grid[:, 1] = zpz_grid[:, 3]
-zpz_grid[:, 2] = zpz_grid[:, 3]
+zpz_grid[:, 0] = zpz_grid[:, 2]
+zpz_grid[:, 1] = zpz_grid[:, 2]
+
+for i in range(zpz_grid.shape[0] - 1):
+    for j in range(zpz_grid.shape[1] - 1):
+        if zpz_grid[i, j + 1] == 0:
+            zpz_grid[i, j + 1] = zpz_grid[i, j]
+        if zpz_grid[i + 1, j] == 0:
+            zpz_grid[i + 1, j] = zpz_grid[i, j]
+
 
 #zpz_grid[0,:] = zpz_grid[1,:]
 
@@ -283,9 +302,9 @@ z_P_fine = np.load('z_array_p_fine.npy')
 """
 np.isnan(zP).sum()
 
-plt.scatter(z_fine_r/R_earth, z_P_fine_r/z_fine_r, s = 0.1, label = 'delta z = 0.011 R_earth', c = 'green')
+plt.scatter(z_fine_r/R_earth, z_P_fine_r/z_fine_r, s = 0.1, label = 'last week', c = 'green')
 
-plt.scatter(particles.z/R_earth, zP/particles.z, s = 0.1, label = 'delta z = 0.005 R_earth', c = 'red')
+plt.scatter(particles.z/R_earth, zP/particles.z, s = 0.1, label = 'this week', c = 'red')
 plt.xlabel(r"$z$ $[R_{earth}]$")
 plt.ylabel(r"$z'/z$")
 plt.legend()
