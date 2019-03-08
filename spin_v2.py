@@ -21,7 +21,7 @@ G = 6.67408E-11
 R_earth = 6371000
 M_earth = 5.972E24
 
-data = pd.read_csv("1layer_n10k.csv", header=0)
+data = pd.read_csv("1layer.csv", header=0)
 
 densities = np.array(data.rho)
 radii = np.array(data.R)*R_earth
@@ -46,23 +46,25 @@ z_array = np.sort(z_array)
 
 """
 ##linear scale
-#r_array = np.arange(0, 1.5*np.max(radii), 1.5*np.max(radii)/120)
-z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/100)
+r_array = np.arange(0, 1.4*np.max(radii), 1.4*np.max(radii)/200)
+z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/200)
 
 rho, r_array, z_array, times = spipgen_v2.spin1layer(10, radii, densities, 4, 101, 1, [300,0], 
-                                                     P_c, P_s, rho_c, rho_s, np.nan, z_array)
+                                                     P_c, P_s, rho_c, rho_s, r_array, z_array)
 
 np.save('profile_parallel', rho)
 np.save('r_array', r_array)
 np.save('z_array', z_array)
 np.save("exec_times", times)
+
 """
 ####### Analysis
 rho_par = np.load('profile_parallel.npy')
 r_array = np.load('r_array.npy')
 z_array = np.load('z_array.npy')
+times = np.load('exec_times.npy')
 
-#spipgen_plot.plotrho(rho_par[10][1:,:], r_array[1:]/R_earth, z_array/R_earth)
+spipgen_plot.plotrho(rho_par[10], r_array/R_earth, z_array/R_earth)
 
 
 ###### test
@@ -96,9 +98,5 @@ spipgen_v2._Vg(r_array[2], z_array[1], rho[0], r_array, z_array, I_array, dS)
 
 spipgen_v2._Vg(0, R_earth, rho[0], r_array, z_array, I_array, dS)
 -G*data.M[0]*M_earth/R_earth
-
-
-
-
 """
 

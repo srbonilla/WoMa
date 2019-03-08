@@ -39,7 +39,7 @@ M_earth = 5.972E24;
 # //////////////////////////////////////////////////////////////////////////// #
 
 @jit(nopython=True)
-def _P_EoS_Till(u, rho, mat_id):
+def _P_EoS_Till2(u, rho, mat_id):
     """
     Computes pressure for Tillotson EoS.
     
@@ -106,6 +106,96 @@ def _P_EoS_Till(u, rho, mat_id):
         P = ((u - u1)*P2 + (u2 - u)*P1)/(u2 - u1)
     
     return P
+
+@jit(nopython=True)
+def _P_EoS_Till(u, rho, mat_id):
+    """
+    Computes pressure for Tillotson EoS.
+    
+    Args:
+        u (double)
+            Internal energy (SI).
+            
+        rho (double) 
+            Density (SI).
+        
+        mat_id ([int])
+            Material id.
+            
+    Returns:
+        P (double)
+            Pressure (SI).
+    """
+    # Material constants for Tillotson EoS
+    # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min
+    iron    = np.array([100, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0])
+    granite = np.array([101, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0])
+    water   = np.array([102, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.9, 0])
+    
+    if (mat_id == 100):
+        material = iron
+    elif (mat_id == 101):
+        material = granite
+    elif (mat_id == 102):
+        material = water
+    else:
+        print("Material not implemented")
+        return None
+        
+    rho_0    = material[1]
+    a        = material[2]
+    b        = material[3]
+    A        = material[4]
+    B        = material[5]
+    u_0      = material[6]
+    u_iv     = material[7]
+    u_cv     = material[8]
+    alpha    = material[9]
+    beta     = material[10]
+    eta_min  = material[11]
+    P_min    = material[12]
+
+    eta      = rho/rho_0
+    eta_sq   = eta*eta
+    mu       = eta - 1.
+    nu       = 1./eta - 1.
+    w        = u/(u_0*eta_sq) + 1.
+    w_inv    = 1./w
+    
+    P_c = 0.
+    P_e = 0.
+    P   = 0.
+
+    # Condensed or cold
+    if eta < eta_min:
+        P_c = 0.
+    else:
+        P_c = (a + b*w_inv)*rho*u + A*mu + B*mu*mu;
+        
+    # Expanded and hot
+    P_e = a*rho*u + (b*rho*u*w_inv + A*mu*np.exp(-beta*nu))                   \
+                     *np.exp(-alpha*nu*nu)
+                
+    
+    # Condensed or cold state
+    if (1. < eta) or (u < u_iv):
+        P = P_c
+    
+    # Expanded and hot state
+    elif ((eta < 1) and (u_cv < u)):
+        P = P_e
+    
+    # Hybrid state
+    else:
+        P = ((u - u_iv) * P_e + (u_cv - u) * P_c) /                           \
+                                (u_cv - u_iv)
+      
+    # Minimum pressure
+    if (P < P_min):
+        P = P_min;
+        
+    return P
+
 
 @jit(nopython=True)
 def P_EoS(u, rho, mat_id):
@@ -398,7 +488,7 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
     """
 
     c = _spec_c(mat_id)
-    tolerance = 1E-7
+    tolerance = 1E-5
     
     u0 = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
     P0 = P_EoS(u0, rho0, mat_id)
@@ -724,6 +814,63 @@ def _fillV(rho_grid, r_array, z_array, I_array, S_grid, Tw):
             
     return V_grid
 
+def _fillV_parallel(rho_grid, r_array, z_array, I_array, S_grid, Tw):
+    """
+    Computes a 2-d potential grid given a 2-d density grid of a rotating planet.
+    
+    Args:
+        rho_grid ([[float]]):
+            2-d density grid (SI) of the planet.
+            
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
+            
+        z_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
+            
+        I_array ([float]):
+            Values of the integral for gamma from 0 to 1.
+            
+        S_grid ([[float]]):
+            Differential of surface for every element i,j of the density grid.
+            
+        Tw (float):
+            Period of the planet (hours).
+    
+    Returns:
+        V_grid ([[float]]):
+            2-d grid of the total potential (SI).
+    
+    """
+    
+    # parallel set-up
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+
+    V_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    #Tw in hours
+    W = 2*np.pi/Tw/60/60
+    
+    N_rows = z_array.shape[0] 
+    
+    # Essential: N_rows is a multiple of size (the number of processors). N_rows = 100 by default 
+    for i in range(V_grid.shape[0]):
+        for j in range(rank*int(N_rows/size), (rank + 1)*int(N_rows/size)):
+            V_grid[i,j] = _Vg(r_array[i], z_array[j], rho_grid, r_array, z_array, I_array, S_grid) - (1/2)*(W*r_array[i])**2
+            
+    V_raw = comm.gather(V_grid)
+    V_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    
+    if rank == 0:
+        for I in range(size):
+            V_grid[:,:] = V_grid[:,:] + V_raw[I]
+        #V_grid = np.flip(V_grid, 1)
+        
+    V_grid = comm.bcast(V_grid, root=0)
+    
+    return V_grid
+
 # From center to surface
 @jit(nopython=True)
 def _fillrho(V_grid, r_array, z_array, P_c, P_s, rho_c, rho_s,
@@ -806,13 +953,14 @@ def _fillrho(V_grid, r_array, z_array, P_c, P_s, rho_c, rho_s,
         
     return rho_grid
 
-def _fillV_parallel(rho_grid, r_array, z_array, I_array, S_grid, Tw):
+def _fillrho_parallel(V_grid, r_array, z_array, P_c, P_s, rho_c, rho_s,
+             mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core):
     """
-    Computes a 2-d potential grid given a 2-d density grid of a rotating planet.
+    Update 2-d density grid given a 2-d potential grid of the planet.
     
     Args:
-        rho_grid ([[float]]):
-            2-d density grid (SI) of the planet.
+        V_grid ([[float]]):
+            2-d grid of the total potential (SI).
             
         r_array ([float]):
             Array of distances from the z axis to build the grid (SI).
@@ -820,48 +968,91 @@ def _fillV_parallel(rho_grid, r_array, z_array, I_array, S_grid, Tw):
         z_array ([float]):
             Array of distances in the z direction to build the grid (SI).
             
-        I_array ([float]):
-            Values of the integral for gamma from 0 to 1.
+        P_c (float):
+            Central pressure of the planet (SI).
             
-        S_grid ([[float]]):
-            Differential of surface for every element i,j of the density grid.
+        P_s (float):
+            Surface pressure of the planet (SI).
             
-        Tw (float):
-            Period of the planet (hours).
-    
+        rho_c (float):
+            Central density of the planet (SI).
+            
+        rho_s (float):
+            Surface density of the planet (SI).
+            
+        mat_id_core ([int]):
+            Material id.
+            
+        T_rho_id_core (int)
+            Relation between T and rho to be used for core material.
+            
+        T_rho_args_core (list):
+            Extra arguments to determine the relation for core material
+        
+        ucold_array_core ([[float]]):
+            Tabulated values of cold internal energy for core material
+            
     Returns:
-        V_grid ([[float]]):
-            2-d grid of the total potential (SI).
-    
+        rho_grid ([[float]]):
+            Updated 2-d density grid (SI).
     """
     
     # parallel set-up
     comm = MPI.COMM_WORLD
     size = comm.Get_size()
     rank = comm.Get_rank()
-
-    V_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
-    #Tw in hours
-    W = 2*np.pi/Tw/60/60
     
-    N_rows = z_array.shape[0] 
+    rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+        
+    rho_grid[0,0] = rho_c
     
+    # Fill pole for every processor
+    for j in range(0, rho_grid.shape[1] - 1):
+        gradV = (V_grid[0, j + 1] - V_grid[0, j])
+        gradP = -rho_grid[0, j]*gradV
+        P = P_rho(rho_grid[0, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
+        
+        if P > P_s:
+            rho_grid[0, j + 1] = _find_rho(P, mat_id_core, T_rho_id_core, T_rho_args_core,
+                                           rho_s - 10, rho_grid[0, j], ucold_array_core)
+        else:
+            rho_grid[0, j + 1] = 0.
+            break
+        
+    N_rows = z_array.shape[0]
+    
+    # Fill to the right distributing the work
     # Essential: N_rows is a multiple of size (the number of processors). N_rows = 100 by default 
-    for i in range(V_grid.shape[0]):
+    for i in range(0, rho_grid.shape[0] - 1):
         for j in range(rank*int(N_rows/size), (rank + 1)*int(N_rows/size)):
-            V_grid[i,j] = _Vg(r_array[i], z_array[j], rho_grid, r_array, z_array, I_array, S_grid) - (1/2)*(W*r_array[i])**2
+            if rho_grid[i, j] == 0:
+                break
+
+            gradV = (V_grid[i + 1, j] - V_grid[i, j])
+            gradP = -rho_grid[i, j]*gradV
+            P = P_rho(rho_grid[i, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
             
-    V_raw = comm.gather(V_grid)
-    V_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+            if P > P_s:
+                rho_grid[i + 1, j] = _find_rho(P, mat_id_core, T_rho_id_core, T_rho_args_core,
+                                               rho_s - 10, rho_grid[i, j], ucold_array_core)
+            else:
+                rho_grid[i + 1, j] = 0.
+                break
+        
+    rho_raw = comm.gather(rho_grid)
+    rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
     
     if rank == 0:
         for I in range(size):
-            V_grid[:,:] = V_grid[:,:] + V_raw[I]
+            rho_grid[:,:] = rho_grid[:,:] + rho_raw[I]
         #V_grid = np.flip(V_grid, 1)
         
-    V_grid = comm.bcast(V_grid, root=0)
+    rho_grid = comm.bcast(rho_grid, root=0)
     
-    return V_grid
+    rho_grid[0,:] = rho_grid[0,:]/size
+    
+    return rho_grid
+
     
 def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
                P_c, P_s, rho_c, rho_s, r_array = None, z_array = None):
@@ -907,7 +1098,7 @@ def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
     comm = MPI.COMM_WORLD
     rank = comm.Get_rank()
     
-    if rank == 0: print("Running time for creating I_array and u_cold_table:", end - start)
+    if rank == 0: print(f"Running time for creating I_array and u_cold_table: {end - start:.2f} seconds \n")
     
     dS = _dS(r_array, z_array)
     
@@ -918,10 +1109,12 @@ def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
         end = time.time()
         times[i - 1, 0] = end - start
         start = time.time()
-        rho[i] = _fillrho(V1, r_array, z_array, P_c, P_s, rho_c, rho_s, mat_id, T_rho_id, T_rho_args, ucold_array)
+        rho[i] = _fillrho_parallel(V1, r_array, z_array, P_c, P_s, rho_c, rho_s, mat_id, T_rho_id, T_rho_args, ucold_array)
         end = time.time()
         times[i - 1, 1] = end - start
         
-        if rank == 0: print(f"Iteration {i} complete")
+        if rank == 0: 
+            print(f"Iteration {i} complete in {times[i-1,0]:.2f} + {times[i-1,1]:.2f} seconds")
+            print(f"Total time: {times[i-1,0] + times[i-1,1]:.2f} seconds\n")
         
     return rho, r_array, z_array, times
