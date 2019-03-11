@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 R_earth = 6371000;
 
-def plotrho(rho_grid, r_array, z_array, save_name = 0):
+def plotrho(rho_grid, r_array, z_array, save_name = 0, levels = np.arange(1000, 15000, 1000)):
     fig_size = plt.rcParams["figure.figsize"]
  
     fig_size[0] = 10
@@ -28,7 +28,7 @@ def plotrho(rho_grid, r_array, z_array, save_name = 0):
 
     plt.figure()
     plt.axes().set_aspect('equal')
-    CS = plt.contour(X, Y, Z)
+    CS = plt.contour(X, Y, Z, levels = levels)
     plt.clabel(CS, inline=1, fontsize=10)
     plt.xlabel('R (Earth radii)')
     plt.ylabel('z (Earth radii)')

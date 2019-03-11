@@ -70,7 +70,7 @@ T_rho_args = [300,0]
 N = 10**6
 Tw = 4
 #
-def _picle_placement_1layer(rho_grid, r_array, z_array, mat_id_core, N, Tw, T_rho_id, T_rho_args):
+def _picle_placement_1layer(rho_grid, r_array, z_array, Tw, N, mat_id_core, T_rho_id, T_rho_args):
 
     Re = np.max(r_array[rho_grid[:,0] > 0])
     rho_model = RectBivariateSpline(r_array, z_array, rho_grid, kx = 1, ky = 1)
@@ -191,8 +191,8 @@ T_rho_args = [300, 0]
 N = 10**5
 
 x, y, z, vx, vy, vz, m, h, rho, P, u, picle_id, mat_id =                      \
-_picle_placement_1layer(rho_grid, r_array, z_array,
-                        mat_id_core, N, Tw, T_rho_id, T_rho_args)
+_picle_placement_1layer(rho_grid, r_array, z_array, Tw, N,
+                        mat_id_core, T_rho_id, T_rho_args)
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
