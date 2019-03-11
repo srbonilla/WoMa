@@ -1022,7 +1022,21 @@ def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
     
     start = time.time()
     
-    ucold_array = _create_ucold_array(mat_id)
+    try:
+        I_array = np.load('I_array.npy')
+        
+        if mat_id == 100:
+            ucold_array = np.load('ucold_array_100.npy')
+        elif mat_id == 101:
+            ucold_array = np.load('ucold_array_101.npy')
+        elif mat_id == 102:
+            ucold_array = np.load('ucold_array_102.npy')  
+            
+    except ImportError:
+        return False
+    
+    #ucold_array = _create_ucold_array(mat_id)
+        
     #I_array = _create_I_array()
     I_array = np.load('I_array.npy')
     
@@ -1338,10 +1352,29 @@ def spin2layer(iterations, radii, densities, Tw,
     
     start = time.time()
     
-    ucold_array_core = _create_ucold_array(mat_id_core)
-    ucold_array_mantle = _create_ucold_array(mat_id_mantle)
+    try:
+        I_array = np.load('I_array.npy')
+        
+        if mat_id_core == 100:
+            ucold_array_core = np.load('ucold_array_100.npy')
+        elif mat_id_core == 101:
+            ucold_array_core = np.load('ucold_array_101.npy')
+        elif mat_id_core == 102:
+            ucold_array_core = np.load('ucold_array_102.npy')
+            
+        if mat_id_mantle == 100:
+            ucold_array_mantle = np.load('ucold_array_100.npy')
+        elif mat_id_mantle == 101:
+            ucold_array_mantle = np.load('ucold_array_101.npy')
+        elif mat_id_mantle == 102:
+            ucold_array_mantle = np.load('ucold_array_102.npy')
+            
+    except ImportError:
+        return False
+            
+    #ucold_array_core = _create_ucold_array(mat_id_core)
+    #ucold_array_mantle = _create_ucold_array(mat_id_mantle)
     #I_array = _create_I_array()
-    I_array = np.load('I_array.npy')
     
     rho_grid, r_array, z_array = _rho0_grid(radii, densities, r_array, z_array)
     rho = np.zeros((iterations + 1, r_array.shape[0], z_array.shape[0]))
