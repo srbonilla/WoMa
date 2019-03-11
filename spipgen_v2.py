@@ -39,75 +39,6 @@ M_earth = 5.972E24;
 # //////////////////////////////////////////////////////////////////////////// #
 
 @jit(nopython=True)
-def _P_EoS_Till2(u, rho, mat_id):
-    """
-    Computes pressure for Tillotson EoS.
-    
-    Args:
-        u (double)
-            Internal energy (SI).
-            
-        rho (double) 
-            Density (SI).
-        
-        mat_id ([int])
-            Material id.
-            
-    Returns:
-        P (double)
-            Pressure (SI).
-    """
-    # Material constants for Tillotson EoS + material code and specific capacity (SI units)
-    iron = np.array([0.5, 1.5, 1.279E11, 1.05E11, 7860, 9.5E6, 1.42E6, 8.45E6, 5, 5, 0, 449])
-    granite = np.array([0.5, 1.3, 1.8E10, 1.8E10, 2700, 1.6E7, 3.5E6, 1.8E7, 5, 5, 1, 790])
-    water = np.array([0.5, 0.9, 2.0E10, 1.0E10, 1000, 2.0E6, 4.0E5, 2.0E6, 5, 5, 2, 4186])
-    
-    if (mat_id == 100):
-        material = iron
-    elif (mat_id == 101):
-        material = granite
-    elif (mat_id == 102):
-        material = water
-    else:
-        print("Material not implemented")
-        return None
-        
-    a = material[0]
-    b = material[1]
-    A = material[2]
-    B = material[3]
-    rho0 = material[4]
-    u0 = material[5]
-    u1 = material[6]
-    u2 = material[7]
-    alpha = material[8]
-    beta = material[9]
-
-    eta = rho/rho0
-    mu = eta - 1.
-
-    if (rho >= rho0 or u <= u1):
-        P = (a + b*u0*eta**2/(u0*eta**2 + u))*u*rho + A*mu + B*mu**2
-        
-    elif (rho <= rho0 and u >= u2):
-        P21 = a*u*rho
-        P221 = b*u*rho*u0*eta**2/(u + u0*eta**2)
-        P222 = A*mu*np.exp(-beta*(1/eta - 1))
-        P23 = np.exp(-alpha*(1/eta - 1)**2)
-        P = P21 + (P221 + P222)*P23
-        
-    else:
-        P1 = (a + b*u0*pow(eta, 2)/(u + u0*pow(eta, 2)))*u*rho + A*mu + B*pow(mu, 2)
-        P21 = a*u*rho
-        P221 = b*u*rho*u0*eta**2/(u + u0*eta**2)
-        P222 = A*mu*np.exp(-beta*(1/eta - 1))
-        P23 = np.exp(-alpha*(1/eta - 1)**2)
-        P2 = P21 + (P221 + P222)*P23
-        P = ((u - u1)*P2 + (u2 - u)*P1)/(u2 - u1)
-    
-    return P
-
-@jit(nopython=True)
 def _P_EoS_Till(u, rho, mat_id):
     """
     Computes pressure for Tillotson EoS.
@@ -498,7 +429,7 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
     u2 = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
     P2 = P_EoS(u2, rho2, mat_id)
     
-    rho_aux = rho0 + 0.1
+    rho_aux = rho0 + 1e-6
     u_aux = _ucold_tab(rho_aux, ucold_array) + c*T_rho(rho_aux, T_rho_id, T_rho_args)
     P_aux = P_EoS(u_aux, rho_aux, mat_id)
 
@@ -1003,19 +934,23 @@ def _fillrho_parallel(V_grid, r_array, z_array, P_c, P_s, rho_c, rho_s,
     rank = comm.Get_rank()
     
     rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    P_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
         
     rho_grid[0,0] = rho_c
+    P_grid[0,0] = P_c
     
     # Fill pole for every processor
     for j in range(0, rho_grid.shape[1] - 1):
         gradV = (V_grid[0, j + 1] - V_grid[0, j])
         gradP = -rho_grid[0, j]*gradV
-        P = P_rho(rho_grid[0, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
+        #P = P_rho(rho_grid[0, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
+        P_grid[0, j + 1] = P_grid[0, j] + gradP
         
-        if P > P_s:
-            rho_grid[0, j + 1] = _find_rho(P, mat_id_core, T_rho_id_core, T_rho_args_core,
+        if P_grid[0, j + 1] > P_s:
+            rho_grid[0, j + 1] = _find_rho(P_grid[0, j + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
                                            rho_s - 10, rho_grid[0, j], ucold_array_core)
         else:
+            P_grid[0, j + 1] = 0.
             rho_grid[0, j + 1] = 0.
             break
         
@@ -1030,12 +965,14 @@ def _fillrho_parallel(V_grid, r_array, z_array, P_c, P_s, rho_c, rho_s,
 
             gradV = (V_grid[i + 1, j] - V_grid[i, j])
             gradP = -rho_grid[i, j]*gradV
-            P = P_rho(rho_grid[i, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
+            #P = P_rho(rho_grid[i, j], mat_id_core, T_rho_id_core, T_rho_args_core) + gradP
+            P_grid[i + 1, j] = P_grid[i, j] + gradP
             
-            if P > P_s:
-                rho_grid[i + 1, j] = _find_rho(P, mat_id_core, T_rho_id_core, T_rho_args_core,
+            if P_grid[i + 1, j] > P_s:
+                rho_grid[i + 1, j] = _find_rho(P_grid[i + 1, j], mat_id_core, T_rho_id_core, T_rho_args_core,
                                                rho_s - 10, rho_grid[i, j], ucold_array_core)
             else:
+                P_grid[0, j + 1]
                 rho_grid[i + 1, j] = 0.
                 break
         
@@ -1110,6 +1047,325 @@ def spin1layer(iterations, radii, densities, Tw, mat_id, T_rho_id, T_rho_args,
         times[i - 1, 0] = end - start
         start = time.time()
         rho[i] = _fillrho_parallel(V1, r_array, z_array, P_c, P_s, rho_c, rho_s, mat_id, T_rho_id, T_rho_args, ucold_array)
+        end = time.time()
+        times[i - 1, 1] = end - start
+        
+        if rank == 0: 
+            print(f"Iteration {i} complete in {times[i-1,0]:.2f} + {times[i-1,1]:.2f} seconds")
+            print(f"Total time: {times[i-1,0] + times[i-1,1]:.2f} seconds\n")
+        
+    return rho, r_array, z_array, times
+
+#########################2 layer###############################################
+# From center to surface
+@jit(nopython=True)
+def _fillrho2(V_grid, r_array, z_array, P_c, P_i, P_s, rho_c, rho_s,
+             mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
+             mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle, ucold_array_mantle):
+    """
+    Update 2-d density grid given a 2-d potential grid of the planet.
+    
+    Args:
+        V_grid ([[float]]):
+            2-d grid of the total potential (SI).
+            
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
+            
+        z_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
+            
+        P_c (float):
+            Central pressure of the planet (SI).
+            
+        P_i (float):
+            Pressure at the interphase of the 2 materials of the planet (SI).
+            
+        P_s (float):
+            Surface pressure of the planet (SI).
+            
+        rho_c (float):
+            Central density of the planet (SI).
+            
+        rho_s (float):
+            Surface density of the planet (SI).
+            
+        mat_id_core ([int]):
+            Material id.
+            
+        T_rho_id_core (int)
+            Relation between T and rho to be used for core material.
+            
+        T_rho_args_core (list):
+            Extra arguments to determine the relation for core material
+        
+        ucold_array_core ([[float]]):
+            Tabulated values of cold internal energy for core material
+            
+    Returns:
+        rho_grid ([[float]]):
+            Updated 2-d density grid (SI).
+    """
+    
+    rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    P_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+        
+    rho_grid[0,0] = rho_c
+    P_grid[0,0] = P_c
+    
+    # Fill pole
+    for j in range(0, rho_grid.shape[1] - 1):
+        gradV = (V_grid[0, j + 1] - V_grid[0, j])
+        gradP = -rho_grid[0, j]*gradV
+        
+        # Core
+        if P_grid[0,j] > P_s and P_grid[0,j] > P_i:
+            P_grid[0, j + 1] = P_grid[0, j] + gradP
+            rho_grid[0, j + 1] = _find_rho(P_grid[0, j + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                           rho_s - 10, rho_grid[0, j], ucold_array_core)
+        # Mantle  
+        elif P_grid[0,j] > P_s and P_grid[0,j] < P_i:
+            P_grid[0, j + 1] = P_grid[0, j] + gradP
+            if P_grid[0, j + 1] > P_s:
+                rho_grid[0, j + 1] = _find_rho(P_grid[0, j + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                               rho_s - 1, rho_grid[0, j], ucold_array_mantle)
+            else:
+                P_grid[0, j + 1] = P_s
+                rho_grid[0, j + 1] = rho_s
+            
+        else:
+            P_grid[0, j + 1] = P_s
+            rho_grid[0, j + 1] = 0.
+            break
+    
+    # Fill to the right 
+    for j in range(0, rho_grid.shape[1]):         
+        for i in range(0, rho_grid.shape[0] - 1):
+            
+            if rho_grid[i, j] == 0:
+                break
+
+            gradV = (V_grid[i + 1, j] - V_grid[i, j])
+            gradP = -rho_grid[i, j]*gradV
+            
+            # Core
+            if P_grid[i, j] > P_s and P_grid[i, j] > P_i:
+                P_grid[i + 1, j] = P_grid[i, j] + gradP
+                if P_grid[i + 1, j] > P_s:
+                    rho_grid[i + 1, j] = _find_rho(P_grid[i + 1, j], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                                   rho_s - 10, rho_grid[i, j], ucold_array_core)
+                else:
+                    P_grid[i + 1, j] = P_s
+                    rho_grid[i + 1, j] + rho_s
+            # Mantle  
+            elif P_grid[i, j] > P_s and P_grid[i, j] < P_i:
+                P_grid[i + 1, j] = P_grid[i, j] + gradP
+                if P_grid[i + 1, j] > P_s:
+                    rho_grid[i + 1, j] = _find_rho(P_grid[i + 1, j], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                                   rho_s - 10, rho_grid[i, j], ucold_array_mantle)
+                else:
+                    P_grid[i + 1, j] = P_s
+                    rho_grid[i + 1, j] + rho_s
+            else:
+                P_grid[i + 1, j] = P_s
+                rho_grid[i + 1, j] = 0.
+                break
+        
+    return rho_grid, P_grid
+
+def _fillrho2_parallel(V_grid, r_array, z_array, P_c, P_i, P_s, rho_c, rho_s,
+             mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
+             mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle, ucold_array_mantle):
+    """
+    Update 2-d density grid given a 2-d potential grid of the planet.
+    
+    Args:
+        V_grid ([[float]]):
+            2-d grid of the total potential (SI).
+            
+        r_array ([float]):
+            Array of distances from the z axis to build the grid (SI).
+            
+        z_array ([float]):
+            Array of distances in the z direction to build the grid (SI).
+            
+        P_c (float):
+            Central pressure of the planet (SI).
+            
+        P_s (float):
+            Surface pressure of the planet (SI).
+            
+        rho_c (float):
+            Central density of the planet (SI).
+            
+        rho_s (float):
+            Surface density of the planet (SI).
+            
+        mat_id_core ([int]):
+            Material id.
+            
+        T_rho_id_core (int)
+            Relation between T and rho to be used for core material.
+            
+        T_rho_args_core (list):
+            Extra arguments to determine the relation for core material
+        
+        ucold_array_core ([[float]]):
+            Tabulated values of cold internal energy for core material
+            
+    Returns:
+        rho_grid ([[float]]):
+            Updated 2-d density grid (SI).
+    """
+    
+    # parallel set-up
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+    
+    rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    P_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+        
+    rho_grid[0,0] = rho_c
+    P_grid[0,0] = P_c
+    
+    # Fill pole
+    for j in range(0, rho_grid.shape[1] - 1):
+        gradV = (V_grid[0, j + 1] - V_grid[0, j])
+        gradP = -rho_grid[0, j]*gradV
+        
+        # Core
+        if P_grid[0,j] > P_s and P_grid[0,j] > P_i:
+            P_grid[0, j + 1] = P_grid[0, j] + gradP
+            rho_grid[0, j + 1] = _find_rho(P_grid[0, j + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                           rho_s - 10, rho_grid[0, j], ucold_array_core)
+        # Mantle  
+        elif P_grid[0,j] > P_s and P_grid[0,j] < P_i:
+            P_grid[0, j + 1] = P_grid[0, j] + gradP
+            if P_grid[0, j + 1] > P_s:
+                rho_grid[0, j + 1] = _find_rho(P_grid[0, j + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                               rho_s - 1, rho_grid[0, j], ucold_array_mantle)
+            else:
+                P_grid[0, j + 1] = P_s
+                rho_grid[0, j + 1] = rho_s
+            
+        else:
+            P_grid[0, j + 1] = 0.
+            rho_grid[0, j + 1] = 0.
+            break
+    
+    N_rows = z_array.shape[0]
+    
+    # Fill to the right distributing the work
+    # Essential: N_rows is a multiple of size (the number of processors). N_rows = 100 by default 
+    for j in range(rank*int(N_rows/size), (rank + 1)*int(N_rows/size)):
+        for i in range(0, rho_grid.shape[0] - 1):
+            
+            if rho_grid[i, j] == 0:
+                break
+
+            gradV = (V_grid[i + 1, j] - V_grid[i, j])
+            gradP = -rho_grid[i, j]*gradV
+            
+            # Core
+            if P_grid[i, j] > P_s and P_grid[i, j] > P_i:
+                P_grid[i + 1, j] = P_grid[i, j] + gradP
+                if P_grid[i + 1, j] > P_s:
+                    rho_grid[i + 1, j] = _find_rho(P_grid[i + 1, j], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                                   rho_s - 10, rho_grid[i, j], ucold_array_core)
+                else:
+                    P_grid[i + 1, j] = P_s
+                    rho_grid[i + 1, j] = rho_s
+            # Mantle  
+            elif P_grid[i, j] > P_s and P_grid[i, j] < P_i:
+                P_grid[i + 1, j] = P_grid[i, j] + gradP
+                if P_grid[i + 1, j] > P_s:
+                    rho_grid[i + 1, j] = _find_rho(P_grid[i + 1, j], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                                   rho_s - 10, rho_grid[i, j], ucold_array_mantle)
+                else:
+                    P_grid[i + 1, j] = P_s
+                    rho_grid[i + 1, j] = rho_s
+            else:
+                P_grid[i + 1, j] = 0.
+                rho_grid[i + 1, j] = 0.
+                break
+        
+    rho_raw = comm.gather(rho_grid)
+    rho_grid = np.zeros((r_array.shape[0], z_array.shape[0]))
+    
+    if rank == 0:
+        for I in range(size):
+            rho_grid[:,:] = rho_grid[:,:] + rho_raw[I]
+        #V_grid = np.flip(V_grid, 1)
+        
+    rho_grid = comm.bcast(rho_grid, root=0)
+    
+    rho_grid[0,:] = rho_grid[0,:]/size
+    
+    return rho_grid
+
+    
+def spin2layer(iterations, radii, densities, Tw,
+               mat_id_core, T_rho_id_core, T_rho_args_core,
+               mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+               P_c, P_i, P_s, rho_c, rho_s, r_array = None, z_array = None):
+    """
+    Spining of a radial planetary profile
+    
+    Args:
+        iterations (int):
+            Number of iterations to compute.
+            
+        rho_sph ([float]):
+            Initial density radial profile to start with (SI).
+            
+        Rs (float):
+            Initial radius of the planet (R_earth).
+            
+        Tw (float):
+            Period of the planet (hours).
+            
+        K, alpha (float):
+            Parameters from the relation between density and temperature
+            T = K*rho**alpha.
+    
+    Returns:
+        V_grid ([[float]]):
+            2-d grid of the total potential (SI).
+    """
+    
+    times = np.zeros((iterations, 2))
+    
+    start = time.time()
+    
+    ucold_array_core = _create_ucold_array(mat_id_core)
+    ucold_array_mantle = _create_ucold_array(mat_id_mantle)
+    #I_array = _create_I_array()
+    I_array = np.load('I_array.npy')
+    
+    rho_grid, r_array, z_array = _rho0_grid(radii, densities, r_array, z_array)
+    rho = np.zeros((iterations + 1, r_array.shape[0], z_array.shape[0]))
+    rho[0] = rho_grid
+    
+    end = time.time()
+    
+    comm = MPI.COMM_WORLD
+    rank = comm.Get_rank()
+    
+    if rank == 0: print(f"Running time for creating I_array and u_cold_table: {end - start:.2f} seconds \n")
+    
+    dS = _dS(r_array, z_array)
+    
+    for i in range(1, iterations + 1):
+        
+        start = time.time()
+        V1 = _fillV_parallel(rho[i - 1], r_array, z_array, I_array, dS, Tw)
+        end = time.time()
+        times[i - 1, 0] = end - start
+        start = time.time()
+        rho[i] = _fillrho2_parallel(V1, r_array, z_array, P_c, P_i, P_s, rho_c, rho_s,
+                                    mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
+                                    mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle, ucold_array_mantle)
         end = time.time()
         times[i - 1, 1] = end - start
         
