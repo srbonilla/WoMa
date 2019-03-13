@@ -12,7 +12,7 @@ sys.path.append(path)
 
 import pandas as pd
 import numpy as np
-import spipgen
+
 import spipgen_plot
 
 import spipgen_v2
@@ -26,13 +26,13 @@ data = pd.read_csv("1layer.csv", header=0)
 densities = np.array(data.rho)
 radii = np.array(data.R)*R_earth
 
-P_c = np.max(data.P)
+P_c = np.median(np.sort(data.P)[-100:])
 P_s = np.min(data.P)
 rho_c = np.max(data.rho)
 rho_s = np.min(data.rho)
 
-r_array = np.arange(0, 1.4*np.max(radii), 1.4*np.max(radii)/200)
-z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/200)
+r_array = np.arange(0, 1.2*np.max(radii), 1.2*np.max(radii)/100)
+z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/100)
 
 rho, r_array, z_array, times = spipgen_v2.spin1layer(10, radii, densities, 4, 101, 1, [300,0], 
                                                      P_c, P_s, rho_c, rho_s, r_array, z_array)
@@ -44,10 +44,10 @@ np.save("exec_times_1l", times)
 
 """
 ####### Analysis
-rho_par = np.load('profile_parallel.npy')
-r_array = np.load('r_array.npy')
-z_array = np.load('z_array.npy')
-times = np.load('exec_times.npy')
+rho_par = np.load('profile_parallel_1l.npy')
+r_array = np.load('r_array_1l.npy')
+z_array = np.load('z_array_1l.npy')
+times = np.load('exec_times_1l.npy')
 
 spipgen_plot.plotrho(rho_par[10], r_array/R_earth, z_array/R_earth)
 
