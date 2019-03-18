@@ -22,7 +22,7 @@ from numba import jit, njit
 from mpi4py import MPI
 import time
 import sys
-from scipy import interpolate
+from scipy.interpolate import interp1d
 
 # Material constants for Tillotson EoS + material code and specific capacity (SI units)
 iron = np.array([0.5, 1.5, 1.279E11, 1.05E11, 7860, 9.5E6, 1.42E6, 8.45E6, 5, 5, 0, 449])
@@ -503,45 +503,51 @@ P_s = np.min(data.P)
 rho_c = np.median(np.sort(data.rho)[-100:])
 rho_s = np.min(data.rho)
 
-r_array = np.arange(0, 1.2*np.max(radii), 1.2*np.max(radii)/100)
-z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/100)
 mat_id_core = 101
-T_rho_id = 1
-T_rho_args = [300, 0]
+T_rho_id_core = 1
+T_rho_args_core = [300, 0]
+
+if mat_id_core == 100:
+    ucold_array_core = np.load('ucold_array_100.npy')
+elif mat_id_core == 101:
+    ucold_array_core = np.load('ucold_array_101.npy')
+elif mat_id_core == 102:
+    ucold_array_core = np.load('ucold_array_102.npy')
 
 #####
 # initial setup
-from scipy.interpolate import interp1d
+
 spherical_model = interp1d(radii, densities, bounds_error=False, fill_value=0)
 
-r_array = np.arange(0, 1.2*np.max(radii), 1.2*np.max(radii)/1000)
-z_array = np.arange(0, 1.2*np.max(radii), 1.2*np.max(radii)/1000)
+r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
+z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
 
 rho_e = spherical_model(r_array)
 rho_p = spherical_model(z_array)
 
-rho_e_model_inv = interp1d(rho_e, r_array)
-rho_p_model_inv = interp1d(rho_p, z_array)
+V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, 1e20)
+rho_e1, rho_p1 = _fillrho(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
+                          mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core)
 
-R_array = r_array
-Z_array = rho_p_model_inv(rho_e)
+#test
+import matplotlib.pyplot as plt
 
-V_e = np.zeros(r_array.shape)
-V_p = np.zeros(z_array.shape)
+plt.scatter(r_array/R_earth, rho_e, label = 'original', s = 1)
+plt.scatter(r_array/R_earth, rho_e1, label = '1st iter', s = 1)
+plt.legend()
+plt.show()
 
-for i in range(rho_e.shape[0] - 1):
-    
-    if rho_e[i] == 0:
-        break
-    
-    delta_rho = rho_e[i] - rho_e[i + 1]
-    
-    for j in range(V_e.shape[0]):
-        V_e[j] += _Vgr(r_array[j], R_array[i], 
-                       min(Z_array[i], R_array[i]), delta_rho)
-        V_p[j] += _Vgz(z_array[j], R_array[i], 
-                       min(Z_array[i], R_array[i]), delta_rho)
-        
+plt.scatter(z_array/R_earth, rho_p, label = 'original', s = 1)
+plt.scatter(z_array/R_earth, rho_p1, label = '1st iter', s = 1)
+plt.legend()
+plt.show()
+
+plt.scatter(r_array/R_earth, V_e, label = 'V', s = 1)
+plt.show()
+
+
+plt.scatter(z_array/R_earth, V_p, label = 'V', s = 1)
+plt.show()
 #test   
  
 V_e_model = interp1d(r_array, V_e)
@@ -554,7 +560,6 @@ model = -G*data.M[0]*M_earth/1.0/R_earth
 
 (test_e - model)/model 
 (test_p - model)/model 
-
 
 
 
@@ -575,7 +580,7 @@ def _analytic_solution_r(r, R, Z, x):
 @jit(nopython=True)
 def _analytic_solution_z(z, R, Z, x):
     if R == Z:
-        return (2*z*z - 3*(R*R + x))/3/np.sqrt((R*R + x)**3)
+        return 2*(z*z - 3*(R*R + x))/3/np.sqrt((R*R + x)**3)
     else:
         A1 = 2*z*z/(R*R - Z*Z)/np.sqrt(Z*Z + x)
         A2 = 2*(R*R + z*z - Z*Z)
@@ -590,19 +595,38 @@ def _Vgr(r, R, Z, rho):
     
     V = 0
     
+    # Control R and Z
     if R == 0. or Z == 0:
         return 0
+        
+    elif np.abs((R - Z)/max(R, Z)) < 1e-6:
+        R = max(R, Z)
+        Z = R
+        
+    elif Z > R:
+        #print("exception")
+        Z = R 
+        
+        
+    if R == Z:
+        if r >= R:
+            vol = 4*np.pi*R*R*Z/3
+            return -G*vol*rho/r
+        else:
+            M = 4/3*np.pi*R**3*rho
+            return -G*M/2/R**3*(3*R*R - r*r)
+
 
     if r <= R:
         V = np.pi*R*R*Z*rho
-        V = V*(_analytic_solution_r(r, R, Z, 1e20)
+        V = V*(_analytic_solution_r(r, R, Z, 1e30)
                - _analytic_solution_r(r, R, Z, 0))
         return -G*V
     
     else:
         A = r*r - R*R
         V = np.pi*R*R*Z*rho
-        V = V*(_analytic_solution_r(r, R, Z, 1e20)
+        V = V*(_analytic_solution_r(r, R, Z, 1e30)
                - _analytic_solution_r(r, R, Z, A))
         return -G*V
     
@@ -616,19 +640,257 @@ def _Vgz(z, R, Z, rho):
     if R == 0. or Z == 0:
         return 0
     
+    elif np.abs((R - Z)/max(R, Z)) < 1e-6:
+        R = max(R, Z)
+        Z = R
+    
+    elif Z > R:
+        Z = R
+        
+        
+    if R == Z:
+        if z >= R:
+            vol = 4*np.pi*R*R*Z/3
+            return -G*vol*rho/z
+        else:
+            M = 4/3*np.pi*R**3*rho
+            return -G*M/2/R**3*(3*R*R - z*z)
+        
+    
     if z <= Z:
         V = np.pi*R*R*Z*rho
-        V = V*(_analytic_solution_z(z, R, Z, 1e20)
+        V = V*(_analytic_solution_z(z, R, Z, 1e40)
                - _analytic_solution_z(z, R, Z, 0))
         return -G*V
     
     else:
         A = z*z - Z*Z
         V = np.pi*R*R*Z*rho
-        V = V*(_analytic_solution_z(z, R, Z, 1e20)
+        V = V*(_analytic_solution_z(z, R, Z, 1e40)
                - _analytic_solution_z(z, R, Z, A))
         return -G*V
     
     return V
 
+@jit(nopython=False)
+def _fillV(r_array, rho_e, z_array, rho_p, Tw):
+    
+    if r_array.shape[0] != rho_e.shape[0] or z_array.shape[0] != rho_p.shape[0]:
+        print("dimension error.\n")
+        return -1, -1
 
+    rho_p_model_inv = interp1d(rho_p, z_array)
+    
+    R_array = r_array
+    Z_array = rho_p_model_inv(rho_e)
+    
+    V_e = np.zeros(r_array.shape)
+    V_p = np.zeros(z_array.shape)
+    
+    W = 2*np.pi/Tw/60/60
+
+    for i in range(rho_e.shape[0] - 1):
+    
+        if rho_e[i] == 0:
+            break
+        
+        delta_rho = rho_e[i] - rho_e[i + 1]
+        
+        for j in range(V_e.shape[0]):
+            V_e[j] += _Vgr(r_array[j], R_array[i], 
+                           Z_array[i], delta_rho)                      
+            
+        for j in range(V_p.shape[0]):
+            V_p[j] += _Vgz(z_array[j], R_array[i], 
+                           Z_array[i], delta_rho)
+            
+    for i in range(V_e.shape[0]):
+        V_e[i] += -(1/2)*(W*r_array[i])**2
+        
+    return V_e, V_p
+
+# From center to surface
+@jit(nopython=True)
+def _fillrho(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
+             mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core):
+    
+    P_e = np.zeros(V_e.shape[0])
+    P_p = np.zeros(V_p.shape[0])
+    rho_e = np.zeros(V_e.shape[0])
+    rho_p = np.zeros(V_p.shape[0])
+    
+    P_e[0] = P_c
+    P_p[0] = P_c
+    rho_e[0] = rho_c
+    rho_p[0] = rho_c
+    
+    for i in range(r_array.shape[0] - 1):
+        gradV = V_e[i + 1] - V_e[i]
+        gradP = -rho_e[i]*gradV
+        P_e[i + 1] = P_e[i] + gradP
+        #print(i)
+            
+        if P_e[i + 1] >= P_s:
+            rho_e[i + 1] = _find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                     rho_s - 10, rho_e[i], ucold_array_core) 
+        else:
+            rho_e[i + 1] = 0.
+            break
+        
+    for i in range(z_array.shape[0] - 1):
+        gradV = V_p[i + 1] - V_p[i]
+        gradP = -rho_p[i]*gradV
+        P_p[i + 1] = P_p[i] + gradP
+        
+        if P_p[i + 1] >= P_s:
+            rho_p[i + 1] = _find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                     rho_s - 10, rho_p[i], ucold_array_core)
+        else:
+            rho_p[i + 1] = 0.
+            break
+        
+    return rho_e, rho_p
+
+def spin1layer(iterations, r_array, z_array, radii, densities, Tw,
+               P_c, P_s, rho_c, rho_s,
+               mat_id_core, T_rho_id_core, T_rho_args_core):
+    
+    if mat_id_core == 100:
+        ucold_array_core = np.load('ucold_array_100.npy')
+    elif mat_id_core == 101:
+        ucold_array_core = np.load('ucold_array_101.npy')
+    elif mat_id_core == 102:
+        ucold_array_core = np.load('ucold_array_102.npy')
+        
+    spherical_model = interp1d(radii, densities, bounds_error=False, fill_value=0)
+
+    rho_e = spherical_model(r_array)
+    rho_p = spherical_model(z_array)
+    
+    profile_e = []
+    profile_p = []
+    
+    profile_e.append(rho_e)
+    profile_p.append(rho_p)
+    
+    for i in range(iterations):
+        V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
+        rho_e, rho_p = _fillrho(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
+                                mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core)
+        profile_e.append(rho_e)
+        profile_p.append(rho_p)
+    
+    return profile_e, profile_p
+   
+@jit(nopython=False)
+def _el_eq(r, z, R, Z):
+    return r*r/R/R + z*z/Z/Z
+
+@jit(nopython=False)
+def _rho_rz(r, z, r_array, rho_e, z_array, rho_p):
+    
+    rho_e_model = interp1d(r_array, rho_e, bounds_error=False, fill_value=0)
+    rho_p_model = interp1d(z_array, rho_p, bounds_error=False, fill_value=0)
+    rho_e_model_inv = interp1d(rho_e, r_array)
+    
+    r_0 = r
+    r_1 = r_array[(rho_e > 0).sum() - 1]
+    
+    rho_0 = rho_e_model(r_0)
+    rho_1 = rho_e_model(r_1)
+    
+    R_0 = r_0
+    Z_0 = rho_e_model_inv(rho_0)
+    R_1 = r_1
+    Z_1 = rho_e_model_inv(rho_1)
+    
+    if _el_eq(r, z, R_1, Z_1) > 1:
+        return 0
+    
+    elif _el_eq(r, z, R_1, Z_1) == 1:
+        return rho_1
+    
+    elif r == 0 and z == 0:
+        return rho_0
+    
+    elif r == 0 and z != 0:
+        return rho_p_model(z)
+    
+    elif _el_eq(r, z, R_0, Z_0) == 1:
+        return rho_0
+    
+    elif _el_eq(r, z, R_0, Z_0) > 1 and _el_eq(r, z, R_1, Z_1) < 1:
+        r_2 = (r_0 + r_1)/2.
+        rho_2 = rho_e_model(r_2)
+        R_2 = r_2
+        Z_2 = rho_e_model_inv(rho_2)
+        tol = 1e-3
+        
+        while np.abs(_el_eq(r, z, R_2, Z_2) - 1) < tol:
+            if _el_eq(r, z, R_2, Z_2) > 1:
+                r_0 = r_2
+                rho_0 = rho_2
+                R_0 = R_2
+                Z_0 = Z_2
+            else:
+                r_1 = r_2
+                rho_1 = rho_2
+                R_1 = R_2
+                Z_1 = Z_2
+                
+            r_2 = (r_0 + r_1)/2.
+            rho_2 = rho_e_model(r_2)
+            R_2 = r_2
+            Z_2 = rho_e_model_inv(rho_2)
+            
+        return rho_2
+    
+    return -1
+    
+#test
+import pandas as pd
+import matplotlib.pyplot as plt
+   
+data = pd.read_csv("1layer.csv", header=0)
+
+iterations = 10
+r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
+z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
+radii = np.array(data.R)*R_earth    
+densities = np.array(data.rho)
+Tw = 4
+P_c = np.median(np.sort(data.P)[-100:])
+P_s = np.min(data.P)
+rho_c = np.median(np.sort(data.rho)[-100:])
+rho_s = np.min(data.rho)
+mat_id_core = 101
+T_rho_id_core = 1
+T_rho_args_core = [300, 0]
+
+profile_e, profile_p = spin1layer(iterations, r_array, z_array, radii, densities, Tw,
+                                  P_c, P_s, rho_c, rho_s,
+                                  mat_id_core, T_rho_id_core, T_rho_args_core)
+
+plt.scatter(r_array/R_earth, profile_e[0], label = 'original', s = 1)
+plt.scatter(r_array/R_earth, profile_e[10], label = 'last iter', s = 1)
+plt.legend()
+plt.show()
+
+plt.scatter(z_array/R_earth, profile_p[0], label = 'original', s = 1)
+plt.scatter(z_array/R_earth, profile_p[10], label = 'last iter', s = 1)
+plt.legend()
+plt.show()
+
+rho_e = profile_e[10]
+rho_p = profile_p[10]
+
+r_array_coarse = np.arange(0, np.max(r_array), np.max(r_array)/100)
+z_array_coarse = np.arange(0, np.max(z_array), np.max(z_array)/100)
+rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+for i in range(rho_grid.shape[0]):
+    r = r_array_coarse[i]
+    for j in range(rho_grid.shape[1]):
+        z = z_array_coarse[j]
+        rho_grid[i,j] = _rho_rz(r, z, r_array, rho_e, z_array, rho_p)
+        
+spipgen_plot.plotrho(rho_grid, r_array_coarse, z_array_coarse)
