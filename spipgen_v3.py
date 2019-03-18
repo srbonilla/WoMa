@@ -791,7 +791,7 @@ def _rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     
     rho_e_model = interp1d(r_array, rho_e, bounds_error=False, fill_value=0)
     rho_p_model = interp1d(z_array, rho_p, bounds_error=False, fill_value=0)
-    rho_e_model_inv = interp1d(rho_e, r_array)
+    rho_p_model_inv = interp1d(rho_p, z_array)
     
     r_0 = r
     r_1 = r_array[(rho_e > 0).sum() - 1]
@@ -800,9 +800,9 @@ def _rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     rho_1 = rho_e_model(r_1)
     
     R_0 = r_0
-    Z_0 = rho_e_model_inv(rho_0)
+    Z_0 = rho_p_model_inv(rho_0)
     R_1 = r_1
-    Z_1 = rho_e_model_inv(rho_1)
+    Z_1 = rho_p_model_inv(rho_1)
     
     if _el_eq(r, z, R_1, Z_1) > 1:
         return 0
@@ -816,6 +816,9 @@ def _rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     elif r == 0 and z != 0:
         return rho_p_model(z)
     
+    elif r != 0 and z == 0:
+        return rho_e_model(r)
+    
     elif _el_eq(r, z, R_0, Z_0) == 1:
         return rho_0
     
@@ -823,10 +826,10 @@ def _rho_rz(r, z, r_array, rho_e, z_array, rho_p):
         r_2 = (r_0 + r_1)/2.
         rho_2 = rho_e_model(r_2)
         R_2 = r_2
-        Z_2 = rho_e_model_inv(rho_2)
-        tol = 1e-3
+        Z_2 = rho_p_model_inv(rho_2)
+        tol = 1e-2
         
-        while np.abs(_el_eq(r, z, R_2, Z_2) - 1) < tol:
+        while np.abs(rho_1 - rho_0) > tol:
             if _el_eq(r, z, R_2, Z_2) > 1:
                 r_0 = r_2
                 rho_0 = rho_2
@@ -841,7 +844,7 @@ def _rho_rz(r, z, r_array, rho_e, z_array, rho_p):
             r_2 = (r_0 + r_1)/2.
             rho_2 = rho_e_model(r_2)
             R_2 = r_2
-            Z_2 = rho_e_model_inv(rho_2)
+            Z_2 = rho_p_model_inv(rho_2)
             
         return rho_2
     
@@ -894,3 +897,12 @@ for i in range(rho_grid.shape[0]):
         rho_grid[i,j] = _rho_rz(r, z, r_array, rho_e, z_array, rho_p)
         
 spipgen_plot.plotrho(rho_grid, r_array_coarse, z_array_coarse)
+
+
+rho_par = np.load('profile_parallel_1l.npy')
+r_array_v2 = np.load('r_array_1l.npy')
+z_array_v2 = np.load('z_array_1l.npy')
+times = np.load('exec_times_1l.npy')
+
+spipgen_plot.plotrho(rho_par[10], r_array_v2/R_earth, z_array_v2/R_earth)
+
