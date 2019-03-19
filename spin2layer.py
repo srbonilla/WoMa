@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+h#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Usage:
@@ -42,18 +42,18 @@ mat_id_mantle = 101
 T_rho_id_mantle = 1
 T_rho_args_mantle = [300,0]
 
-r_array = np.arange(0, 1.2*np.max(radii), 1.2*np.max(radii)/800)
-z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/800)
+r_array = np.arange(0, 1.2*np.max(radii), 1.2*np.max(radii)/200)
+z_array = np.arange(0, 1.1*np.max(radii), 1.1*np.max(radii)/200)
 
 rho, r_array, z_array, times = spipgen_v2.spin2layer(10, radii, densities, 4,
                                                      mat_id_core, T_rho_id_core, T_rho_args_core,
                                                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                                      P_c, P_i, P_s, rho_c, rho_s, r_array, z_array)
 
-np.save('profile_parallel_2l', rho)
-np.save('r_array_2l', r_array)
-np.save('z_array_2l', z_array)
-np.save("exec_times_2l", times)
+np.save('profile_parallel_2l_200', rho)
+np.save('r_array_2l_200', r_array)
+np.save('z_array_2l_200', z_array)
+np.save("exec_times_2l_200", times)
 
 """
 #test
@@ -97,13 +97,13 @@ spipgen_plot.plotrho(rho_par[10], r_array/R_earth, z_array/R_earth)
 
 
 """
-
+"""
 #comparison elipsoid vs true result
 from scipy.interpolate import interp1d
 
-rho_par = np.load('profile_parallel_2l.npy')
-r_array = np.load('r_array_2l.npy')
-z_array = np.load('z_array_2l.npy')
+rho_par = np.load('profile_parallel_2l_200.npy')
+r_array = np.load('r_array_2l_200.npy')
+z_array = np.load('z_array_2l_200.npy')
 
 rho_e = rho_par[-1][:,0]
 rho_p = rho_par[-1][0,:]
@@ -119,13 +119,14 @@ rho_test = 5000
 R = rho_e_model_inv(rho_test)
 Z = rho_p_model_inv(rho_test)
 
-x = np.arange(0, R, R/100)
+x = np.arange(0, R, R/1000)
 y = np.sqrt(Z**2*(1 - (x/R)**2))
 
 
-spipgen_plot.plotrho(rho_par[10], r_array/R_earth, z_array/R_earth)
+spipgen_plot.plotrho(rho_par[1], r_array/R_earth, z_array/R_earth)
 plt.scatter(x/R_earth, y/R_earth, s = 1, color = 'red')
 
+"""
 
 
 

@@ -23,6 +23,9 @@ from mpi4py import MPI
 import time
 import sys
 from scipy.interpolate import interp1d
+import os
+path = '/home/sergio/Documents/SpiPGen/'
+os.chdir(path)
 
 import seagen
 import swift_io
@@ -788,8 +791,8 @@ import matplotlib.pyplot as plt
 data = pd.read_csv("1layer.csv", header=0)
 
 iterations = 10
-r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
-z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
+r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/2000)
+z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/2000)
 radii = np.array(data.R)*R_earth    
 densities = np.array(data.rho)
 Tw = 4
@@ -815,6 +818,11 @@ plt.scatter(z_array/R_earth, profile_p[0], label = 'original', s = 1)
 plt.scatter(z_array/R_earth, profile_p[10], label = 'last iter', s = 1)
 plt.legend()
 plt.show()
+
+np.save('r_array', r_array)
+np.save('z_array', z_array)
+np.save('rho_e', profile_e[-1])
+np.save('rho_p', profile_p[-1])
 
 #2d plot
 rho_e = profile_e[10]
@@ -918,7 +926,7 @@ def _picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     return x, y, zP, vx, vy, vz, mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id
 
 x, y, z, vx, vy, vz, m, h, rho, P, u, picle_id, mat_id =                      \
-_picle_placement_1layer(rho_grid, r_array, z_array, Tw, N,
+_picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
                         mat_id_core, T_rho_id_core, T_rho_args_core)
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
@@ -928,3 +936,268 @@ with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, np.array([x, y, z]).T, np.array([vx, vy, vz]).T,
                              m, h, rho, P, u, picle_id, mat_id,
                              4*R_earth, swift_to_SI) 
+    
+# 2 layer
+
+
+# From center to surface
+@jit(nopython=True)
+def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
+             mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
+             mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle, ucold_array_mantle):
+    
+    P_e = np.zeros(V_e.shape[0])
+    P_p = np.zeros(V_p.shape[0])
+    rho_e = np.zeros(V_e.shape[0])
+    rho_p = np.zeros(V_p.shape[0])
+    
+    P_e[0] = P_c
+    P_p[0] = P_c
+    rho_e[0] = rho_c
+    rho_p[0] = rho_c
+    
+    for i in range(r_array.shape[0] - 1):
+        gradV = V_e[i + 1] - V_e[i]
+        gradP = -rho_e[i]*gradV
+        P_e[i + 1] = P_e[i] + gradP
+        #print(i)
+            
+        if P_e[i + 1] >= P_s and P_e[i + 1] >= P_i:
+            rho_e[i + 1] = _find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                     rho_s - 10, rho_e[i], ucold_array_core) 
+            
+        elif P_e[i + 1] >= P_s and P_e[i + 1] < P_i:
+            rho_e[i + 1] = _find_rho(P_e[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                     rho_s - 10, rho_e[i], ucold_array_mantle) 
+            
+        else:
+            rho_e[i + 1] = 0.
+            break
+        
+    for i in range(z_array.shape[0] - 1):
+        gradV = V_p[i + 1] - V_p[i]
+        gradP = -rho_p[i]*gradV
+        P_p[i + 1] = P_p[i] + gradP
+        
+        if P_p[i + 1] >= P_s and P_p[i + 1] >= P_i:
+            rho_p[i + 1] = _find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+                                     rho_s - 10, rho_p[i], ucold_array_core)
+            
+        elif P_p[i + 1] >= P_s and P_p[i + 1] < P_i:
+            rho_p[i + 1] = _find_rho(P_p[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                     rho_s - 10, rho_p[i], ucold_array_mantle)
+            
+        else:
+            rho_p[i + 1] = 0.
+            break
+        
+    return rho_e, rho_p
+
+def spin2layer(iterations, r_array, z_array, radii, densities, Tw,
+               P_c, P_i, P_s, rho_c, rho_s,
+               mat_id_core, T_rho_id_core, T_rho_args_core,
+               mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle):
+    
+    if mat_id_core == 100:
+        ucold_array_core = np.load('ucold_array_100.npy')
+    elif mat_id_core == 101:
+        ucold_array_core = np.load('ucold_array_101.npy')
+    elif mat_id_core == 102:
+        ucold_array_core = np.load('ucold_array_102.npy')
+        
+    if mat_id_mantle == 100:
+        ucold_array_mantle = np.load('ucold_array_100.npy')
+    elif mat_id_mantle == 101:
+        ucold_array_mantle = np.load('ucold_array_101.npy')
+    elif mat_id_mantle == 102:
+        ucold_array_mantle = np.load('ucold_array_102.npy')
+        
+    spherical_model = interp1d(radii, densities, bounds_error=False, fill_value=0)
+
+    rho_e = spherical_model(r_array)
+    rho_p = spherical_model(z_array)
+    
+    profile_e = []
+    profile_p = []
+    
+    profile_e.append(rho_e)
+    profile_p.append(rho_p)
+    
+    for i in range(iterations):
+        V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
+        rho_e, rho_p = _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
+                                mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
+                                mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle, ucold_array_mantle)
+        profile_e.append(rho_e)
+        profile_p.append(rho_p)
+    
+    return profile_e, profile_p
+
+# test 2 layer
+    
+data = pd.read_csv("2layer.csv", header=0)
+
+iterations = 10
+r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
+z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
+radii = np.array(data.R)*R_earth    
+densities = np.array(data.rho)
+Tw = 4
+P_c = np.median(np.sort(data.P)[-100:])
+P_i = (195619882720.038 + 195702367184.472)/2.
+P_s = np.min(data.P)
+rho_c = np.median(np.sort(data.rho)[-100:])
+rho_s = np.min(data.rho)
+mat_id_core = 100
+T_rho_id_core = 1
+T_rho_args_core = [300, 0]
+mat_id_mantle = 101
+T_rho_id_mantle = 1
+T_rho_args_mantle = [300,0]
+
+N = 10**5
+
+profile_e, profile_p = spin2layer(iterations, r_array, z_array, radii, densities, Tw,
+                                  P_c, P_i, P_s, rho_c, rho_s,
+                                  mat_id_core, T_rho_id_core, T_rho_args_core,
+                                  mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle)
+
+rho_e = profile_e[-1]
+rho_p = profile_p[-1]
+
+plt.scatter(r_array/R_earth, profile_e[0], label = 'original', s = 1)
+plt.scatter(r_array/R_earth, profile_e[10], label = 'last iter', s = 1)
+plt.legend()
+plt.show()
+
+plt.scatter(z_array/R_earth, profile_p[0], label = 'original', s = 1)
+plt.scatter(z_array/R_earth, profile_p[10], label = 'last iter', s = 1)
+plt.legend()
+plt.show()
+
+plt.scatter(r_array/R_earth, profile_e[0], label = 'original', s = 1)
+plt.scatter(r_array/R_earth, rho_e, label = 'equatorial profile', s = 1)
+plt.scatter(z_array/R_earth, rho_p, label = 'polar profile', s = 1)
+plt.legend()
+plt.show()
+
+np.save('r_array', r_array)
+np.save('z_array', z_array)
+np.save('rho_e', profile_e[-1])
+np.save('rho_p', profile_p[-1])
+
+def _picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
+                            mat_id_core, T_rho_id_core, T_rho_args_core,
+                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle):
+    
+    rho_e_model = interp1d(r_array, rho_e)
+    #rho_p_model = interp1d(z_array, rho_p)
+    
+    rho_e_model_inv = interp1d(rho_e, r_array)
+    rho_p_model_inv = interp1d(rho_p, z_array)
+
+    Re = np.max(r_array[rho_e > 0])
+    #rho_model = RectBivariateSpline(r_array, z_array, rho_grid, kx = 1, ky = 1)
+
+    radii = np.arange(0, Re, Re/1000000)
+    densities = rho_e_model(radii)
+
+    particles = seagen.GenSphere(N, radii[1:], densities[1:])
+    
+    particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
+    particles_rc = np.sqrt(particles.x**2 + particles.y**2)
+    particles_rho = rho_e_model(particles_r)
+    
+    R = rho_e_model_inv(particles_rho)
+    Z = rho_p_model_inv(particles_rho)
+    
+    zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
+
+    """ 
+    plt.scatter(particles.z/R_earth, zP/particles.z, s = 0.01, c = 'red')
+    plt.xlabel(r"$z$ $[R_{earth}]$")
+    plt.ylabel(r"$z'/z$")
+    plt.show()
+    """
+    # Tweek masses
+    mP = particles.m*zP/particles.z
+    print("\nx, y, z, and m computed\n")
+    
+    # Compute velocities (T_w in hours)
+    vx = np.zeros(mP.shape[0])
+    vy = np.zeros(mP.shape[0])
+    vz = np.zeros(mP.shape[0])
+    
+    hour_to_s = 3600
+    wz = 2*np.pi/Tw/hour_to_s 
+        
+    vx = -particles.y*wz
+    vy = particles.x*wz
+    
+    # internal energy
+    rho = particles_rho
+    u = np.zeros((mP.shape[0]))
+    
+    x = particles.x
+    y = particles.y
+    
+    print("vx, vy, and vz computed\n")
+    
+    try:
+        
+        if mat_id_core == 100:
+            ucold_array_core = np.load('ucold_array_100.npy')
+        elif mat_id_core == 101:
+            ucold_array_core = np.load('ucold_array_101.npy')
+        elif mat_id_core == 102:
+            ucold_array_core = np.load('ucold_array_102.npy')
+            
+        if mat_id_mantle == 100:
+            ucold_array_mantle = np.load('ucold_array_100.npy')
+        elif mat_id_mantle == 101:
+            ucold_array_mantle = np.load('ucold_array_101.npy')
+        elif mat_id_mantle == 102:
+            ucold_array_mantle = np.load('ucold_array_102.npy')
+            
+    except ImportError:
+        return False
+    
+    #ucold_array_core = spipgen_v2._create_ucold_array(mat_id_core)
+    c_core = _spec_c(mat_id_core)
+    c_mantle = _spec_c(mat_id_mantle)
+    
+    for k in range(mP.shape[0]):
+        if particles_rho[k] > rho_i:
+            u[k] = _ucold_tab(particles_rho[k], ucold_array_core)
+            u[k] = u[k] + c_core*T_rho(particles_rho[k], T_rho_id_core, T_rho_args_core)
+        else:
+            u[k] = _ucold_tab(rho[k], ucold_array_mantle)
+            u[k] = u[k] + c_mantle*T_rho(particles_rho[k], T_rho_id_mantle, T_rho_args_mantle)
+    
+    print("Internal energy u computed\n")
+    ## Smoothing lengths, crudely estimated from the densities
+    num_ngb = 48    # Desired number of neighbours
+    w_edge  = 2     # r/h at which the kernel goes to zero
+    A1_h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
+    
+    A1_P = np.ones((mP.shape[0],)) # not implemented (not necessary)
+    A1_id = np.arange(mP.shape[0])
+    A1_mat_id = (rho > rho_i)*mat_id_core + (rho <= rho_i)*mat_id_mantle
+    
+    return x, y, zP, vx, vy, vz, mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id
+    
+rho_i = 10000
+
+x, y, z, vx, vy, vz, m, h, rho, P, u, picle_id, mat_id =                      \
+_picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
+                        mat_id_core, T_rho_id_core, T_rho_args_core,
+                        mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle)
+
+swift_to_SI = swift_io.Conversions(1, 1, 1)
+
+filename = '2layer_10e5.hdf5'
+with h5py.File(filename, 'w') as f:
+    swift_io.save_picle_data(f, np.array([x, y, z]).T, np.array([vx, vy, vz]).T,
+                             m, h, rho, P, u, picle_id, mat_id,
+                             4*R_earth, swift_to_SI)   
+     
