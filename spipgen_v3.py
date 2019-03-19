@@ -1042,7 +1042,7 @@ r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
 z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
 radii = np.array(data.R)*R_earth    
 densities = np.array(data.rho)
-Tw = 4
+Tw = 4.
 P_c = np.median(np.sort(data.P)[-100:])
 P_i = (195619882720.038 + 195702367184.472)/2.
 P_s = np.min(data.P)
@@ -1064,16 +1064,6 @@ profile_e, profile_p = spin2layer(iterations, r_array, z_array, radii, densities
 
 rho_e = profile_e[-1]
 rho_p = profile_p[-1]
-
-plt.scatter(r_array/R_earth, profile_e[0], label = 'original', s = 1)
-plt.scatter(r_array/R_earth, profile_e[10], label = 'last iter', s = 1)
-plt.legend()
-plt.show()
-
-plt.scatter(z_array/R_earth, profile_p[0], label = 'original', s = 1)
-plt.scatter(z_array/R_earth, profile_p[10], label = 'last iter', s = 1)
-plt.legend()
-plt.show()
 
 plt.scatter(r_array/R_earth, profile_e[0], label = 'original', s = 1)
 plt.scatter(r_array/R_earth, rho_e, label = 'equatorial profile', s = 1)
