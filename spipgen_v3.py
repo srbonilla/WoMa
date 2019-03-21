@@ -791,8 +791,8 @@ import matplotlib.pyplot as plt
 data = pd.read_csv("1layer.csv", header=0)
 
 iterations = 10
-r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/2000)
-z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/2000)
+r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
+z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
 radii = np.array(data.R)*R_earth    
 densities = np.array(data.rho)
 Tw = 4
@@ -809,13 +809,14 @@ profile_e, profile_p = spin1layer(iterations, r_array, z_array, radii, densities
                                   P_c, P_s, rho_c, rho_s,
                                   mat_id_core, T_rho_id_core, T_rho_args_core)
 
-plt.scatter(r_array/R_earth, profile_e[0], label = 'original', s = 1)
-plt.scatter(r_array/R_earth, profile_e[10], label = 'last iter', s = 1)
-plt.legend()
-plt.show()
+rho_e = profile_e[-1]
+rho_p = profile_p[-1]
 
-plt.scatter(z_array/R_earth, profile_p[0], label = 'original', s = 1)
-plt.scatter(z_array/R_earth, profile_p[10], label = 'last iter', s = 1)
+plt.scatter(r_array/R_earth, profile_e[0], label = 'original', s = 1)
+plt.scatter(r_array/R_earth, rho_e, label = 'equatorial profile', s = 1)
+plt.scatter(z_array/R_earth, rho_p, label = 'polar profile', s = 1)
+plt.xlabel(r"$r$ [$R_{earth}$]")
+plt.ylabel(r"$\rho$ [$kg/m^3$]")
 plt.legend()
 plt.show()
 
@@ -1040,7 +1041,7 @@ data = pd.read_csv("2layer.csv", header=0)
 iterations = 10
 r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
 z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
-radii = np.array(data.R)*R_earth    
+radii = np.array(data.R)*R_earth 
 densities = np.array(data.rho)
 Tw = 4.
 P_c = np.median(np.sort(data.P)[-100:])
