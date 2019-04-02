@@ -3,7 +3,7 @@
 """
 Created on Mon Apr  1 10:38:18 2019
 
-@author: sergio
+@author: Sergio Ruiz-Bonilla
 """
 
 import numpy as np
@@ -472,15 +472,15 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
         return rho2
     
     elif Ps < P0 and P0 < P1:
-        print("Exception 1\n")
+        #print("Exception 1\n")
         #print("P0: %.2f P1 %.2f Ps %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(Ps/1e9,2)))
         return rho0
     elif Ps > P1 and P0 < P1:
-        print("Exception 2\n")
+        #print("Exception 2\n")
         #print("P0: %.2f P1 %.2f Ps %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(Ps/1e9,2)))
         return rho1
     else:
-        print("Exception 3\n")
+        #print("Exception 3\n")
         #print("P0: %.2f P1 %.2f Ps %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(Ps/1e9,2)))
         return rho2
 

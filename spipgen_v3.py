@@ -33,11 +33,6 @@ import seagen
 import swift_io
 import h5py
 
-# Material constants for Tillotson EoS + material code and specific capacity (SI units)
-iron = np.array([0.5, 1.5, 1.279E11, 1.05E11, 7860, 9.5E6, 1.42E6, 8.45E6, 5, 5, 0, 449])
-granite = np.array([0.5, 1.3, 1.8E10, 1.8E10, 2700, 1.6E7, 3.5E6, 1.8E7, 5, 5, 1, 790])
-water = np.array([0.5, 0.9, 2.0E10, 1.0E10, 1000, 2.0E6, 4.0E5, 2.0E6, 5, 5, 2, 4186])
-
 # Global constants
 G = 6.67408E-11;
 R_earth = 6371000;
@@ -176,11 +171,11 @@ def _rho0_material(mat_id):
     
     """
     if (mat_id == 100):     # Tillotson iron
-        return 7860
+        return 7800
     elif (mat_id == 101):   # Tillotson granite   
-        return 2700
+        return 2680
     elif (mat_id == 102):   # Tillotson water
-        return 1000
+        return 998
     elif (mat_id == 200):   # H&M80 H-He atmosphere
         return None
     elif (mat_id == 201):   # H&M80 H-He ice mix
@@ -463,6 +458,7 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
             rho2 = (rho0 + rho1)/2.
             
         return rho2
+    
     elif (P0 == Ps and P_aux == Ps and P1 != Ps):
         while np.abs(rho1 - rho0) > tolerance:
             rho2 = (rho0 + rho1)/2.
@@ -795,7 +791,7 @@ r_array = np.arange(0, 1.2*R_earth, 1.2*R_earth/1000)
 z_array = np.arange(0, 1.1*R_earth, 1.1*R_earth/1000)
 radii = np.array(data.R)*R_earth    
 densities = np.array(data.rho)
-Tw = 24
+Tw = 4
 P_c = np.median(np.sort(data.P)[-100:])
 P_s = np.min(data.P)
 rho_c = np.median(np.sort(data.rho)[-100:])
