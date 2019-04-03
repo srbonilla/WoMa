@@ -10,13 +10,14 @@ Created on Tue Apr  2 13:11:10 2019
 ####################### Libraries and constants ###############################
 ###############################################################################
 
-path = '/home/sergio/Documents/SpiPGen/'
-import numpy as np
-import matplotlib.pyplot as plt
+path = '/home/sergio/Documents/SpiPGen/'     # Set local project folder
 import os
 os.chdir(path)
 import sys
 sys.path.append(path)
+
+import numpy as np
+import matplotlib.pyplot as plt
 import woma
 
 R_earth = 6371000;
@@ -38,14 +39,14 @@ woma.set_up()
 
 # Create spherical profile (determine mass of the planet given radius)
 
+N             = 10000                       # Number of integration steps
 R             = R_earth                     # Radius of the planet 
 M_max         = M_earth                     # Upper bound for the mass of the planet
-N             = 10000                       # Number of integration steps
 Ts            = 300.                        # Temperature at the surface
 Ps            = 0.                          # Pressure at the surface
+mat_id        = 101                         # Material id (see mat_id.txt)
 T_rho_id      = 1.                          # Relation between density and temperature (T_rho_id.txt)
 T_rho_args    = [np.nan, 0.]                # Extra arguments for the above relation 
-mat_id        = 101                         # Material id (see mat_id.txt)
 rhos_min      = 2000.                       # Lower bound for the density at the surface
 rhos_max      = 3000.                       # Upper bound for the density at the surface
 
@@ -81,6 +82,60 @@ ax[1,1].set_ylabel(r"$T$ $[K]$")
 
 plt.tight_layout()
 plt.show()
+
+# Let's convet it to a spining profile
+iterations = 5                               # Iterations to convergence
+r_array    = np.arange(0, 1.2*R, 1.2*R/1000) # Points at equatorial profile to find the solution
+z_array    = np.arange(0, 1.1*R, 1.1*R/1000) # Points at equatorial profile to find the solution
+Tw         = 4                               # Period of the planet [hours]
+
+P_c   = P[-1]                                # Pressure at the center
+P_s   = P[0]                                 # Pressure at the surface
+rho_c = rho[-1]                              # Density at the center
+rho_s = rho[0]                               # Density at the surface
+
+# Compute equatorial and polar profiles
+profile_e, profile_p = woma.spin1layer(iterations, r_array, z_array, r, rho, Tw,
+                                       P_c, P_s, rho_c, rho_s,
+                                       mat_id, T_rho_id, T_rho_args,
+                                       ucold_array)
+
+# Keep last iteration of the computation
+rho_e = profile_e[-1]
+rho_p = profile_p[-1]
+
+# Plot the results
+fig, ax = plt.subplots(1,2, figsize=(12,6))
+ax[0].scatter(r/R_earth, rho, label = 'original', s = 0.5)
+ax[0].scatter(r_array/R_earth, rho_e, label = 'equatorial profile', s = 1)
+ax[0].scatter(z_array/R_earth, rho_p, label = 'polar profile', s = 1)
+ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[0].set_ylabel(r"$\rho$ [$kg/m^3$]")
+ax[0].legend()
+
+
+r_array_coarse = np.arange(0, np.max(r_array), np.max(r_array)/100)
+z_array_coarse = np.arange(0, np.max(z_array), np.max(z_array)/100)
+rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+for i in range(rho_grid.shape[0]):
+    radius = r_array_coarse[i]
+    for j in range(rho_grid.shape[1]):
+        z = z_array_coarse[j]
+        rho_grid[i,j] = woma.rho_rz(radius, z, r_array, rho_e, z_array, rho_p)
+
+X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
+Z = rho_grid.T
+levels = np.arange(1000, 15000, 1000)
+ax[1].set_aspect('equal')
+CS = plt.contour(X, Y, Z, levels = levels)
+ax[1].clabel(CS, inline=1, fontsize=10)
+ax[1].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[1].set_ylabel(r"$z$ [$R_{earth}$]")
+ax[1].set_title('Density (Kg/m^3)')
+    
+plt.tight_layout()
+plt.show()
+
 
 ###############################################################################
 ########################## 2 layer planet #####################################
@@ -202,6 +257,63 @@ ax[1,1].plot(r/R_earth, T)
 ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
 ax[1,1].set_ylabel(r"$T$ $[K]$")
 
+plt.tight_layout()
+plt.show()
+
+# Let's convet it to a spining profile
+iterations = 5                               # Iterations to convergence
+r_array    = np.arange(0, 1.2*R, 1.2*R/1000) # Points at equatorial profile to find the solution
+z_array    = np.arange(0, 1.1*R, 1.1*R/1000) # Points at equatorial profile to find the solution
+Tw         = 4                               # Period of the planet [hours]
+
+P_c   = P[-1]                                # Pressure at the center
+P_s   = P[0]                                 # Pressure at the surface
+rho_c = rho[-1]                              # Density at the center
+rho_s = rho[0]                               # Density at the surface
+
+rho_i = 10000                                          # Density at boundary
+P_i   = (P[rho > rho_i][0] + P[rho < rho_i][-1])/2.    # Pressure at the boundary
+
+# Compute equatorial and polar profiles
+profile_e, profile_p = woma.spin2layer(iterations, r_array, z_array, r, rho, Tw,
+                                       P_c, P_i, P_s, rho_c, rho_s,
+                                       mat_id_core, T_rho_id_core, T_rho_args_core,
+                                       mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                       ucold_array_core, ucold_array_mantle)
+
+# Keep last iteration of the computation
+rho_e = profile_e[-1]
+rho_p = profile_p[-1]
+
+# Plot the results
+fig, ax = plt.subplots(1,2, figsize=(12,6))
+ax[0].scatter(r/R_earth, rho, label = 'original', s = 0.5)
+ax[0].scatter(r_array/R_earth, rho_e, label = 'equatorial profile', s = 1)
+ax[0].scatter(z_array/R_earth, rho_p, label = 'polar profile', s = 1)
+ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[0].set_ylabel(r"$\rho$ [$kg/m^3$]")
+ax[0].legend()
+
+
+r_array_coarse = np.arange(0, np.max(r_array), np.max(r_array)/100)
+z_array_coarse = np.arange(0, np.max(z_array), np.max(z_array)/100)
+rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+for i in range(rho_grid.shape[0]):
+    radius = r_array_coarse[i]
+    for j in range(rho_grid.shape[1]):
+        z = z_array_coarse[j]
+        rho_grid[i,j] = woma.rho_rz(radius, z, r_array, rho_e, z_array, rho_p)
+
+X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
+Z = rho_grid.T
+levels = np.arange(1000, 15000, 1000)
+ax[1].set_aspect('equal')
+CS = plt.contour(X, Y, Z, levels = levels)
+ax[1].clabel(CS, inline=1, fontsize=10)
+ax[1].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[1].set_ylabel(r"$z$ [$R_{earth}$]")
+ax[1].set_title('Density (Kg/m^3)')
+    
 plt.tight_layout()
 plt.show()
 
@@ -406,5 +518,65 @@ ax[1,1].plot(r/R_earth, T)
 ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
 ax[1,1].set_ylabel(r"$T$ $[K]$")
 
+plt.tight_layout()
+plt.show()
+
+# Let's convet it to a spining profile
+iterations = 5                               # Iterations to convergence
+r_array    = np.arange(0, 1.2*R, 1.2*R/1000) # Points at equatorial profile to find the solution
+z_array    = np.arange(0, 1.1*R, 1.1*R/1000) # Points at equatorial profile to find the solution
+Tw         = 4                               # Period of the planet [hours]
+
+P_c   = P[-1]                                # Pressure at the center
+P_s   = P[0]                                 # Pressure at the surface
+rho_c = rho[-1]                              # Density at the center
+rho_s = rho[0]                               # Density at the surface
+
+rho_cm = 10000                                          # Density at boundary core-mantle
+P_cm   = (P[rho > rho_cm][0] + P[rho < rho_cm][-1])/2.  # Pressure at the boundary core-mantle
+rho_ma = 2000                                           # Density at boundary core-mantle
+P_ma   = (P[rho > rho_ma][0] + P[rho < rho_ma][-1])/2.  # Pressure at the boundary core-mantle
+
+# Compute equatorial and polar profiles
+profile_e, profile_p = woma.spin3layer(iterations, r_array, z_array, r, rho, Tw,
+                                       P_c, P_cm, P_ma, P_s, rho_c, rho_s,
+                                       mat_id_core, T_rho_id_core, T_rho_args_core,
+                                       mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                                       mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                                       ucold_array_core, ucold_array_mantle, ucold_array_atm)
+
+# Keep last iteration of the computation
+rho_e = profile_e[-1]
+rho_p = profile_p[-1]
+
+# Plot the results
+fig, ax = plt.subplots(1,2, figsize=(12,6))
+ax[0].scatter(r/R_earth, rho, label = 'original', s = 0.5)
+ax[0].scatter(r_array/R_earth, rho_e, label = 'equatorial profile', s = 1)
+ax[0].scatter(z_array/R_earth, rho_p, label = 'polar profile', s = 1)
+ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[0].set_ylabel(r"$\rho$ [$kg/m^3$]")
+ax[0].legend()
+
+
+r_array_coarse = np.arange(0, np.max(r_array), np.max(r_array)/100)
+z_array_coarse = np.arange(0, np.max(z_array), np.max(z_array)/100)
+rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+for i in range(rho_grid.shape[0]):
+    radius = r_array_coarse[i]
+    for j in range(rho_grid.shape[1]):
+        z = z_array_coarse[j]
+        rho_grid[i,j] = woma.rho_rz(radius, z, r_array, rho_e, z_array, rho_p)
+
+X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
+Z = rho_grid.T
+levels = np.arange(1000, 15000, 1000)
+ax[1].set_aspect('equal')
+CS = plt.contour(X, Y, Z, levels = levels)
+ax[1].clabel(CS, inline=1, fontsize=10)
+ax[1].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[1].set_ylabel(r"$z$ [$R_{earth}$]")
+ax[1].set_title('Density (Kg/m^3)')
+    
 plt.tight_layout()
 plt.show()

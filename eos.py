@@ -5,51 +5,38 @@ Created on Mon Apr  1 10:38:18 2019
 
 @author: Sergio Ruiz-Bonilla
 """
+###############################################################################
+####################### Libraries and constants ###############################
+###############################################################################
 
 import numpy as np
-import scipy.integrate
-from numba import jit, njit
-from mpi4py import MPI
-import time
-import sys
-from scipy.interpolate import interp1d
-import os
-import pandas as pd
-import matplotlib.pyplot as plt
-path = '/home/sergio/Documents/SpiPGen/'
-os.chdir(path)
+from numba import jit
 
-import seagen
-import swift_io
-import h5py
-
-# Global constants
-G = 6.67408E-11;
+G       = 6.67408E-11;
 R_earth = 6371000;
 M_earth = 5.972E24;
 
-# //////////////////////////////////////////////////////////////////////////// #
-#                              II. Functions                                   #
-# //////////////////////////////////////////////////////////////////////////// #
+###############################################################################
+############################### Functions #####################################
+###############################################################################
 
 @jit(nopython=True)
 def _P_EoS_Till(u, rho, mat_id):
-    """
-    Computes pressure for Tillotson EoS.
+    """ Computes pressure for Tillotson EoS.
     
-    Args:
-        u (double)
-            Internal energy (SI).
+        Args:
+            u (double)
+                Internal energy (SI).
+                
+            rho (double) 
+                Density (SI).
             
-        rho (double) 
-            Density (SI).
-        
-        mat_id ([int])
-            Material id.
-            
-    Returns:
-        P (double)
-            Pressure (SI).
+            mat_id ([int])
+                Material id.
+                
+        Returns:
+            P (double)
+                Pressure (SI).
     """
     # Material constants for Tillotson EoS
     # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min
@@ -124,22 +111,21 @@ def _P_EoS_Till(u, rho, mat_id):
 
 @jit(nopython=True)
 def P_EoS(u, rho, mat_id):
-    """
-    Computes pressure for Tillotson EoS.
+    """ Computes pressure for a given material.
     
-    Args:
-        u (double)
-            Internal energy (SI).
+        Args:
+            u (double)
+                Internal energy (SI).
+                
+            rho (double) 
+                Density (SI).
             
-        rho (double) 
-            Density (SI).
-        
-        mat_id ([int])
-            Material id.
-            
-    Returns:
-        P (double)
-            Pressure (SI).
+            mat_id ([int])
+                Material id.
+                
+        Returns:
+            P (double)
+                Pressure (SI).
     """
     if (mat_id == 100):
         return _P_EoS_Till(u, rho, mat_id)
@@ -153,19 +139,23 @@ def P_EoS(u, rho, mat_id):
 
 @jit(nopython=True)
 def _rho0_material(mat_id):
-    """Returns rho_0 for a given material id
+    """ Returns rho_0 for a given material id. u_{cold}(rho_0) = 0
     
-    Args:          
-        mat_id ([int])
-            Material id.
+        Args:          
+            mat_id ([int])
+                Material id.
+                
+        Returns:
+            rho0 (double)
+                Density (SI).
     
     """
     if (mat_id == 100):     # Tillotson iron
-        return 7800
+        return 7800.
     elif (mat_id == 101):   # Tillotson granite   
-        return 2680
+        return 2680.
     elif (mat_id == 102):   # Tillotson water
-        return 998
+        return 998.
     elif (mat_id == 200):   # H&M80 H-He atmosphere
         return None
     elif (mat_id == 201):   # H&M80 H-He ice mix
@@ -173,24 +163,28 @@ def _rho0_material(mat_id):
     elif (mat_id == 202):   # H&M80 H-He rock mix
         return None
     elif (mat_id == 300):   # SESAME iron
-        return 7902
+        return 7902.
     elif (mat_id == 301):   # SESAME basalt
-        return 2902
+        return 2902.
     elif (mat_id == 302):   # SESAME water
-        return 1402
+        return 1402.
     elif (mat_id == 303):   # SS08 like-SESAME water
-        return 1002
+        return 1002.
     else:
         print("Material not implemented")
         return None
     
 @jit(nopython=True)
 def _spec_c(mat_id):
-    """Returns specific capacity for a given material id
+    """ Returns specific capacity for a given material id (SI)
     
-    Args:          
-        mat_id ([int])
-            Material id.
+        Args:          
+            mat_id ([int])
+                Material id.
+                
+        Returns:
+            c (double)
+                Capacity (SI).
     
     """
     if (mat_id == 100):     # Tillotson iron
@@ -219,22 +213,21 @@ def _spec_c(mat_id):
     
 @jit(nopython=True)
 def ucold(rho, mat_id, N):
-    """
-    Computes internal energy cold.
+    """ Computes internal energy cold.
     
-    Args:          
-        rho (float) 
-            Density (SI).
-        
-        mat_id ([int])
-            Material id.
+        Args:          
+            rho (float) 
+                Density (SI).
             
-        N (int)
-            Number of subdivisions for the numerical integral.
-            
-    Returns:
-        uc (float)
-            Cold internal energy (SI).
+            mat_id ([int])
+                Material id.
+                
+            N (int)
+                Number of subdivisions for the numerical integral.
+                
+        Returns:
+            uc (float)
+                Cold internal energy (SI).
     """
 
     rho0 = _rho0_material(mat_id)
@@ -250,21 +243,20 @@ def ucold(rho, mat_id, N):
 
 @jit(nopython=True)
 def T_rho(rho, T_rho_id, T_rho_args):
-    """
-    Computes temperature given density (T = f(rho)).
+    """ Computes temperature given density (T = f(rho)).
     
-    Args:
-        rho (float)
-            Density (SI).
-            
-        T_rho_id (int)
-            Relation between T and rho to be used.
-            
-        T_rho_args (list):
-            Extra arguments to determine the relation
-            
-    Returns:
-        Temperature (SI)
+        Args:
+            rho (float)
+                Density (SI).
+                
+            T_rho_id (int)
+                Relation between T and rho to be used.
+                
+            T_rho_args (list):
+                Extra arguments to determine the relation.
+                
+        Returns:
+            Temperature (SI)
             
     """
     if (T_rho_id == 1):  # T = K*rho**alpha, T_rho_args = [K, alpha]
@@ -279,27 +271,26 @@ def T_rho(rho, T_rho_id, T_rho_args):
 
 @jit(nopython=True)
 def P_rho(rho, mat_id, T_rho_id, T_rho_args):
-    """
-    Computes pressure using Tillotson EoS, and
-    internal energy = internal energy cold + c*Temperature 
-    (which depends on rho and the relation between temperature and density).
-    
-    Args:          
-        rho (float) 
-            Density (SI).
+    """ Computes pressure using Tillotson EoS, and
+        internal energy = internal energy cold + c*Temperature 
+        (which depends on rho and the relation between temperature and density).
         
-        mat_id ([float])
-            Material id.
+        Args:          
+            rho (float) 
+                Density (SI).
             
-        T_rho_id (int)
-            Relation between T and rho to be used.
-            
-        T_rho_args (list):
-            Extra arguments to determine the relation
-            
-    Returns:
-        P (float):
-            Pressure (SI).
+            mat_id ([float])
+                Material id.
+                
+            T_rho_id (int)
+                Relation between T and rho to be used.
+                
+            T_rho_args (list):
+                Extra arguments to determine the relation
+                
+        Returns:
+            P (float):
+                Pressure (SI).
     """
     
     N = 10000
@@ -311,16 +302,16 @@ def P_rho(rho, mat_id, T_rho_id, T_rho_args):
 
 @jit(nopython=True)
 def _create_ucold_array(mat_id):
-    """
-    Computes values of the cold internal energy and stores it to save 
-    computation time in future calculations.
-    
-    Args:
-        mat_id (int):
-            Material id.
-            
-    Returns:
-        ucold_array ([float])
+    """ Computes values of the cold internal energy and stores it to save 
+        computation time in future calculations.
+        It ranges from density = 100 kg/m^3 to 100000 kg/m^3
+        
+        Args:
+            mat_id (int):
+                Material id.
+                
+        Returns:
+            ucold_array ([float])
     """
 
     nrow = 10000
@@ -341,21 +332,20 @@ def _create_ucold_array(mat_id):
 
 @jit(nopython=True)
 def _ucold_tab(rho, ucold_array):
-    """
-    Fast computation of cold internal energy using the table previously
-    computed.
+    """ Fast computation of cold internal energy using the table previously
+        computed.
     
-    Args:
-        rho (float):
-            Density (SI).
-            
-        ucold_array ([float])
-            Precomputed values of cold internal energy for a particular material
-            with function _create_ucold_array() (SI).
-            
-    Returns:
-        interpolation (float):
-            cold internal energy (SI).
+        Args:
+            rho (float):
+                Density (SI).
+                
+            ucold_array ([float])
+                Precomputed values of cold internal energy for a particular material
+                with function _create_ucold_array() (SI).
+                
+        Returns:
+            interpolation (float):
+                cold internal energy (SI).
     """
 
     nrow = ucold_array.shape[0]
@@ -381,53 +371,52 @@ def _ucold_tab(rho, ucold_array):
 
 @jit(nopython=True)
 def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
-    """
-    Root finder of the density for Tillotson EoS using 
-    tabulated values of cold internal energy
-    
-    Args:
-        Ps (float):
-            Pressure (SI).
-            
-        mat_id (int):
-            Material id (SI).
+    """ Root finder of the density for EoS using 
+        tabulated values of cold internal energy
         
-        T_rho_id (int)
-            Relation between T and rho to be used.
+        Args:
+            Ps (float):
+                Pressure (SI).
+                
+            mat_id (int):
+                Material id.
             
-        T_rho_args (list):
-            Extra arguments to determine the relation
+            T_rho_id (int)
+                Relation between T and rho to be used.
+                
+            T_rho_args (list):
+                Extra arguments to determine the relation.
+                
+            rho0 (float):
+                Lower bound for where to look the root (SI).
+                
+            rho1 (float):
+                Upper bound for where to look the root (SI).
             
-        rho0 (float):
-            Lower bound for where to look the root (SI).
-            
-        rho1 (float):
-            Upper bound for where to look the root (SI).
-        
-        ucold_array ([float])
-            Precomputed values of cold internal energy
-            with function _create_ucold_array() (SI).
-            
-    Returns:
-        rho2 (float):
-            Value of the density which satisfies P(u(rho), rho) = 0 
-            (SI).
+            ucold_array ([float])
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() (SI).
+                
+        Returns:
+            rho2 (float):
+                Value of the density which satisfies P(u(rho), rho) = 0 
+                (SI).
     """
 
-    c = _spec_c(mat_id)
+    c         = _spec_c(mat_id)
     tolerance = 1E-5
     
-    u0 = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
-    P0 = P_EoS(u0, rho0, mat_id)
-    u1 = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
-    P1 = P_EoS(u1, rho1, mat_id)
+    u0   = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
+    P0   = P_EoS(u0, rho0, mat_id)
+    u1   = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
+    P1   = P_EoS(u1, rho1, mat_id)
     rho2 = (rho0 + rho1)/2.
-    u2 = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
-    P2 = P_EoS(u2, rho2, mat_id)
+    u2   = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
+    P2   = P_EoS(u2, rho2, mat_id)
     
     rho_aux = rho0 + 1e-6
-    u_aux = _ucold_tab(rho_aux, ucold_array) + c*T_rho(rho_aux, T_rho_id, T_rho_args)
-    P_aux = P_EoS(u_aux, rho_aux, mat_id)
+    u_aux   = _ucold_tab(rho_aux, ucold_array) + c*T_rho(rho_aux, T_rho_id, T_rho_args)
+    P_aux   = P_EoS(u_aux, rho_aux, mat_id)
 
     if ((P0 < Ps and Ps < P1) or (P0 > Ps and Ps > P1)):
         while np.abs(rho1 - rho0) > tolerance:
@@ -488,60 +477,36 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
 
 @jit(nopython=True)
 def _find_rho_fixed_T(Ps, mat_id, Ts, rho0, rho1, ucold_array):
-    """
-    Root finder of the density for Tillotson EoS using 
-    tabulated values of cold internal energy
-    
-    Args:
-        Ps (float):
-            Pressure (SI).
-            
-        mat_id (int):
-            Material id (SI).
+    """ Root finder of the density for EoS using 
+        tabulated values of cold internal energy
         
-        Ts (float):
-            Temperature (SI)
+        Args:
+            Ps (float):
+                Pressure (SI).
+                
+            mat_id (int):
+                Material id (SI).
             
-        rho0 (float):
-            Lower bound for where to look the root (SI).
+            Ts (float):
+                Temperature (SI)
+                
+            rho0 (float):
+                Lower bound for where to look the root (SI).
+                
+            rho1 (float):
+                Upper bound for where to look the root (SI).
             
-        rho1 (float):
-            Upper bound for where to look the root (SI).
-        
-        ucold_array ([float])
-            Precomputed values of cold internal energy
-            with function _create_ucold_array() (SI).
-            
-    Returns:
-        rho2 (float):
-            Value of the density which satisfies P(u(rho), rho) = 0 
-            (SI).
+            ucold_array ([float])
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() (SI).
+                
+        Returns:
+            rho2 (float):
+                Value of the density which satisfies P(u(rho), rho) = 0 
+                (SI).
     """
 
     return _find_rho(Ps, mat_id, 1, [Ts, 0], rho0, rho1, ucold_array)
-
-"""
-# find rho_0 for a material
-import matplotlib.pyplot as plt
-
-ucold_array_101 = _create_ucold_array(101)
-
-drho = (100000-100)/9999
-rho = np.arange(100, 100000 + drho, drho)
-
-plt.scatter(rho, ucold_array_101, s=1)
-plt.show()
-
-ucold_model     = interp1d(rho, ucold_array_101)
-ucold_model_inv = interp1d(ucold_array_101, rho)
-
-ucold_model(100)
-ucold_model_inv(1)
-"""
-
-
-
-
 
 
 
