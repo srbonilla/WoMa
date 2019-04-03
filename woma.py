@@ -1698,6 +1698,33 @@ def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     
 @jit(nopython=False)
 def _fillV(r_array, rho_e, z_array, rho_p, Tw):
+    """ Computes the potential at every point of the equatorial and polar profiles.
+        
+        Args:
+            
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_p ([float]):
+                Polar profile of densities (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+                
+        Returns:
+            
+            V_e ([float]):
+                Equatorial profile of the potential (SI).
+                
+            V_p ([float]):
+                Polar profile of the potential (SI).
+    """
     
     if r_array.shape[0] != rho_e.shape[0] or z_array.shape[0] != rho_p.shape[0]:
         print("dimension error.\n")
@@ -1736,6 +1763,56 @@ def _fillV(r_array, rho_e, z_array, rho_p, Tw):
 @jit(nopython=True)
 def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
              mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core):
+    """ Compute densities of equatorial and polar profiles given the potential
+        for a 1 layer planet.
+        
+        Args:
+            
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            V_e ([float]):
+                Equatorial profile of potential (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            V_p ([float]):
+                Polar profile of potential (SI).
+                
+            P_c (float):
+                Pressure at the center of the planet (SI).
+                
+            P_s (float):
+                Pressure at the surface of the planet (SI).
+                
+            rho_c (float):
+                Density at the center of the planet (SI).
+                
+            rho_s (float):
+                Density at the surface of the planet (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+        Returns:
+            
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+                
+            rho_p ([float]):
+                Polar profile of densities (SI).
+    """
     
     P_e = np.zeros(V_e.shape[0])
     P_p = np.zeros(V_p.shape[0])
@@ -1778,6 +1855,62 @@ def spin1layer(iterations, r_array, z_array, radii, densities, Tw,
                P_c, P_s, rho_c, rho_s,
                mat_id_core, T_rho_id_core, T_rho_args_core,
                ucold_array_core):
+    """ Compute spining profile of densities for a 1 layer planet.
+    
+        Args:
+            
+            iterations (int):
+                Number of iterations to run.
+                
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            radii ([float]):
+                Radii of the spherical profile (SI).
+                
+            densities ([float]):
+                Densities of the spherical profile (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+                
+            P_c (float):
+                Pressure at the center of the planet (SI).
+                
+            P_s (float):
+                Pressure at the surface of the planet (SI).
+                
+            rho_c (float):
+                Density at the center of the planet (SI).
+                
+            rho_s (float):
+                Density at the surface of the planet (SI).
+            
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+        Returns:
+            
+            profile_e ([[float]]):
+                List of the iterations of the equatorial density profile (SI).
+                
+            profile_p ([[float]]):
+                List of the iterations of the polar density profile (SI).
+    
+    """
         
     spherical_model = interp1d(radii, densities, bounds_error=False, fill_value=0)
 
@@ -1803,6 +1936,86 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
                            ucold_array_core, N_neig):
     
+    """ Particle placement for a 1 layer spining profile.
+    
+        Args:
+            
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_p ([float]):
+                Polar profile of densities (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+                
+            N (int):
+                Number of particles.
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            N_neig (int):
+                Number of neighbors in the SPH simulation.
+            
+        Returns:
+            
+            x ([float]):
+                Position x of each particle (SI).
+                
+            y ([float]):
+                Position y of each particle (SI).
+                
+            z ([float]):
+                Position z of each particle (SI).
+                
+            vx ([float]):
+                Velocity in x of each particle (SI).
+                
+            vy ([float]):
+                Velocity in y of each particle (SI).
+                
+            vz ([float]):
+                Velocity in z of each particle (SI).
+                
+            m ([float]):
+                Mass of every particle (SI).
+                
+            h ([float]):
+                Smoothing lenght for every particle (SI).
+                
+            rho ([float]):
+                Density for every particle (SI).
+                
+            P ([float]):
+                Pressure for every particle (SI).
+                
+            u ([float]):
+                Internal energy for every particle (SI).
+            
+            mat_id ([int]):
+                Material id for every particle.
+                
+            id ([int]):
+                Identifier for every particle
+            
+    """
     rho_e_model = interp1d(r_array, rho_e)
     
     rho_e_model_inv = interp1d(rho_e, r_array)
@@ -1824,12 +2037,6 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     
     zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
 
-    """ 
-    plt.scatter(particles.z/R_earth, zP/particles.z, s = 0.01, c = 'red')
-    plt.xlabel(r"$z$ $[R_{earth}]$")
-    plt.ylabel(r"$z'/z$")
-    plt.show()
-    """
     # Tweek masses
     mP = particles.m*zP/particles.z
     print("\nx, y, z, and m computed\n")
@@ -1857,21 +2064,23 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     #ucold_array_core = spipgen_v2._create_ucold_array(mat_id_core)
     c_core = eos._spec_c(mat_id_core)
     
+    P = np.zeros((mP.shape[0],))
+    
     for k in range(mP.shape[0]):
-        u[k] = eos._ucold_tab(particles_rho[k], ucold_array_core)
-        u[k] = u[k] + c_core*eos.T_rho(particles_rho[k], T_rho_id_core, T_rho_args_core)
+        u[k] = eos._ucold_tab(rho[k], ucold_array_core)
+        u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
+        P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
     
     print("Internal energy u computed\n")
     ## Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
-    A1_h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
+    h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
     
-    A1_P = np.ones((mP.shape[0],)) # not implemented (not necessary)
-    A1_id = np.arange(mP.shape[0])
+    A1_id     = np.arange(mP.shape[0])
     A1_mat_id = np.ones((mP.shape[0],))*mat_id_core
     
-    return x, y, zP, vx, vy, vz, mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id
+    return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
 
 ############################## 2 layers #######################################
     
@@ -1879,6 +2088,72 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
 def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
              mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
              mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle, ucold_array_mantle):
+    """ Compute densities of equatorial and polar profiles given the potential
+        for a 2 layer planet.
+        
+        Args:
+            
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            V_e ([float]):
+                Equatorial profile of potential (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            V_p ([float]):
+                Polar profile of potential (SI).
+                
+            P_c (float):
+                Pressure at the center of the planet (SI).
+                
+            P_i (float):
+                Pressure at the boundary of the planet (SI).
+                
+            P_s (float):
+                Pressure at the surface of the planet (SI).
+                
+            rho_c (float):
+                Density at the center of the planet (SI).
+                
+            rho_s (float):
+                Density at the surface of the planet (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+        Returns:
+            
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+                
+            rho_p ([float]):
+                Polar profile of densities (SI).
+    """
     
     P_e = np.zeros(V_e.shape[0])
     P_p = np.zeros(V_p.shape[0])
@@ -1932,7 +2207,79 @@ def spin2layer(iterations, r_array, z_array, radii, densities, Tw,
                mat_id_core, T_rho_id_core, T_rho_args_core,
                mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                ucold_array_core, ucold_array_mantle):
-        
+    """ Compute spining profile of densities for a 2 layer planet.
+    
+        Args:
+            
+            iterations (int):
+                Number of iterations to run.
+                
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            radii ([float]):
+                Radii of the spherical profile (SI).
+                
+            densities ([float]):
+                Densities of the spherical profile (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+                
+            P_c (float):
+                Pressure at the center of the planet (SI).
+                
+            P_i (float):
+                Pressure at the boundary of the planet (SI).
+                
+            P_s (float):
+                Pressure at the surface of the planet (SI).
+                
+            rho_c (float):
+                Density at the center of the planet (SI).
+                
+            rho_s (float):
+                Density at the surface of the planet (SI).
+            
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+        Returns:
+            
+            profile_e ([[float]]):
+                List of the iterations of the equatorial density profile (SI).
+                
+            profile_p ([[float]]):
+                List of the iterations of the polar density profile (SI).
+    
+    """    
+    
     spherical_model = interp1d(radii, densities, bounds_error=False, fill_value=0)
 
     rho_e = spherical_model(r_array)
@@ -1958,15 +2305,109 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                            ucold_array_core, ucold_array_mantle, N_neig=48):
+    """ Particle placement for a 2 layer spining profile.
+    
+        Args:
+            
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_p ([float]):
+                Polar profile of densities (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+                
+            N (int):
+                Number of particles.
+                
+            rho_i (float):
+                Density at the boundary (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+            N_neig (int):
+                Number of neighbors in the SPH simulation.
+            
+        Returns:
+            
+            x ([float]):
+                Position x of each particle (SI).
+                
+            y ([float]):
+                Position y of each particle (SI).
+                
+            z ([float]):
+                Position z of each particle (SI).
+                
+            vx ([float]):
+                Velocity in x of each particle (SI).
+                
+            vy ([float]):
+                Velocity in y of each particle (SI).
+                
+            vz ([float]):
+                Velocity in z of each particle (SI).
+                
+            m ([float]):
+                Mass of every particle (SI).
+                
+            h ([float]):
+                Smoothing lenght for every particle (SI).
+                
+            rho ([float]):
+                Density for every particle (SI).
+                
+            P ([float]):
+                Pressure for every particle (SI).
+                
+            u ([float]):
+                Internal energy for every particle (SI).
+            
+            mat_id ([int]):
+                Material id for every particle.
+                
+            id ([int]):
+                Identifier for every particle
+            
+    """
     
     rho_e_model = interp1d(r_array, rho_e)
-    #rho_p_model = interp1d(z_array, rho_p)
     
     rho_e_model_inv = interp1d(rho_e, r_array)
     rho_p_model_inv = interp1d(rho_p, z_array)
 
     Re = np.max(r_array[rho_e > 0])
-    #rho_model = RectBivariateSpline(r_array, z_array, rho_grid, kx = 1, ky = 1)
 
     radii = np.arange(0, Re, Re/1000000)
     densities = rho_e_model(radii)
@@ -1982,12 +2423,6 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     
     zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
 
-    """ 
-    plt.scatter(particles.z/R_earth, zP/particles.z, s = 0.01, c = 'red')
-    plt.xlabel(r"$z$ $[R_{earth}]$")
-    plt.ylabel(r"$z'/z$")
-    plt.show()
-    """
     # Tweek masses
     mP = particles.m*zP/particles.z
     print("\nx, y, z, and m computed\n")
@@ -2012,29 +2447,32 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     
     print("vx, vy, and vz computed\n")
     
-    #ucold_array_core = spipgen_v2._create_ucold_array(mat_id_core)
     c_core = eos._spec_c(mat_id_core)
     c_mantle = eos._spec_c(mat_id_mantle)
     
+    P = np.zeros((mP.shape[0],))
+    
     for k in range(mP.shape[0]):
         if particles_rho[k] > rho_i:
-            u[k] = eos._ucold_tab(particles_rho[k], ucold_array_core)
-            u[k] = u[k] + c_core*eos.T_rho(particles_rho[k], T_rho_id_core, T_rho_args_core)
+            u[k] = eos._ucold_tab(rho[k], ucold_array_core)
+            u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
+            P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
         else:
             u[k] = eos._ucold_tab(rho[k], ucold_array_mantle)
-            u[k] = u[k] + c_mantle*eos.T_rho(particles_rho[k], T_rho_id_mantle, T_rho_args_mantle)
+            u[k] = u[k] + c_mantle*eos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
+            P[k] = eos.P_EoS(u[k], rho[k], mat_id_mantle)
     
     print("Internal energy u computed\n")
+    
     ## Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
-    A1_h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
+    h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
     
-    A1_P = np.ones((mP.shape[0],)) # not implemented (not necessary)
     A1_id = np.arange(mP.shape[0])
     A1_mat_id = (rho > rho_i)*mat_id_core + (rho <= rho_i)*mat_id_mantle
     
-    return x, y, zP, vx, vy, vz, mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id
+    return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
 
 ############################## 3 layers #######################################
     
@@ -2043,6 +2481,88 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
              mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
              mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle, ucold_array_mantle,
              mat_id_atm, T_rho_id_atm, T_rho_args_atm, ucold_array_atm):
+    """ Compute densities of equatorial and polar profiles given the potential
+        for a 3 layer planet.
+        
+        Args:
+            
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            V_e ([float]):
+                Equatorial profile of potential (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            V_p ([float]):
+                Polar profile of potential (SI).
+                
+            P_c (float):
+                Pressure at the center of the planet (SI).
+                
+            P_cm (float):
+                Pressure at the boundary core-mantle of the planet (SI).
+                
+            P_ma (float):
+                Pressure at the boundary mantle-atmosphere of the planet (SI).
+                
+            P_s (float):
+                Pressure at the surface of the planet (SI).
+                
+            rho_c (float):
+                Density at the center of the planet (SI).
+                
+            rho_s (float):
+                Density at the surface of the planet (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+            mat_id_atm (int):
+                Material id for the atmosphere.
+                
+            T_rho_id_atm (int)
+                Relation between T and rho to be used at the atmosphere.
+                
+            T_rho_args_atm (list):
+                Extra arguments to determine the relation at the atmosphere.
+                
+            ucold_array_atm ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the atmosphere (SI).
+                
+        Returns:
+            
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+                
+            rho_p ([float]):
+                Polar profile of densities (SI).
+    """
     
     P_e = np.zeros(V_e.shape[0])
     P_p = np.zeros(V_p.shape[0])
@@ -2058,7 +2578,6 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
         gradV = V_e[i + 1] - V_e[i]
         gradP = -rho_e[i]*gradV
         P_e[i + 1] = P_e[i] + gradP
-        #print(i)
             
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_cm:
             rho_e[i + 1] = eos._find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
@@ -2105,7 +2624,94 @@ def spin3layer(iterations, r_array, z_array, radii, densities, Tw,
                mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                ucold_array_core, ucold_array_mantle, ucold_array_atm):
-        
+    """ Compute spining profile of densities for a 3 layer planet.
+    
+        Args:
+            
+            iterations (int):
+                Number of iterations to run.
+                
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            radii ([float]):
+                Radii of the spherical profile (SI).
+                
+            densities ([float]):
+                Densities of the spherical profile (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+                
+            P_c (float):
+                Pressure at the center of the planet (SI).
+                
+            P_cm (float):
+                Pressure at the boundary core-mantle of the planet (SI).
+                
+            P_ma (float):
+                Pressure at the boundary mantle-atmosphere of the planet (SI).
+                
+            P_s (float):
+                Pressure at the surface of the planet (SI).
+                
+            rho_c (float):
+                Density at the center of the planet (SI).
+                
+            rho_s (float):
+                Density at the surface of the planet (SI).
+            
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            mat_id_atm (int):
+                Material id for the atmosphere.
+                
+            T_rho_id_atm (int)
+                Relation between T and rho to be used at the atmosphere.
+                
+            T_rho_args_atm (list):
+                Extra arguments to determine the relation at the atmosphere.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+            ucold_array_atm ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the atmosphere (SI).
+                
+        Returns:
+            
+            profile_e ([[float]]):
+                List of the iterations of the equatorial density profile (SI).
+                
+            profile_p ([[float]]):
+                List of the iterations of the polar density profile (SI).
+    
+    """    
     spherical_model = interp1d(radii, densities, bounds_error=False, fill_value=0)
 
     rho_e = spherical_model(r_array)
@@ -2135,15 +2741,124 @@ def _picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_m
                             mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                             ucold_array_core, ucold_array_mantle, ucold_array_atm,
                             N_neig=48):
+    """ Particle placement for a 2 layer spining profile.
     
+        Args:
+            
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+                
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+                
+            rho_p ([float]):
+                Polar profile of densities (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+                
+            N (int):
+                Number of particles.
+                
+            rho_cm (float):
+                Density at the boundary core-mantle (SI).
+                
+            rho_ma (float):
+                Density at the boundary mantle-atmosphere (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            mat_id_atm (int):
+                Material id for the atmosphere.
+                
+            T_rho_id_atm (int)
+                Relation between T and rho to be used at the atmosphere.
+                
+            T_rho_args_atm (list):
+                Extra arguments to determine the relation at the atmosphere.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+            ucold_array_atm ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the atmosphere (SI).
+                
+            N_neig (int):
+                Number of neighbors in the SPH simulation.
+            
+        Returns:
+            
+            x ([float]):
+                Position x of each particle (SI).
+                
+            y ([float]):
+                Position y of each particle (SI).
+                
+            z ([float]):
+                Position z of each particle (SI).
+                
+            vx ([float]):
+                Velocity in x of each particle (SI).
+                
+            vy ([float]):
+                Velocity in y of each particle (SI).
+                
+            vz ([float]):
+                Velocity in z of each particle (SI).
+                
+            m ([float]):
+                Mass of every particle (SI).
+                
+            h ([float]):
+                Smoothing lenght for every particle (SI).
+                
+            rho ([float]):
+                Density for every particle (SI).
+                
+            P ([float]):
+                Pressure for every particle (SI).
+                
+            u ([float]):
+                Internal energy for every particle (SI).
+            
+            mat_id ([int]):
+                Material id for every particle.
+                
+            id ([int]):
+                Identifier for every particle
+            
+    """
     rho_e_model = interp1d(r_array, rho_e)
-    #rho_p_model = interp1d(z_array, rho_p)
     
     rho_e_model_inv = interp1d(rho_e, r_array)
     rho_p_model_inv = interp1d(rho_p, z_array)
 
     Re = np.max(r_array[rho_e > 0])
-    #rho_model = RectBivariateSpline(r_array, z_array, rho_grid, kx = 1, ky = 1)
 
     radii = np.arange(0, Re, Re/1000000)
     densities = rho_e_model(radii)
@@ -2159,12 +2874,6 @@ def _picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_m
     
     zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
 
-    """ 
-    plt.scatter(particles.z/R_earth, zP/particles.z, s = 0.01, c = 'red')
-    plt.xlabel(r"$z$ $[R_{earth}]$")
-    plt.ylabel(r"$z'/z$")
-    plt.show()
-    """
     # Tweek masses
     mP = particles.m*zP/particles.z
     print("\nx, y, z, and m computed\n")
@@ -2189,34 +2898,37 @@ def _picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_m
     
     print("vx, vy, and vz computed\n")
     
-    #ucold_array_core = spipgen_v2._create_ucold_array(mat_id_core)
     c_core    = eos._spec_c(mat_id_core)
     c_mantle  = eos._spec_c(mat_id_mantle)
     c_atm     = eos._spec_c(mat_id_atm)
     
+    P = np.zeros((mP.shape[0],))
+    
     for k in range(mP.shape[0]):
         if particles_rho[k] > rho_cm:
-            u[k] = eos._ucold_tab(particles_rho[k], ucold_array_core)
-            u[k] = u[k] + c_core*eos.T_rho(particles_rho[k], T_rho_id_core, T_rho_args_core)
+            u[k] = eos._ucold_tab(rho[k], ucold_array_core)
+            u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
+            P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
             
         elif particles_rho[k] > rho_ma:
-            u[k] = eos._ucold_tab(particles_rho[k], ucold_array_mantle)
-            u[k] = u[k] + c_mantle*eos.T_rho(particles_rho[k], T_rho_id_mantle, T_rho_args_mantle)
+            u[k] = eos._ucold_tab(rho[k], ucold_array_mantle)
+            u[k] = u[k] + c_mantle*eos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
+            P[k] = eos.P_EoS(u[k], rho[k], mat_id_mantle)
             
         else:
             u[k] = eos._ucold_tab(rho[k], ucold_array_atm)
-            u[k] = u[k] + c_atm*eos.T_rho(particles_rho[k], T_rho_id_atm, T_rho_args_atm)
+            u[k] = u[k] + c_atm*eos.T_rho(rho[k], T_rho_id_atm, T_rho_args_atm)
+            P[k] = eos.P_EoS(u[k], rho[k], mat_id_atm)
     
     print("Internal energy u computed\n")
     ## Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
-    A1_h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
+    h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
     
-    A1_P = np.ones((mP.shape[0],)) # not implemented (not necessary)
     A1_id = np.arange(mP.shape[0])
     A1_mat_id = (rho > rho_cm)*mat_id_core                       \
                 + np.logical_and(rho <= rho_cm, rho > rho_ma)*mat_id_mantle \
                 + (rho < rho_ma)*mat_id_atm
     
-    return x, y, zP, vx, vy, vz, mP, A1_h, rho, A1_P, u, A1_id, A1_mat_id
+    return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id 
