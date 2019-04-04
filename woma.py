@@ -2036,9 +2036,10 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     Z = rho_p_model_inv(particles_rho)
     
     zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
-
+    
     # Tweek masses
     mP = particles.m*zP/particles.z
+    
     print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
@@ -2061,7 +2062,6 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     
     print("vx, vy, and vz computed\n")
     
-    #ucold_array_core = spipgen_v2._create_ucold_array(mat_id_core)
     c_core = eos._spec_c(mat_id_core)
     
     P = np.zeros((mP.shape[0],))
@@ -2075,7 +2075,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     ## Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
-    h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
+    h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge 
     
     A1_id     = np.arange(mP.shape[0])
     A1_mat_id = np.ones((mP.shape[0],))*mat_id_core
@@ -2735,12 +2735,12 @@ def spin3layer(iterations, r_array, z_array, radii, densities, Tw,
     return profile_e, profile_p
 
 
-def _picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
-                            mat_id_core, T_rho_id_core, T_rho_args_core,
-                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                            mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                            ucold_array_core, ucold_array_mantle, ucold_array_atm,
-                            N_neig=48):
+def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
+                           mat_id_core, T_rho_id_core, T_rho_args_core,
+                           mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                           mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                           ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                           N_neig=48):
     """ Particle placement for a 2 layer spining profile.
     
         Args:

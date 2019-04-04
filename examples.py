@@ -84,9 +84,9 @@ plt.tight_layout()
 plt.show()
 
 # Let's convet it to a spining profile
-iterations = 5                               # Iterations to convergence
-r_array    = np.arange(0, 1.2*R, 1.2*R/1000) # Points at equatorial profile to find the solution
-z_array    = np.arange(0, 1.1*R, 1.1*R/1000) # Points at equatorial profile to find the solution
+iterations = 10                              # Iterations to convergence
+r_array    = np.linspace(0, 1.2*R, 1000)     # Points at equatorial profile to find the solution
+z_array    = np.linspace(0, 1.2*R, 1000)     # Points at equatorial profile to find the solution
 Tw         = 4                               # Period of the planet [hours]
 
 P_c   = P[-1]                                # Pressure at the center
@@ -169,9 +169,16 @@ b_cm = woma.find_boundary_2layer(N, R, M, Ps, Ts,
                      rhos_min, rhos_max,
                      ucold_array_core, ucold_array_mantle)
 
+# Slighly tweek the mass of the planet to avoid peeks at the center
+M_tweek = woma.find_mass_2layer(N, R, 2*M, Ps, Ts, b_cm,
+                     mat_id_core, T_rho_id_core, T_rho_args_core,
+                     mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                     rhos_min, rhos_max,
+                     ucold_array_core, ucold_array_mantle)
+
 # Compute the whole profile
 r, m, P, T, rho, u, mat = \
-    woma.integrate_2layer(N, R, M, Ps, Ts, b_cm,
+    woma.integrate_2layer(N, R, M_tweek, Ps, Ts, b_cm,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      rhos_min, rhos_max,
@@ -216,7 +223,7 @@ T_rho_id_mantle   = 1.                     # Relation between density and temper
 T_rho_args_mantle = [np.nan, 0.]           # Extra arguments for the above relation 
 rhos_min          = 2000.                  # Lower bound for the density at the surface
 rhos_max          = 3000.                  # Upper bound for the density at the surface
-b_cm              = 0.42*R_earth           # Boundary core-mantle
+b_cm              = 0.426*R_earth          # Boundary core-mantle
 
 # Load precomputed values of cold internal energy
 ucold_array_core   = woma.load_ucold_array(mat_id_core)
@@ -260,9 +267,9 @@ plt.tight_layout()
 plt.show()
 
 # Let's convet it to a spining profile
-iterations = 5                               # Iterations to convergence
-r_array    = np.arange(0, 1.2*R, 1.2*R/1000) # Points at equatorial profile to find the solution
-z_array    = np.arange(0, 1.1*R, 1.1*R/1000) # Points at equatorial profile to find the solution
+iterations = 10                               # Iterations to convergence
+r_array    = np.linspace(0, 1.2*R, 1000)     # Points at equatorial profile to find the solution
+z_array    = np.linspace(0, 1.1*R, 1000)     # Points at equatorial profile to find the solution
 Tw         = 4                               # Period of the planet [hours]
 
 P_c   = P[-1]                                # Pressure at the center
@@ -355,9 +362,17 @@ b_cm, b_ma = woma.find_boundaries_3layer(N, R, M, Ps, Ts, MoI,
                      rhos_min, rhos_max,
                      ucold_array_core, ucold_array_mantle, ucold_array_atm)
 
+# Slighly tweek the mass of the planet to avoid peeks at the center
+M_tweek = woma.find_mass_3layer(N, R, 2*M, Ps, Ts, b_cm, b_ma,
+                     mat_id_core, T_rho_id_core, T_rho_args_core,
+                     mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                     mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                     rhos_min, rhos_max,
+                     ucold_array_core, ucold_array_mantle, ucold_array_atm)
+
 # Compute the whole profile
 r, m, P, T, rho, u, mat = \
-    woma.integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
+    woma.integrate_3layer(N, R, M_tweek, Ps, Ts, b_cm, b_ma,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
@@ -459,7 +474,7 @@ plt.show()
 
 N                 = 10000                     # Number of integration steps
 R                 = R_earth                   # Radius of the planet 
-M_max             = 200*M_earth                 # Mass of the planet
+M_max             = 2*M_earth                 # Mass of the planet
 Ts                = 300.                      # Temperature at the surface
 Ps                = 0.                        # Pressure at the surface
 mat_id_core       = 100                       # Material id for the core (see mat_id.txt)
@@ -521,9 +536,9 @@ plt.tight_layout()
 plt.show()
 
 # Let's convet it to a spining profile
-iterations = 5                               # Iterations to convergence
-r_array    = np.arange(0, 1.2*R, 1.2*R/1000) # Points at equatorial profile to find the solution
-z_array    = np.arange(0, 1.1*R, 1.1*R/1000) # Points at equatorial profile to find the solution
+iterations = 10                              # Iterations to convergence
+r_array    = np.linspace(0, 1.2*R, 1000)     # Points at equatorial profile to find the solution
+z_array    = np.linspace(0, 1.1*R, 1000) # Points at equatorial profile to find the solution
 Tw         = 4                               # Period of the planet [hours]
 
 P_c   = P[-1]                                # Pressure at the center
@@ -557,7 +572,6 @@ ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
 ax[0].set_ylabel(r"$\rho$ [$kg/m^3$]")
 ax[0].legend()
 
-
 r_array_coarse = np.arange(0, np.max(r_array), np.max(r_array)/100)
 z_array_coarse = np.arange(0, np.max(z_array), np.max(z_array)/100)
 rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
@@ -579,3 +593,6 @@ ax[1].set_title('Density (Kg/m^3)')
     
 plt.tight_layout()
 plt.show()
+
+
+
