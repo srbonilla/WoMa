@@ -2035,9 +2035,31 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     R = rho_e_model_inv(particles_rho)
     Z = rho_p_model_inv(particles_rho)
     
+    #zP = particles.z*Z/R
+    
     zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
     
+    #
+    import matplotlib.pyplot as plt
+    mask1 = particles_rc < R_earth/10
+    mask2 = np.logical_and(particles_rc > 5*R_earth/10, particles_rc < 5.1*R_earth/10)
+    un = np.unique(particles.A1_r)
+    mask3 = np.logical_and(particles_rc >= un[5], particles_rc < un[6])
+    mask4 = np.logical_and(particles_rc >= un[6], particles_rc < un[7])
+    plt.scatter(particles.z[mask1]/R_earth, (zP/particles.z)[mask1], s=1)
+    plt.scatter(particles.z[mask2]/R_earth, (zP/particles.z)[mask2], s=1)
+    plt.scatter(particles.z[mask3]/R_earth, (zP/particles.z)[mask3], s=1)
+    plt.scatter(particles.z[mask4]/R_earth, (zP/particles.z)[mask4], s=1)
+    plt.show()
+    
+    R1 = particles.A1_r
+    rho_1 = rho_e_model(R1)
+    Z1 = rho_p_model_inv(rho_1)
+    f = Z1/R1
+    zP2 = particles.z*f
+    
     # Tweek masses
+    
     mP = particles.m*zP/particles.z
     
     print("\nx, y, z, and m computed\n")

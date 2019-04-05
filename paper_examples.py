@@ -85,8 +85,8 @@ plt.show()
 
 # Let's convet it to a spining profile
 iterations = 30                              # Iterations to convergence
-r_array    = np.linspace(0, 1.2*R, 1000)     # Points at equatorial profile to find the solution
-z_array    = np.linspace(0, 1.1*R, 1000)     # Points at equatorial profile to find the solution
+r_array    = np.linspace(0, 1.2*R, 2000)     # Points at equatorial profile to find the solution
+z_array    = np.linspace(0, 1.1*R, 2000)     # Points at equatorial profile to find the solution
 Tw         = 4                               # Period of the planet [hours]
 
 P_c   = P[-1]                                # Pressure at the center
@@ -111,7 +111,7 @@ np.save('rho_p', rho_p)
 
 # Particle placement and save data
 
-N_picles = 1e5    # Number of particles
+N_picles = 1e6    # Number of particles
 N_neig   = 48     # Number of neighbors
 x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id =                      \
 woma.picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N_picles,
@@ -120,7 +120,7 @@ woma.picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N_picles,
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '1layer_10e5.hdf5'
+filename = '1layer_10e6.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, np.array([x, y, z]).T, np.array([vx, vy, vz]).T,
                              m, h, rho, P, u, picle_id, mat_id,
@@ -221,7 +221,7 @@ np.save('rho_p', rho_p)
 
 # Particle placement and save data
 
-N_picles = 1e6    # Number of particles
+N_picles = 1e5    # Number of particles
 N_neig   = 48     # Number of neighbors
 x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id =                      \
 woma.picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N_picles, rho_i,
@@ -231,7 +231,7 @@ woma.picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N_picles, rho_i,
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '2layer_10e6.hdf5'
+filename = '2layer_10e5.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, np.array([x, y, z]).T, np.array([vx, vy, vz]).T,
                              m, h, rho, P, u, picle_id, mat_id,
