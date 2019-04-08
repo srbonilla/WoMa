@@ -567,5 +567,3 @@ def find_P_fixed_T_rho(T, rho, mat_id):
         return 0
     
     return -1
-
-find_rho_fixed_P_T(Ps, Ts, 101)
