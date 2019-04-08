@@ -331,13 +331,16 @@ def _create_ucold_array(mat_id):
     return ucold_array
 
 @jit(nopython=True)
-def _ucold_tab(rho, ucold_array):
+def _ucold_tab(rho, mat_id, ucold_array):
     """ Fast computation of cold internal energy using the table previously
         computed.
     
         Args:
             rho (float):
                 Density (SI).
+                
+            mat_id (int):
+                Material id.
                 
             ucold_array ([float])
                 Precomputed values of cold internal energy for a particular material
@@ -347,27 +350,33 @@ def _ucold_tab(rho, ucold_array):
             interpolation (float):
                 cold internal energy (SI).
     """
-
-    nrow = ucold_array.shape[0]
-    rho_min = 100
-    rho_max = 100000
-
-    drho = (rho_max - rho_min)/(nrow - 1)
-
-    a = int(((rho - rho_min)/drho))
-    b = a + 1
-
-    if a >= 0 and a < (nrow - 1):
-        interpolation = ucold_array[a]
-        interpolation += ((ucold_array[b] - ucold_array[a])/drho)*(rho - rho_min - a*drho)
-
-    elif rho < rho_min:
-        interpolation = ucold_array[0]
+    mat_id = int(mat_id)
+    if mat_id == 100 or mat_id == 101 or mat_id == 102:
+        
+        nrow = ucold_array.shape[0]
+        rho_min = 100
+        rho_max = 100000
+    
+        drho = (rho_max - rho_min)/(nrow - 1)
+    
+        a = int(((rho - rho_min)/drho))
+        b = a + 1
+    
+        if a >= 0 and a < (nrow - 1):
+            interpolation = ucold_array[a]
+            interpolation += ((ucold_array[b] - ucold_array[a])/drho)*(rho - rho_min - a*drho)
+    
+        elif rho < rho_min:
+            interpolation = ucold_array[0]
+        else:
+            interpolation = ucold_array[int(nrow - 1)]
+            interpolation += ((ucold_array[int(nrow - 1)] - ucold_array[int(nrow) - 2])/drho)*(rho - rho_max)
+    
+        return interpolation
+    
     else:
-        interpolation = ucold_array[int(nrow - 1)]
-        interpolation += ((ucold_array[int(nrow - 1)] - ucold_array[int(nrow) - 2])/drho)*(rho - rho_max)
-
-    return interpolation
+        
+        print("Material not implemented")
 
 @jit(nopython=True)
 def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
@@ -406,29 +415,28 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
     c         = _spec_c(mat_id)
     tolerance = 1E-5
     
-    u0   = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
+    u0   = _ucold_tab(rho0, mat_id, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
     P0   = P_EoS(u0, rho0, mat_id)
-    u1   = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
+    u1   = _ucold_tab(rho1, mat_id, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
     P1   = P_EoS(u1, rho1, mat_id)
     rho2 = (rho0 + rho1)/2.
-    u2   = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
+    u2   = _ucold_tab(rho2, mat_id, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
     P2   = P_EoS(u2, rho2, mat_id)
     
     rho_aux = rho0 + 1e-6
-    u_aux   = _ucold_tab(rho_aux, ucold_array) + c*T_rho(rho_aux, T_rho_id, T_rho_args)
+    u_aux   = _ucold_tab(rho_aux, mat_id, ucold_array) + c*T_rho(rho_aux, T_rho_id, T_rho_args)
     P_aux   = P_EoS(u_aux, rho_aux, mat_id)
 
     if ((P0 < Ps and Ps < P1) or (P0 > Ps and Ps > P1)):
         while np.abs(rho1 - rho0) > tolerance:
-            u0 = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
+            u0 = _ucold_tab(rho0, mat_id, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
             P0 = P_EoS(u0, rho0, mat_id)
-            u1 = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
+            u1 = _ucold_tab(rho1, mat_id, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
             P1 = P_EoS(u1, rho1, mat_id)
-            u2 = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
+            u2 = _ucold_tab(rho2, mat_id, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
             P2 = P_EoS(u2, rho2, mat_id)
             
             f0 = Ps - P0
-            #f1 = Ps - P1
             f2 = Ps - P2
             
             if f0*f2 > 0:
@@ -443,12 +451,12 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
     elif (P0 == Ps and P_aux == Ps and P1 != Ps):
         while np.abs(rho1 - rho0) > tolerance:
             rho2 = (rho0 + rho1)/2.
-            u0 = _ucold_tab(rho0, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
+            u0 = _ucold_tab(rho0, mat_id, ucold_array) + c*T_rho(rho0, T_rho_id, T_rho_args)
             P0 = P_EoS(u0, rho0, mat_id)
-            u1 = _ucold_tab(rho1, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
+            u1 = _ucold_tab(rho1, mat_id, ucold_array) + c*T_rho(rho1, T_rho_id, T_rho_args)
             P1 = P_EoS(u1, rho1, mat_id)
             rho2 = (rho0 + rho1)/2.
-            u2 = _ucold_tab(rho2, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
+            u2 = _ucold_tab(rho2, mat_id, ucold_array) + c*T_rho(rho2, T_rho_id, T_rho_args)
             P2 = P_EoS(u2, rho2, mat_id)
             
             if P2 == Ps:
@@ -475,38 +483,89 @@ def _find_rho(Ps, mat_id, T_rho_id, T_rho_args, rho0, rho1, ucold_array):
 
     return rho2;
 
-@jit(nopython=True)
-def _find_rho_fixed_T(Ps, mat_id, Ts, rho0, rho1, ucold_array):
+def load_ucold_array(mat_id):
+    """ Load precomputed values of cold internal energy for a given material.
+    
+        Returns:
+            ucold_array ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() (SI).
+    """
+    
+    if mat_id == 100:
+        ucold_array = np.load('data/ucold_array_100.npy')
+    elif mat_id == 101:
+        ucold_array = np.load('data/ucold_array_101.npy')
+    elif mat_id == 102:
+        ucold_array = np.load('data/ucold_array_102.npy')
+        
+    return ucold_array
+
+def find_rho_fixed_P_T(P, T, mat_id):
     """ Root finder of the density for EoS using 
         tabulated values of cold internal energy
         
         Args:
-            Ps (float):
+            P (float):
                 Pressure (SI).
+                
+            T (float):
+                Temperature (SI).
                 
             mat_id (int):
                 Material id (SI).
-            
-            Ts (float):
-                Temperature (SI)
-                
-            rho0 (float):
-                Lower bound for where to look the root (SI).
-                
-            rho1 (float):
-                Upper bound for where to look the root (SI).
-            
-            ucold_array ([float])
-                Precomputed values of cold internal energy
-                with function _create_ucold_array() (SI).
                 
         Returns:
             rho2 (float):
                 Value of the density which satisfies P(u(rho), rho) = 0 
                 (SI).
     """
+    P = float(P)
+    T = float(T)
+    
+    rho_min     = 1e-9
+    rho_max     = 1e15
+    ucold_array = load_ucold_array(mat_id)
+    
+    return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, ucold_array)
 
-    return _find_rho(Ps, mat_id, 1, [Ts, 0], rho0, rho1, ucold_array)
+def find_P_fixed_T_rho(T, rho, mat_id):
+    """ Finder of the pressure for EoS using 
+        tabulated values of cold internal energy
+        
+        Args:
+            T (float):
+                Temperature (SI).
+                
+            rho (float):
+                Density (SI).
+                
+            mat_id (int):
+                Material id (SI).
+                
+        Returns:
+            P (float):
+                Value of the pressure P(u(rho) + c*T, rho) 
+                (SI).
+    """
+    T = float(T)
+    rho = float(rho)
+    
+    u = ucold(rho, mat_id, 10000) + _spec_c(mat_id)*T
+    P = P_EoS(u, rho, mat_id)
+    
+    rho_test = rho + 1e-5
+    u_test = ucold(rho_test, mat_id, 10000) + _spec_c(mat_id)*T
+    P_test = P_EoS(u_test, rho_test, mat_id)
+    
+    if P != P_test:
+        return P
+    
+    elif P == P_test and P == 0:
+        print("This is a flat region of the EoS, where the pressure is 0")
+        print("Please consider a higher rho value.")
+        return 0
+    
+    return -1
 
-
-
+find_rho_fixed_P_T(Ps, Ts, 101)

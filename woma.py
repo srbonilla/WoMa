@@ -38,32 +38,12 @@ def set_up():
     np.save("data/ucold_array_100", ucold_array_100)
     np.save("data/ucold_array_101", ucold_array_101)
     np.save("data/ucold_array_102", ucold_array_102)
-    
-def load_ucold_array(mat_id):
-    """ Load precomputed values of cold internal energy for a given material.
-    
-        Returns:
-            ucold_array ([float]):
-                Precomputed values of cold internal energy
-                with function _create_ucold_array() (SI).
-    """
-    
-    if mat_id == 100:
-        ucold_array = np.load('data/ucold_array_100.npy')
-    elif mat_id == 101:
-        ucold_array = np.load('data/ucold_array_101.npy')
-    elif mat_id == 102:
-        ucold_array = np.load('data/ucold_array_102.npy')
-        
-    return ucold_array
-
-
-   
+      
 ############################## 1 layer ########################################
     
 @jit(nopython=True)
-def integrate_1layer(N, R, M, Ps, Ts, mat_id, T_rho_id, T_rho_args,
-                     rhos_min, rhos_max, ucold_array):
+def integrate_1layer(N, R, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
+                     ucold_array):
     """ Integration of a 1 layer spherical planet.
     
         Args:
@@ -82,6 +62,9 @@ def integrate_1layer(N, R, M, Ps, Ts, mat_id, T_rho_id, T_rho_args,
             Ts (float):
                 Temperature at the surface (SI).
                 
+            rhos (float):
+                Density at the surface (SI).
+                
             mat_id (int):
                 Material id.
                 
@@ -90,12 +73,6 @@ def integrate_1layer(N, R, M, Ps, Ts, mat_id, T_rho_id, T_rho_args,
                 
             T_rho_args (list):
                 Extra arguments to determine the relation.
-                
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
                 
             ucold_array ([float]):
                 Precomputed values of cold internal energy
@@ -133,19 +110,12 @@ def integrate_1layer(N, R, M, Ps, Ts, mat_id, T_rho_id, T_rho_args,
     rho = np.zeros(r.shape)
     u   = np.zeros(r.shape)
     mat = np.ones(r.shape)*mat_id
-        
-    rhos = eos._find_rho_fixed_T(Ps, mat_id, Ts, rhos_min, rhos_max, ucold_array)
     
     c = eos._spec_c(mat_id)
     
-    if rhos == rhos_min or rhos == rhos_max or rhos == (rhos_min + rhos_max)/2.:
-        print("Could not find rho surface in that interval")
-        return r, m, P, T, rho, u, mat
-    
-    else:
-        us = eos.ucold(rhos, mat_id, 10000) + c*Ts
-        if T_rho_id == 1:
-            T_rho_args[0] = Ts*rhos**(-T_rho_args[1])
+    us = eos.ucold(rhos, mat_id, 10000) + c*Ts
+    if T_rho_id == 1:
+        T_rho_args[0] = Ts*rhos**(-T_rho_args[1])
     
     dr = r[0] - r[1]
     
@@ -162,7 +132,7 @@ def integrate_1layer(N, R, M, Ps, Ts, mat_id, T_rho_id, T_rho_args,
         rho[i] = eos._find_rho(P[i], mat_id, T_rho_id, T_rho_args,
                                rho[i - 1], 1.1*rho[i - 1], ucold_array)
         T[i]   = eos.T_rho(rho[i], T_rho_id, T_rho_args)
-        u[i]   = eos._ucold_tab(rho[i], ucold_array) + c*T[i]
+        u[i]   = eos._ucold_tab(rho[i], mat_id, ucold_array) + c*T[i]
         
         if m[i] < 0:
             
@@ -171,8 +141,8 @@ def integrate_1layer(N, R, M, Ps, Ts, mat_id, T_rho_id, T_rho_args,
     return r, m, P, T, rho, u, mat
 
 @jit(nopython=True)
-def find_mass_1layer(N, R, M_max, Ps, Ts, mat_id, T_rho_id, T_rho_args,
-                     rhos_min, rhos_max, ucold_array):
+def find_mass_1layer(N, R, M_max, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
+                     ucold_array):
     
     """ Finder of the total mass of the planet.
         The correct value yields m -> 0 at the center of the planet. 
@@ -193,6 +163,9 @@ def find_mass_1layer(N, R, M_max, Ps, Ts, mat_id, T_rho_id, T_rho_args,
             Ts (float):
                 Temperature at the surface (SI).
                 
+            rhos (float):
+                Density at the surface (SI).
+                
             mat_id (int):
                 Material id.
                 
@@ -201,12 +174,6 @@ def find_mass_1layer(N, R, M_max, Ps, Ts, mat_id, T_rho_id, T_rho_args,
                 
             T_rho_args (list):
                 Extra arguments to determine the relation.
-                
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
                 
             ucold_array ([float]):
                 Precomputed values of cold internal energy
@@ -221,19 +188,18 @@ def find_mass_1layer(N, R, M_max, Ps, Ts, mat_id, T_rho_id, T_rho_args,
     
     M_min = 0.
     
-    r, m, P, T, rho, u, mat = integrate_1layer(N, R, M_max, Ps, Ts, mat_id, T_rho_id, T_rho_args,
-                                               rhos_min, rhos_max, ucold_array)
+    r, m, P, T, rho, u, mat = integrate_1layer(N, R, M_max, Ps, Ts, rhos, mat_id,
+                                               T_rho_id, T_rho_args, ucold_array)
     
     if m[-1] > 0.:
         
-        for i in range(30):
+        while np.abs(M_min - M_max) > 1e-10*M_min:
             
             M_try = (M_min + M_max)/2.
             
             r, m, P, T, rho, u, mat = \
-                  integrate_1layer(N, R, M_try, Ps, Ts, mat_id,
-                                   T_rho_id, T_rho_args,
-                                   rhos_min, rhos_max, ucold_array)
+                  integrate_1layer(N, R, M_try, Ps, Ts, rhos, mat_id,
+                                   T_rho_id, T_rho_args, ucold_array)
             
             if m[-1] > 0.:
                 M_max = M_try
@@ -245,6 +211,79 @@ def find_mass_1layer(N, R, M_max, Ps, Ts, mat_id, T_rho_id, T_rho_args,
         return 0.
         
     return M_max
+
+@jit(nopython=True)
+def find_radius_1layer(N, R_max, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
+                       ucold_array, iterations = 40):
+    
+    """ Finder of the total radius of the planet.
+        The correct value yields m -> 0 at the center of the planet. 
+    
+        Args:
+            N (int):
+                Number of integration steps.
+            
+            R (float):
+                Maximuum radius of the planet (SI).
+                
+            M_max (float):
+                Mass of the planet (SI).
+                
+            Ps (float):
+                Pressure at the surface (SI).
+                
+            Ts (float):
+                Temperature at the surface (SI).
+                
+            rhos (float):
+                Density at the surface (SI).
+                
+            mat_id (int):
+                Material id.
+                
+            T_rho_id (int)
+                Relation between T and rho to be used.
+                
+            T_rho_args (list):
+                Extra arguments to determine the relation.
+                
+            ucold_array ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() (SI).
+                
+        Returns:
+            
+            M_max (float):
+                Mass of the planet (SI).
+            
+    """
+    
+    R_min = 0.
+    
+    r, m, P, T, rho, u, mat = integrate_1layer(N, R_max, M, Ps, Ts, rhos, mat_id,
+                                               T_rho_id, T_rho_args, ucold_array)
+    
+    if m[-1] == 0.:
+        
+        for i in range(iterations):
+            print(i)
+            
+            R_try = (R_min + R_max)/2.
+            
+            r, m, P, T, rho, u, mat = \
+                  integrate_1layer(N, R_try, M, Ps, Ts, rhos, mat_id,
+                                   T_rho_id, T_rho_args, ucold_array)
+            
+            if m[-1] > 0.:
+                R_min = R_try
+            else:
+                R_max = R_try
+                
+    else:
+        print("R_max is too low, did not ran out of mass in first iteration")
+        return 0.
+        
+    return R_min
      
 ############################## 2 layers #######################################
     
@@ -2032,35 +2071,70 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
     particles_rho = rho_e_model(particles_r)
     
-    R = rho_e_model_inv(particles_rho)
-    Z = rho_p_model_inv(particles_rho)
+    R = particles.A1_r.copy()
+    rho_layer = rho_e_model(R)
+    Z = rho_p_model_inv(rho_layer)
     
-    #zP = particles.z*Z/R
+    f = Z/R
+    zP = particles.z*f
     
-    zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
+    delta_f = np.zeros(R.shape)
+    delta_z = np.zeros(R.shape)
     
-    #
-    import matplotlib.pyplot as plt
-    mask1 = particles_rc < R_earth/10
-    mask2 = np.logical_and(particles_rc > 5*R_earth/10, particles_rc < 5.1*R_earth/10)
-    un = np.unique(particles.A1_r)
-    mask3 = np.logical_and(particles_rc >= un[5], particles_rc < un[6])
-    mask4 = np.logical_and(particles_rc >= un[6], particles_rc < un[7])
-    plt.scatter(particles.z[mask1]/R_earth, (zP/particles.z)[mask1], s=1)
-    plt.scatter(particles.z[mask2]/R_earth, (zP/particles.z)[mask2], s=1)
-    plt.scatter(particles.z[mask3]/R_earth, (zP/particles.z)[mask3], s=1)
-    plt.scatter(particles.z[mask4]/R_earth, (zP/particles.z)[mask4], s=1)
-    plt.show()
+    unique_R = np.unique(R)
+    unique_Z = np.unique(Z)
     
-    R1 = particles.A1_r
-    rho_1 = rho_e_model(R1)
-    Z1 = rho_p_model_inv(rho_1)
-    f = Z1/R1
-    zP2 = particles.z*f
+    for i, Radius in enumerate(np.unique(R)):
+
+        if i != particles.N_shell_tot - 1:
+            
+            Zip1 = unique_Z[i + 1]
+            Rip1 = unique_R[i + 1]
+            Zi = unique_Z[i]
+            Ri = unique_R[i]
+            
+            delta_f[R == Radius] = Zip1/Rip1 - Zi/Ri
+            rc = particles_rc[R == Radius]
+            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
+            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
+            delta_z[R == Radius] = zip1 - zi
+            
+        else:
+            
+            delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
+            delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
+            
+    dzPz_dz = delta_f/delta_z
+    
+    alpha = 3.5e6
+    mP = particles.m*(f + alpha*dzPz_dz)
+    
+# =============================================================================
+#     import matplotlib.pyplot as plt
+#     
+#     plt.hist(dzPz_dz, bins=100)
+#     plt.show()
+#     
+#     mask1 = particles_rc < R_earth/10
+#     #mask2 = np.logical_and(particles_rc > 5*R_earth/10, particles_rc < 5.1*R_earth/10)
+#     plt.scatter(particles.z[mask1]/R_earth, (zP/particles.z)[mask1], s=1)
+#     #plt.scatter(particles.z[mask2]/R_earth, (zP/particles.z)[mask2], s=1)
+#     plt.scatter(particles.z[mask1]/R_earth, (mP/particles.m)[mask1], s=1)
+#     plt.show()
+#     
+#     plt.scatter(particles.z/R_earth, (mP/particles.m), s=1)
+#     plt.show()
+#     
+#     R1 = particles.A1_r
+#     rho_1 = rho_e_model(R1)
+#     Z1 = rho_p_model_inv(rho_1)
+#     f = Z1/R1
+#     zP2 = particles.z*f
+# =============================================================================
     
     # Tweek masses
     
-    mP = particles.m*zP/particles.z
+    #mP = particles.m*zP/particles.z
     
     print("\nx, y, z, and m computed\n")
     
@@ -2440,13 +2514,46 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
     particles_rho = rho_e_model(particles_r)
     
-    R = rho_e_model_inv(particles_rho)
-    Z = rho_p_model_inv(particles_rho)
+    R = particles.A1_r.copy()
+    rho_layer = rho_e_model(R)
+    Z = rho_p_model_inv(rho_layer)
     
-    zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
+    f = Z/R
+    zP = particles.z*f
+    
+    delta_f = np.zeros(R.shape)
+    delta_z = np.zeros(R.shape)
+    
+    unique_R = np.unique(R)
+    unique_Z = np.unique(Z)
+    
+    for i, Radius in enumerate(np.unique(R)):
+
+        if i != particles.N_shell_tot - 1:
+            
+            Zip1 = unique_Z[i + 1]
+            Rip1 = unique_R[i + 1]
+            Zi = unique_Z[i]
+            Ri = unique_R[i]
+            
+            delta_f[R == Radius] = Zip1/Rip1 - Zi/Ri
+            rc = particles_rc[R == Radius]
+            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
+            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
+            delta_z[R == Radius] = zip1 - zi
+            
+        else:
+            
+            delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
+            delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
+            
+    dzPz_dz = delta_f/delta_z
+    
+    alpha = 3.5e6
+    mP = particles.m*(f + alpha*dzPz_dz)
 
     # Tweek masses
-    mP = particles.m*zP/particles.z
+    #mP = particles.m*zP/particles.z
     print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
@@ -2891,13 +2998,43 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
     particles_rho = rho_e_model(particles_r)
     
-    R = rho_e_model_inv(particles_rho)
-    Z = rho_p_model_inv(particles_rho)
+    R = particles.A1_r.copy()
+    rho_layer = rho_e_model(R)
+    Z = rho_p_model_inv(rho_layer)
     
-    zP = np.sqrt(Z**2*(1 - (particles_rc/R)**2))*np.sign(particles.z)
+    f = Z/R
+    zP = particles.z*f
+    
+    delta_f = np.zeros(R.shape)
+    delta_z = np.zeros(R.shape)
+    
+    unique_R = np.unique(R)
+    unique_Z = np.unique(Z)
+    
+    for i, Radius in enumerate(np.unique(R)):
 
-    # Tweek masses
-    mP = particles.m*zP/particles.z
+        if i != particles.N_shell_tot - 1:
+            
+            Zip1 = unique_Z[i + 1]
+            Rip1 = unique_R[i + 1]
+            Zi = unique_Z[i]
+            Ri = unique_R[i]
+            
+            delta_f[R == Radius] = Zip1/Rip1 - Zi/Ri
+            rc = particles_rc[R == Radius]
+            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
+            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
+            delta_z[R == Radius] = zip1 - zi
+            
+        else:
+            
+            delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
+            delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
+            
+    dzPz_dz = delta_f/delta_z
+    
+    alpha = 3.5e6
+    mP = particles.m*(f + alpha*dzPz_dz)
     print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
