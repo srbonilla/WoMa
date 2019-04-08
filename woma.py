@@ -266,7 +266,6 @@ def find_radius_1layer(N, R_max, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
     if m[-1] == 0.:
         
         for i in range(iterations):
-            print(i)
             
             R_try = (R_min + R_max)/2.
             
@@ -288,10 +287,9 @@ def find_radius_1layer(N, R_max, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
 ############################## 2 layers #######################################
     
 @jit(nopython=True)
-def integrate_2layer(N, R, M, Ps, Ts, b_cm,
+def integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     rhos_min, rhos_max,
                      ucold_array_core, ucold_array_mantle):
     """ Integration of a 2 layer spherical planet.
     
@@ -311,7 +309,10 @@ def integrate_2layer(N, R, M, Ps, Ts, b_cm,
             Ts (float):
                 Temperature at the surface (SI).
                 
-            b_cm (float):
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bcm (float):
                 Boundary core-mantle (SI).
                 
             mat_id_core (int):
@@ -332,11 +333,6 @@ def integrate_2layer(N, R, M, Ps, Ts, b_cm,
             T_rho_args_mantle (list):
                 Extra arguments to determine the relation at the mantle.
                 
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
                 
             ucold_array_core ([float]):
                 Precomputed values of cold internal energy
@@ -377,21 +373,13 @@ def integrate_2layer(N, R, M, Ps, Ts, b_cm,
     rho = np.zeros(r.shape)
     u   = np.zeros(r.shape)
     mat = np.zeros(r.shape)
-        
-    rhos = eos._find_rho_fixed_T(Ps, mat_id_mantle, Ts,
-                                 rhos_min, rhos_max, ucold_array_mantle)
     
     c_core   = eos._spec_c(mat_id_core)
     c_mantle = eos._spec_c(mat_id_mantle)
     
-    if rhos == rhos_min or rhos == rhos_max or rhos == (rhos_min + rhos_max)/2.:
-        print("Could not find rho surface in that interval")
-        return r, m, P, T, rho, u, mat
-    
-    else:
-        us = eos.ucold(rhos, mat_id_mantle, 10000) + c_mantle*Ts
-        if T_rho_id_mantle == 1:
-            T_rho_args_mantle[0] = Ts*rhos**(-T_rho_args_mantle[1])
+    us = eos.ucold(rhos, mat_id_mantle, 10000) + c_mantle*Ts
+    if T_rho_id_mantle == 1:
+        T_rho_args_mantle[0] = Ts*rhos**(-T_rho_args_mantle[1])
     
     dr = r[0] - r[1]
     
@@ -405,24 +393,24 @@ def integrate_2layer(N, R, M, Ps, Ts, b_cm,
     for i in range(1, r.shape[0]):
             
         # mantle
-        if r[i] > b_cm:
+        if r[i] > Bcm:
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = eos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_mantle)
             T[i]   = eos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_mantle) + c_mantle*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
             if m[i] < 0: 
                 return r, m, P, T, rho, u, mat
         
         # boundary core mantle
-        elif r[i] <= b_cm and r[i - 1] > b_cm:
+        elif r[i] <= Bcm and r[i - 1] > Bcm:
             
-            rho_transition = eos._find_rho_fixed_T(P[i - 1], mat_id_core, T[i - 1],
-                                                   rho[i - 1], 5*rho[i - 1], ucold_array_core)
+            rho_transition = eos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
+                                                     mat_id_core, ucold_array_core)
             
             if T_rho_id_core == 1:
                 T_rho_args_core[0] = T[i - 1]*rho_transition**(-T_rho_args_core[1])
@@ -432,18 +420,18 @@ def integrate_2layer(N, R, M, Ps, Ts, b_cm,
             rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho_transition, ucold_array_core)
             T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_core) + c_core*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
         # core  
-        elif r[i] <= b_cm:
+        elif r[i] <= Bcm:
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_core)
             T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_core) + c_core*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
             if m[i] < 0: 
@@ -452,10 +440,9 @@ def integrate_2layer(N, R, M, Ps, Ts, b_cm,
     return r, m, P, T, rho, u, mat
 
 @jit(nopython=True)
-def find_mass_2layer(N, R, M_max, Ps, Ts, b_cm,
+def find_mass_2layer(N, R, M_max, Ps, Ts, rhos, Bcm,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     rhos_min, rhos_max,
                      ucold_array_core, ucold_array_mantle):
     """ Finder of the total mass of the planet.
         The correct value yields m -> 0 at the center of the planet. 
@@ -476,7 +463,10 @@ def find_mass_2layer(N, R, M_max, Ps, Ts, b_cm,
             Ts (float):
                 Temperature at the surface (SI).
                 
-            b_cm (float):
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bcm (float):
                 Boundary core-mantle (SI).
                 
             mat_id_core (int):
@@ -497,12 +487,6 @@ def find_mass_2layer(N, R, M_max, Ps, Ts, b_cm,
             T_rho_args_mantle (list):
                 Extra arguments to determine the relation at the mantle.
                 
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
-                
             ucold_array_core ([float]):
                 Precomputed values of cold internal energy
                 with function _create_ucold_array() for the core (SI).
@@ -520,23 +504,21 @@ def find_mass_2layer(N, R, M_max, Ps, Ts, b_cm,
     M_min = 0.
     
     r, m, P, T, rho, u, mat = \
-        integrate_2layer(N, R, M_max, Ps, Ts, b_cm,
+        integrate_2layer(N, R, M_max, Ps, Ts, rhos, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         rhos_min, rhos_max,
                          ucold_array_core, ucold_array_mantle)
     
     if m[-1] > 0.:
         
-        for i in range(30):
+        while np.abs(M_min - M_max) > 1e-10*M_min:
             
             M_try = (M_min + M_max)/2.
             
             r, m, P, T, rho, u, mat = \
-                  integrate_2layer(N, R, M_try, Ps, Ts, b_cm,
+                  integrate_2layer(N, R, M_try, Ps, Ts, rhos, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         rhos_min, rhos_max,
                          ucold_array_core, ucold_array_mantle)
             
             if m[-1] > 0.:
@@ -551,11 +533,115 @@ def find_mass_2layer(N, R, M_max, Ps, Ts, b_cm,
     return M_max
 
 @jit(nopython=True)
-def find_boundary_2layer(N, R, M, Ps, Ts,
+def find_radius_2layer(N, R_max, M, Ps, Ts, rhos, Bcm,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_mantle):
+                     ucold_array_core, ucold_array_mantle, iterations = 40):
+    """ Finder of the total radius of the planet.
+        The correct value yields m -> 0 at the center of the planet. 
+    
+        Args:
+            N (int):
+                Number of integration steps.
+            
+            R_max (float):
+                Maximum radius of the planet (SI).
+                
+            M (float):
+                Mass of the planet (SI).
+                
+            Ps (float):
+                Pressure at the surface (SI).
+                
+            Ts (float):
+                Temperature at the surface (SI).
+                
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bcm (float):
+                Boundary core-mantle (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+        Returns:
+            
+            M_max ([float]):
+                Mass of the planet (SI).
+            
+    """
+    R_min = Bcm
+    
+    r, m1, P, T, rho, u, mat = \
+        integrate_2layer(N, R_max, M, Ps, Ts, rhos, Bcm,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         ucold_array_core, ucold_array_mantle)
+    
+    rhos_core = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_core, ucold_array_core)
+    
+    r, m2, P, T, rho, u, mat = \
+        integrate_1layer(N, Bcm, M, Ps, Ts, rhos_core,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         ucold_array_core)
+        
+    if m1[-1] > 0:
+        print("R_max too low, excess of mass for R = R_max")
+        return R_max
+    
+    if m2[-1] == 0:
+        print("R = Bcm yields a planet which already lacks mass.")
+        print("Try increase M or reduce Bcm.")
+        return -1
+    
+    if m1[-1] == 0.:
+        
+        for i in range(iterations):
+            
+            R_try = (R_min + R_max)/2.
+            
+            r, m, P, T, rho, u, mat = \
+                  integrate_2layer(N, R_try, M, Ps, Ts, rhos, Bcm,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         ucold_array_core, ucold_array_mantle)
+            
+            if m[-1] > 0.:
+                R_min = R_try
+            else:
+                R_max = R_try
+        
+    return R_min
+
+@jit(nopython=True)
+def find_boundary_2layer(N, R, M, Ps, Ts, rhos,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         ucold_array_core, ucold_array_mantle, iterations = 40):
     """ Finder of the boundary of the planet.
         The correct value yields m -> 0 at the center of the planet. 
     
@@ -575,6 +661,9 @@ def find_boundary_2layer(N, R, M, Ps, Ts,
             Ts (float):
                 Temperature at the surface (SI).
                 
+            rhos (float):
+                Temperature at the surface (SI).
+                
             mat_id_core (int):
                 Material id for the core.
                 
@@ -593,12 +682,6 @@ def find_boundary_2layer(N, R, M, Ps, Ts,
             T_rho_args_mantle (list):
                 Extra arguments to determine the relation at the mantle.
                 
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
-                
             ucold_array_core ([float]):
                 Precomputed values of cold internal energy
                 with function _create_ucold_array() for the core (SI).
@@ -614,48 +697,59 @@ def find_boundary_2layer(N, R, M, Ps, Ts,
             
     """
     
-    b_min = 0.
-    b_max = R 
+    B_min = 0.
+    B_max = R 
     
-    r, m, P, T, rho, u, mat = \
-        integrate_2layer(N, R, M, Ps, Ts, b_max,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
+    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
+    
+    r, m1, P, T, rho, u, mat = \
+        integrate_1layer(N, R, M, Ps, Ts, rhos_mantle,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle)
-    
-    if m[-1] == 0.:
+                         ucold_array_mantle)
         
-        for i in range(40):
+    rhos_core = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_core, ucold_array_core)
+    
+    r, m2, P, T, rho, u, mat = \
+        integrate_1layer(N, R, M, Ps, Ts, rhos_core,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         ucold_array_core)
+        
+    if m1[-1] == 0:
+        print("Ran out of mass for a planet made of mantle material")
+        print("Try increasing the mass or decreasing the radius")
+        return B_max
+    
+    if m2[-1] > 0:
+        print("Excess of mass for a planet made of core material")
+        print("Try decreasing the mass or increasing the radius")
+        return B_max
+    
+    if m1[-1] > 0.:
+        
+        for i in range(iterations):
             
-            b_try = (b_min + b_max)/2.
+            B_try = (B_min + B_max)/2.
             
             r, m, P, T, rho, u, mat = \
-                  integrate_2layer(N, R, M, Ps, Ts, b_try,
+                  integrate_2layer(N, R, M, Ps, Ts, rhos, B_try,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         rhos_min, rhos_max,
                          ucold_array_core, ucold_array_mantle)
             
             if m[-1] > 0.:
-                b_min = b_try
+                B_min = B_try
             else:
-                b_max = b_try
-                
-    else:
-        print("R is too low, ran out of mass in first iteration")
-        return 0.
+                B_max = B_try
         
-    return b_min
+    return B_min
 
 ############################## 3 layers #######################################
     
 @jit(nopython=True)
-def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
+def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                     rhos_min, rhos_max,
                      ucold_array_core, ucold_array_mantle, ucold_array_atm):
     """ Integration of a 2 layer spherical planet.
     
@@ -675,10 +769,13 @@ def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
             Ts (float):
                 Temperature at the surface (SI).
                 
-            b_cm (float):
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bcm (float):
                 Boundary core-mantle (SI).
                 
-            b_ma (float):
+            Bma (float):
                 Boundary mantle-atmosphere (SI).
                 
             mat_id_core (int):
@@ -707,12 +804,6 @@ def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
                 
             T_rho_args_atm (list):
                 Extra arguments to determine the relation at the atmosphere.
-                
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
                 
             ucold_array_core ([float]):
                 Precomputed values of cold internal energy
@@ -758,22 +849,14 @@ def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
     rho = np.zeros(r.shape)
     u   = np.zeros(r.shape)
     mat = np.zeros(r.shape)
-        
-    rhos = eos._find_rho_fixed_T(Ps, mat_id_atm, Ts,
-                                 rhos_min, rhos_max, ucold_array_atm)
     
     c_core   = eos._spec_c(mat_id_core)
     c_mantle = eos._spec_c(mat_id_mantle)
     c_atm    = eos._spec_c(mat_id_atm)
     
-    if rhos == rhos_min or rhos == rhos_max or rhos == (rhos_min + rhos_max)/2.:
-        print("Could not find rho surface in that interval")
-        return r, m, P, T, rho, u, mat
-    
-    else:
-        us = eos.ucold(rhos, mat_id_atm, 10000) + c_atm*Ts
-        if T_rho_id_atm == 1:
-            T_rho_args_atm[0] = Ts*rhos**(-T_rho_args_atm[1])
+    us = eos.ucold(rhos, mat_id_atm, 10000) + c_atm*Ts
+    if T_rho_id_atm == 1:
+        T_rho_args_atm[0] = Ts*rhos**(-T_rho_args_atm[1])        
     
     dr = r[0] - r[1]
     
@@ -787,24 +870,24 @@ def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
     for i in range(1, r.shape[0]):
             
         # atm
-        if r[i] > b_ma:
+        if r[i] > Bma:
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = eos._find_rho(P[i], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_atm)
             T[i]   = eos.T_rho(rho[i], T_rho_id_atm, T_rho_args_atm)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_atm) + c_atm*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_atm, ucold_array_atm) + c_atm*T[i]
             mat[i] = mat_id_atm
             
             if m[i] < 0: 
                 return r, m, P, T, rho, u, mat
         
         # boundary mantle atm
-        elif r[i] <= b_ma and r[i - 1] > b_ma:
+        elif r[i] <= Bma and r[i - 1] > Bma:
             
-            rho_transition = eos._find_rho_fixed_T(P[i - 1], mat_id_mantle, T[i - 1],
-                                                   rho[i - 1], 5*rho[i - 1], ucold_array_mantle)
+            rho_transition = eos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
+                                                     mat_id_mantle, ucold_array_mantle)
             
             if T_rho_id_mantle == 1:
                 T_rho_args_mantle[0] = T[i - 1]*rho_transition**(-T_rho_args_mantle[1])
@@ -814,28 +897,28 @@ def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
             rho[i] = eos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho_transition, ucold_array_mantle)
             T[i]   = eos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_mantle) + c_mantle*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
         # mantle
-        elif r[i] > b_cm:
+        elif r[i] > Bcm:
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = eos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_mantle)
             T[i]   = eos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_mantle) + c_mantle*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
             if m[i] < 0: 
                 return r, m, P, T, rho, u, mat
         
         # boundary core mantle
-        elif r[i] <= b_cm and r[i - 1] > b_cm:
+        elif r[i] <= Bcm and r[i - 1] > Bcm:
             
-            rho_transition = eos._find_rho_fixed_T(P[i - 1], mat_id_core, T[i - 1],
-                                                   rho[i - 1], 5*rho[i - 1], ucold_array_core)
+            rho_transition = eos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
+                                                     mat_id_core, ucold_array_core)
             
             if T_rho_id_core == 1:
                 T_rho_args_core[0] = T[i - 1]*rho_transition**(-T_rho_args_core[1])
@@ -845,18 +928,18 @@ def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
             rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho_transition, ucold_array_core)
             T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_core) + c_core*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
         # core  
-        elif r[i] <= b_cm:
+        elif r[i] <= Bcm:
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_core)
             T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], ucold_array_core) + c_core*T[i]
+            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
             if m[i] < 0: 
@@ -866,11 +949,10 @@ def integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma,
 
 
 @jit(nopython=True)
-def find_mass_3layer(N, R, M_max, Ps, Ts, b_cm, b_ma,
+def find_mass_3layer(N, R, M_max, Ps, Ts, rhos, Bcm, Bma,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                     rhos_min, rhos_max,
                      ucold_array_core, ucold_array_mantle, ucold_array_atm):
     """ Finder of the total mass of the planet.
         The correct value yields m -> 0 at the center of the planet. 
@@ -891,10 +973,13 @@ def find_mass_3layer(N, R, M_max, Ps, Ts, b_cm, b_ma,
             Ts (float):
                 Temperature at the surface (SI).
                 
-            b_cm (float):
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bcm (float):
                 Boundary core-mantle (SI).
                 
-            b_ma (float):
+            Bma (float):
                 Boundary mantle-atmosphere (SI).
                 
             mat_id_core (int):
@@ -924,12 +1009,6 @@ def find_mass_3layer(N, R, M_max, Ps, Ts, b_cm, b_ma,
             T_rho_args_atm (list):
                 Extra arguments to determine the relation at the atmosphere.
                 
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
-                
             ucold_array_core ([float]):
                 Precomputed values of cold internal energy
                 with function _create_ucold_array() for the core (SI).
@@ -952,25 +1031,23 @@ def find_mass_3layer(N, R, M_max, Ps, Ts, b_cm, b_ma,
     M_min = 0.
     
     r, m, P, T, rho, u, mat = \
-        integrate_3layer(N, R, M_max, Ps, Ts, b_cm, b_ma,
+        integrate_3layer(N, R, M_max, Ps, Ts, rhos, Bcm, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
                          ucold_array_core, ucold_array_mantle, ucold_array_atm)
     
     if m[-1] > 0.:
         
-        for i in range(40):
+        while np.abs(M_min - M_max) > 1e-10*M_min:
             
             M_try = (M_min + M_max)/2.
             
             r, m, P, T, rho, u, mat = \
-                  integrate_3layer(N, R, M_try, Ps, Ts, b_cm, b_ma,
+                  integrate_3layer(N, R, M_try, Ps, Ts, rhos, Bcm, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
                          ucold_array_core, ucold_array_mantle, ucold_array_atm)
             
             if m[-1] > 0.:

@@ -529,6 +529,38 @@ def find_rho_fixed_P_T(P, T, mat_id):
     
     return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, ucold_array)
 
+@jit(nopython=True)
+def _find_rho_fixed_P_T(P, T, mat_id, ucold_array):
+    """ Root finder of the density for EoS using 
+        tabulated values of cold internal energy
+        
+        Args:
+            P (float):
+                Pressure (SI).
+                
+            T (float):
+                Temperature (SI).
+                
+            mat_id (int):
+                Material id (SI).
+                
+            ucold_array ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() (SI).
+                
+        Returns:
+            rho2 (float):
+                Value of the density which satisfies P(u(rho), rho) = 0 
+                (SI).
+    """
+    P = float(P)
+    T = float(T)
+    
+    rho_min     = 1e-9
+    rho_max     = 1e15
+    
+    return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, ucold_array)
+
 def find_P_fixed_T_rho(T, rho, mat_id):
     """ Finder of the pressure for EoS using 
         tabulated values of cold internal energy
