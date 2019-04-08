@@ -717,7 +717,7 @@ def find_boundary_2layer(N, R, M, Ps, Ts, rhos,
     if m1[-1] == 0:
         print("Ran out of mass for a planet made of mantle material")
         print("Try increasing the mass or decreasing the radius")
-        return B_max
+        return B_min
     
     if m2[-1] > 0:
         print("Excess of mass for a planet made of core material")
@@ -1062,45 +1062,21 @@ def find_mass_3layer(N, R, M_max, Ps, Ts, rhos, Bcm, Bma,
     return M_max
 
 @jit(nopython=True)
-def moi(r, rho):
-    """ Computes moment of inertia for a planet with spherical symmetry.
-        
-        Args:
-            r ([float]):
-                Radii of the planet (SI).
-                
-            rho ([float]):
-                Densities asociated with the radii (SI)
-                
-        Returns:
-            
-            MoI (float):
-                Moment of inertia (SI).
-    """
-    
-    dr  = np.abs(r[0] - r[1])
-    r4  = np.power(r, 4)
-    MoI = 2*np.pi*(4/3)*np.sum(r4*rho)*dr
-    
-    return MoI
-
-@jit(nopython=True)
-def find_b_ma_3layer(N, R, M, Ps, Ts, b_cm,
+def find_radius_3layer(N, R_max, M, Ps, Ts, rhos, Bcm, Bma,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_mantle, ucold_array_atm):
-    """ Finder of the boundary mantle-atmosphere of the planet for
-        fixed boundary core-mantle.
+                     ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                     iterations=40):
+    """ Finder of the total mass of the planet.
         The correct value yields m -> 0 at the center of the planet. 
     
         Args:
             N (int):
                 Number of integration steps.
             
-            R (float):
-                Radii of the planet (SI).
+            R_max (float):
+                Maximum radius of the planet (SI).
                 
             M (float):
                 Mass of the planet (SI).
@@ -1111,8 +1087,14 @@ def find_b_ma_3layer(N, R, M, Ps, Ts, b_cm,
             Ts (float):
                 Temperature at the surface (SI).
                 
-            b_cm (float):
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bcm (float):
                 Boundary core-mantle (SI).
+                
+            Bma (float):
+                Boundary mantle-atmosphere (SI).
                 
             mat_id_core (int):
                 Material id for the core.
@@ -1141,12 +1123,158 @@ def find_b_ma_3layer(N, R, M, Ps, Ts, b_cm,
             T_rho_args_atm (list):
                 Extra arguments to determine the relation at the atmosphere.
                 
-            rhos_min (float):
-                Lower bound for the density at the surface.
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
                 
-            rhos_min (float):
-                Upper bound for the density at the surface.
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
                 
+            ucold_array_atm ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the atmosphere (SI).
+                
+        Returns:
+            
+            M_max ([float]):
+                Mass of the planet (SI).
+            
+    """
+    if Bcm > Bma:
+        print("Bcm should not be greater than Bma")
+        return -1
+    
+    R_min = Bma
+    
+    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
+    
+    r, m, P, T, rho, u, mat = \
+        integrate_2layer(N, Bma, M, Ps, Ts, rhos_mantle, Bcm,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         ucold_array_core, ucold_array_mantle)
+        
+    if m[-1] == 0:
+        print("Ran out of mass for a 2 layer planet with core and mantle.")
+        print("Try increase the mass or reduce Bcm")
+        return R_min
+        
+    r, m, P, T, rho, u, mat = \
+        integrate_3layer(N, R_max, M, Ps, Ts, rhos, Bcm, Bma,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
+        
+    if m[-1] > 0:
+        print("Excess of mass for a 3 layer planet with R = R_max.")
+        print("Try reduce the mass or increase R_max")
+        return R_max
+        
+    for i in range(iterations):
+            
+            R_try = (R_min + R_max)/2.
+            
+            r, m, P, T, rho, u, mat = \
+                  integrate_3layer(N, R_try, M, Ps, Ts, rhos, Bcm, Bma,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+            if m[-1] > 0.:
+                R_min = R_try
+            else:
+                R_max = R_try
+                
+
+        
+    return R_min
+
+@jit(nopython=True)
+def moi(r, rho):
+    """ Computes moment of inertia for a planet with spherical symmetry.
+        
+        Args:
+            r ([float]):
+                Radii of the planet (SI).
+                
+            rho ([float]):
+                Densities asociated with the radii (SI)
+                
+        Returns:
+            
+            MoI (float):
+                Moment of inertia (SI).
+    """
+    
+    dr  = np.abs(r[0] - r[1])
+    r4  = np.power(r, 4)
+    MoI = 2*np.pi*(4/3)*np.sum(r4*rho)*dr
+    
+    return MoI
+
+@jit(nopython=True)
+def find_Bma_3layer(N, R, M, Ps, Ts, rhos, Bcm,
+                     mat_id_core, T_rho_id_core, T_rho_args_core,
+                     mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                     mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                     ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                     iterations=40):
+    """ Finder of the boundary mantle-atmosphere of the planet for
+        fixed boundary core-mantle.
+        The correct value yields m -> 0 at the center of the planet. 
+    
+        Args:
+            N (int):
+                Number of integration steps.
+            
+            R (float):
+                Radii of the planet (SI).
+                
+            M (float):
+                Mass of the planet (SI).
+                
+            Ps (float):
+                Pressure at the surface (SI).
+                
+            Ts (float):
+                Temperature at the surface (SI).
+                
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bcm (float):
+                Boundary core-mantle (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            mat_id_atm (int):
+                Material id for the atmosphere.
+                
+            T_rho_id_atm (int)
+                Relation between T and rho to be used at the atmosphere.
+                
+            T_rho_args_atm (list):
+                Extra arguments to determine the relation at the atmosphere.
+                             
             ucold_array_core ([float]):
                 Precomputed values of cold internal energy
                 with function _create_ucold_array() for the core (SI).
@@ -1165,75 +1293,171 @@ def find_b_ma_3layer(N, R, M, Ps, Ts, b_cm,
                 Boundary mantle-atmosphere of the planet (SI).
             
     """
+    Bma_min = Bcm
+    Bma_max = R
     
-    b_cm_min = find_boundary_2layer(N, R, M, Ps, Ts,
+    r, m, P, T, rho, u, mat = \
+        integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                         ucold_array_core, ucold_array_atm)
+        
+    if m[-1] == 0:
+        print("A planet made of core and atm. materials lacks mass.")
+        print("Try increasing the mass, increasing Bcm or decreasing R.") 
+        return Bma_min
+        
+    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
+    
+    r, m, P, T, rho, u, mat = \
+        integrate_2layer(N, R, M, Ps, Ts, rhos_mantle, Bcm,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         ucold_array_core, ucold_array_mantle)
+        
+    if m[-1] > 0:
+        print("A planet made of core and mantle materials excess mass.")  
+        print("Try decreasing the mass, decreasing Bcm or increasing R")
+        return Bma_max
+    
+    for i in range(iterations):
+            
+        Bma_try = (Bma_min + Bma_max)/2.
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma_try,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        if m[-1] > 0.:
+            Bma_min = Bma_try
+        else:
+            Bma_max = Bma_try
+        
+    return Bma_max
+
+@jit(nopython=True)
+def find_Bcm_3layer(N, R, M, Ps, Ts, rhos, Bma,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_mantle)
-    
-    b_cm_max = find_boundary_2layer(N, R, M, Ps, Ts,
-                     mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_atm)
+                     ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                     iterations=40):
+    """ Finder of the boundary mantle-atmosphere of the planet for
+        fixed boundary core-mantle.
+        The correct value yields m -> 0 at the center of the planet. 
     
-    if b_cm > b_cm_max:
-        print("value of b_cm is too high,")
-        print("maximum value available for this configuration is:")
-        print(b_cm_max/R_earth, "R_earth")
-        return -1
-        
-    elif b_cm < b_cm_min:
-        print("value of b_cm is too low,")
-        print("minimum value available for this configuration is:")
-        print(b_cm_min/R_earth, "R_earth")
-        return -1
-        
-    b_ma_min = R
-    b_ma_max = b_cm
-    
-    r, m_min, P, T, rho, u, mat = \
-        integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma_min,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
-                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
-        
-    r, m_max, P, T, rho, u, mat = \
-        integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma_max,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
-                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
-    
-    if m_max[-1] > 0. and m_min[-1] == 0:
-        
-        for i in range(30):
+        Args:
+            N (int):
+                Number of integration steps.
             
-            b_ma_try = (b_ma_min + b_ma_max)/2.
-            
-            r, m, P, T, rho, u, mat = \
-                  integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma_try,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
-                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
-            
-            if m[-1] > 0.:
-                b_ma_max = b_ma_try
-            else:
-                b_ma_min = b_ma_try
+            R (float):
+                Radii of the planet (SI).
                 
-    else:
-        print("Something went wrong")
-        return 0.
+            M (float):
+                Mass of the planet (SI).
+                
+            Ps (float):
+                Pressure at the surface (SI).
+                
+            Ts (float):
+                Temperature at the surface (SI).
+                
+            rhos (float):
+                Density at the surface (SI).
+                
+            Bma (float):
+                Boundary mantle-atmosphere (SI).
+                
+            mat_id_core (int):
+                Material id for the core.
+                
+            T_rho_id_core (int)
+                Relation between T and rho to be used at the core.
+                
+            T_rho_args_core (list):
+                Extra arguments to determine the relation at the core.
+                
+            mat_id_mantle (int):
+                Material id for the mantle.
+                
+            T_rho_id_mantle (int)
+                Relation between T and rho to be used at the mantle.
+                
+            T_rho_args_mantle (list):
+                Extra arguments to determine the relation at the mantle.
+                
+            mat_id_atm (int):
+                Material id for the atmosphere.
+                
+            T_rho_id_atm (int)
+                Relation between T and rho to be used at the atmosphere.
+                
+            T_rho_args_atm (list):
+                Extra arguments to determine the relation at the atmosphere.
+                             
+            ucold_array_core ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the core (SI).
+                
+            ucold_array_mantle ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the mantle (SI).
+                
+            ucold_array_atm ([float]):
+                Precomputed values of cold internal energy
+                with function _create_ucold_array() for the atmosphere (SI).
+                
+        Returns:
+            
+            b_ma_max ([float]):
+                Boundary mantle-atmosphere of the planet (SI).
+            
+    """
+    Bcm_min = 0.
+    Bcm_max = Bma
+    
+    r, m, P, T, rho, u, mat = \
+        integrate_2layer(N, R, M, Ps, Ts, rhos, Bma,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                         ucold_array_core, ucold_array_atm)
         
-    return b_ma_max
-
+    if m[-1] > 0:
+        print("A planet made of core and atm. materials excess mass.")
+        print("Try decreasing the mass, decreasing Bma or increasing R")
+        return Bcm_min
+    
+    r, m, P, T, rho, u, mat = \
+        integrate_2layer(N, R, M, Ps, Ts, rhos, Bma,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                         ucold_array_mantle, ucold_array_atm)
+        
+    if m[-1] == 0:
+        print("A planet made of mantle and atm. materials lacks mass.")  
+        print("Try increasing the mass, increasing Bma or decreasing R")
+        return Bcm_max
+    
+    for i in range(iterations):
+            
+        Bcm_try = (Bcm_min + Bcm_max)/2.
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm_try, Bma,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
+                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        if m[-1] > 0.:
+            Bcm_min = Bcm_try
+        else:
+            Bcm_max = Bcm_try
+        
+    return Bcm_max
 
 @jit(nopython=True)
 def _find_b_ma_3layer_nocheck(N, R, M, Ps, Ts, b_cm,
@@ -1361,12 +1585,12 @@ def _find_b_ma_3layer_nocheck(N, R, M, Ps, Ts, b_cm,
 
 
 @jit(nopython=True)
-def find_boundaries_3layer(N, R, M, Ps, Ts, MoI,
+def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_mantle, ucold_array_atm):
+                     ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                     iterations=20, subiterations=10):
     """ Finder of the boundaries of the planet for a
         fixed moment of inertia.
         The correct value yields m -> 0 at the center of the planet. 
@@ -1386,6 +1610,9 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, MoI,
                 
             Ts (float):
                 Temperature at the surface (SI).
+                
+            rhos (float):
+                Density at the surface (SI).
                 
             MoI (float):
                 moment of inertia (SI).
@@ -1417,12 +1644,6 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, MoI,
             T_rho_args_atm (list):
                 Extra arguments to determine the relation at the atmosphere.
                 
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
-                
             ucold_array_core ([float]):
                 Precomputed values of cold internal energy
                 with function _create_ucold_array() for the core (SI).
@@ -1441,87 +1662,81 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, MoI,
                 Boundaries core-mantle and mantle-atmosphere of the planet (SI).
             
     """
+    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
     
-    b_cm_max = find_boundary_2layer(N, R, M, Ps, Ts,
+    Bcm_I_max = find_boundary_2layer(N, R, M, Ps, Ts, rhos_mantle,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     rhos_min, rhos_max,
                      ucold_array_core, ucold_array_mantle)
     
-    b_cm_min = find_boundary_2layer(N, R, M, Ps, Ts,
+    Bcm_I_min = find_boundary_2layer(N, R, M, Ps, Ts, rhos,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                     rhos_min, rhos_max,
                      ucold_array_core, ucold_array_atm)
-        
-    b_ma_max = R
-    b_ma_min = b_cm_min
     
-    r_min, m, P, T, rho_min, u, mat = \
-        integrate_3layer(N, R, M, Ps, Ts, b_cm_min, b_ma_min,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
-                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
-        
     r_max, m, P, T, rho_max, u, mat = \
-        integrate_3layer(N, R, M, Ps, Ts, b_cm_max, b_ma_max,
+        integrate_2layer(N, R, M, Ps, Ts, rhos_mantle, Bcm_I_max,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+                         ucold_array_core, ucold_array_mantle)
+        
+    r_min, m, P, T, rho_min, u, mat = \
+        integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm_I_min,
+                         mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
+                         ucold_array_core, ucold_array_atm)
         
     moi_min = moi(r_min, rho_min)
     moi_max = moi(r_max, rho_max)
     
+    Bcm_min = Bcm_I_max
+    Bcm_max = Bcm_I_min
+    
     if MoI > moi_min and  MoI < moi_max:
         
-        for i in range(10):
+        for i in range(iterations):
+            print(i)
+            Bcm_try = (Bcm_min + Bcm_max)/2.
             
-            b_cm_try = (b_cm_min + b_cm_max)/2.
-            
-            b_ma_try = _find_b_ma_3layer_nocheck(N, R, M, Ps, Ts, b_cm_try,
+            Bma_try = find_Bma_3layer(N, R, M, Ps, Ts, rhos, Bcm_try,
                              mat_id_core, T_rho_id_core, T_rho_args_core,
                              mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                              mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                             rhos_min, rhos_max,
-                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                             subiterations)
                     
             r, m, P, T, rho, u, mat = \
-                  integrate_3layer(N, R, M, Ps, Ts, b_cm_try, b_ma_try,
+                  integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm_try, Bma_try,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
                          ucold_array_core, ucold_array_mantle, ucold_array_atm)
             
             if moi(r,rho) < MoI:
-                b_cm_min = b_cm_try
+                Bcm_max = Bcm_try
             else:
-                b_cm_max = b_cm_try
+                Bcm_min = Bcm_try
                 
     elif MoI > moi_max:
         print("Moment of interia is too high,")
         print("maximum value is:")
         print(moi_max/M_earth/R_earth/R_earth,"[M_earth R_earth^2]")
-        b_cm_try = 0.
-        b_ma_try = 0.
+        Bcm_try = 0.
+        Bma_try = 0.
     
     elif MoI < moi_min:
         print("Moment of interia is too low,")
         print("minimum value is:")
         print(moi_min/M_earth/R_earth/R_earth,"[M_earth R_earth^2]")
-        b_cm_try = 0.
-        b_ma_try = 0.
+        Bcm_try = 0.
+        Bma_try = 0.
         
     else:
         print("Something went wrong")
-        b_cm_try = 0.
-        b_ma_try = 0.
+        Bcm_try = 0.
+        Bma_try = 0.
         
-    return b_cm_try, b_ma_try
+    return Bcm_try, Bma_try
 
 ###############################################################################
 ####################### Spining profile functions #############################
