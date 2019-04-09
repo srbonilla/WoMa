@@ -1427,7 +1427,7 @@ def find_Bcm_3layer(N, R, M, Ps, Ts, rhos, Bma,
         
     if m[-1] > 0:
         print("A planet made of core and atm. materials excess mass.")
-        print("Try decreasing the mass, decreasing Bma or increasing R")
+        print("Try decreasing the mass, increasing Bma or increasing R")
         return Bcm_min
     
     r, m, P, T, rho, u, mat = \
@@ -1458,131 +1458,6 @@ def find_Bcm_3layer(N, R, M, Ps, Ts, rhos, Bma,
             Bcm_max = Bcm_try
         
     return Bcm_max
-
-@jit(nopython=True)
-def _find_b_ma_3layer_nocheck(N, R, M, Ps, Ts, b_cm,
-                     mat_id_core, T_rho_id_core, T_rho_args_core,
-                     mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_mantle, ucold_array_atm):
-    """ Fast finder of the boundary mantle-atmosphere of the planet for
-        fixed boundary core-mantle.
-        The correct value yields m -> 0 at the center of the planet. 
-    
-        Args:
-            N (int):
-                Number of integration steps.
-            
-            R (float):
-                Radii of the planet (SI).
-                
-            M (float):
-                Mass of the planet (SI).
-                
-            Ps (float):
-                Pressure at the surface (SI).
-                
-            Ts (float):
-                Temperature at the surface (SI).
-                
-            b_cm (float):
-                Boundary core-mantle (SI).
-                
-            mat_id_core (int):
-                Material id for the core.
-                
-            T_rho_id_core (int)
-                Relation between T and rho to be used at the core.
-                
-            T_rho_args_core (list):
-                Extra arguments to determine the relation at the core.
-                
-            mat_id_mantle (int):
-                Material id for the mantle.
-                
-            T_rho_id_mantle (int)
-                Relation between T and rho to be used at the mantle.
-                
-            T_rho_args_mantle (list):
-                Extra arguments to determine the relation at the mantle.
-                
-            mat_id_atm (int):
-                Material id for the atmosphere.
-                
-            T_rho_id_atm (int)
-                Relation between T and rho to be used at the atmosphere.
-                
-            T_rho_args_atm (list):
-                Extra arguments to determine the relation at the atmosphere.
-                
-            rhos_min (float):
-                Lower bound for the density at the surface.
-                
-            rhos_min (float):
-                Upper bound for the density at the surface.
-                
-            ucold_array_core ([float]):
-                Precomputed values of cold internal energy
-                with function _create_ucold_array() for the core (SI).
-                
-            ucold_array_mantle ([float]):
-                Precomputed values of cold internal energy
-                with function _create_ucold_array() for the mantle (SI).
-                
-            ucold_array_atm ([float]):
-                Precomputed values of cold internal energy
-                with function _create_ucold_array() for the atmosphere (SI).
-                
-        Returns:
-            
-            b_ma_max ([float]):
-                Boundary mantle-atmosphere of the planet (SI).
-            
-    """
-    
-    b_ma_min = R
-    b_ma_max = b_cm
-    
-    r, m_min, P, T, rho, u, mat = \
-        integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma_min,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
-                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
-        
-    r, m_max, P, T, rho, u, mat = \
-        integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma_max,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
-                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
-    
-
-        
-    for i in range(30):
-            
-        b_ma_try = (b_ma_min + b_ma_max)/2.
-            
-        r, m, P, T, rho, u, mat = \
-                  integrate_3layer(N, R, M, Ps, Ts, b_cm, b_ma_try,
-                         mat_id_core, T_rho_id_core, T_rho_args_core,
-                         mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                         mat_id_atm, T_rho_id_atm, T_rho_args_atm,
-                         rhos_min, rhos_max,
-                         ucold_array_core, ucold_array_mantle, ucold_array_atm)
-            
-        if m[-1] > 0.:
-            b_ma_max = b_ma_try
-        else:
-            b_ma_min = b_ma_try
-                
-
-    return b_ma_max
-
-
 
 @jit(nopython=True)
 def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
@@ -1695,7 +1570,7 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
     if MoI > moi_min and  MoI < moi_max:
         
         for i in range(iterations):
-            print(i)
+            
             Bcm_try = (Bcm_min + Bcm_max)/2.
             
             Bma_try = find_Bma_3layer(N, R, M, Ps, Ts, rhos, Bcm_try,
@@ -1737,6 +1612,612 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
         Bma_try = 0.
         
     return Bcm_try, Bma_try
+
+###############################################################################
+####################### Spherical profile classes #############################
+###############################################################################
+
+def _print_banner():
+    
+    print("\n-------------------------------------------------------")
+    print("-               WoMa - World Maker                    -")
+    print("-------------------------------------------------------\n")
+    print("sergio.ruiz-bonilla@durham.ac.uk\n")
+    
+class _planet():
+    
+    N_integ_steps = 10000
+    iterations    = 40
+    
+    T_surface     = np.nan
+    P_surface     = np.nan
+    rho_surface   = np.nan
+    
+    def __init__(self):
+        return None
+    
+    def set_T_surface(self, T):
+        self.T_surface = T
+        
+    def set_P_surface(self, P):
+        self.P_surface = P
+        
+    def set_rho_surface(self, rho):
+        self.rho_surface = rho          
+    
+class _1l_planet(_planet):
+    
+    N_layers        = 1
+    mat_id_core     = np.nan
+    T_rho_id_core   = np.nan
+    T_rho_args_core = np.nan
+    
+    M           = np.nan # Total mass of the planet (SI).
+    R           = np.nan # Radius of the planet (SI).
+    A1_R        = np.nan # Vector of radial distances (SI).
+    A1_M        = np.nan # Vector of cumulative mass of the planet (SI).
+    A1_P        = np.nan # Pressure profile (SI).
+    A1_T        = np.nan # Temperature profile (SI).
+    A1_rho      = np.nan # Density profile (SI).
+    A1_u        = np.nan # Internal energy profile (SI).
+    A1_material = np.nan # Material profile
+    
+    def __init__(self):
+        return None
+    
+    def set_core_properties(self, mat_id_core, T_rho_id_core, T_rho_args_core):
+        self.mat_id_core     = mat_id_core
+        self.T_rho_id_core   = T_rho_id_core
+        self.T_rho_args_core = np.array(T_rho_args_core, dtype='float')
+    
+    def fix_R_given_M(self, M, R_max):
+        """ Computes the correct R for a given M.
+        """
+        ucold_array = eos.load_ucold_array(self.mat_id_core)
+        R = find_radius_1layer(self.N_integ_steps, R_max, M,
+                               self.P_surface, self.T_surface, self.rho_surface,
+                               self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                               ucold_array, self.iterations)
+        
+        M_tweek = find_mass_1layer(self.N_integ_steps, R, 2*M,
+                                   self.P_surface, self.T_surface, self.rho_surface,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   ucold_array)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_1layer(self.N_integ_steps, R, M_tweek,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             ucold_array)
+         
+        self.M           = M_tweek
+        self.R           = R
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def fix_M_given_R(self, R, M_max):
+        
+        ucold_array = eos.load_ucold_array(self.mat_id_core)
+        
+        M = find_mass_1layer(self.N_integ_steps, R, M_max,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             ucold_array)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_1layer(self.N_integ_steps, R, M,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             ucold_array)
+            
+        self.M           = M
+        self.R           = R
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def compute_spherical_profile_given_R_M(self, R, M):
+        
+        ucold_array = eos.load_ucold_array(self.mat_id_core)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_1layer(self.N_integ_steps, R, M,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             ucold_array)
+            
+        self.M           = M
+        self.R           = R
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+
+class _2l_planet(_planet):
+    
+    N_layers          = 2
+    mat_id_core       = np.nan
+    T_rho_id_core     = np.nan
+    T_rho_args_core   = np.nan
+    mat_id_mantle     = np.nan
+    T_rho_id_mantle   = np.nan
+    T_rho_args_mantle = np.nan
+    
+    M           = np.nan # Total mass of the planet (SI).
+    R           = np.nan # Radius of the planet (SI).
+    Bcm         = np.nan # Boundary core-mantle (SI).
+    A1_R        = np.nan # Vector of radial distances (SI).
+    A1_M        = np.nan # Vector of cumulative mass of the planet (SI).
+    A1_P        = np.nan # Pressure profile (SI).
+    A1_T        = np.nan # Temperature profile (SI).
+    A1_rho      = np.nan # Density profile (SI).
+    A1_u        = np.nan # Internal energy profile (SI).
+    A1_material = np.nan # Material profile
+        
+    def __init__(self):
+        return None
+    
+    def set_core_properties(self, mat_id_core, T_rho_id_core, T_rho_args_core):  
+        self.mat_id_core     = mat_id_core
+        self.T_rho_id_core   = T_rho_id_core
+        self.T_rho_args_core = np.array(T_rho_args_core, dtype='float')
+        
+    def set_mantle_properties(self, mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle): 
+        self.mat_id_mantle     = mat_id_mantle
+        self.T_rho_id_mantle   = T_rho_id_mantle
+        self.T_rho_args_mantle = np.array(T_rho_args_mantle, dtype='float')
+    
+    def fix_B_given_R_M(self, R, M):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        
+        Bcm = find_boundary_2layer(self.N_integ_steps, R, M,
+                                   self.P_surface, self.T_surface, self.rho_surface,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   ucold_array_core, ucold_array_mantle, self.iterations)
+        
+        M_tweek = find_mass_2layer(self.N_integ_steps, R, 2*M,
+                                   self.P_surface, self.T_surface, self.rho_surface, Bcm,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   ucold_array_core, ucold_array_mantle)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_2layer(self.N_integ_steps, R, M_tweek,
+                             self.P_surface, self.T_surface, self.rho_surface, Bcm,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             ucold_array_core, ucold_array_mantle)
+            
+        self.M           = M_tweek
+        self.R           = R
+        self.Bcm         = Bcm
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+            
+    def fix_M_given_B_R(self, B, R, M_max):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        
+        M = find_mass_2layer(self.N_integ_steps, R, M_max,
+                             self.P_surface, self.T_surface, self.rho_surface, B,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             ucold_array_core, ucold_array_mantle)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_2layer(self.N_integ_steps, R, M,
+                             self.P_surface, self.T_surface, self.rho_surface, B,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             ucold_array_core, ucold_array_mantle)
+            
+        self.M           = M
+        self.R           = R
+        self.Bcm         = B
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def fix_R_given_M_B(self, M, B, R_max):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        
+        R = find_radius_2layer(self.N_integ_steps, R_max, M,
+                               self.P_surface, self.T_surface, self.rho_surface, B,
+                               self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                               self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                               ucold_array_core, ucold_array_mantle, self.iterations)
+        
+        M_tweek = find_mass_2layer(self.N_integ_steps, R, 2*M,
+                                   self.P_surface, self.T_surface, self.rho_surface, B,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   ucold_array_core, ucold_array_mantle)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_2layer(self.N_integ_steps, R, M_tweek,
+                             self.P_surface, self.T_surface, self.rho_surface, B,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             ucold_array_core, ucold_array_mantle)
+            
+        self.M           = M_tweek
+        self.R           = R
+        self.Bcm         = B
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def compute_spherical_profile_given_R_M_B(self, R, M, B):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_2layer(self.N_integ_steps, R, M,
+                             self.P_surface, self.T_surface, self.rho_surface, B,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             ucold_array_core, ucold_array_mantle)
+            
+        self.M           = M
+        self.R           = R
+        self.Bcm         = B
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+
+class _3l_planet(_planet):
+    
+    N_layers          = 3
+    mat_id_core       = np.nan 
+    T_rho_id_core     = np.nan
+    T_rho_args_core   = np.nan
+    mat_id_mantle     = np.nan
+    T_rho_id_mantle   = np.nan
+    T_rho_args_mantle = np.nan
+    mat_id_atm        = np.nan
+    T_rho_id_atm      = np.nan
+    T_rho_args_atm    = np.nan
+    
+    subiterations = 20
+    
+    M           = np.nan # Total mass of the planet (SI).
+    R           = np.nan # Radius of the planet (SI).
+    Bcm         = np.nan # Boundary core-mantle (SI).
+    Bma         = np.nan # Boundary mantle-atmosphere (SI).
+    I           = np.nan # Moment of inertia (SI).
+    A1_R        = np.nan # Vector of radial distances (SI).
+    A1_M        = np.nan # Vector of cumulative mass of the planet (SI).
+    A1_P        = np.nan # Pressure profile (SI).
+    A1_T        = np.nan # Temperature profile (SI).
+    A1_rho      = np.nan # Density profile (SI).
+    A1_u        = np.nan # Internal energy profile (SI).
+    A1_material = np.nan # Material profile
+        
+    def __init__(self):
+        return None
+    
+    def set_core_properties(self, mat_id_core, T_rho_id_core, T_rho_args_core):  
+        self.mat_id_core     = mat_id_core
+        self.T_rho_id_core   = T_rho_id_core
+        self.T_rho_args_core = np.array(T_rho_args_core, dtype='float')
+        
+    def set_mantle_properties(self, mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle): 
+        self.mat_id_mantle     = mat_id_mantle
+        self.T_rho_id_mantle   = T_rho_id_mantle
+        self.T_rho_args_mantle = np.array(T_rho_args_mantle, dtype='float')
+        
+    def set_atmosphere_properties(self, mat_id_atm, T_rho_id_atm, T_rho_args_atm): 
+        self.mat_id_atm     = mat_id_atm
+        self.T_rho_id_atm   = T_rho_id_atm
+        self.T_rho_args_atm = np.array(T_rho_args_atm, dtype='float')
+    
+    def fix_Bcm_Bma_given_R_M_I(self, R, M, I):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        
+        Bcm, Bma = \
+            find_boundaries_3layer(self.N_integ_steps, R, M,
+                                   self.P_surface, self.T_surface, self.rho_surface, I, 
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                                   ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                                   self.iterations, self.subiterations)
+
+        
+        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+                                   self.P_surface, self.T_surface, self.rho_surface,
+                                   Bcm, Bma,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                                   ucold_array_core, ucold_array_mantle, ucold_array_atm)
+        
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(self.N_integ_steps, R, M_tweek,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             Bcm, Bma,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        self.M           = M_tweek
+        self.R           = R
+        self.Bcm         = Bcm
+        self.Bma         = Bma
+        self.I           = moi(r, rho)
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+        
+    
+    def fix_Bma_given_R_M_Bcm(self, R, M, Bcm):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        
+        Bma = find_Bma_3layer(self.N_integ_steps, R, M,
+                              self.P_surface, self.T_surface, self.rho_surface, Bcm, 
+                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                              ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                              self.iterations)
+        
+        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+                                   self.P_surface, self.T_surface, self.rho_surface,
+                                   Bcm, Bma,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                                   ucold_array_core, ucold_array_mantle, ucold_array_atm)
+
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(self.N_integ_steps, R, M_tweek,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             Bcm, Bma,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        self.M           = M_tweek
+        self.R           = R
+        self.Bcm         = Bcm
+        self.Bma         = Bma
+        self.I           = moi(r, rho)
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def fix_Bcm_given_R_M_Bma(self, R, M, Bma):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        
+        Bcm = find_Bcm_3layer(self.N_integ_steps, R, M,
+                              self.P_surface, self.T_surface, self.rho_surface, Bma, 
+                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                              ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                              self.iterations)
+        
+        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+                                   self.P_surface, self.T_surface, self.rho_surface,
+                                   Bcm, Bma,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                                   ucold_array_core, ucold_array_mantle, ucold_array_atm)
+
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(self.N_integ_steps, R, M_tweek,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             Bcm, Bma,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        self.M           = M_tweek
+        self.R           = R
+        self.Bcm         = Bcm
+        self.Bma         = Bma
+        self.I           = moi(r, rho)
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def fix_M_given_R_Bcm_Bma(self, R, Bcm, Bma, M_max):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        
+        M = find_mass_3layer(self.N_integ_steps, R, M_max,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             Bcm, Bma,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(self.N_integ_steps, R, M,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             Bcm, Bma,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        self.M           = M
+        self.R           = R
+        self.Bcm         = Bcm
+        self.Bma         = Bma
+        self.I           = moi(r, rho)
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def fix_R_given_M_Bcm_Bma(self, M, Bcm, Bma, R_max):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        
+        R = find_radius_3layer(self.N_integ_steps, R_max, M,
+                               self.P_surface, self.T_surface, self.rho_surface,
+                               Bcm, Bma, 
+                               self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                               self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                               self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                               ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                               self.iterations)
+        
+        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+                                   self.P_surface, self.T_surface, self.rho_surface,
+                                   Bcm, Bma,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                                   ucold_array_core, ucold_array_mantle, ucold_array_atm)
+
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(self.N_integ_steps, R, M_tweek,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             Bcm, Bma,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        self.M           = M_tweek
+        self.R           = R
+        self.Bcm         = Bcm
+        self.Bma         = Bma
+        self.I           = moi(r, rho)
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    def compute_spherical_profile_given_R_M_Bcm_Bma(self, R, M, Bcm, Bma):
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        
+        r, m, P, T, rho, u, mat = \
+            integrate_3layer(self.N_integ_steps, R, M,
+                             self.P_surface, self.T_surface, self.rho_surface,
+                             Bcm, Bma,
+                             self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                             self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                             self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                             ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        self.M           = M
+        self.R           = R
+        self.Bcm         = Bcm
+        self.Bma         = Bma
+        self.I           = moi(r, rho)
+        self.A1_R        = r
+        self.A1_M        = m
+        self.A1_P        = P
+        self.A1_T        = T
+        self.A1_rho      = rho
+        self.A1_u        = u
+        self.A1_material = mat
+    
+    
+def Planet(N_layers):
+        
+    _print_banner()
+    
+    if N_layers not in [1, 2, 3]:
+        print(f"Can't build a planet with {N_layers} layers!")
+        return None
+        
+    if N_layers == 1:
+        print("For a 1 layer planet, please specify:")
+        planet = _1l_planet()
+        return planet
+            
+    elif N_layers == 2:
+        print("For a 2 layer planet, please specify:")
+        planet = _2l_planet()
+        return planet
+        
+    elif N_layers == 3:
+        print("For a 3 layer planet, please specify:")
+        planet = _3l_planet()
+        return planet
+
+
+        
 
 ###############################################################################
 ####################### Spining profile functions #############################
@@ -2265,7 +2746,7 @@ def spin1layer(iterations, r_array, z_array, radii, densities, Tw,
 
 def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
-                           ucold_array_core, N_neig):
+                           ucold_array_core, N_neig=48, alpha=3.5e6):
     
     """ Particle placement for a 1 layer spining profile.
     
@@ -2348,8 +2829,6 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
             
     """
     rho_e_model = interp1d(r_array, rho_e)
-    
-    rho_e_model_inv = interp1d(rho_e, r_array)
     rho_p_model_inv = interp1d(rho_p, z_array)
 
     Re = np.max(r_array[rho_e > 0])
@@ -2357,7 +2836,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     radii = np.arange(0, Re, Re/1000000)
     densities = rho_e_model(radii)
 
-    particles = seagen.GenSphere(N, radii[1:], densities[1:])
+    particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
@@ -2398,37 +2877,9 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
             
     dzPz_dz = delta_f/delta_z
     
-    alpha = 3.5e6
     mP = particles.m*(f + alpha*dzPz_dz)
     
-# =============================================================================
-#     import matplotlib.pyplot as plt
-#     
-#     plt.hist(dzPz_dz, bins=100)
-#     plt.show()
-#     
-#     mask1 = particles_rc < R_earth/10
-#     #mask2 = np.logical_and(particles_rc > 5*R_earth/10, particles_rc < 5.1*R_earth/10)
-#     plt.scatter(particles.z[mask1]/R_earth, (zP/particles.z)[mask1], s=1)
-#     #plt.scatter(particles.z[mask2]/R_earth, (zP/particles.z)[mask2], s=1)
-#     plt.scatter(particles.z[mask1]/R_earth, (mP/particles.m)[mask1], s=1)
-#     plt.show()
-#     
-#     plt.scatter(particles.z/R_earth, (mP/particles.m), s=1)
-#     plt.show()
-#     
-#     R1 = particles.A1_r
-#     rho_1 = rho_e_model(R1)
-#     Z1 = rho_p_model_inv(rho_1)
-#     f = Z1/R1
-#     zP2 = particles.z*f
-# =============================================================================
-    
-    # Tweek masses
-    
-    #mP = particles.m*zP/particles.z
-    
-    print("\nx, y, z, and m computed\n")
+    #print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -2448,18 +2899,18 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     x = particles.x
     y = particles.y
     
-    print("vx, vy, and vz computed\n")
+    #print("vx, vy, and vz computed\n")
     
     c_core = eos._spec_c(mat_id_core)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
-        u[k] = eos._ucold_tab(rho[k], ucold_array_core)
+        u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
         u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
         P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
     
-    print("Internal energy u computed\n")
+    #print("Internal energy u computed\n")
     ## Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
@@ -2692,7 +3143,8 @@ def spin2layer(iterations, r_array, z_array, radii, densities, Tw,
 def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                           ucold_array_core, ucold_array_mantle, N_neig=48):
+                           ucold_array_core, ucold_array_mantle, N_neig=48,
+                           alpha=3.5e6):
     """ Particle placement for a 2 layer spining profile.
     
         Args:
@@ -2791,8 +3243,6 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     """
     
     rho_e_model = interp1d(r_array, rho_e)
-    
-    rho_e_model_inv = interp1d(rho_e, r_array)
     rho_p_model_inv = interp1d(rho_p, z_array)
 
     Re = np.max(r_array[rho_e > 0])
@@ -2800,7 +3250,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     radii = np.arange(0, Re, Re/1000000)
     densities = rho_e_model(radii)
 
-    particles = seagen.GenSphere(N, radii[1:], densities[1:])
+    particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
@@ -2840,13 +3290,12 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
             
     dzPz_dz = delta_f/delta_z
-    
-    alpha = 3.5e6
+
     mP = particles.m*(f + alpha*dzPz_dz)
 
     # Tweek masses
     #mP = particles.m*zP/particles.z
-    print("\nx, y, z, and m computed\n")
+    #print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -2866,7 +3315,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     x = particles.x
     y = particles.y
     
-    print("vx, vy, and vz computed\n")
+    #print("vx, vy, and vz computed\n")
     
     c_core = eos._spec_c(mat_id_core)
     c_mantle = eos._spec_c(mat_id_mantle)
@@ -2875,15 +3324,15 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     
     for k in range(mP.shape[0]):
         if particles_rho[k] > rho_i:
-            u[k] = eos._ucold_tab(rho[k], ucold_array_core)
+            u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
             u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
         else:
-            u[k] = eos._ucold_tab(rho[k], ucold_array_mantle)
+            u[k] = eos._ucold_tab(rho[k], mat_id_mantle, ucold_array_mantle)
             u[k] = u[k] + c_mantle*eos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_mantle)
     
-    print("Internal energy u computed\n")
+    #print("Internal energy u computed\n")
     
     ## Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
@@ -3161,7 +3610,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                            mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                            ucold_array_core, ucold_array_mantle, ucold_array_atm,
-                           N_neig=48):
+                           N_neig=48, alpha=3.5e6):
     """ Particle placement for a 2 layer spining profile.
     
         Args:
@@ -3275,8 +3724,6 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
             
     """
     rho_e_model = interp1d(r_array, rho_e)
-    
-    rho_e_model_inv = interp1d(rho_e, r_array)
     rho_p_model_inv = interp1d(rho_p, z_array)
 
     Re = np.max(r_array[rho_e > 0])
@@ -3284,7 +3731,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     radii = np.arange(0, Re, Re/1000000)
     densities = rho_e_model(radii)
 
-    particles = seagen.GenSphere(N, radii[1:], densities[1:])
+    particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
@@ -3325,9 +3772,8 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
             
     dzPz_dz = delta_f/delta_z
     
-    alpha = 3.5e6
     mP = particles.m*(f + alpha*dzPz_dz)
-    print("\nx, y, z, and m computed\n")
+    #print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -3347,7 +3793,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     x = particles.x
     y = particles.y
     
-    print("vx, vy, and vz computed\n")
+    #print("vx, vy, and vz computed\n")
     
     c_core    = eos._spec_c(mat_id_core)
     c_mantle  = eos._spec_c(mat_id_mantle)
@@ -3357,21 +3803,21 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     
     for k in range(mP.shape[0]):
         if particles_rho[k] > rho_cm:
-            u[k] = eos._ucold_tab(rho[k], ucold_array_core)
+            u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
             u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
             
         elif particles_rho[k] > rho_ma:
-            u[k] = eos._ucold_tab(rho[k], ucold_array_mantle)
+            u[k] = eos._ucold_tab(rho[k], mat_id_mantle, ucold_array_mantle)
             u[k] = u[k] + c_mantle*eos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_mantle)
             
         else:
-            u[k] = eos._ucold_tab(rho[k], ucold_array_atm)
+            u[k] = eos._ucold_tab(rho[k], mat_id_atm, ucold_array_atm)
             u[k] = u[k] + c_atm*eos.T_rho(rho[k], T_rho_id_atm, T_rho_args_atm)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_atm)
     
-    print("Internal energy u computed\n")
+    #print("Internal energy u computed\n")
     ## Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
@@ -3383,3 +3829,415 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
                 + (rho < rho_ma)*mat_id_atm
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id 
+
+
+###############################################################################
+####################### Spining profile classes ###############################
+###############################################################################
+    
+class _spin():
+    
+    N_steps_spin = 1000
+    iterations   = 40
+    
+    P_surface   = np.nan
+    T_surface   = np.nan
+    rho_surface = np.nan
+    
+    P_center   = np.nan
+    T_center   = np.nan
+    rho_center = np.nan
+    
+    Re = np.nan
+    Rp = np.nan
+    Tw = np.nan
+    
+    A1_equator     = np.nan
+    A1_pole        = np.nan
+    A1_rho_equator = np.nan
+    A1_rho_pole    = np.nan
+    
+    def __init__(self):
+        return None
+    
+class _1l_spin(_spin):
+    
+    def __init__(self, planet):
+        
+        self.N_layers        = 1
+        self.mat_id_core     = planet.mat_id_core
+        self.T_rho_id_core   = planet.T_rho_id_core
+        self.T_rho_args_core = planet.T_rho_args_core
+        
+        self.P_surface   = planet.P_surface
+        self.T_surface   = planet.T_surface
+        self.rho_surface = planet.rho_surface
+        
+        self.P_center    = planet.A1_P[-1]
+        self.T_center    = planet.A1_T[-1]
+        self.rho_center  = planet.A1_rho[-1]
+        
+        self.A1_R   = planet.A1_R
+        self.A1_rho = planet.A1_rho
+        self.A1_P   = planet.A1_P
+        
+    def solve(self, Tw, Re, Rp):
+        
+        r_array     = np.linspace(0, Re, self.N_steps_spin)
+        z_array     = np.linspace(0, Rp, self.N_steps_spin) 
+        
+        ucold_array = eos.load_ucold_array(self.mat_id_core) 
+        
+        profile_e, profile_p = \
+            spin1layer(self.iterations, r_array, z_array,
+                       self.A1_R, self.A1_rho, Tw,
+                       self.P_center, self.P_surface,
+                       self.rho_center, self.rho_surface,
+                       self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                       ucold_array)
+            
+        self.Tw = Tw
+        self.Re = Re
+        self.Rp = Rp
+        
+        self.A1_equator     = r_array
+        self.A1_pole        = z_array
+        self.A1_rho_equator = profile_e[-1]
+        self.A1_rho_pole    = profile_p[-1]
+        
+class _2l_spin(_spin):
+    
+    def __init__(self, planet):
+        
+        self.N_layers          = 2
+        self.mat_id_core       = planet.mat_id_core
+        self.T_rho_id_core     = planet.T_rho_id_core
+        self.T_rho_args_core   = planet.T_rho_args_core
+        self.mat_id_mantle     = planet.mat_id_mantle
+        self.T_rho_id_mantle   = planet.T_rho_id_mantle
+        self.T_rho_args_mantle = planet.T_rho_args_mantle
+        
+        self.P_surface   = planet.P_surface
+        self.T_surface   = planet.T_surface
+        self.rho_surface = planet.rho_surface
+        
+        self.P_center    = planet.A1_P[-1]
+        self.T_center    = planet.A1_T[-1]
+        self.rho_center  = planet.A1_rho[-1]
+        
+        k               = np.sum(planet.A1_material == planet.mat_id_core)
+        self.P_boundary = planet.A1_P[planet.N_integ_steps - k] + \
+                          planet.A1_P[planet.N_integ_steps - k - 1]
+        self.P_boundary = self.P_boundary/2.
+        
+        self.A1_R   = planet.A1_R
+        self.A1_rho = planet.A1_rho
+        self.A1_P   = planet.A1_P
+        
+    def solve(self, Tw, Re, Rp):
+        
+        r_array     = np.linspace(0, Re, self.N_steps_spin)
+        z_array     = np.linspace(0, Rp, self.N_steps_spin)
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core) 
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle) 
+        
+        profile_e, profile_p = \
+            spin2layer(self.iterations, r_array, z_array,
+                       self.A1_R, self.A1_rho, Tw,
+                       self.P_center, self.P_boundary, self.P_surface,
+                       self.rho_center, self.rho_surface,
+                       self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                       self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                       ucold_array_core, ucold_array_mantle)
+            
+        self.Tw = Tw
+        self.Re = Re
+        self.Rp = Rp
+        
+        self.A1_equator     = r_array
+        self.A1_pole        = z_array
+        self.A1_rho_equator = profile_e[-1]
+        self.A1_rho_pole    = profile_p[-1]
+        
+class _3l_spin(_spin):
+    
+    def __init__(self, planet):
+        
+        self.N_layers          = 3
+        self.mat_id_core       = planet.mat_id_core
+        self.T_rho_id_core     = planet.T_rho_id_core
+        self.T_rho_args_core   = planet.T_rho_args_core
+        self.mat_id_mantle     = planet.mat_id_mantle
+        self.T_rho_id_mantle   = planet.T_rho_id_mantle
+        self.T_rho_args_mantle = planet.T_rho_args_mantle
+        self.mat_id_atm        = planet.mat_id_atm
+        self.T_rho_id_atm      = planet.T_rho_id_atm
+        self.T_rho_args_atm    = planet.T_rho_args_atm
+        
+        self.P_surface   = planet.P_surface
+        self.T_surface   = planet.T_surface
+        self.rho_surface = planet.rho_surface
+        
+        k                  = np.sum(planet.A1_material == planet.mat_id_core)
+        self.P_boundary_cm = planet.A1_P[planet.N_integ_steps - k] + \
+                             planet.A1_P[planet.N_integ_steps - k - 1]
+        self.P_boundary_cm = self.P_boundary_cm/2.
+        
+        k                  = np.sum(planet.A1_material == planet.mat_id_atm)
+        self.P_boundary_ma = (planet.A1_P[k] + planet.A1_P[k - 1])/2.
+        
+        self.P_center    = planet.A1_P[-1]
+        self.T_center    = planet.A1_T[-1]
+        self.rho_center  = planet.A1_rho[-1]
+        
+        self.A1_R   = planet.A1_R
+        self.A1_rho = planet.A1_rho
+        self.A1_P   = planet.A1_P
+        
+    def solve(self, Tw, Re, Rp):
+        
+        r_array     = np.linspace(0, Re, self.N_steps_spin)
+        z_array     = np.linspace(0, Rp, self.N_steps_spin)
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core) 
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm = eos.load_ucold_array(self.mat_id_atm) 
+        
+        profile_e, profile_p = \
+            spin3layer(self.iterations, r_array, z_array,
+                       self.A1_R, self.A1_rho, Tw,
+                       self.P_center, self.P_boundary_cm, self.P_boundary_ma, self.P_surface,
+                       self.rho_center, self.rho_surface,
+                       self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                       self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                       self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                       ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        self.Tw = Tw
+        self.Re = Re
+        self.Rp = Rp
+        
+        self.A1_equator     = r_array
+        self.A1_pole        = z_array
+        self.A1_rho_equator = profile_e[-1]
+        self.A1_rho_pole    = profile_p[-1]
+    
+def Spin(planet):
+        
+    _print_banner()
+    
+    if planet.N_layers not in [1, 2, 3]:
+        
+        print(f"Can't build a planet with {planet.N_layers} layers!")
+        return None
+        
+    if planet.N_layers == 1:
+        
+        spin_planet = _1l_spin(planet)
+        return spin_planet
+            
+    elif planet.N_layers == 2:
+        
+        spin_planet = _2l_spin(planet)
+        return spin_planet
+        
+    elif planet.N_layers == 3:
+        
+        spin_planet = _3l_spin(planet)
+        return spin_planet
+
+class _1l_genspheroid():
+    
+    alpha = 3.5e6
+    
+    def __init__(self, spin_planet, N_particles, N_neig=48):
+        
+        self.N_layers    = 1
+        self.N_particles = N_particles
+        
+        self.A1_equator     = spin_planet.A1_equator
+        self.A1_rho_equator = spin_planet.A1_rho_equator
+        self.A1_pole        = spin_planet.A1_pole
+        self.A1_rho_pole    = spin_planet.A1_rho_pole
+        self.Tw             = spin_planet.Tw
+        
+        self.mat_id_core     = spin_planet.mat_id_core
+        self.T_rho_id_core   = spin_planet.T_rho_id_core
+        self.T_rho_args_core = spin_planet.T_rho_args_core
+        
+        ucold_array_core = eos.load_ucold_array(self.mat_id_core)
+        
+        x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            picle_placement_1layer(self.A1_equator, self.A1_rho_equator,
+                                   self.A1_pole, self.A1_rho_pole, self.Tw, N_particles,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   ucold_array_core, N_neig, alpha = self.alpha)
+            
+        self.A1_x = x
+        self.A1_y = y
+        self.A1_z = z
+        self.A1_vx = vx
+        self.A1_vy = vy
+        self.A1_vz = vz
+        self.A1_m = m
+        self.A1_h = h
+        self.A1_rho = rho
+        self.A1_P = P
+        self.A1_u = u
+        self.A1_mat_id = mat_id
+        self.A1_picle_id = picle_id
+        
+class _2l_genspheroid():
+    
+    alpha = 3.5e6
+    
+    def __init__(self, spin_planet, N_particles, N_neig=48):
+        
+        self.N_layers    = 2
+        self.N_particles = N_particles
+        
+        self.A1_equator     = spin_planet.A1_equator
+        self.A1_rho_equator = spin_planet.A1_rho_equator
+        self.A1_pole        = spin_planet.A1_pole
+        self.A1_rho_pole    = spin_planet.A1_rho_pole
+        self.Tw             = spin_planet.Tw
+        
+        self.mat_id_core       = spin_planet.mat_id_core
+        self.T_rho_id_core     = spin_planet.T_rho_id_core
+        self.T_rho_args_core   = spin_planet.T_rho_args_core
+        self.mat_id_mantle     = spin_planet.mat_id_mantle
+        self.T_rho_id_mantle   = spin_planet.T_rho_id_mantle
+        self.T_rho_args_mantle = spin_planet.T_rho_args_mantle
+        
+        self.P_boundary    = spin_planet.P_boundary
+        rho_P_model       = interp1d(spin_planet.A1_P, spin_planet.A1_rho)
+        self.rho_boundary = rho_P_model(self.P_boundary)
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        
+        x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            picle_placement_2layer(self.A1_equator, self.A1_rho_equator,
+                                   self.A1_pole, self.A1_rho_pole,
+                                   self.Tw, N_particles, self.rho_boundary,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   ucold_array_core, ucold_array_mantle,
+                                   N_neig, alpha=self.alpha)
+            
+        self.A1_x = x
+        self.A1_y = y
+        self.A1_z = z
+        self.A1_vx = vx
+        self.A1_vy = vy
+        self.A1_vz = vz
+        self.A1_m = m
+        self.A1_h = h
+        self.A1_rho = rho
+        self.A1_P = P
+        self.A1_u = u
+        self.A1_mat_id = mat_id
+        self.A1_picle_id = picle_id
+    
+class _3l_genspheroid():
+    
+    alpha = 3.5e6
+    
+    def __init__(self, spin_planet, N_particles, N_neig=48):
+        
+        self.N_layers    = 3
+        self.N_particles = N_particles
+        
+        self.A1_equator     = spin_planet.A1_equator
+        self.A1_rho_equator = spin_planet.A1_rho_equator
+        self.A1_pole        = spin_planet.A1_pole
+        self.A1_rho_pole    = spin_planet.A1_rho_pole
+        self.Tw             = spin_planet.Tw
+        
+        self.mat_id_core       = spin_planet.mat_id_core
+        self.T_rho_id_core     = spin_planet.T_rho_id_core
+        self.T_rho_args_core   = spin_planet.T_rho_args_core
+        self.mat_id_mantle     = spin_planet.mat_id_mantle
+        self.T_rho_id_mantle   = spin_planet.T_rho_id_mantle
+        self.T_rho_args_mantle = spin_planet.T_rho_args_mantle
+        self.mat_id_atm        = spin_planet.mat_id_atm
+        self.T_rho_id_atm      = spin_planet.T_rho_id_atm
+        self.T_rho_args_atm    = spin_planet.T_rho_args_atm
+        
+        self.P_boundary_cm    = spin_planet.P_boundary_cm
+        self.P_boundary_ma    = spin_planet.P_boundary_ma
+        rho_P_model           = interp1d(spin_planet.A1_P, spin_planet.A1_rho)
+        self.rho_boundary_cm  = rho_P_model(self.P_boundary_cm)
+        self.rho_boundary_ma  = rho_P_model(self.P_boundary_ma)
+        
+        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        
+        x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            picle_placement_2layer(self.A1_equator, self.A1_rho_equator,
+                                   self.A1_pole, self.A1_rho_pole,
+                                   self.Tw, N_particles, self.rho_boundary,
+                                   self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
+                                   self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
+                                   ucold_array_core, ucold_array_mantle,
+                                   N_neig, alpha=self.alpha)
+            
+        self.A1_x = x
+        self.A1_y = y
+        self.A1_z = z
+        self.A1_vx = vx
+        self.A1_vy = vy
+        self.A1_vz = vz
+        self.A1_m = m
+        self.A1_h = h
+        self.A1_rho = rho
+        self.A1_P = P
+        self.A1_u = u
+        self.A1_mat_id = mat_id
+        self.A1_picle_id = picle_id
+
+def GenSpheroid(spin_planet, N_particles):
+    
+    _print_banner()
+    
+    sp = spin_planet
+    
+    if sp.N_layers not in [1, 2, 3]:
+        
+        print(f"Can't build a planet with {sp.N_layers} layers!")
+        return None
+        
+    if sp.N_layers == 1:
+        
+        spheroid = _1l_genspheroid(sp, N_particles)
+        return spheroid
+            
+    elif sp.N_layers == 2:
+        
+        spheroid = _2l_genspheroid(sp, N_particles)
+        return spheroid
+        
+    elif sp.N_layers == 3:
+        
+        spheroid = _3l_genspheroid(sp, N_particles)
+        return spheroid
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        

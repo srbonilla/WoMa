@@ -19,6 +19,7 @@ sys.path.append(path)
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
+import eos
 
 import swift_io
 import h5py
@@ -31,7 +32,7 @@ M_earth = 5.972E24;
 ###############################################################################
 
 # Only need to run once
-woma.set_up()
+#woma.set_up()
 
 ###############################################################################
 ########################## 1 layer planet #####################################
@@ -49,7 +50,7 @@ rhos_min           = 2000.                       # Lower bound for the density a
 rhos_max           = 3000.                       # Upper bound for the density at the surface
 
 # Load precomputed values of cold internal energy
-ucold_array_core = woma.load_ucold_array(mat_id_core) 
+ucold_array_core = eos.load_ucold_array(mat_id_core) 
 
 # Find the correct mass for the planet
 M = woma.find_mass_1layer(N, R, M_max, Ps, Ts, mat_id_core, T_rho_id_core, T_rho_args_core,
@@ -62,26 +63,28 @@ r, m, P, T, rho, u, mat =  \
                           rhos_min, rhos_max, ucold_array_core)
 
 # Plot the results
-fig, ax = plt.subplots(2,2, figsize=(12,12))
-
-ax[0,0].plot(r/R_earth, rho)
-ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
-
-ax[1,0].plot(r/R_earth, m/M_earth)
-ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
-
-ax[0,1].plot(r/R_earth, P)
-ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[0,1].set_ylabel(r"$P$ $[Pa]$")
-
-ax[1,1].plot(r/R_earth, T)
-ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[1,1].set_ylabel(r"$T$ $[K]$")
-
-plt.tight_layout()
-plt.show()
+# =============================================================================
+# fig, ax = plt.subplots(2,2, figsize=(12,12))
+# 
+# ax[0,0].plot(r/R_earth, rho)
+# ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
+# 
+# ax[1,0].plot(r/R_earth, m/M_earth)
+# ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
+# 
+# ax[0,1].plot(r/R_earth, P)
+# ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[0,1].set_ylabel(r"$P$ $[Pa]$")
+# 
+# ax[1,1].plot(r/R_earth, T)
+# ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[1,1].set_ylabel(r"$T$ $[K]$")
+# 
+# plt.tight_layout()
+# plt.show()
+# =============================================================================
 
 # Let's convet it to a spining profile
 iterations = 30                              # Iterations to convergence
@@ -103,15 +106,17 @@ profile_e, profile_p = woma.spin1layer(iterations, r_array, z_array, r, rho, Tw,
 # Keep last iteration of the computation
 rho_e = profile_e[-1]
 rho_p = profile_p[-1]
-
-np.save('r_array', r_array)
-np.save('z_array', z_array)
-np.save('rho_e', rho_e)
-np.save('rho_p', rho_p)
-
+# =============================================================================
+# 
+# np.save('r_array', r_array)
+# np.save('z_array', z_array)
+# np.save('rho_e', rho_e)
+# np.save('rho_p', rho_p)
+# 
+# =============================================================================
 # Particle placement and save data
 
-N_picles = 1e6    # Number of particles
+N_picles = 1e5    # Number of particles
 N_neig   = 48     # Number of neighbors
 x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id =                      \
 woma.picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N_picles,
@@ -120,7 +125,7 @@ woma.picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N_picles,
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '1layer_10e6.hdf5'
+filename = '1layer_10e5.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, np.array([x, y, z]).T, np.array([vx, vy, vz]).T,
                              m, h, rho, P, u, picle_id, mat_id,
@@ -167,26 +172,28 @@ r, m, P, T, rho, u, mat = \
                      ucold_array_core, ucold_array_mantle)
 
 # Plot the results
-fig, ax = plt.subplots(2,2, figsize=(12,12))
-
-ax[0,0].plot(r/R_earth, rho)
-ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
-
-ax[1,0].plot(r/R_earth, m/M_earth)
-ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
-
-ax[0,1].plot(r/R_earth, P)
-ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[0,1].set_ylabel(r"$P$ $[Pa]$")
-
-ax[1,1].plot(r/R_earth, T)
-ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
-ax[1,1].set_ylabel(r"$T$ $[K]$")
-
-plt.tight_layout()
-plt.show()
+# =============================================================================
+# fig, ax = plt.subplots(2,2, figsize=(12,12))
+# 
+# ax[0,0].plot(r/R_earth, rho)
+# ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
+# 
+# ax[1,0].plot(r/R_earth, m/M_earth)
+# ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
+# 
+# ax[0,1].plot(r/R_earth, P)
+# ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[0,1].set_ylabel(r"$P$ $[Pa]$")
+# 
+# ax[1,1].plot(r/R_earth, T)
+# ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
+# ax[1,1].set_ylabel(r"$T$ $[K]$")
+# 
+# plt.tight_layout()
+# plt.show()
+# =============================================================================
 
 # Let's convet it to a spining profile
 iterations = 30                              # Iterations to convergence
@@ -214,11 +221,13 @@ rho_e = profile_e[-1]
 rho_p = profile_p[-1]
 
 # Save results
-np.save('r_array', r_array)
-np.save('z_array', z_array)
-np.save('rho_e', rho_e)
-np.save('rho_p', rho_p)
-
+# =============================================================================
+# np.save('r_array', r_array)
+# np.save('z_array', z_array)
+# np.save('rho_e', rho_e)
+# np.save('rho_p', rho_p)
+# 
+# =============================================================================
 # Particle placement and save data
 
 N_picles = 1e5    # Number of particles
