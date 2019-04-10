@@ -119,7 +119,7 @@ my_planet.fix_M_given_R(R_earth, 1*M_earth)
 plot_spherical_profile(my_planet)
 
 my_spinning_planet = woma.Spin(my_planet)
-my_spinning_planet.solve(3, 1.3*R_earth, 1.1*R_earth)
+my_spinning_planet.solve(3, 1.3*my_planet.R, 1.1*my_planet.R)
 
 plot_spin_profile(my_spinning_planet)
 
@@ -147,7 +147,7 @@ my_planet.fix_B_given_R_M(R_earth, M_earth)
 plot_spherical_profile(my_planet)
 
 my_spinning_planet = woma.Spin(my_planet)
-my_spinning_planet.solve(2.6, 1.5*R_earth, 1.1*R_earth)
+my_spinning_planet.solve(2.6, 1.5*my_planet.R, 1.1*my_planet.R)
 
 plot_spin_profile(my_spinning_planet)
 
@@ -155,28 +155,32 @@ plot_spin_profile(my_spinning_planet)
 ########################## 3 layer planet #####################################
 ###############################################################################
 
-example = woma.Planet(3)
+my_planet = woma.Planet(3)
 
-example.set_core_properties(100, 1, [np.nan, 0])
-example.set_mantle_properties(101, 1, [np.nan, 0])
-example.set_atmosphere_properties(102, 1, [np.nan, 0])
+my_planet.set_core_properties(100, 1, [np.nan, 0])
+my_planet.set_mantle_properties(101, 1, [np.nan, 0])
+my_planet.set_atmosphere_properties(102, 1, [np.nan, 0])
 
-example.set_P_surface(0)
-example.set_T_surface(300)
-example.set_rho_surface(eos.find_rho_fixed_P_T(0, 300, 102))
+Ps   = 0
+Ts   = 300
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 102)
 
-#example.fix_Bcm_Bma_given_R_M_I(R_earth, M_earth, 0.3*M_earth*R_earth**2)
-example.fix_Bma_given_R_M_Bcm(R_earth, M_earth, 0.49*R_earth)
+my_planet.set_P_surface(Ps)
+my_planet.set_T_surface(Ts)
+my_planet.set_rho_surface(rhos)
 
-#example.fix_Bcm_given_R_M_Bma(R_earth, M_earth, 0.85*R_earth)
+#my_planet.fix_Bcm_Bma_given_R_M_I(R_earth, M_earth, 0.3*M_earth*R_earth**2)
+#my_planet.fix_Bma_given_R_M_Bcm(R_earth, M_earth, 0.49*R_earth)
 
-#example.fix_M_given_R_Bcm_Bma(R_earth, 0.3*R_earth, 0.7*R_earth, 10*M_earth)
+my_planet.fix_Bcm_given_R_M_Bma(1*R_earth, 0.5*M_earth, 0.75*R_earth)
 
-#example.fix_R_given_M_Bcm_Bma(M_earth, 0.4*R_earth, 0.8*R_earth, 10*R_earth)
+#my_planet.fix_M_given_R_Bcm_Bma(R_earth, 0.3*R_earth, 0.7*R_earth, 10*M_earth)
 
-plot_spherical_profile(example)
+#my_planet.fix_R_given_M_Bcm_Bma(M_earth, 0.4*R_earth, 0.8*R_earth, 2*R_earth)
 
-spin_example = woma.Spin(example)
-spin_example.solve(4, 1.2*R_earth, 1.1*R_earth)
+plot_spherical_profile(my_planet)
+
+spin_example = woma.Spin(my_planet)
+spin_example.solve(4, 1.2*my_planet.R, 1.1*my_planet.R)
 
 plot_spin_profile(spin_example)
