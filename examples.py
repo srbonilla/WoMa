@@ -20,8 +20,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import woma
 import eos
-import swift_io
-import h5py
 
 R_earth = 6371000;
 M_earth = 5.972E24;
@@ -104,79 +102,55 @@ def plot_spin_profile(spin_planet):
 
 ########################## Example 1.1 ########################################
 
-example = woma.Planet(1)
+my_planet = woma.Planet(1)
 
-example.set_core_properties(101, 1, [np.nan, 0.])
+my_planet.set_core_properties(101, 1, [np.nan, 0.])
 
-example.set_P_surface(0)
-example.set_T_surface(300)
-example.set_rho_surface(eos.find_rho_fixed_P_T(0, 300, 101))
+Ps   = 0
+Ts   = 300
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
 
-example.fix_M_given_R(R_earth, 1*M_earth)
+my_planet.set_P_surface(Ps)
+my_planet.set_T_surface(Ts)
+my_planet.set_rho_surface(rhos)
 
-#plot_spherical_profile(example)
+my_planet.fix_M_given_R(R_earth, 1*M_earth)
 
-spin_example = woma.Spin(example)
-spin_example.solve(4, 1.2*R_earth, 1.1*R_earth)
+plot_spherical_profile(my_planet)
 
-#plot_spin_profile(spin_example)
+my_spinning_planet = woma.Spin(my_planet)
+my_spinning_planet.solve(3, 1.3*R_earth, 1.1*R_earth)
 
-particles = woma.GenSpheroid(spin_example, 1e5)
-
-positions = np.array([particles.A1_x, particles.A1_y, particles.A1_z]).T
-velocities = np.array([particles.A1_vx, particles.A1_vy, particles.A1_vz]).T
-
-swift_to_SI = swift_io.Conversions(1, 1, 1)
-
-filename = '1layer_10e5.hdf5'
-with h5py.File(filename, 'w') as f:
-    swift_io.save_picle_data(f, positions, velocities,
-                             particles.A1_m, particles.A1_h,
-                             particles.A1_rho, particles.A1_P, particles.A1_u,
-                             particles.A1_picle_id, particles.A1_mat_id,
-                             4*R_earth, swift_to_SI) 
-    
-
-
+plot_spin_profile(my_spinning_planet)
 
 ###############################################################################
 ########################## 2 layer planet #####################################
 ###############################################################################
 
-example = woma.Planet(2)
+my_planet = woma.Planet(2)
 
-example.set_core_properties(100, 1, [np.nan, 0])
-example.set_mantle_properties(101, 1, [np.nan, 0])
+my_planet.set_core_properties(100, 1, [np.nan, 0])
+my_planet.set_mantle_properties(101, 1, [np.nan, 0])
 
-example.set_P_surface(0)
-example.set_T_surface(300)
-example.set_rho_surface(eos.find_rho_fixed_P_T(0, 300, 101))
+Ps   = 0
+Ts   = 300
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
 
-example.fix_B_given_R_M(R_earth, M_earth)
-#example.fix_M_given_B_R(0.2*R_earth, R_earth, M_earth)
-#example.fix_R_given_M_B(2*M_earth, 0.6*R_earth, 20*R_earth)
+my_planet.set_P_surface(Ps)
+my_planet.set_T_surface(Ts)
+my_planet.set_rho_surface(eos.find_rho_fixed_P_T(Ps, Ts, 101))
 
-#plot_spherical_profile(example)
+my_planet.fix_B_given_R_M(R_earth, M_earth)
+#my_planet.fix_M_given_B_R(0.2*R_earth, R_earth, M_earth)
+#my_planet.fix_R_given_M_B(2*M_earth, 0.6*R_earth, 20*R_earth)
 
-spin_example = woma.Spin(example)
-spin_example.solve(4, 1.2*R_earth, 1.1*R_earth)
+plot_spherical_profile(my_planet)
 
-#plot_spin_profile(spin_example)
+my_spinning_planet = woma.Spin(my_planet)
+my_spinning_planet.solve(2.6, 1.5*R_earth, 1.1*R_earth)
 
-particles = woma.GenSpheroid(spin_example, 1e5)
+plot_spin_profile(my_spinning_planet)
 
-positions = np.array([particles.A1_x, particles.A1_y, particles.A1_z]).T
-velocities = np.array([particles.A1_vx, particles.A1_vy, particles.A1_vz]).T
-
-swift_to_SI = swift_io.Conversions(1, 1, 1)
-
-filename = '2layer_10e5.hdf5'
-with h5py.File(filename, 'w') as f:
-    swift_io.save_picle_data(f, positions, velocities,
-                             particles.A1_m, particles.A1_h,
-                             particles.A1_rho, particles.A1_P, particles.A1_u,
-                             particles.A1_picle_id, particles.A1_mat_id,
-                             4*R_earth, swift_to_SI) 
 ###############################################################################
 ########################## 3 layer planet #####################################
 ###############################################################################
@@ -206,5 +180,3 @@ spin_example = woma.Spin(example)
 spin_example.solve(4, 1.2*R_earth, 1.1*R_earth)
 
 plot_spin_profile(spin_example)
-
-particles = woma.GenSpheroid(spin_example, 1e5)

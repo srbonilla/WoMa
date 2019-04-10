@@ -2746,7 +2746,8 @@ def spin1layer(iterations, r_array, z_array, radii, densities, Tw,
 
 def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
-                           ucold_array_core, N_neig=48, alpha=3.5e6):
+                           ucold_array_core, N_neig=48,
+                           alpha=1e6, beta=0., gamma=0., delta=1.):
     
     """ Particle placement for a 1 layer spining profile.
     
@@ -2849,9 +2850,9 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     f = Z/R
     zP = particles.z*f
     
-    delta_f = np.zeros(R.shape)
-    delta_z = np.zeros(R.shape)
-    
+    delta_f  = np.zeros(R.shape)
+    delta_z  = np.zeros(R.shape)
+
     unique_R = np.unique(R)
     unique_Z = np.unique(Z)
     
@@ -2864,11 +2865,15 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
             Zi = unique_Z[i]
             Ri = unique_R[i]
             
-            delta_f[R == Radius] = Zip1/Rip1 - Zi/Ri
+            df = Zip1/Rip1 - Zi/Ri
+            
+            delta_f[R == Radius] = df
             rc = particles_rc[R == Radius]
             zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
             zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
-            delta_z[R == Radius] = zip1 - zi
+            
+            dz = zip1 - zi
+            delta_z[R == Radius] = dz
             
         else:
             
@@ -2877,9 +2882,44 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
             
     dzPz_dz = delta_f/delta_z
     
-    mP = particles.m*(f + alpha*dzPz_dz)
+    delta_2f  = np.zeros(R.shape)
+    delta_2z  = np.zeros(R.shape)
     
-    #print("\nx, y, z, and m computed\n")
+    for i, Radius in enumerate(np.unique(R)):
+
+        if i != particles.N_shell_tot - 1:
+            
+            fi   = np.median(dzPz_dz[R == Radius])
+            fip1 = np.median(R == unique_R[i + 1])
+            d2f  = fip1 - fi
+            
+            delta_2f[R == Radius] = d2f
+            rc = particles_rc[R == Radius]
+            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
+            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
+            
+            dz = zip1 - zi
+            delta_2z[R == Radius] = dz
+            
+        else:
+            
+            delta_2f[R == Radius] = delta_2f[R == unique_R[i - 1]][0]
+            delta_2z[R == Radius] = delta_2z[R == unique_R[i - 1]][0]
+    
+    d2zPz_dz2 = delta_2f/delta_2z
+    
+    z_max = np.max(np.abs(particles.z))
+    a = np.power(np.abs(particles.z)/z_max, gamma)
+    mP = delta*particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
+    
+    #
+    #import matplotlib.pyplot as plt
+    #plt.scatter(particles.z, dzPz_dz/np.max(dzPz_dz))
+    #plt.scatter(particles.z, 100*d2zPz_dz2/np.max(d2zPz_dz2))
+    #plt.show()
+    #
+    
+    # print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -3144,7 +3184,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                            ucold_array_core, ucold_array_mantle, N_neig=48,
-                           alpha=3.5e6):
+                           alpha=1e6, beta=0., gamma=0., delta=1.):
     """ Particle placement for a 2 layer spining profile.
     
         Args:
@@ -3290,8 +3330,12 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
             
     dzPz_dz = delta_f/delta_z
+    
+    z_max = np.max(np.abs(particles.z))
+    a = np.power(np.abs(particles.z)/z_max, gamma)
+    mP = delta*particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
 
-    mP = particles.m*(f + alpha*dzPz_dz)
+    #mP = particles.m*(f + alpha*dzPz_dz)
 
     # Tweek masses
     #mP = particles.m*zP/particles.z
@@ -3610,7 +3654,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                            mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                            ucold_array_core, ucold_array_mantle, ucold_array_atm,
-                           N_neig=48, alpha=3.5e6):
+                           N_neig=48, alpha=1e6, beta=0., gamma=0.):
     """ Particle placement for a 2 layer spining profile.
     
         Args:
@@ -3771,6 +3815,10 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
             delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
             
     dzPz_dz = delta_f/delta_z
+    
+    z_max = np.max(np.abs(particles.z))
+    a = np.power(np.abs(particles.z)/z_max, gamma)
+    mP = particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
     
     mP = particles.m*(f + alpha*dzPz_dz)
     #print("\nx, y, z, and m computed\n")
@@ -4049,12 +4097,14 @@ def Spin(planet):
 
 class _1l_genspheroid():
     
-    alpha = 3.5e6
-    
-    def __init__(self, spin_planet, N_particles, N_neig=48):
+    def __init__(self, spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=1.):
         
         self.N_layers    = 1
         self.N_particles = N_particles
+        self.alpha = alpha
+        self.beta  = beta
+        self.gamma = gamma
+        self.delta = delta
         
         self.A1_equator     = spin_planet.A1_equator
         self.A1_rho_equator = spin_planet.A1_rho_equator
@@ -4072,7 +4122,9 @@ class _1l_genspheroid():
             picle_placement_1layer(self.A1_equator, self.A1_rho_equator,
                                    self.A1_pole, self.A1_rho_pole, self.Tw, N_particles,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
-                                   ucold_array_core, N_neig, alpha = self.alpha)
+                                   ucold_array_core, N_neig,
+                                   alpha = self.alpha, beta = self.beta, gamma = self.gamma,
+                                   delta = self.delta)
             
         self.A1_x = x
         self.A1_y = y
@@ -4090,12 +4142,14 @@ class _1l_genspheroid():
         
 class _2l_genspheroid():
     
-    alpha = 3.5e6
-    
-    def __init__(self, spin_planet, N_particles, N_neig=48):
+    def __init__(self, spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=1.):
         
         self.N_layers    = 2
         self.N_particles = N_particles
+        self.alpha       = alpha
+        self.beta        = beta
+        self.gamma       = gamma
+        self.delta       = delta
         
         self.A1_equator     = spin_planet.A1_equator
         self.A1_rho_equator = spin_planet.A1_rho_equator
@@ -4124,7 +4178,8 @@ class _2l_genspheroid():
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    ucold_array_core, ucold_array_mantle,
-                                   N_neig, alpha=self.alpha)
+                                   N_neig, alpha=self.alpha, beta=self.beta, gamma=self.gamma,
+                                   delta=self.delta)
             
         self.A1_x = x
         self.A1_y = y
@@ -4142,12 +4197,14 @@ class _2l_genspheroid():
     
 class _3l_genspheroid():
     
-    alpha = 3.5e6
-    
-    def __init__(self, spin_planet, N_particles, N_neig=48):
+    def __init__(self, spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=1.):
         
         self.N_layers    = 3
         self.N_particles = N_particles
+        self.alpha       = alpha
+        self.beta        = beta
+        self.gamma       = gamma
+        self.delta       = delta
         
         self.A1_equator     = spin_planet.A1_equator
         self.A1_rho_equator = spin_planet.A1_rho_equator
@@ -4197,7 +4254,7 @@ class _3l_genspheroid():
         self.A1_mat_id = mat_id
         self.A1_picle_id = picle_id
 
-def GenSpheroid(spin_planet, N_particles):
+def GenSpheroid(spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=0.):
     
     _print_banner()
     
@@ -4210,17 +4267,17 @@ def GenSpheroid(spin_planet, N_particles):
         
     if sp.N_layers == 1:
         
-        spheroid = _1l_genspheroid(sp, N_particles)
+        spheroid = _1l_genspheroid(sp, N_particles, N_neig, alpha, beta, gamma, delta)
         return spheroid
             
     elif sp.N_layers == 2:
         
-        spheroid = _2l_genspheroid(sp, N_particles)
+        spheroid = _2l_genspheroid(sp, N_particles, N_neig, alpha, beta, gamma, delta)
         return spheroid
         
     elif sp.N_layers == 3:
         
-        spheroid = _3l_genspheroid(sp, N_particles)
+        spheroid = _3l_genspheroid(sp, N_particles, N_neig, alpha, beta, gamma, delta)
         return spheroid
         
         

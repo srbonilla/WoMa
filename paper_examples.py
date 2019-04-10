@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Thu Apr  4 09:36:24 2019
+Created on Tue Apr  2 13:11:10 2019
 
 @author: Sergio Ruiz-Bonilla
 """
@@ -20,7 +20,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import woma
 import eos
-
 import swift_io
 import h5py
 
@@ -32,216 +31,217 @@ M_earth = 5.972E24;
 ###############################################################################
 
 # Only need to run once
-#woma.set_up()
+
+woma.set_up()
+
+# Function to plot results for spherical profile
+
+def plot_spherical_profile(planet):
+    
+    fig, ax = plt.subplots(2,2, figsize=(12,12))
+    
+    ax[0,0].plot(planet.A1_R/R_earth, planet.A1_rho)
+    ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
+    ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
+    
+    ax[1,0].plot(planet.A1_R/R_earth, planet.A1_M/M_earth)
+    ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
+    ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
+    
+    ax[0,1].plot(planet.A1_R/R_earth, planet.A1_P)
+    ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
+    ax[0,1].set_ylabel(r"$P$ $[Pa]$")
+    
+    ax[1,1].plot(planet.A1_R/R_earth, planet.A1_T)
+    ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
+    ax[1,1].set_ylabel(r"$T$ $[K]$")
+    
+    plt.tight_layout()
+    plt.show()
+    
+# Function to plot results for spining profile
+    
+def plot_spin_profile(spin_planet):
+    
+    sp = spin_planet
+    
+    fig, ax = plt.subplots(1,2, figsize=(12,6))
+    ax[0].scatter(sp.A1_R/R_earth, sp.A1_rho, label = 'original', s = 0.5)
+    ax[0].scatter(sp.A1_equator/R_earth, sp.A1_rho_equator, label = 'equatorial profile', s = 1)
+    ax[0].scatter(sp.A1_pole/R_earth, sp.A1_rho_pole, label = 'polar profile', s = 1)
+    ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+    ax[0].set_ylabel(r"$\rho$ [$kg/m^3$]")
+    ax[0].legend()
+    
+    
+    r_array_coarse = np.linspace(0, np.max(sp.A1_equator), 100)
+    z_array_coarse = np.linspace(0, np.max(sp.A1_pole), 100)
+    rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+    for i in range(rho_grid.shape[0]):
+        radius = r_array_coarse[i]
+        for j in range(rho_grid.shape[1]):
+            z = z_array_coarse[j]
+            rho_grid[i,j] = woma.rho_rz(radius, z,
+                                        sp.A1_equator, sp.A1_rho_equator,
+                                        sp.A1_pole, sp.A1_rho_pole)
+    
+    X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
+    Z = rho_grid.T
+    levels = np.arange(1000, 15000, 1000)
+    ax[1].set_aspect('equal')
+    CS = plt.contour(X, Y, Z, levels = levels)
+    ax[1].clabel(CS, inline=1, fontsize=10)
+    ax[1].set_xlabel(r"$r$ [$R_{earth}$]")
+    ax[1].set_ylabel(r"$z$ [$R_{earth}$]")
+    ax[1].set_title('Density (Kg/m^3)')
+        
+    plt.tight_layout()
+    plt.show()
 
 ###############################################################################
 ########################## 1 layer planet #####################################
 ###############################################################################
 
-N                  = 10000                       # Number of integration steps
-R                  = R_earth                     # Radius of the planet 
-M_max              = M_earth                     # Upper bound for the mass of the planet
-Ts                 = 300.                        # Temperature at the surface
-Ps                 = 0.                          # Pressure at the surface
-mat_id_core        = 101                         # Material id (see mat_id.txt)
-T_rho_id_core      = 1.                          # Relation between density and temperature (T_rho_id.txt)
-T_rho_args_core    = [np.nan, 0.]                # Extra arguments for the above relation 
-rhos_min           = 2000.                       # Lower bound for the density at the surface
-rhos_max           = 3000.                       # Upper bound for the density at the surface
+########################## Example 1.1 ########################################
 
-# Load precomputed values of cold internal energy
-ucold_array_core = eos.load_ucold_array(mat_id_core) 
+my_planet = woma.Planet(1)
 
-# Find the correct mass for the planet
-M = woma.find_mass_1layer(N, R, M_max, Ps, Ts, mat_id_core, T_rho_id_core, T_rho_args_core,
-                          rhos_min, rhos_max, ucold_array_core)
+my_planet.set_core_properties(101, 1, [np.nan, 0.])
 
-# Compute the whole profile
-r, m, P, T, rho, u, mat =  \
-    woma.integrate_1layer(N, R, M, Ps, Ts,
-                          mat_id_core, T_rho_id_core, T_rho_args_core,
-                          rhos_min, rhos_max, ucold_array_core)
+Ps   = 0
+Ts   = 300
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
 
-# Plot the results
-# =============================================================================
-# fig, ax = plt.subplots(2,2, figsize=(12,12))
-# 
-# ax[0,0].plot(r/R_earth, rho)
-# ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
-# 
-# ax[1,0].plot(r/R_earth, m/M_earth)
-# ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
-# 
-# ax[0,1].plot(r/R_earth, P)
-# ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[0,1].set_ylabel(r"$P$ $[Pa]$")
-# 
-# ax[1,1].plot(r/R_earth, T)
-# ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[1,1].set_ylabel(r"$T$ $[K]$")
-# 
-# plt.tight_layout()
-# plt.show()
-# =============================================================================
 
-# Let's convet it to a spining profile
-iterations = 30                              # Iterations to convergence
-r_array    = np.linspace(0, 1.2*R, 2000)     # Points at equatorial profile to find the solution
-z_array    = np.linspace(0, 1.1*R, 2000)     # Points at equatorial profile to find the solution
-Tw         = 4                               # Period of the planet [hours]
+my_planet.set_P_surface(Ps)
+my_planet.set_T_surface(Ts)
+my_planet.set_rho_surface(rhos)
 
-P_c   = P[-1]                                # Pressure at the center
-P_s   = P[0]                                 # Pressure at the surface
-rho_c = rho[-1]                              # Density at the center
-rho_s = rho[0]                               # Density at the surface
+my_planet.fix_M_given_R(R_earth, 1*M_earth)
 
-# Compute equatorial and polar profiles
-profile_e, profile_p = woma.spin1layer(iterations, r_array, z_array, r, rho, Tw,
-                                       P_c, P_s, rho_c, rho_s,
-                                       mat_id_core, T_rho_id_core, T_rho_args_core,
-                                       ucold_array_core)
+#plot_spherical_profile(my_planet)
 
-# Keep last iteration of the computation
-rho_e = profile_e[-1]
-rho_p = profile_p[-1]
-# =============================================================================
-# 
-# np.save('r_array', r_array)
-# np.save('z_array', z_array)
-# np.save('rho_e', rho_e)
-# np.save('rho_p', rho_p)
-# 
-# =============================================================================
-# Particle placement and save data
+my_spinning_planet = woma.Spin(my_planet)
+my_spinning_planet.solve(3, 1.3*R_earth, 1.1*R_earth)
 
-N_picles = 1e5    # Number of particles
-N_neig   = 48     # Number of neighbors
-x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id =                      \
-woma.picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N_picles,
-                            mat_id_core, T_rho_id_core, T_rho_args_core,
-                            ucold_array_core, N_neig)
+#plot_spin_profile(my_spinning_planet)
+
+particles = woma.GenSpheroid(my_spinning_planet, 1e5, alpha=1e6, beta=0.09, gamma=3)
+
+positions = np.array([particles.A1_x, particles.A1_y, particles.A1_z]).T
+velocities = np.array([particles.A1_vx, particles.A1_vy, particles.A1_vz]).T
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
 filename = '1layer_10e5.hdf5'
 with h5py.File(filename, 'w') as f:
-    swift_io.save_picle_data(f, np.array([x, y, z]).T, np.array([vx, vy, vz]).T,
-                             m, h, rho, P, u, picle_id, mat_id,
+    swift_io.save_picle_data(f, positions, velocities,
+                             particles.A1_m, particles.A1_h,
+                             particles.A1_rho, particles.A1_P, particles.A1_u,
+                             particles.A1_picle_id, particles.A1_mat_id,
                              4*R_earth, swift_to_SI) 
+    
+np.save('r_array', my_spinning_planet.A1_equator)
+np.save('z_array', my_spinning_planet.A1_pole)
+np.save('rho_e', my_spinning_planet.A1_rho_equator)
+np.save('rho_p', my_spinning_planet.A1_rho_pole)
+
+
+r_array = my_spinning_planet.A1_equator
+rho_e = my_spinning_planet.A1_rho_equator
+z_array = my_spinning_planet.A1_pole
+rho_p = my_spinning_planet.A1_rho_pole
+Tw = 3
+N = 1e5
+mat_id_core = 101
+T_rho_id_core = 1
+T_rho_args_core = [300, 0.]
+ucold_array_core = eos.load_ucold_array(101)
+
+x = np.linspace(0, 100, 100)
+y2 = np.power(x, 2)
+y3 = np.power(x, 2.1)
+plt.scatter(x, y2)
+plt.scatter(x, y3)
+plt.show()
 
 ###############################################################################
 ########################## 2 layer planet #####################################
 ###############################################################################
 
-# Create spherical profile (determine mass of the planet given radius and boundary)
+my_planet = woma.Planet(2)
 
-N                 = 10000                  # Number of integration steps
-R                 = R_earth                # Radius of the planet 
-M_max             = 2*M_earth              # Upper bound for the mass of the planet
-Ts                = 300.                   # Temperature at the surface
-Ps                = 0.                     # Pressure at the surface
-mat_id_core       = 100                    # Material id for the core (see mat_id.txt)
-T_rho_id_core     = 1.                     # Relation between density and temperature for the core (T_rho_id.txt)
-T_rho_args_core   = [np.nan, 0.]           # Extra arguments for the above relation 
-mat_id_mantle     = 101                    # Material id for the mantle (see mat_id.txt)
-T_rho_id_mantle   = 1.                     # Relation between density and temperature for the mantle (T_rho_id.txt)
-T_rho_args_mantle = [np.nan, 0.]           # Extra arguments for the above relation 
-rhos_min          = 2000.                  # Lower bound for the density at the surface
-rhos_max          = 3000.                  # Upper bound for the density at the surface
-b_cm              = 0.426*R_earth          # Boundary core-mantle
+my_planet.set_core_properties(100, 1, [np.nan, 0])
+my_planet.set_mantle_properties(101, 1, [np.nan, 0])
 
-# Load precomputed values of cold internal energy
-ucold_array_core   = woma.load_ucold_array(mat_id_core)
-ucold_array_mantle = woma.load_ucold_array(mat_id_mantle)
+Ps   = 0
+Ts   = 300
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
 
-# Find correct mass for the planet
-M = woma.find_mass_2layer(N, R, M_max, Ps, Ts, b_cm,
-                     mat_id_core, T_rho_id_core, T_rho_args_core,
-                     mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_mantle)
+my_planet.set_P_surface(Ps)
+my_planet.set_T_surface(Ts)
+my_planet.set_rho_surface(eos.find_rho_fixed_P_T(Ps, Ts, 101))
 
-# Compute the whole profile
-r, m, P, T, rho, u, mat = \
-    woma.integrate_2layer(N, R, M, Ps, Ts, b_cm,
-                     mat_id_core, T_rho_id_core, T_rho_args_core,
-                     mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                     rhos_min, rhos_max,
-                     ucold_array_core, ucold_array_mantle)
+my_planet.fix_B_given_R_M(R_earth, M_earth)
+#my_planet.fix_M_given_B_R(0.2*R_earth, R_earth, M_earth)
+#my_planet.fix_R_given_M_B(2*M_earth, 0.6*R_earth, 20*R_earth)
 
-# Plot the results
-# =============================================================================
-# fig, ax = plt.subplots(2,2, figsize=(12,12))
-# 
-# ax[0,0].plot(r/R_earth, rho)
-# ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
-# 
-# ax[1,0].plot(r/R_earth, m/M_earth)
-# ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
-# 
-# ax[0,1].plot(r/R_earth, P)
-# ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[0,1].set_ylabel(r"$P$ $[Pa]$")
-# 
-# ax[1,1].plot(r/R_earth, T)
-# ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
-# ax[1,1].set_ylabel(r"$T$ $[K]$")
-# 
-# plt.tight_layout()
-# plt.show()
-# =============================================================================
+#plot_spherical_profile(my_planet)
 
-# Let's convet it to a spining profile
-iterations = 30                              # Iterations to convergence
-r_array    = np.linspace(0, 1.2*R, 1000)     # Points at equatorial profile to find the solution
-z_array    = np.linspace(0, 1.1*R, 1000)     # Points at equatorial profile to find the solution
-Tw         = 4                               # Period of the planet [hours]
+my_spinning_planet = woma.Spin(my_planet)
+my_spinning_planet.solve(2.6, 1.5*R_earth, 1.1*R_earth)
 
-P_c   = P[-1]                                # Pressure at the center
-P_s   = P[0]                                 # Pressure at the surface
-rho_c = rho[-1]                              # Density at the center
-rho_s = rho[0]                               # Density at the surface
+#plot_spin_profile(my_spinning_planet)
 
-rho_i = 10000                                          # Density at boundary
-P_i   = (P[rho > rho_i][0] + P[rho < rho_i][-1])/2.    # Pressure at the boundary
+particles = woma.GenSpheroid(my_spinning_planet, 1e5,
+                             alpha=1.0e6, beta=0.20, gamma=1.5, delta=1.02)
 
-# Compute equatorial and polar profiles
-profile_e, profile_p = woma.spin2layer(iterations, r_array, z_array, r, rho, Tw,
-                                       P_c, P_i, P_s, rho_c, rho_s,
-                                       mat_id_core, T_rho_id_core, T_rho_args_core,
-                                       mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                                       ucold_array_core, ucold_array_mantle)
-
-# Keep last iteration of the computation
-rho_e = profile_e[-1]
-rho_p = profile_p[-1]
-
-# Save results
-# =============================================================================
-# np.save('r_array', r_array)
-# np.save('z_array', z_array)
-# np.save('rho_e', rho_e)
-# np.save('rho_p', rho_p)
-# 
-# =============================================================================
-# Particle placement and save data
-
-N_picles = 1e5    # Number of particles
-N_neig   = 48     # Number of neighbors
-x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id =                      \
-woma.picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N_picles, rho_i,
-                            mat_id_core, T_rho_id_core, T_rho_args_core,
-                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
-                            ucold_array_core, ucold_array_mantle, N_neig)
+positions = np.array([particles.A1_x, particles.A1_y, particles.A1_z]).T
+velocities = np.array([particles.A1_vx, particles.A1_vy, particles.A1_vz]).T
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
 filename = '2layer_10e5.hdf5'
 with h5py.File(filename, 'w') as f:
-    swift_io.save_picle_data(f, np.array([x, y, z]).T, np.array([vx, vy, vz]).T,
-                             m, h, rho, P, u, picle_id, mat_id,
+    swift_io.save_picle_data(f, positions, velocities,
+                             particles.A1_m, particles.A1_h,
+                             particles.A1_rho, particles.A1_P, particles.A1_u,
+                             particles.A1_picle_id, particles.A1_mat_id,
                              4*R_earth, swift_to_SI) 
+    
+np.save('r_array', my_spinning_planet.A1_equator)
+np.save('z_array', my_spinning_planet.A1_pole)
+np.save('rho_e', my_spinning_planet.A1_rho_equator)
+np.save('rho_p', my_spinning_planet.A1_rho_pole)
+
+###############################################################################
+########################## 3 layer planet #####################################
+###############################################################################
+
+example = woma.Planet(3)
+
+example.set_core_properties(100, 1, [np.nan, 0])
+example.set_mantle_properties(101, 1, [np.nan, 0])
+example.set_atmosphere_properties(102, 1, [np.nan, 0])
+
+example.set_P_surface(0)
+example.set_T_surface(300)
+example.set_rho_surface(eos.find_rho_fixed_P_T(0, 300, 102))
+
+#example.fix_Bcm_Bma_given_R_M_I(R_earth, M_earth, 0.3*M_earth*R_earth**2)
+example.fix_Bma_given_R_M_Bcm(R_earth, M_earth, 0.49*R_earth)
+
+#example.fix_Bcm_given_R_M_Bma(R_earth, M_earth, 0.85*R_earth)
+
+#example.fix_M_given_R_Bcm_Bma(R_earth, 0.3*R_earth, 0.7*R_earth, 10*M_earth)
+
+#example.fix_R_given_M_Bcm_Bma(M_earth, 0.4*R_earth, 0.8*R_earth, 10*R_earth)
+
+plot_spherical_profile(example)
+
+spin_example = woma.Spin(example)
+spin_example.solve(4, 1.2*R_earth, 1.1*R_earth)
+
+plot_spin_profile(spin_example)
+
+particles = woma.GenSpheroid(spin_example, 1e5)
