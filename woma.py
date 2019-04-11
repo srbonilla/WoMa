@@ -15,6 +15,7 @@ from numba import jit
 from scipy.interpolate import interp1d
 import seagen
 import eos
+from sklearn.neighbors import NearestNeighbors
 
 # Global constants
 G = 6.67408E-11;
@@ -2743,11 +2744,284 @@ def spin1layer(iterations, r_array, z_array, radii, densities, Tw,
         profile_p.append(rho_p)
     
     return profile_e, profile_p
+# =============================================================================
+# 
+# def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
+#                            mat_id_core, T_rho_id_core, T_rho_args_core,
+#                            ucold_array_core, N_neig=48,
+#                            alpha=1e6, beta=0., gamma=0., delta=1.):
+#     
+#     """ Particle placement for a 1 layer spining profile.
+#     
+#         Args:
+#             
+#             r_array ([float]):
+#                 Points at equatorial profile where the solution is defined (SI).
+#                 
+#             rho_e ([float]):
+#                 Equatorial profile of densities (SI).
+#                 
+#             z_array ([float]):
+#                 Points at equatorial profile where the solution is defined (SI).
+#                 
+#             rho_p ([float]):
+#                 Polar profile of densities (SI).
+#                 
+#             Tw (float):
+#                 Period of the planet (hours).
+#                 
+#             N (int):
+#                 Number of particles.
+#                 
+#             mat_id_core (int):
+#                 Material id for the core.
+#                 
+#             T_rho_id_core (int)
+#                 Relation between T and rho to be used at the core.
+#                 
+#             T_rho_args_core (list):
+#                 Extra arguments to determine the relation at the core.
+#                 
+#             ucold_array_core ([float]):
+#                 Precomputed values of cold internal energy
+#                 with function _create_ucold_array() for the core (SI).
+#                 
+#             N_neig (int):
+#                 Number of neighbors in the SPH simulation.
+#             
+#         Returns:
+#             
+#             x ([float]):
+#                 Position x of each particle (SI).
+#                 
+#             y ([float]):
+#                 Position y of each particle (SI).
+#                 
+#             z ([float]):
+#                 Position z of each particle (SI).
+#                 
+#             vx ([float]):
+#                 Velocity in x of each particle (SI).
+#                 
+#             vy ([float]):
+#                 Velocity in y of each particle (SI).
+#                 
+#             vz ([float]):
+#                 Velocity in z of each particle (SI).
+#                 
+#             m ([float]):
+#                 Mass of every particle (SI).
+#                 
+#             h ([float]):
+#                 Smoothing lenght for every particle (SI).
+#                 
+#             rho ([float]):
+#                 Density for every particle (SI).
+#                 
+#             P ([float]):
+#                 Pressure for every particle (SI).
+#                 
+#             u ([float]):
+#                 Internal energy for every particle (SI).
+#             
+#             mat_id ([int]):
+#                 Material id for every particle.
+#                 
+#             id ([int]):
+#                 Identifier for every particle
+#             
+#     """
+#     rho_e_model = interp1d(r_array, rho_e)
+#     rho_p_model_inv = interp1d(rho_p, z_array)
+# 
+#     Re = np.max(r_array[rho_e > 0])
+# 
+#     radii = np.arange(0, Re, Re/1000000)
+#     densities = rho_e_model(radii)
+# 
+#     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
+#     
+#     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
+#     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
+#     particles_rho = rho_e_model(particles_r)
+#     
+#     R = particles.A1_r.copy()
+#     rho_layer = rho_e_model(R)
+#     Z = rho_p_model_inv(rho_layer)
+#     
+#     f = Z/R
+#     zP = particles.z*f
+#     
+#     delta_f  = np.zeros(R.shape)
+#     delta_z  = np.zeros(R.shape)
+# 
+#     unique_R = np.unique(R)
+#     unique_Z = np.unique(Z)
+#     
+#     for i, Radius in enumerate(np.unique(R)):
+# 
+#         if i != particles.N_shell_tot - 1:
+#             
+#             Zip1 = unique_Z[i + 1]
+#             Rip1 = unique_R[i + 1]
+#             Zi = unique_Z[i]
+#             Ri = unique_R[i]
+#             
+#             df = Zip1/Rip1 - Zi/Ri
+#             
+#             delta_f[R == Radius] = df
+#             rc = particles_rc[R == Radius]
+#             zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
+#             zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
+#             
+#             dz = zip1 - zi
+#             delta_z[R == Radius] = dz
+#             
+#         else:
+#             
+#             delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
+#             delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
+#             
+#     dzPz_dz = delta_f/delta_z
+#     
+#     delta_2f  = np.zeros(R.shape)
+#     delta_2z  = np.zeros(R.shape)
+#     
+#     for i, Radius in enumerate(np.unique(R)):
+# 
+#         if i != particles.N_shell_tot - 1:
+#             
+#             fi   = np.median(dzPz_dz[R == Radius])
+#             fip1 = np.median(R == unique_R[i + 1])
+#             d2f  = fip1 - fi
+#             
+#             delta_2f[R == Radius] = d2f
+#             rc = particles_rc[R == Radius]
+#             zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
+#             zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
+#             
+#             dz = zip1 - zi
+#             delta_2z[R == Radius] = dz
+#             
+#         else:
+#             
+#             delta_2f[R == Radius] = delta_2f[R == unique_R[i - 1]][0]
+#             delta_2z[R == Radius] = delta_2z[R == unique_R[i - 1]][0]
+#     
+#     d2zPz_dz2 = delta_2f/delta_2z
+#     
+#     z_max = np.max(np.abs(particles.z))
+#     a = np.power(np.abs(particles.z)/z_max, gamma)
+#     mP = delta*particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
+#     
+#     #
+#     #import matplotlib.pyplot as plt
+#     #plt.scatter(particles.z, dzPz_dz/np.max(dzPz_dz))
+#     #plt.scatter(particles.z, 100*d2zPz_dz2/np.max(d2zPz_dz2))
+#     #plt.show()
+#     #
+#     
+#     # print("\nx, y, z, and m computed\n")
+#     
+#     # Compute velocities (T_w in hours)
+#     vx = np.zeros(mP.shape[0])
+#     vy = np.zeros(mP.shape[0])
+#     vz = np.zeros(mP.shape[0])
+#     
+#     hour_to_s = 3600
+#     wz = 2*np.pi/Tw/hour_to_s 
+#         
+#     vx = -particles.y*wz
+#     vy = particles.x*wz
+#     
+#     # internal energy
+#     rho = particles_rho
+#     u = np.zeros((mP.shape[0]))
+#     
+#     x = particles.x
+#     y = particles.y
+#     
+#     #print("vx, vy, and vz computed\n")
+#     
+#     c_core = eos._spec_c(mat_id_core)
+#     
+#     P = np.zeros((mP.shape[0],))
+#     
+#     for k in range(mP.shape[0]):
+#         u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
+#         u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
+#         P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
+#     
+#     #print("Internal energy u computed\n")
+#     ## Smoothing lengths, crudely estimated from the densities
+#     num_ngb = N_neig    # Desired number of neighbours
+#     w_edge  = 2     # r/h at which the kernel goes to zero
+#     h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge 
+#     
+#     A1_id     = np.arange(mP.shape[0])
+#     A1_mat_id = np.ones((mP.shape[0],))*mat_id_core
+#     
+#     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
+# 
+# =============================================================================
+
+@jit(nopython=True)
+def cubic_spline_kernel(rij, h):
+    
+    gamma = 1.825742
+    H     = gamma*h
+    C     = 16/np.pi
+    u     = rij/H
+    
+    fu = np.zeros(u.shape)
+    
+    mask_1     = u < 1/2
+    fu[mask_1] = (3*np.power(u,3) - 3*np.power(u,2) + 0.5)[mask_1]
+    
+    mask_2     = np.logical_and(u > 1/2, u < 1)
+    fu[mask_2] = (-np.power(u,3) + 3*np.power(u,2) - 3*u + 1)[mask_2]
+        
+    return C*fu/np.power(H,3)
+      
+@jit(nopython=True)  
+def N_neig_cubic_spline_kernel(eta):
+        
+    gamma = 1.825742
+        
+    return 4/3*np.pi*(gamma*eta)**3
+    
+@jit(nopython=True)    
+def eta_cubic_spline_kernel(N_neig):
+    
+    gamma = 1.825742
+    
+    return np.cbrt(3*N_neig/4/np.pi)/gamma
+
+@jit(nopython=True)
+def SPH_density(M, R, H):
+    
+    rho_sph = np.zeros(H.shape[0])
+    
+    for i in range(H.shape[0]):
+        
+        rho_sph[i] = np.sum(M[i,:]*cubic_spline_kernel(R[i,:], H[i]))
+        
+    return rho_sph
+
+@jit(nopython=True)
+def _generate_M(indices, m):
+    
+    M = np.zeros(indices.shape)
+    
+    for i in range(M.shape[0]):
+        M[i,:] = m[indices[i]]
+        
+    return M
+ 
 
 def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
-                           ucold_array_core, N_neig=48,
-                           alpha=1e6, beta=0., gamma=0., delta=1.):
+                           ucold_array_core, N_neig=48, iterations=10):
     
     """ Particle placement for a 1 layer spining profile.
     
@@ -2850,67 +3124,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     f = Z/R
     zP = particles.z*f
     
-    delta_f  = np.zeros(R.shape)
-    delta_z  = np.zeros(R.shape)
-
-    unique_R = np.unique(R)
-    unique_Z = np.unique(Z)
-    
-    for i, Radius in enumerate(np.unique(R)):
-
-        if i != particles.N_shell_tot - 1:
-            
-            Zip1 = unique_Z[i + 1]
-            Rip1 = unique_R[i + 1]
-            Zi = unique_Z[i]
-            Ri = unique_R[i]
-            
-            df = Zip1/Rip1 - Zi/Ri
-            
-            delta_f[R == Radius] = df
-            rc = particles_rc[R == Radius]
-            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
-            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
-            
-            dz = zip1 - zi
-            delta_z[R == Radius] = dz
-            
-        else:
-            
-            delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
-            delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
-            
-    dzPz_dz = delta_f/delta_z
-    
-    delta_2f  = np.zeros(R.shape)
-    delta_2z  = np.zeros(R.shape)
-    
-    for i, Radius in enumerate(np.unique(R)):
-
-        if i != particles.N_shell_tot - 1:
-            
-            fi   = np.median(dzPz_dz[R == Radius])
-            fip1 = np.median(R == unique_R[i + 1])
-            d2f  = fip1 - fi
-            
-            delta_2f[R == Radius] = d2f
-            rc = particles_rc[R == Radius]
-            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
-            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
-            
-            dz = zip1 - zi
-            delta_2z[R == Radius] = dz
-            
-        else:
-            
-            delta_2f[R == Radius] = delta_2f[R == unique_R[i - 1]][0]
-            delta_2z[R == Radius] = delta_2z[R == unique_R[i - 1]][0]
-    
-    d2zPz_dz2 = delta_2f/delta_2z
-    
-    z_max = np.max(np.abs(particles.z))
-    a = np.power(np.abs(particles.z)/z_max, gamma)
-    mP = delta*particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
+    mP = particles.m*f 
     
     #
     #import matplotlib.pyplot as plt
@@ -2952,12 +3166,88 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     
     #print("Internal energy u computed\n")
     ## Smoothing lengths, crudely estimated from the densities
-    num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
-    h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge 
+    h       = np.cbrt(N_neig * mP / (4/3*np.pi * rho)) / w_edge 
     
     A1_id     = np.arange(mP.shape[0])
     A1_mat_id = np.ones((mP.shape[0],))*mat_id_core
+    
+    ############
+    unique_R = np.unique(R)
+    
+    x_reshaped  = x.reshape((-1,1))
+    y_reshaped  = y.reshape((-1,1))
+    zP_reshaped = zP.reshape((-1,1))
+    
+    X = np.hstack((x_reshaped, y_reshaped, zP_reshaped))
+
+    nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
+    nbrs.fit(X)
+    distances, indices = nbrs.kneighbors(X)
+    
+    mP = particles.m*f 
+    M  = _generate_M(indices, mP)
+    
+    rho_sph = SPH_density(M, distances, h)
+    
+    
+    
+# =============================================================================
+#     import matplotlib.pyplot as plt
+#     
+#     diff = (rho_sph - rho)/rho
+#     fig, ax = plt.subplots(1,2, figsize=(12,6))
+#     ax[0].hist(diff, bins = 500)
+#     ax[0].set_xlabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+#     ax[0].set_ylabel('Counts')
+#     ax[0].set_yscale("log")
+#     ax[1].scatter(zP/R_earth, diff, s = 0.5, alpha=0.5)
+#     ax[1].set_xlabel(r"z [$R_{earth}$]")
+#     ax[1].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+#     #ax[1].set_ylim(-0.03, 0.03)
+#     plt.tight_layout()
+#     plt.show()
+# =============================================================================
+    
+    for _ in range(iterations):
+        
+        diff = (rho_sph - rho)/rho
+        mP_next = (1 - diff)*mP
+        mP_next[R == unique_R[-1]] = mP[R == unique_R[-1]] # do not change mass of boundary layers
+    
+        M = _generate_M(indices, mP_next)
+    
+        rho_sph = SPH_density(M, distances, h)
+        
+        mP = mP_next
+    
+    np.max(mP)/np.min(mP)
+    
+    ##############
+    part = 70435
+    x_particle = x[indices[part]]
+    y_particle = y[indices[part]]
+    rc_particles = np.sqrt(x_particle**2 + y_particle**2)
+    z_particle = particles.z[indices[part]]
+    zP_particle = zP[indices[part]]
+    m_particle = particles.m[indices[part]]
+    mP_particle = mP[indices[part]]
+    
+    h_prev   = np.cbrt(N_neig * particles.m / (4/3*np.pi * rho)) / w_edge 
+    sph_part = np.sum(mP_particle*cubic_spline_kernel(distances[part,:], h[part]))
+    sph_prev = np.sum(m_particle*cubic_spline_kernel(distances[part,:]/np.cbrt(f[part]), h_prev[part]))
+    
+    #plt.scatter(rc_particles, zP_particle)
+    plt.scatter(rc_particles/R_earth, z_particle/R_earth)
+    plt.scatter(rc_particles[0]/R_earth, z_particle[0]/R_earth)
+    plt.show()
+    
+    plt.hist(rho[indices[part]], bins=15)
+    plt.axvline(x=rho[part], color='black')
+    #plt.axvline(x=np.mean(m_particle[indices[part]]), color='red')
+    plt.show()
+    
+    ###########
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
 
@@ -4097,14 +4387,11 @@ def Spin(planet):
 
 class _1l_genspheroid():
     
-    def __init__(self, spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=1.):
+    def __init__(self, spin_planet, N_particles, N_neig=48, iterations=10):
         
         self.N_layers    = 1
         self.N_particles = N_particles
-        self.alpha = alpha
-        self.beta  = beta
-        self.gamma = gamma
-        self.delta = delta
+        self.iterations  = iterations
         
         self.A1_equator     = spin_planet.A1_equator
         self.A1_rho_equator = spin_planet.A1_rho_equator
@@ -4123,8 +4410,7 @@ class _1l_genspheroid():
                                    self.A1_pole, self.A1_rho_pole, self.Tw, N_particles,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    ucold_array_core, N_neig,
-                                   alpha = self.alpha, beta = self.beta, gamma = self.gamma,
-                                   delta = self.delta)
+                                   self.iterations)
             
         self.A1_x = x
         self.A1_y = y
@@ -4254,7 +4540,7 @@ class _3l_genspheroid():
         self.A1_mat_id = mat_id
         self.A1_picle_id = picle_id
 
-def GenSpheroid(spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=0.):
+def GenSpheroid(spin_planet, N_particles, N_neig=48, iterations=10):
     
     _print_banner()
     
@@ -4267,17 +4553,17 @@ def GenSpheroid(spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0
         
     if sp.N_layers == 1:
         
-        spheroid = _1l_genspheroid(sp, N_particles, N_neig, alpha, beta, gamma, delta)
+        spheroid = _1l_genspheroid(sp, N_particles, N_neig, iterations)
         return spheroid
             
     elif sp.N_layers == 2:
         
-        spheroid = _2l_genspheroid(sp, N_particles, N_neig, alpha, beta, gamma, delta)
+        spheroid = _2l_genspheroid(sp, N_particles, N_neig)
         return spheroid
         
     elif sp.N_layers == 3:
         
-        spheroid = _3l_genspheroid(sp, N_particles, N_neig, alpha, beta, gamma, delta)
+        spheroid = _3l_genspheroid(sp, N_particles, N_neig)
         return spheroid
         
         

@@ -155,8 +155,9 @@ Tw = 3
 N = 1e5
 mat_id_core = 101
 T_rho_id_core = 1
-T_rho_args_core = [300, 0.]
+T_rho_args_core = [300., 0.]
 ucold_array_core = eos.load_ucold_array(101)
+iterations = 10
 
 x = np.linspace(0, 100, 100)
 y2 = np.power(x, 2)
