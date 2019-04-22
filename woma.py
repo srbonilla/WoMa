@@ -16,6 +16,7 @@ from scipy.interpolate import interp1d
 import seagen
 import eos
 from sklearn.neighbors import NearestNeighbors
+from tqdm import tqdm
 
 # Global constants
 G = 6.67408E-11;
@@ -213,7 +214,7 @@ def find_mass_1layer(N, R, M_max, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
         
     return M_max
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def find_radius_1layer(N, R_max, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
                        ucold_array, iterations = 40):
     
@@ -264,9 +265,9 @@ def find_radius_1layer(N, R_max, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
     r, m, P, T, rho, u, mat = integrate_1layer(N, R_max, M, Ps, Ts, rhos, mat_id,
                                                T_rho_id, T_rho_args, ucold_array)
     
-    if m[-1] == 0.:
+    if m[-1] != 0.:
         
-        for i in range(iterations):
+        for i in tqdm(range(iterations), desc="Finding R given M"):
             
             R_try = (R_min + R_max)/2.
             
@@ -533,7 +534,7 @@ def find_mass_2layer(N, R, M_max, Ps, Ts, rhos, Bcm,
         
     return M_max
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def find_radius_2layer(N, R_max, M, Ps, Ts, rhos, Bcm,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
@@ -621,7 +622,7 @@ def find_radius_2layer(N, R_max, M, Ps, Ts, rhos, Bcm,
     
     if m1[-1] == 0.:
         
-        for i in range(iterations):
+        for i in tqdm(range(iterations), desc="Finding R given M, B"):
             
             R_try = (R_min + R_max)/2.
             
@@ -638,7 +639,7 @@ def find_radius_2layer(N, R_max, M, Ps, Ts, rhos, Bcm,
         
     return R_min
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def find_boundary_2layer(N, R, M, Ps, Ts, rhos,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
@@ -727,7 +728,7 @@ def find_boundary_2layer(N, R, M, Ps, Ts, rhos,
     
     if m1[-1] > 0.:
         
-        for i in range(iterations):
+        for i in tqdm(range(iterations), desc="Finding B given R, M"):
             
             B_try = (B_min + B_max)/2.
             
@@ -1062,7 +1063,7 @@ def find_mass_3layer(N, R, M_max, Ps, Ts, rhos, Bcm, Bma,
         
     return M_max
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def find_radius_3layer(N, R_max, M, Ps, Ts, rhos, Bcm, Bma,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
@@ -1173,7 +1174,7 @@ def find_radius_3layer(N, R_max, M, Ps, Ts, rhos, Bcm, Bma,
         print("Try reduce the mass or increase R_max")
         return R_max
         
-    for i in range(iterations):
+    for i in tqdm(range(iterations), desc="Finding R given M, Bcm, Bma"):
             
             R_try = (R_min + R_max)/2.
             
@@ -1216,7 +1217,7 @@ def moi(r, rho):
     
     return MoI
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def find_Bma_3layer(N, R, M, Ps, Ts, rhos, Bcm,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
@@ -1321,7 +1322,7 @@ def find_Bma_3layer(N, R, M, Ps, Ts, rhos, Bcm,
         print("Try decreasing the mass, decreasing Bcm or increasing R")
         return Bma_max
     
-    for i in range(iterations):
+    for i in tqdm(range(iterations), desc="Finding Bma given M, R, Bcm"):
             
         Bma_try = (Bma_min + Bma_max)/2.
         
@@ -1339,7 +1340,7 @@ def find_Bma_3layer(N, R, M, Ps, Ts, rhos, Bcm,
         
     return Bma_max
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def find_Bcm_3layer(N, R, M, Ps, Ts, rhos, Bma,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
@@ -1442,7 +1443,7 @@ def find_Bcm_3layer(N, R, M, Ps, Ts, rhos, Bma,
         print("Try increasing the mass, increasing Bma or decreasing R")
         return Bcm_max
     
-    for i in range(iterations):
+    for i in tqdm(range(iterations), desc="Finding Bcm given R, M, Bma"):
             
         Bcm_try = (Bcm_min + Bcm_max)/2.
         
@@ -1460,7 +1461,7 @@ def find_Bcm_3layer(N, R, M, Ps, Ts, rhos, Bma,
         
     return Bcm_max
 
-@jit(nopython=True)
+#@jit(nopython=True)
 def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
@@ -1570,7 +1571,7 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
     
     if MoI > moi_min and  MoI < moi_max:
         
-        for i in range(iterations):
+        for i in tqdm(range(iterations), desc="Finding Bcm, Bma given R, M, I"):
             
             Bcm_try = (Bcm_min + Bcm_max)/2.
             
@@ -1620,10 +1621,10 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
 
 def _print_banner():
     
-    print("\n-------------------------------------------------------")
-    print("-               WoMa - World Maker                    -")
-    print("-------------------------------------------------------\n")
-    print("sergio.ruiz-bonilla@durham.ac.uk\n")
+    print("\n")
+    print("#  WoMa - World Maker")
+    print("#  sergio.ruiz-bonilla@durham.ac.uk")
+    print("\n")
     
 class _planet():
     
@@ -1680,10 +1681,14 @@ class _1l_planet(_planet):
                                self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                ucold_array, self.iterations)
         
+        print("Tweeking M to avoid peaks at the center of the planet...")
+        
         M_tweek = find_mass_1layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    ucold_array)
+        
+        print("Done!")
         
         r, m, P, T, rho, u, mat = \
             integrate_1layer(self.N_integ_steps, R, M_tweek,
@@ -1705,6 +1710,8 @@ class _1l_planet(_planet):
         
         ucold_array = eos.load_ucold_array(self.mat_id_core)
         
+        print("Finding M given R...")
+        
         M = find_mass_1layer(self.N_integ_steps, R, M_max,
                              self.P_surface, self.T_surface, self.rho_surface,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1715,6 +1722,8 @@ class _1l_planet(_planet):
                              self.P_surface, self.T_surface, self.rho_surface,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              ucold_array)
+            
+        print("Done!")
             
         self.M           = M
         self.R           = R
@@ -1791,6 +1800,8 @@ class _2l_planet(_planet):
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    ucold_array_core, ucold_array_mantle, self.iterations)
         
+        print("Tweeking M to avoid peaks at the center of the planet...")
+        
         M_tweek = find_mass_2layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface, Bcm,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1803,6 +1814,8 @@ class _2l_planet(_planet):
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              ucold_array_core, ucold_array_mantle)
+            
+        print("Done!")
             
         self.M           = M_tweek
         self.R           = R
@@ -1820,6 +1833,8 @@ class _2l_planet(_planet):
         ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
         ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
         
+        print("Finding M given B and R...")
+        
         M = find_mass_2layer(self.N_integ_steps, R, M_max,
                              self.P_surface, self.T_surface, self.rho_surface, B,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1832,6 +1847,8 @@ class _2l_planet(_planet):
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              ucold_array_core, ucold_array_mantle)
+            
+        print("Done!")
             
         self.M           = M
         self.R           = R
@@ -1855,6 +1872,8 @@ class _2l_planet(_planet):
                                self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                ucold_array_core, ucold_array_mantle, self.iterations)
         
+        print("Tweeking M to avoid peaks at the center of the planet...")
+        
         M_tweek = find_mass_2layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface, B,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1867,6 +1886,8 @@ class _2l_planet(_planet):
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              ucold_array_core, ucold_array_mantle)
+            
+        print("Done!")
             
         self.M           = M_tweek
         self.R           = R
@@ -1963,6 +1984,7 @@ class _3l_planet(_planet):
                                    ucold_array_core, ucold_array_mantle, ucold_array_atm,
                                    self.iterations, self.subiterations)
 
+        print("Tweeking M to avoid peaks at the center of the planet...")
         
         M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
@@ -1981,6 +2003,8 @@ class _3l_planet(_planet):
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                              ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        print("Done!")
             
         self.M           = M_tweek
         self.R           = R
@@ -2010,6 +2034,8 @@ class _3l_planet(_planet):
                               ucold_array_core, ucold_array_mantle, ucold_array_atm,
                               self.iterations)
         
+        print("Tweeking M to avoid peaks at the center of the planet...")
+        
         M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
@@ -2026,6 +2052,8 @@ class _3l_planet(_planet):
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                              ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        print("Done!")
             
         self.M           = M_tweek
         self.R           = R
@@ -2054,6 +2082,8 @@ class _3l_planet(_planet):
                               ucold_array_core, ucold_array_mantle, ucold_array_atm,
                               self.iterations)
         
+        print("Tweeking M to avoid peaks at the center of the planet...")
+        
         M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
@@ -2070,6 +2100,8 @@ class _3l_planet(_planet):
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                              ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        print("Done!")
             
         self.M           = M_tweek
         self.R           = R
@@ -2090,6 +2122,8 @@ class _3l_planet(_planet):
         ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
         ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
         
+        print("Finding M given Bcm, Bma and R...")
+        
         M = find_mass_3layer(self.N_integ_steps, R, M_max,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
@@ -2107,6 +2141,8 @@ class _3l_planet(_planet):
                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                              ucold_array_core, ucold_array_mantle, ucold_array_atm)
             
+        print("Done!")
+        
         self.M           = M
         self.R           = R
         self.Bcm         = Bcm
@@ -2135,6 +2171,8 @@ class _3l_planet(_planet):
                                ucold_array_core, ucold_array_mantle, ucold_array_atm,
                                self.iterations)
         
+        print("Tweeking M to avoid peaks at the center of the planet...")
+        
         M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
@@ -2151,6 +2189,8 @@ class _3l_planet(_planet):
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                              ucold_array_core, ucold_array_mantle, ucold_array_atm)
+            
+        print("Done!")
             
         self.M           = M_tweek
         self.R           = R
@@ -2736,7 +2776,7 @@ def spin1layer(iterations, r_array, z_array, radii, densities, Tw,
     profile_e.append(rho_e)
     profile_p.append(rho_p)
     
-    for i in range(iterations):
+    for i in tqdm(range(iterations), desc="Solving spining profile"):
         V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
                                 mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core)
@@ -2744,226 +2784,6 @@ def spin1layer(iterations, r_array, z_array, radii, densities, Tw,
         profile_p.append(rho_p)
     
     return profile_e, profile_p
-# =============================================================================
-# 
-# def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
-#                            mat_id_core, T_rho_id_core, T_rho_args_core,
-#                            ucold_array_core, N_neig=48,
-#                            alpha=1e6, beta=0., gamma=0., delta=1.):
-#     
-#     """ Particle placement for a 1 layer spining profile.
-#     
-#         Args:
-#             
-#             r_array ([float]):
-#                 Points at equatorial profile where the solution is defined (SI).
-#                 
-#             rho_e ([float]):
-#                 Equatorial profile of densities (SI).
-#                 
-#             z_array ([float]):
-#                 Points at equatorial profile where the solution is defined (SI).
-#                 
-#             rho_p ([float]):
-#                 Polar profile of densities (SI).
-#                 
-#             Tw (float):
-#                 Period of the planet (hours).
-#                 
-#             N (int):
-#                 Number of particles.
-#                 
-#             mat_id_core (int):
-#                 Material id for the core.
-#                 
-#             T_rho_id_core (int)
-#                 Relation between T and rho to be used at the core.
-#                 
-#             T_rho_args_core (list):
-#                 Extra arguments to determine the relation at the core.
-#                 
-#             ucold_array_core ([float]):
-#                 Precomputed values of cold internal energy
-#                 with function _create_ucold_array() for the core (SI).
-#                 
-#             N_neig (int):
-#                 Number of neighbors in the SPH simulation.
-#             
-#         Returns:
-#             
-#             x ([float]):
-#                 Position x of each particle (SI).
-#                 
-#             y ([float]):
-#                 Position y of each particle (SI).
-#                 
-#             z ([float]):
-#                 Position z of each particle (SI).
-#                 
-#             vx ([float]):
-#                 Velocity in x of each particle (SI).
-#                 
-#             vy ([float]):
-#                 Velocity in y of each particle (SI).
-#                 
-#             vz ([float]):
-#                 Velocity in z of each particle (SI).
-#                 
-#             m ([float]):
-#                 Mass of every particle (SI).
-#                 
-#             h ([float]):
-#                 Smoothing lenght for every particle (SI).
-#                 
-#             rho ([float]):
-#                 Density for every particle (SI).
-#                 
-#             P ([float]):
-#                 Pressure for every particle (SI).
-#                 
-#             u ([float]):
-#                 Internal energy for every particle (SI).
-#             
-#             mat_id ([int]):
-#                 Material id for every particle.
-#                 
-#             id ([int]):
-#                 Identifier for every particle
-#             
-#     """
-#     rho_e_model = interp1d(r_array, rho_e)
-#     rho_p_model_inv = interp1d(rho_p, z_array)
-# 
-#     Re = np.max(r_array[rho_e > 0])
-# 
-#     radii = np.arange(0, Re, Re/1000000)
-#     densities = rho_e_model(radii)
-# 
-#     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
-#     
-#     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
-#     particles_rc = np.sqrt(particles.x**2 + particles.y**2)
-#     particles_rho = rho_e_model(particles_r)
-#     
-#     R = particles.A1_r.copy()
-#     rho_layer = rho_e_model(R)
-#     Z = rho_p_model_inv(rho_layer)
-#     
-#     f = Z/R
-#     zP = particles.z*f
-#     
-#     delta_f  = np.zeros(R.shape)
-#     delta_z  = np.zeros(R.shape)
-# 
-#     unique_R = np.unique(R)
-#     unique_Z = np.unique(Z)
-#     
-#     for i, Radius in enumerate(np.unique(R)):
-# 
-#         if i != particles.N_shell_tot - 1:
-#             
-#             Zip1 = unique_Z[i + 1]
-#             Rip1 = unique_R[i + 1]
-#             Zi = unique_Z[i]
-#             Ri = unique_R[i]
-#             
-#             df = Zip1/Rip1 - Zi/Ri
-#             
-#             delta_f[R == Radius] = df
-#             rc = particles_rc[R == Radius]
-#             zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
-#             zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
-#             
-#             dz = zip1 - zi
-#             delta_z[R == Radius] = dz
-#             
-#         else:
-#             
-#             delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
-#             delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
-#             
-#     dzPz_dz = delta_f/delta_z
-#     
-#     delta_2f  = np.zeros(R.shape)
-#     delta_2z  = np.zeros(R.shape)
-#     
-#     for i, Radius in enumerate(np.unique(R)):
-# 
-#         if i != particles.N_shell_tot - 1:
-#             
-#             fi   = np.median(dzPz_dz[R == Radius])
-#             fip1 = np.median(R == unique_R[i + 1])
-#             d2f  = fip1 - fi
-#             
-#             delta_2f[R == Radius] = d2f
-#             rc = particles_rc[R == Radius]
-#             zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
-#             zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
-#             
-#             dz = zip1 - zi
-#             delta_2z[R == Radius] = dz
-#             
-#         else:
-#             
-#             delta_2f[R == Radius] = delta_2f[R == unique_R[i - 1]][0]
-#             delta_2z[R == Radius] = delta_2z[R == unique_R[i - 1]][0]
-#     
-#     d2zPz_dz2 = delta_2f/delta_2z
-#     
-#     z_max = np.max(np.abs(particles.z))
-#     a = np.power(np.abs(particles.z)/z_max, gamma)
-#     mP = delta*particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
-#     
-#     #
-#     #import matplotlib.pyplot as plt
-#     #plt.scatter(particles.z, dzPz_dz/np.max(dzPz_dz))
-#     #plt.scatter(particles.z, 100*d2zPz_dz2/np.max(d2zPz_dz2))
-#     #plt.show()
-#     #
-#     
-#     # print("\nx, y, z, and m computed\n")
-#     
-#     # Compute velocities (T_w in hours)
-#     vx = np.zeros(mP.shape[0])
-#     vy = np.zeros(mP.shape[0])
-#     vz = np.zeros(mP.shape[0])
-#     
-#     hour_to_s = 3600
-#     wz = 2*np.pi/Tw/hour_to_s 
-#         
-#     vx = -particles.y*wz
-#     vy = particles.x*wz
-#     
-#     # internal energy
-#     rho = particles_rho
-#     u = np.zeros((mP.shape[0]))
-#     
-#     x = particles.x
-#     y = particles.y
-#     
-#     #print("vx, vy, and vz computed\n")
-#     
-#     c_core = eos._spec_c(mat_id_core)
-#     
-#     P = np.zeros((mP.shape[0],))
-#     
-#     for k in range(mP.shape[0]):
-#         u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
-#         u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
-#         P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
-#     
-#     #print("Internal energy u computed\n")
-#     ## Smoothing lengths, crudely estimated from the densities
-#     num_ngb = N_neig    # Desired number of neighbours
-#     w_edge  = 2     # r/h at which the kernel goes to zero
-#     h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge 
-#     
-#     A1_id     = np.arange(mP.shape[0])
-#     A1_mat_id = np.ones((mP.shape[0],))*mat_id_core
-#     
-#     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
-# 
-# =============================================================================
 
 @jit(nopython=True)
 def cubic_spline_kernel(rij, h):
@@ -3114,8 +2934,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
-    particles_rc = np.sqrt(particles.x**2 + particles.y**2)
-    particles_rho = rho_e_model(particles_r)
+    rho = rho_e_model(particles_r)
     
     R = particles.A1_r.copy()
     rho_layer = rho_e_model(R)
@@ -3125,15 +2944,6 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     zP = particles.z*f
     
     mP = particles.m*f 
-    
-    #
-    #import matplotlib.pyplot as plt
-    #plt.scatter(particles.z, dzPz_dz/np.max(dzPz_dz))
-    #plt.scatter(particles.z, 100*d2zPz_dz2/np.max(d2zPz_dz2))
-    #plt.show()
-    #
-    
-    # print("\nx, y, z, and m computed\n")
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -3147,13 +2957,10 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     vy = particles.x*wz
     
     # internal energy
-    rho = particles_rho
     u = np.zeros((mP.shape[0]))
     
     x = particles.x
     y = particles.y
-    
-    #print("vx, vy, and vz computed\n")
     
     c_core = eos._spec_c(mat_id_core)
     
@@ -3180,18 +2987,66 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     zP_reshaped = zP.reshape((-1,1))
     
     X = np.hstack((x_reshaped, y_reshaped, zP_reshaped))
+    
+    del x_reshaped, y_reshaped, zP_reshaped
 
     nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
     nbrs.fit(X)
-    distances, indices = nbrs.kneighbors(X)
     
-    mP = particles.m*f 
-    M  = _generate_M(indices, mP)
+    N_mem = int(1e6)
     
-    rho_sph = SPH_density(M, distances, h)
+    if particles.N_picle < N_mem:
+        
+        print("Finding neighbors of all particles...")
+        distances, indices = nbrs.kneighbors(X)
+        
+        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        
+            M = _generate_M(indices, mP)
+        
+            rho_sph = SPH_density(M, distances, h)
+            
+            diff = (rho_sph - rho)/rho
+            mP_next = (1 - diff)*mP
+            mP_next[R == unique_R[-1]] = mP[R == unique_R[-1]] # do not change mass of boundary layers
+            
+            mP = mP_next
+        
+    else:
+        
+        k    = particles.N_picle // N_mem
+        
+        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+            
+            for i in range(int(k)):
+                
+                distances_i, indices_i = nbrs.kneighbors(X[i*N_mem:(i + 1)*N_mem,:])
+                
+                M_i  = _generate_M(indices_i, mP[i*N_mem:(i + 1)*N_mem])
+        
+                rho_sph_i = SPH_density(M_i, distances_i, h[i*N_mem:(i + 1)*N_mem])
+                
+                diff_i = (rho_sph_i - rho[i*N_mem:(i + 1)*N_mem])/rho[i*N_mem:(i + 1)*N_mem]
+                mP_next_i = (1 - diff_i)*mP[i*N_mem:(i + 1)*N_mem]
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R[-1]] = \
+                        mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R[-1]] # do not change mass of boundary layers
+            
+                mP[i*N_mem:(i + 1)*N_mem] = mP_next_i
+                
+            distances_k, indices_k = nbrs.kneighbors(X[k*N_mem:,:])
+                
+            M_k  = _generate_M(indices_k, mP[k*N_mem:])
+        
+            rho_sph_k = SPH_density(M_k, distances_k, h[k*N_mem:])
+                
+            diff_k = (rho_sph_k - rho[k*N_mem:])/rho[k*N_mem:]
+            mP_next_k = (1 - diff_k)*mP[k*N_mem:]
+            mP_next_k[R[k*N_mem:] == unique_R[-1]] = \
+                    mP[k*N_mem:][R[k*N_mem:] == unique_R[-1]] # do not change mass of boundary layers
+            
+            mP[k*N_mem:] = mP_next_k    
     
-    
-    
+    ######
 # =============================================================================
 #     import matplotlib.pyplot as plt
 #     
@@ -3208,46 +3063,9 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
 #     plt.tight_layout()
 #     plt.show()
 # =============================================================================
-    
-    for _ in range(iterations):
+    #####
         
-        diff = (rho_sph - rho)/rho
-        mP_next = (1 - diff)*mP
-        mP_next[R == unique_R[-1]] = mP[R == unique_R[-1]] # do not change mass of boundary layers
-    
-        M = _generate_M(indices, mP_next)
-    
-        rho_sph = SPH_density(M, distances, h)
-        
-        mP = mP_next
-    
-    np.max(mP)/np.min(mP)
-    
-    ##############
-    part = 70435
-    x_particle = x[indices[part]]
-    y_particle = y[indices[part]]
-    rc_particles = np.sqrt(x_particle**2 + y_particle**2)
-    z_particle = particles.z[indices[part]]
-    zP_particle = zP[indices[part]]
-    m_particle = particles.m[indices[part]]
-    mP_particle = mP[indices[part]]
-    
-    h_prev   = np.cbrt(N_neig * particles.m / (4/3*np.pi * rho)) / w_edge 
-    sph_part = np.sum(mP_particle*cubic_spline_kernel(distances[part,:], h[part]))
-    sph_prev = np.sum(m_particle*cubic_spline_kernel(distances[part,:]/np.cbrt(f[part]), h_prev[part]))
-    
-    #plt.scatter(rc_particles, zP_particle)
-    plt.scatter(rc_particles/R_earth, z_particle/R_earth)
-    plt.scatter(rc_particles[0]/R_earth, z_particle[0]/R_earth)
-    plt.show()
-    
-    plt.hist(rho[indices[part]], bins=15)
-    plt.axvline(x=rho[part], color='black')
-    #plt.axvline(x=np.mean(m_particle[indices[part]]), color='red')
-    plt.show()
-    
-    ###########
+    print("\nDone!")
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
 
@@ -3460,7 +3278,7 @@ def spin2layer(iterations, r_array, z_array, radii, densities, Tw,
     profile_e.append(rho_e)
     profile_p.append(rho_p)
     
-    for i in range(iterations):
+    for i in tqdm(range(iterations), desc="Solving spining profile"):
         V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
                                 mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
@@ -3474,7 +3292,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                            mat_id_core, T_rho_id_core, T_rho_args_core,
                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                            ucold_array_core, ucold_array_mantle, N_neig=48,
-                           alpha=1e6, beta=0., gamma=0., delta=1.):
+                           iterations=10):
     """ Particle placement for a 2 layer spining profile.
     
         Args:
@@ -3583,8 +3401,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
-    particles_rc = np.sqrt(particles.x**2 + particles.y**2)
-    particles_rho = rho_e_model(particles_r)
+    rho = rho_e_model(particles_r)
     
     R = particles.A1_r.copy()
     rho_layer = rho_e_model(R)
@@ -3593,43 +3410,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     f = Z/R
     zP = particles.z*f
     
-    delta_f = np.zeros(R.shape)
-    delta_z = np.zeros(R.shape)
-    
-    unique_R = np.unique(R)
-    unique_Z = np.unique(Z)
-    
-    for i, Radius in enumerate(np.unique(R)):
-
-        if i != particles.N_shell_tot - 1:
-            
-            Zip1 = unique_Z[i + 1]
-            Rip1 = unique_R[i + 1]
-            Zi = unique_Z[i]
-            Ri = unique_R[i]
-            
-            delta_f[R == Radius] = Zip1/Rip1 - Zi/Ri
-            rc = particles_rc[R == Radius]
-            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
-            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
-            delta_z[R == Radius] = zip1 - zi
-            
-        else:
-            
-            delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
-            delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
-            
-    dzPz_dz = delta_f/delta_z
-    
-    z_max = np.max(np.abs(particles.z))
-    a = np.power(np.abs(particles.z)/z_max, gamma)
-    mP = delta*particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
-
-    #mP = particles.m*(f + alpha*dzPz_dz)
-
-    # Tweek masses
-    #mP = particles.m*zP/particles.z
-    #print("\nx, y, z, and m computed\n")
+    mP = particles.m*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -3643,13 +3424,10 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     vy = particles.x*wz
     
     # internal energy
-    rho = particles_rho
     u = np.zeros((mP.shape[0]))
     
     x = particles.x
     y = particles.y
-    
-    #print("vx, vy, and vz computed\n")
     
     c_core = eos._spec_c(mat_id_core)
     c_mantle = eos._spec_c(mat_id_mantle)
@@ -3657,7 +3435,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
-        if particles_rho[k] > rho_i:
+        if rho[k] > rho_i:
             u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
             u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
@@ -3675,6 +3453,108 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     
     A1_id = np.arange(mP.shape[0])
     A1_mat_id = (rho > rho_i)*mat_id_core + (rho <= rho_i)*mat_id_mantle
+    
+    ############
+    unique_R_core   = np.unique(R[A1_mat_id == mat_id_core])
+    unique_R_mantle = np.unique(R[A1_mat_id == mat_id_mantle])
+    
+    x_reshaped  = x.reshape((-1,1))
+    y_reshaped  = y.reshape((-1,1))
+    zP_reshaped = zP.reshape((-1,1))
+    
+    X = np.hstack((x_reshaped, y_reshaped, zP_reshaped))
+    
+    del x_reshaped, y_reshaped, zP_reshaped
+
+    nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
+    nbrs.fit(X)
+    
+    N_mem = int(1e6)
+    
+    if particles.N_picle < N_mem:
+        
+        print("Finding neighbors of all particles...")
+        distances, indices = nbrs.kneighbors(X)
+        
+        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        
+            M = _generate_M(indices, mP)
+        
+            rho_sph = SPH_density(M, distances, h)
+            
+            diff = (rho_sph - rho)/rho
+            mP_next = (1 - diff)*mP
+            # do not change values of inter-boundary layers
+            mP_next[R == unique_R_core[-1]]   = mP[R == unique_R_core[-1]]   # outer core layer
+            mP_next[R == unique_R_mantle[0]]  = mP[R == unique_R_mantle[0]]  # inner mantle layer
+            mP_next[R == unique_R_mantle[-1]] = mP[R == unique_R_mantle[-1]] # outer mantle layer
+            
+            mP = mP_next
+        
+    else:
+        
+        k    = particles.N_picle // N_mem
+        
+        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+            
+            for i in range(int(k)):
+                
+                distances_i, indices_i = nbrs.kneighbors(X[i*N_mem:(i + 1)*N_mem,:])
+                
+                M_i  = _generate_M(indices_i, mP[i*N_mem:(i + 1)*N_mem])
+        
+                rho_sph_i = SPH_density(M_i, distances_i, h[i*N_mem:(i + 1)*N_mem])
+                
+                diff_i = (rho_sph_i - rho[i*N_mem:(i + 1)*N_mem])/rho[i*N_mem:(i + 1)*N_mem]
+                mP_next_i = (1 - diff_i)*mP[i*N_mem:(i + 1)*N_mem]
+                # do not change values of inter-boundary layers
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_core[-1]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_core[-1]]   # outer core layer
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[0]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[0]]  # inner mantle layer
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[-1]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[-1]] # outer mantle layer
+            
+                mP[i*N_mem:(i + 1)*N_mem] = mP_next_i
+                
+            distances_k, indices_k = nbrs.kneighbors(X[k*N_mem:,:])
+                
+            M_k  = _generate_M(indices_k, mP[k*N_mem:])
+        
+            rho_sph_k = SPH_density(M_k, distances_k, h[k*N_mem:])
+                
+            diff_k = (rho_sph_k - rho[k*N_mem:])/rho[k*N_mem:]
+            mP_next_k = (1 - diff_k)*mP[k*N_mem:]
+            # do not change values of inter-boundary layers
+            mP_next_k[R[k*N_mem:] == unique_R_core[-1]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_core[-1]]   # outer core layer
+            mP_next_k[R[k*N_mem:] == unique_R_mantle[0]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_mantle[0]]  # inner mantle layer
+            mP_next_k[R[k*N_mem:] == unique_R_mantle[-1]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_mantle[-1]] # outer mantle layer
+            
+            mP[k*N_mem:] = mP_next_k    
+    
+# =============================================================================
+#     ######
+#     import matplotlib.pyplot as plt
+#     
+#     diff = (rho_sph - rho)/rho
+#     fig, ax = plt.subplots(1,2, figsize=(12,6))
+#     ax[0].hist(diff, bins = 500)
+#     ax[0].set_xlabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+#     ax[0].set_ylabel('Counts')
+#     ax[0].set_yscale("log")
+#     ax[1].scatter(zP/R_earth, diff, s = 0.5, alpha=0.5)
+#     ax[1].set_xlabel(r"z [$R_{earth}$]")
+#     ax[1].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+#     #ax[1].set_ylim(-0.03, 0.03)
+#     plt.tight_layout()
+#     plt.show()
+# =============================================================================
+    #####
+        
+    print("\nDone!")
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
 
@@ -3927,7 +3807,7 @@ def spin3layer(iterations, r_array, z_array, radii, densities, Tw,
     profile_e.append(rho_e)
     profile_p.append(rho_p)
     
-    for i in range(iterations):
+    for i in tqdm(range(iterations), desc="Solving spining profile"):
         V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
                                 mat_id_core, T_rho_id_core, T_rho_args_core, ucold_array_core,
@@ -3944,7 +3824,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
                            mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                            mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                            ucold_array_core, ucold_array_mantle, ucold_array_atm,
-                           N_neig=48, alpha=1e6, beta=0., gamma=0.):
+                           N_neig=48, iterations=10):
     """ Particle placement for a 2 layer spining profile.
     
         Args:
@@ -4068,8 +3948,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
     particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
-    particles_rc = np.sqrt(particles.x**2 + particles.y**2)
-    particles_rho = rho_e_model(particles_r)
+    rho = rho_e_model(particles_r)
     
     R = particles.A1_r.copy()
     rho_layer = rho_e_model(R)
@@ -4078,40 +3957,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     f = Z/R
     zP = particles.z*f
     
-    delta_f = np.zeros(R.shape)
-    delta_z = np.zeros(R.shape)
-    
-    unique_R = np.unique(R)
-    unique_Z = np.unique(Z)
-    
-    for i, Radius in enumerate(np.unique(R)):
-
-        if i != particles.N_shell_tot - 1:
-            
-            Zip1 = unique_Z[i + 1]
-            Rip1 = unique_R[i + 1]
-            Zi = unique_Z[i]
-            Ri = unique_R[i]
-            
-            delta_f[R == Radius] = Zip1/Rip1 - Zi/Ri
-            rc = particles_rc[R == Radius]
-            zip1 = np.sqrt(Zip1**2*(Rip1**2 - rc**2)/Rip1**2)
-            zi = np.sqrt(Zi**2*(Ri**2 - rc**2)/Ri**2)
-            delta_z[R == Radius] = zip1 - zi
-            
-        else:
-            
-            delta_f[R == Radius] = delta_f[R == unique_R[i - 1]][0]
-            delta_z[R == Radius] = delta_z[R == unique_R[i - 1]][0]
-            
-    dzPz_dz = delta_f/delta_z
-    
-    z_max = np.max(np.abs(particles.z))
-    a = np.power(np.abs(particles.z)/z_max, gamma)
-    mP = particles.m*(f - f[a == 1][0]*beta*a + alpha*dzPz_dz)
-    
-    mP = particles.m*(f + alpha*dzPz_dz)
-    #print("\nx, y, z, and m computed\n")
+    mP = particles.m*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -4125,27 +3971,24 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     vy = particles.x*wz
     
     # internal energy
-    rho = particles_rho
     u = np.zeros((mP.shape[0]))
     
     x = particles.x
     y = particles.y
     
-    #print("vx, vy, and vz computed\n")
-    
-    c_core    = eos._spec_c(mat_id_core)
-    c_mantle  = eos._spec_c(mat_id_mantle)
-    c_atm     = eos._spec_c(mat_id_atm)
+    c_core   = eos._spec_c(mat_id_core)
+    c_mantle = eos._spec_c(mat_id_mantle)
+    c_atm    = eos._spec_c(mat_id_atm)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
-        if particles_rho[k] > rho_cm:
+        if rho[k] > rho_cm:
             u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
             u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
             
-        elif particles_rho[k] > rho_ma:
+        elif rho[k] > rho_ma:
             u[k] = eos._ucold_tab(rho[k], mat_id_mantle, ucold_array_mantle)
             u[k] = u[k] + c_mantle*eos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
             P[k] = eos.P_EoS(u[k], rho[k], mat_id_mantle)
@@ -4165,6 +4008,120 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     A1_mat_id = (rho > rho_cm)*mat_id_core                       \
                 + np.logical_and(rho <= rho_cm, rho > rho_ma)*mat_id_mantle \
                 + (rho < rho_ma)*mat_id_atm
+    
+    ############
+    unique_R_core   = np.unique(R[A1_mat_id == mat_id_core])
+    unique_R_mantle = np.unique(R[A1_mat_id == mat_id_mantle])
+    unique_R_atm    = np.unique(R[A1_mat_id == mat_id_atm])
+    
+    x_reshaped  = x.reshape((-1,1))
+    y_reshaped  = y.reshape((-1,1))
+    zP_reshaped = zP.reshape((-1,1))
+    
+    X = np.hstack((x_reshaped, y_reshaped, zP_reshaped))
+    
+    del x_reshaped, y_reshaped, zP_reshaped
+
+    nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
+    nbrs.fit(X)
+    
+    N_mem = int(1e6)
+    
+    if particles.N_picle < N_mem:
+        
+        print("Finding neighbors of all particles...")
+        distances, indices = nbrs.kneighbors(X)
+        
+        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        
+            M = _generate_M(indices, mP)
+        
+            rho_sph = SPH_density(M, distances, h)
+            
+            diff = (rho_sph - rho)/rho
+            mP_next = (1 - diff)*mP
+            # do not change values of inter-boundary layers
+            mP_next[R == unique_R_core[-1]]   = mP[R == unique_R_core[-1]]   # outer core layer
+            mP_next[R == unique_R_mantle[0]]  = mP[R == unique_R_mantle[0]]  # inner mantle layer
+            mP_next[R == unique_R_mantle[-1]] = mP[R == unique_R_mantle[-1]] # outer mantle layer
+            mP_next[R == unique_R_atm[0]]  = mP[R == unique_R_atm[0]]        # inner atm layer
+            mP_next[R == unique_R_atm[-1]] = mP[R == unique_R_atm[-1]]       # outer atm layer
+            
+            mP = mP_next
+        
+    else:
+        
+        k    = particles.N_picle // N_mem
+        
+        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+            
+            for i in range(int(k)):
+                
+                distances_i, indices_i = nbrs.kneighbors(X[i*N_mem:(i + 1)*N_mem,:])
+                
+                M_i  = _generate_M(indices_i, mP[i*N_mem:(i + 1)*N_mem])
+        
+                rho_sph_i = SPH_density(M_i, distances_i, h[i*N_mem:(i + 1)*N_mem])
+                
+                diff_i = (rho_sph_i - rho[i*N_mem:(i + 1)*N_mem])/rho[i*N_mem:(i + 1)*N_mem]
+                mP_next_i = (1 - diff_i)*mP[i*N_mem:(i + 1)*N_mem]
+                # do not change values of inter-boundary layers
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_core[-1]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_core[-1]]   # outer core layer
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[0]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[0]]  # inner mantle layer
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[-1]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_mantle[-1]] # outer mantle layer
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_atm[0]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_atm[0]]  # inner atm layer
+                mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_atm[-1]] = \
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_atm[-1]] # outer atm layer
+            
+                mP[i*N_mem:(i + 1)*N_mem] = mP_next_i
+                
+            distances_k, indices_k = nbrs.kneighbors(X[k*N_mem:,:])
+                
+            M_k  = _generate_M(indices_k, mP[k*N_mem:])
+        
+            rho_sph_k = SPH_density(M_k, distances_k, h[k*N_mem:])
+                
+            diff_k = (rho_sph_k - rho[k*N_mem:])/rho[k*N_mem:]
+            mP_next_k = (1 - diff_k)*mP[k*N_mem:]
+            # do not change values of inter-boundary layers
+            mP_next_k[R[k*N_mem:] == unique_R_core[-1]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_core[-1]]   # outer core layer
+            mP_next_k[R[k*N_mem:] == unique_R_mantle[0]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_mantle[0]]  # inner mantle layer
+            mP_next_k[R[k*N_mem:] == unique_R_mantle[-1]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_mantle[-1]] # outer mantle layer
+            mP_next_k[R[k*N_mem:] == unique_R_atm[0]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_atm[0]]  # inner mantle layer
+            mP_next_k[R[k*N_mem:] == unique_R_atm[-1]] = \
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_atm[-1]] # outer mantle layer
+            
+            mP[k*N_mem:] = mP_next_k    
+    
+    ######
+# =============================================================================
+#     import matplotlib.pyplot as plt
+#     
+#     diff = (rho_sph - rho)/rho
+#     fig, ax = plt.subplots(1,2, figsize=(12,6))
+#     ax[0].hist(diff, bins = 500)
+#     ax[0].set_xlabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+#     ax[0].set_ylabel('Counts')
+#     ax[0].set_yscale("log")
+#     ax[1].scatter(zP/R_earth, diff, s = 0.5, alpha=0.5)
+#     ax[1].set_xlabel(r"z [$R_{earth}$]")
+#     ax[1].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+#     #ax[1].set_ylim(-0.03, 0.03)
+#     plt.tight_layout()
+#     plt.show()
+# =============================================================================
+    #####
+        
+    print("\nDone!")
+    
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id 
 
@@ -4234,6 +4191,8 @@ class _1l_spin(_spin):
                        self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                        ucold_array)
             
+        print("\nDone!")
+        
         self.Tw = Tw
         self.Re = Re
         self.Rp = Rp
@@ -4288,6 +4247,8 @@ class _2l_spin(_spin):
                        self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                        self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                        ucold_array_core, ucold_array_mantle)
+            
+        print("\nDone!")
             
         self.Tw = Tw
         self.Re = Re
@@ -4352,6 +4313,8 @@ class _3l_spin(_spin):
                        self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                        ucold_array_core, ucold_array_mantle, ucold_array_atm)
             
+        print("\nDone!")
+            
         self.Tw = Tw
         self.Re = Re
         self.Rp = Rp
@@ -4390,7 +4353,6 @@ class _1l_genspheroid():
     def __init__(self, spin_planet, N_particles, N_neig=48, iterations=10):
         
         self.N_layers    = 1
-        self.N_particles = N_particles
         self.iterations  = iterations
         
         self.A1_equator     = spin_planet.A1_equator
@@ -4409,33 +4371,29 @@ class _1l_genspheroid():
             picle_placement_1layer(self.A1_equator, self.A1_rho_equator,
                                    self.A1_pole, self.A1_rho_pole, self.Tw, N_particles,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
-                                   ucold_array_core, N_neig,
-                                   self.iterations)
+                                   ucold_array_core, N_neig, iterations)
             
-        self.A1_x = x
-        self.A1_y = y
-        self.A1_z = z
-        self.A1_vx = vx
-        self.A1_vy = vy
-        self.A1_vz = vz
-        self.A1_m = m
-        self.A1_h = h
+        self.A1_x   = x
+        self.A1_y   = y
+        self.A1_z   = z
+        self.A1_vx  = vx
+        self.A1_vy  = vy
+        self.A1_vz  = vz
+        self.A1_m   = m
+        self.A1_h   = h
         self.A1_rho = rho
-        self.A1_P = P
-        self.A1_u = u
-        self.A1_mat_id = mat_id
+        self.A1_P   = P
+        self.A1_u   = u
+        self.A1_mat_id   = mat_id
         self.A1_picle_id = picle_id
+        self.N_particles = x.shape[0]
         
 class _2l_genspheroid():
     
-    def __init__(self, spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=1.):
+    def __init__(self, spin_planet, N_particles, N_neig=48, iterations=10):
         
         self.N_layers    = 2
-        self.N_particles = N_particles
-        self.alpha       = alpha
-        self.beta        = beta
-        self.gamma       = gamma
-        self.delta       = delta
+        
         
         self.A1_equator     = spin_planet.A1_equator
         self.A1_rho_equator = spin_planet.A1_rho_equator
@@ -4450,7 +4408,7 @@ class _2l_genspheroid():
         self.T_rho_id_mantle   = spin_planet.T_rho_id_mantle
         self.T_rho_args_mantle = spin_planet.T_rho_args_mantle
         
-        self.P_boundary    = spin_planet.P_boundary
+        self.P_boundary   = spin_planet.P_boundary
         rho_P_model       = interp1d(spin_planet.A1_P, spin_planet.A1_rho)
         self.rho_boundary = rho_P_model(self.P_boundary)
         
@@ -4464,33 +4422,28 @@ class _2l_genspheroid():
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    ucold_array_core, ucold_array_mantle,
-                                   N_neig, alpha=self.alpha, beta=self.beta, gamma=self.gamma,
-                                   delta=self.delta)
+                                   N_neig, iterations)
             
-        self.A1_x = x
-        self.A1_y = y
-        self.A1_z = z
-        self.A1_vx = vx
-        self.A1_vy = vy
-        self.A1_vz = vz
-        self.A1_m = m
-        self.A1_h = h
+        self.A1_x   = x
+        self.A1_y   = y
+        self.A1_z   = z
+        self.A1_vx  = vx
+        self.A1_vy  = vy
+        self.A1_vz  = vz
+        self.A1_m   = m
+        self.A1_h   = h
         self.A1_rho = rho
-        self.A1_P = P
-        self.A1_u = u
-        self.A1_mat_id = mat_id
+        self.A1_P   = P
+        self.A1_u   = u
+        self.A1_mat_id   = mat_id
         self.A1_picle_id = picle_id
+        self.N_particles = x.shape[0]
     
 class _3l_genspheroid():
     
-    def __init__(self, spin_planet, N_particles, N_neig=48, alpha=1e6, beta=0., gamma=0., delta=1.):
+    def __init__(self, spin_planet, N_particles, N_neig=48, iterations=10):
         
         self.N_layers    = 3
-        self.N_particles = N_particles
-        self.alpha       = alpha
-        self.beta        = beta
-        self.gamma       = gamma
-        self.delta       = delta
         
         self.A1_equator     = spin_planet.A1_equator
         self.A1_rho_equator = spin_planet.A1_rho_equator
@@ -4516,29 +4469,32 @@ class _3l_genspheroid():
         
         ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
         ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
         
         x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
-            picle_placement_2layer(self.A1_equator, self.A1_rho_equator,
+            picle_placement_3layer(self.A1_equator, self.A1_rho_equator,
                                    self.A1_pole, self.A1_rho_pole,
-                                   self.Tw, N_particles, self.rho_boundary,
+                                   self.Tw, N_particles, self.rho_boundary_cm, self.rho_boundary_ma,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
-                                   ucold_array_core, ucold_array_mantle,
-                                   N_neig, alpha=self.alpha)
+                                   self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
+                                   ucold_array_core, ucold_array_mantle, ucold_array_atm,
+                                   N_neig, iterations)
             
-        self.A1_x = x
-        self.A1_y = y
-        self.A1_z = z
-        self.A1_vx = vx
-        self.A1_vy = vy
-        self.A1_vz = vz
-        self.A1_m = m
-        self.A1_h = h
+        self.A1_x   = x
+        self.A1_y   = y
+        self.A1_z   = z
+        self.A1_vx  = vx
+        self.A1_vy  = vy
+        self.A1_vz  = vz
+        self.A1_m   = m
+        self.A1_h   = h
         self.A1_rho = rho
-        self.A1_P = P
-        self.A1_u = u
-        self.A1_mat_id = mat_id
+        self.A1_P   = P
+        self.A1_u   = u
+        self.A1_mat_id   = mat_id
         self.A1_picle_id = picle_id
+        self.N_particles = x.shape[0]
 
 def GenSpheroid(spin_planet, N_particles, N_neig=48, iterations=10):
     
@@ -4558,12 +4514,12 @@ def GenSpheroid(spin_planet, N_particles, N_neig=48, iterations=10):
             
     elif sp.N_layers == 2:
         
-        spheroid = _2l_genspheroid(sp, N_particles, N_neig)
+        spheroid = _2l_genspheroid(sp, N_particles, N_neig, iterations)
         return spheroid
         
     elif sp.N_layers == 3:
         
-        spheroid = _3l_genspheroid(sp, N_particles, N_neig)
+        spheroid = _3l_genspheroid(sp, N_particles, N_neig, iterations)
         return spheroid
         
         
