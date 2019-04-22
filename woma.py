@@ -2244,16 +2244,25 @@ def Planet(N_layers):
         
     if N_layers == 1:
         print("For a 1 layer planet, please specify:")
+        print("pressure, temperature and density at the surface of the planet,")
+        print("material, relation between temperature and density with any desired aditional parameters,")
+        print("for the core of the planet.")
         planet = _1l_planet()
         return planet
             
     elif N_layers == 2:
         print("For a 2 layer planet, please specify:")
+        print("pressure, temperature and density at the surface of the planet,")
+        print("materials, relations between temperature and density with any desired aditional parameters,")
+        print("for the core and mantle of the planet.")
         planet = _2l_planet()
         return planet
         
     elif N_layers == 3:
         print("For a 3 layer planet, please specify:")
+        print("pressure, temperature and density at the surface of the planet,")
+        print("materials, relations between temperature and density with any desired aditional parameters,")
+        print("for the core, mantle and atmosphere of the planet.")
         planet = _3l_planet()
         return planet
 

@@ -252,7 +252,7 @@ example.set_T_surface(Ts)
 example.set_rho_surface(rhos)
 
 #example.fix_Bcm_Bma_given_R_M_I(R_earth, M_earth, 0.3*M_earth*R_earth**2)
-example.fix_Bma_given_R_M_Bcm(R_earth, M_earth, 0.60*R_earth)
+example.fix_Bma_given_R_M_Bcm(R_earth, M_earth, 0.50*R_earth)
 
 #example.fix_Bcm_given_R_M_Bma(R_earth, M_earth, 0.85*R_earth)
 
