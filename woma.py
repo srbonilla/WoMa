@@ -265,7 +265,7 @@ def find_radius_1layer(N, R_max, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
     r, m, P, T, rho, u, mat = integrate_1layer(N, R_max, M, Ps, Ts, rhos, mat_id,
                                                T_rho_id, T_rho_args, ucold_array)
     
-    if m[-1] != 0.:
+    if m[-1] == 0.:
         
         for i in tqdm(range(iterations), desc="Finding R given M"):
             

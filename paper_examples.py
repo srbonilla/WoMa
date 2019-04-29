@@ -112,17 +112,17 @@ Ps   = 0
 Ts   = 300
 rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
 
-
 my_planet.set_P_surface(Ps)
 my_planet.set_T_surface(Ts)
 my_planet.set_rho_surface(rhos)
 
 my_planet.fix_M_given_R(R_earth, 1*M_earth)
+#my_planet.fix_R_given_M(0.85*M_earth, 2*R_earth)
 
 #plot_spherical_profile(my_planet)
 
 my_spinning_planet = woma.Spin(my_planet)
-my_spinning_planet.solve(3, 1.3*R_earth, 1.1*R_earth)
+my_spinning_planet.solve(3, 1.5*R_earth, 1.1*R_earth)
 
 #plot_spin_profile(my_spinning_planet)
 
@@ -147,25 +147,27 @@ np.save('rho_e', my_spinning_planet.A1_rho_equator)
 np.save('rho_p', my_spinning_planet.A1_rho_pole)
 
 
-r_array = my_spinning_planet.A1_equator
-rho_e = my_spinning_planet.A1_rho_equator
-z_array = my_spinning_planet.A1_pole
-rho_p = my_spinning_planet.A1_rho_pole
-Tw = 3
-N = 1e5
-mat_id_core = 101
-T_rho_id_core = 1
-T_rho_args_core = [300., 0.]
-ucold_array_core = eos.load_ucold_array(101)
-iterations = 10
-N_neig=48
-
-x = np.linspace(0, 100, 100)
-y2 = np.power(x, 2)
-y3 = np.power(x, 2.1)
-plt.scatter(x, y2)
-plt.scatter(x, y3)
-plt.show()
+# =============================================================================
+# r_array = my_spinning_planet.A1_equator
+# rho_e = my_spinning_planet.A1_rho_equator
+# z_array = my_spinning_planet.A1_pole
+# rho_p = my_spinning_planet.A1_rho_pole
+# Tw = 3
+# N = 1e5
+# mat_id_core = 101
+# T_rho_id_core = 1
+# T_rho_args_core = [300., 0.]
+# ucold_array_core = eos.load_ucold_array(101)
+# iterations = 10
+# N_neig=48
+# 
+# x = np.linspace(0, 100, 100)
+# y2 = np.power(x, 2)
+# y3 = np.power(x, 2.1)
+# plt.scatter(x, y2)
+# plt.scatter(x, y3)
+# plt.show()
+# =============================================================================
 
 ###############################################################################
 ########################## 2 layer planet #####################################
@@ -185,8 +187,8 @@ my_planet.set_T_surface(Ts)
 my_planet.set_rho_surface(rhos)
 
 my_planet.fix_B_given_R_M(R_earth, M_earth)
-#my_planet.fix_M_given_B_R(0.2*R_earth, R_earth, M_earth)
-#my_planet.fix_R_given_M_B(2*M_earth, 0.6*R_earth, 20*R_earth)
+#my_planet.fix_M_given_B_R(0.42*R_earth, R_earth, 2*M_earth)
+#my_planet.fix_R_given_M_B(M_earth, 0.42*R_earth, 2*R_earth)
 
 #plot_spherical_profile(my_planet)
 
@@ -215,23 +217,25 @@ np.save('z_array', my_spinning_planet.A1_pole)
 np.save('rho_e', my_spinning_planet.A1_rho_equator)
 np.save('rho_p', my_spinning_planet.A1_rho_pole)
 
-r_array = my_spinning_planet.A1_equator
-rho_e = my_spinning_planet.A1_rho_equator
-z_array = my_spinning_planet.A1_pole
-rho_p = my_spinning_planet.A1_rho_pole
-Tw = 2.6
-N = 1e6
-mat_id_core = 100
-T_rho_id_core = 1
-T_rho_args_core = [300., 0.]
-mat_id_mantle = 101
-T_rho_id_mantle = 1
-T_rho_args_mantle = [300., 0.]
-ucold_array_core = eos.load_ucold_array(100)
-ucold_array_mantle = eos.load_ucold_array(101)
-iterations = 10
-N_neig=48
-rho_i = 10000
+# =============================================================================
+# r_array = my_spinning_planet.A1_equator
+# rho_e = my_spinning_planet.A1_rho_equator
+# z_array = my_spinning_planet.A1_pole
+# rho_p = my_spinning_planet.A1_rho_pole
+# Tw = 2.6
+# N = 1e6
+# mat_id_core = 100
+# T_rho_id_core = 1
+# T_rho_args_core = [300., 0.]
+# mat_id_mantle = 101
+# T_rho_id_mantle = 1
+# T_rho_args_mantle = [300., 0.]
+# ucold_array_core = eos.load_ucold_array(100)
+# ucold_array_mantle = eos.load_ucold_array(101)
+# iterations = 10
+# N_neig=48
+# rho_i = 10000
+# =============================================================================
 
 ###############################################################################
 ########################## 3 layer planet #####################################
@@ -269,25 +273,27 @@ plot_spin_profile(my_spinning_planet)
 
 particles = woma.GenSpheroid(my_spinning_planet, 1e5, iterations=5)
 
-r_array = my_spinning_planet.A1_equator
-rho_e = my_spinning_planet.A1_rho_equator
-z_array = my_spinning_planet.A1_pole
-rho_p = my_spinning_planet.A1_rho_pole
-Tw = 2.6
-N = 1e5
-mat_id_core = 100
-T_rho_id_core = 1
-T_rho_args_core = [300., 0.]
-mat_id_mantle = 101
-T_rho_id_mantle = 1
-T_rho_args_mantle = [300., 0.]
-mat_id_atm = 102
-T_rho_id_atm = 1
-T_rho_args_atm = [300., 0.]
-ucold_array_core = eos.load_ucold_array(100)
-ucold_array_mantle = eos.load_ucold_array(101)
-ucold_array_atm = eos.load_ucold_array(102)
-iterations = 20
-N_neig=48
-rho_cm = 8893.
-rho_ma = 2709.
+# =============================================================================
+# r_array = my_spinning_planet.A1_equator
+# rho_e = my_spinning_planet.A1_rho_equator
+# z_array = my_spinning_planet.A1_pole
+# rho_p = my_spinning_planet.A1_rho_pole
+# Tw = 2.6
+# N = 1e5
+# mat_id_core = 100
+# T_rho_id_core = 1
+# T_rho_args_core = [300., 0.]
+# mat_id_mantle = 101
+# T_rho_id_mantle = 1
+# T_rho_args_mantle = [300., 0.]
+# mat_id_atm = 102
+# T_rho_id_atm = 1
+# T_rho_args_atm = [300., 0.]
+# ucold_array_core = eos.load_ucold_array(100)
+# ucold_array_mantle = eos.load_ucold_array(101)
+# ucold_array_atm = eos.load_ucold_array(102)
+# iterations = 20
+# N_neig=48
+# rho_cm = 8893.
+# rho_ma = 2709.
+# =============================================================================

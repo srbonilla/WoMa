@@ -39,10 +39,10 @@ def _P_EoS_Till(u, rho, mat_id):
                 Pressure (SI).
     """
     # Material constants for Tillotson EoS
-    # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min
-    iron    = np.array([100, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0])
-    granite = np.array([101, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0])
-    water   = np.array([102, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.9, 0])
+    # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
+    iron    = np.array([100, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
+    granite = np.array([101, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0, 0])
+    water   = np.array([102, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.925, 0, 0.875])
     
     if (mat_id == 100):
         material = iron
@@ -66,6 +66,7 @@ def _P_EoS_Till(u, rho, mat_id):
     beta     = material[10]
     eta_min  = material[11]
     P_min    = material[12]
+    eta_zero = material[13]
 
     eta      = rho/rho_0
     eta_sq   = eta*eta
@@ -79,10 +80,12 @@ def _P_EoS_Till(u, rho, mat_id):
     P   = 0.
 
     # Condensed or cold
-    if eta < eta_min:
+    P_c = (a + b*w_inv)*rho*u + A*mu + B*mu*mu
+    
+    if eta < eta_zero:
         P_c = 0.
-    else:
-        P_c = (a + b*w_inv)*rho*u + A*mu + B*mu*mu;
+    elif eta < eta_min:
+        P_c *= (eta - eta_zero) / (eta_min - eta_zero)
         
     # Expanded and hot
     P_e = a*rho*u + (b*rho*u*w_inv + A*mu*np.exp(-beta*nu))                   \
@@ -104,7 +107,7 @@ def _P_EoS_Till(u, rho, mat_id):
       
     # Minimum pressure
     if (P < P_min):
-        P = P_min;
+        P = P_min
         
     return P
 

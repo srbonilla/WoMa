@@ -129,18 +129,18 @@ plot_spin_profile(my_spinning_planet)
 
 my_planet = woma.Planet(2)
 
-my_planet.set_core_properties(100, 1, [np.nan, 0])
-my_planet.set_mantle_properties(101, 1, [np.nan, 0])
+my_planet.set_core_properties(101, 1, [np.nan, 0])
+my_planet.set_mantle_properties(102, 1, [np.nan, 0])
 
 Ps   = 0
-Ts   = 300
-rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
+Ts   = 600
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 102)
 
 my_planet.set_P_surface(Ps)
 my_planet.set_T_surface(Ts)
-my_planet.set_rho_surface(eos.find_rho_fixed_P_T(Ps, Ts, 101))
+my_planet.set_rho_surface(rhos)
 
-my_planet.fix_B_given_R_M(R_earth, M_earth)
+my_planet.fix_B_given_R_M(R_earth, 0.5*M_earth)
 #my_planet.fix_M_given_B_R(0.2*R_earth, R_earth, M_earth)
 #my_planet.fix_R_given_M_B(2*M_earth, 0.6*R_earth, 20*R_earth)
 
