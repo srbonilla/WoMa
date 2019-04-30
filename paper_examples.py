@@ -122,18 +122,18 @@ my_planet.fix_M_given_R(R_earth, 1*M_earth)
 #plot_spherical_profile(my_planet)
 
 my_spinning_planet = woma.Spin(my_planet)
-my_spinning_planet.solve(3, 1.5*R_earth, 1.1*R_earth)
+my_spinning_planet.solve(3, 1.4*R_earth, 1.1*R_earth)
 
 #plot_spin_profile(my_spinning_planet)
 
-particles = woma.GenSpheroid(my_spinning_planet, 1e7, iterations=3)
+particles = woma.GenSpheroid(my_spinning_planet, 1e7, iterations=5)
 
 positions = np.array([particles.A1_x, particles.A1_y, particles.A1_z]).T
 velocities = np.array([particles.A1_vx, particles.A1_vy, particles.A1_vz]).T
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '1layer_10e5.hdf5'
+filename = '1layer_10e7.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, positions, velocities,
                              particles.A1_m, particles.A1_h,
@@ -147,27 +147,25 @@ np.save('rho_e', my_spinning_planet.A1_rho_equator)
 np.save('rho_p', my_spinning_planet.A1_rho_pole)
 
 
-# =============================================================================
-# r_array = my_spinning_planet.A1_equator
-# rho_e = my_spinning_planet.A1_rho_equator
-# z_array = my_spinning_planet.A1_pole
-# rho_p = my_spinning_planet.A1_rho_pole
-# Tw = 3
-# N = 1e5
-# mat_id_core = 101
-# T_rho_id_core = 1
-# T_rho_args_core = [300., 0.]
-# ucold_array_core = eos.load_ucold_array(101)
-# iterations = 10
-# N_neig=48
-# 
-# x = np.linspace(0, 100, 100)
-# y2 = np.power(x, 2)
-# y3 = np.power(x, 2.1)
-# plt.scatter(x, y2)
-# plt.scatter(x, y3)
-# plt.show()
-# =============================================================================
+r_array = my_spinning_planet.A1_equator
+rho_e = my_spinning_planet.A1_rho_equator
+z_array = my_spinning_planet.A1_pole
+rho_p = my_spinning_planet.A1_rho_pole
+Tw = 3
+N = 1e5
+mat_id_core = 101
+T_rho_id_core = 1
+T_rho_args_core = [300., 0.]
+ucold_array_core = eos.load_ucold_array(101)
+iterations = 1
+N_neig=48
+
+x = np.linspace(0, 100, 100)
+y2 = np.power(x, 2)
+y3 = np.power(x, 2.1)
+plt.scatter(x, y2)
+plt.scatter(x, y3)
+plt.show()
 
 ###############################################################################
 ########################## 2 layer planet #####################################
@@ -197,14 +195,14 @@ my_spinning_planet.solve(2.6, 1.45*R_earth, 1.1*R_earth)
 
 #plot_spin_profile(my_spinning_planet)
 
-particles = woma.GenSpheroid(my_spinning_planet, 1e7, iterations=3)
+particles = woma.GenSpheroid(my_spinning_planet, 1e7, iterations=5)
 
 positions = np.array([particles.A1_x, particles.A1_y, particles.A1_z]).T
 velocities = np.array([particles.A1_vx, particles.A1_vy, particles.A1_vz]).T
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '2layer_10e5.hdf5'
+filename = '2layer_10e7.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, positions, velocities,
                              particles.A1_m, particles.A1_h,

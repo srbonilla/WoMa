@@ -2989,6 +2989,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     A1_mat_id = np.ones((mP.shape[0],))*mat_id_core
     
     ############
+    mP = particles.m*f 
     unique_R = np.unique(R)
     
     x_reshaped  = x.reshape((-1,1))
@@ -3027,11 +3028,13 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
         
         for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
             
+            mP_prev = mP.copy()
+            
             for i in range(int(k)):
                 
                 distances_i, indices_i = nbrs.kneighbors(X[i*N_mem:(i + 1)*N_mem,:])
                 
-                M_i  = _generate_M(indices_i, mP[i*N_mem:(i + 1)*N_mem])
+                M_i  = _generate_M(indices_i, mP_prev)
         
                 rho_sph_i = SPH_density(M_i, distances_i, h[i*N_mem:(i + 1)*N_mem])
                 
@@ -3044,7 +3047,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
                 
             distances_k, indices_k = nbrs.kneighbors(X[k*N_mem:,:])
                 
-            M_k  = _generate_M(indices_k, mP[k*N_mem:])
+            M_k  = _generate_M(indices_k, mP_prev)
         
             rho_sph_k = SPH_density(M_k, distances_k, h[k*N_mem:])
                 
@@ -3055,9 +3058,12 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
             
             mP[k*N_mem:] = mP_next_k    
     
-    ######
 # =============================================================================
+#     ######
 #     import matplotlib.pyplot as plt
+#     
+#     M = _generate_M(indices, mP) 
+#     rho_sph = SPH_density(M, distances, h)
 #     
 #     diff = (rho_sph - rho)/rho
 #     fig, ax = plt.subplots(1,2, figsize=(12,6))
@@ -3506,11 +3512,13 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
         
         for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
             
+            mP_prev = mP.copy()
+            
             for i in range(int(k)):
                 
                 distances_i, indices_i = nbrs.kneighbors(X[i*N_mem:(i + 1)*N_mem,:])
                 
-                M_i  = _generate_M(indices_i, mP[i*N_mem:(i + 1)*N_mem])
+                M_i  = _generate_M(indices_i, mP_prev)
         
                 rho_sph_i = SPH_density(M_i, distances_i, h[i*N_mem:(i + 1)*N_mem])
                 
@@ -3528,7 +3536,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                 
             distances_k, indices_k = nbrs.kneighbors(X[k*N_mem:,:])
                 
-            M_k  = _generate_M(indices_k, mP[k*N_mem:])
+            M_k  = _generate_M(indices_k, mP_prev)
         
             rho_sph_k = SPH_density(M_k, distances_k, h[k*N_mem:])
                 
@@ -4064,11 +4072,13 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
         
         for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
             
+            mP_prev = mP.copy()
+            
             for i in range(int(k)):
                 
                 distances_i, indices_i = nbrs.kneighbors(X[i*N_mem:(i + 1)*N_mem,:])
                 
-                M_i  = _generate_M(indices_i, mP[i*N_mem:(i + 1)*N_mem])
+                M_i  = _generate_M(indices_i, mP_prev)
         
                 rho_sph_i = SPH_density(M_i, distances_i, h[i*N_mem:(i + 1)*N_mem])
                 
@@ -4090,7 +4100,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
                 
             distances_k, indices_k = nbrs.kneighbors(X[k*N_mem:,:])
                 
-            M_k  = _generate_M(indices_k, mP[k*N_mem:])
+            M_k  = _generate_M(indices_k, mP_prev)
         
             rho_sph_k = SPH_density(M_k, distances_k, h[k*N_mem:])
                 

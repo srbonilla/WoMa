@@ -18,7 +18,7 @@ Contents
 --------
 + `woma.py` The main program classes and functions.
 + `seagen.py` The main program classes and functions of the SEAGen project.
-+ `examples.py` Examples to demonstrate how to use the SEAGen module.
++ `examples.py` Examples to demonstrate how to use the WoMa module.
 + `eos.py` Functions related equations of states.
 + `LICENSE.txt` GNU general public license v3+.
 
