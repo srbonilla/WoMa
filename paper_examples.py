@@ -215,6 +215,70 @@ np.save('z_array', my_spinning_planet.A1_pole)
 np.save('rho_e', my_spinning_planet.A1_rho_equator)
 np.save('rho_p', my_spinning_planet.A1_rho_pole)
 
+# plot spherical profiles paper#################################
+
+my_planet1 = woma.Planet(1)
+my_planet1.set_core_properties(101, 1, [np.nan, 0.])
+Ps   = 0
+Ts   = 300
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
+my_planet1.set_P_surface(Ps)
+my_planet1.set_T_surface(Ts)
+my_planet1.set_rho_surface(rhos)
+my_planet1.fix_M_given_R(R_earth, 1*M_earth)
+
+my_planet2 = woma.Planet(2)
+my_planet2.set_core_properties(100, 1, [np.nan, 0])
+my_planet2.set_mantle_properties(101, 1, [np.nan, 0])
+Ps   = 0
+Ts   = 300
+rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
+my_planet2.set_P_surface(Ps)
+my_planet2.set_T_surface(Ts)
+my_planet2.set_rho_surface(rhos)
+my_planet2.fix_B_given_R_M(R_earth, M_earth)
+
+
+fig, ax = plt.subplots(2,2, figsize=(12,12))
+    
+ax[0,0].plot(my_planet1.A1_R/R_earth, my_planet1.A1_rho, label="Test 1")
+ax[0,0].plot(my_planet2.A1_R/R_earth, my_planet2.A1_rho, label="Test 2")
+ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
+ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
+ax[0,0].legend()
+    
+ax[1,0].plot(my_planet1.A1_R/R_earth, my_planet1.A1_M/M_earth, label="Test 1")
+ax[1,0].plot(my_planet2.A1_R/R_earth, my_planet2.A1_M/M_earth, label="Test 2")
+ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
+ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
+ax[1,0].legend()
+    
+ax[0,1].plot(my_planet1.A1_R/R_earth, my_planet1.A1_P, label="Test 1")
+ax[0,1].plot(my_planet2.A1_R/R_earth, my_planet2.A1_P, label="Test 2")
+ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
+ax[0,1].set_ylabel(r"$P$ $[Pa]$")
+ax[0,1].legend()
+
+ax[1,1].plot(my_planet1.A1_R/R_earth, my_planet1.A1_T, label="Test 1")
+ax[1,1].plot(my_planet2.A1_R/R_earth, my_planet2.A1_T, label="Test 2")
+ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
+ax[1,1].set_ylabel(r"$T$ $[K]$")
+ax[1,1].legend()
+    
+plt.tight_layout()
+plt.show()
+
+
+fig, ax = plt.subplots(1,1, figsize=(6,6))
+ax.plot(my_planet1.A1_R/R_earth, my_planet1.A1_rho, label="Test 1")
+ax.plot(my_planet2.A1_R/R_earth, my_planet2.A1_rho, label="Test 2")
+ax.set_xlabel(r"$r$ $[R_{earth}]$")
+ax.set_ylabel(r"$\rho$ $[kg/m^3]$")
+ax.legend()
+plt.tight_layout()
+plt.savefig("spherical_profiles.png")
+plt.show()
+
 # =============================================================================
 # r_array = my_spinning_planet.A1_equator
 # rho_e = my_spinning_planet.A1_rho_equator
