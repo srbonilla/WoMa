@@ -215,7 +215,7 @@ np.save('z_array', my_spinning_planet.A1_pole)
 np.save('rho_e', my_spinning_planet.A1_rho_equator)
 np.save('rho_p', my_spinning_planet.A1_rho_pole)
 
-# plot spherical profiles paper#################################
+# plot spherical profiles paper #################################
 
 my_planet1 = woma.Planet(1)
 my_planet1.set_core_properties(101, 1, [np.nan, 0.])
@@ -269,7 +269,7 @@ plt.tight_layout()
 plt.show()
 
 
-fig, ax = plt.subplots(1,1, figsize=(6,6))
+fig, ax = plt.subplots(1,1, figsize=(5,3))
 ax.plot(my_planet1.A1_R/R_earth, my_planet1.A1_rho, label="Test 1")
 ax.plot(my_planet2.A1_R/R_earth, my_planet2.A1_rho, label="Test 2")
 ax.set_xlabel(r"$r$ $[R_{earth}]$")
@@ -277,6 +277,77 @@ ax.set_ylabel(r"$\rho$ $[kg/m^3]$")
 ax.legend()
 plt.tight_layout()
 plt.savefig("spherical_profiles.png")
+plt.show()
+
+# Spining plots
+my_spin_planet1 = woma.Spin(my_planet1)
+my_spin_planet1.solve(3, 1.4*R_earth, 1.1*R_earth)
+
+my_spin_planet2 = woma.Spin(my_planet2)
+my_spin_planet2.solve(2.6, 1.45*R_earth, 1.1*R_earth)
+
+
+fig, ax = plt.subplots(2,1, figsize=(12,8), sharex=True)
+
+sp = my_spin_planet1
+r_array_coarse = np.linspace(0, np.max(sp.A1_equator), 200)
+z_array_coarse = np.linspace(0, np.max(sp.A1_pole), 200)
+rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+for i in range(rho_grid.shape[0]):
+    radius = r_array_coarse[i]
+    for j in range(rho_grid.shape[1]):
+        z = z_array_coarse[j]
+        rho_grid[i,j] = woma.rho_rz(radius, z,
+                                    sp.A1_equator, sp.A1_rho_equator,
+                                    sp.A1_pole, sp.A1_rho_pole)
+    
+X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
+Z = rho_grid.T
+levels = np.concatenate((np.array([0.00001]), np.arange(3000, 12000, 1000)))
+ax[0].set_aspect('equal')
+CS = ax[0].contour(X, Y, Z, levels = levels)
+fmt = {}
+strs = ['0', '3000', '4000', '5000', '6000', '7000', '8000', '9000', '10000', '11000', '12000']
+for i in range(len(strs)):
+    strs[i] = '  ' + strs[i] + '  '
+for l, s in zip(CS.levels, strs):
+    fmt[l] = s
+ax[0].clabel(CS, inline=True, fontsize=10, fmt = fmt)
+#ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[0].set_ylabel(r"$z$ [$R_{earth}$]")
+ax[0].set_ylim(0,1)
+
+sp = my_spin_planet2
+r_array_coarse = np.linspace(0, np.max(sp.A1_equator), 200)
+z_array_coarse = np.linspace(0, np.max(sp.A1_pole), 200)
+rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+for i in range(rho_grid.shape[0]):
+    radius = r_array_coarse[i]
+    for j in range(rho_grid.shape[1]):
+        z = z_array_coarse[j]
+        rho_grid[i,j] = woma.rho_rz(radius, z,
+                                    sp.A1_equator, sp.A1_rho_equator,
+                                    sp.A1_pole, sp.A1_rho_pole)
+    
+X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
+Z = rho_grid.T
+levels = np.concatenate((np.array([0.00001]), np.arange(3000, 7000, 1000), np.arange(12000, 20000, 1000)))
+ax[1].set_aspect('equal')
+CS = ax[1].contour(X, Y, Z, levels = levels)
+fmt = {}
+strs = ['0', '3000', '4000', '5000', '6000', '7000', '12000', '13000', '14000',
+        '15000', '16000', '17000', '18000', '19000', '20000']
+for i in range(len(strs)):
+    strs[i] = '  ' + strs[i] + '  '
+for l, s in zip(CS.levels, strs):
+    fmt[l] = s
+ax[1].clabel(CS, inline=True, fontsize=10, fmt = fmt)
+ax[1].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[1].set_ylabel(r"$z$ [$R_{earth}$]")
+ax[1].set_ylim(0,1)
+ax[1].set_yticks([0,0.2,0.4,0.6,0.8])
+
+fig.subplots_adjust(hspace=0)
 plt.show()
 
 # =============================================================================
