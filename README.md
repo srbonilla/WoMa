@@ -41,3 +41,20 @@ Notation etc.
     `n`-dimensional array.
 + Particle is abbreviated to `picle`.
 
+
+To Do etc. (Jacob thoughts in progress)
+---------------------------------------
++ If `set_up()` has to be run then it should be called automatically. 
+    Also, if creating those files, then should first check if they already 
+    exist before making. And no need to make them if not using those materials.
++ Continue replacing all hard-coded EoS IDs with the dictionary names.
++ Replace Tillotson (and all) EoS parameter arrays with simple class objects.
++ Import SEAGen as a normal module instead of copying the file?
++ Add documentation to examples and basic instructions to readme.
++ Why are some `jit`s commented out?
++ Replace `np.nan` with `None` for default function arguments
++ Tweak some names to match SWIFT and SEAGen nicely
++ Use something more generic than core/mantle/atmosphere for the layer names
++ Simpler way to choose which input parameters are fixed
++ Allow fixing the mass ratios of each layer instead of e.g. outer radius 
++ Can we integrate outwards to e.g. add an atmosphere onto an existing profile?
