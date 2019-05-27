@@ -58,3 +58,10 @@ To Do etc. (Jacob thoughts in progress)
 + Simpler way to choose which input parameters are fixed
 + Allow fixing the mass ratios of each layer instead of e.g. outer radius 
 + Can we integrate outwards to e.g. add an atmosphere onto an existing profile?
++ Make into a PyPI package
++ Sort out eos.py's name to not conflict with GIHR
++ Apparently numba can't handle dictionaries?
++ `set_up()` takes a while, so print something to say what's happening
++ Zero axes in example plots and non-symbol labels
++ Tweek --> tweak
++ Examples are using non-Earth materials?

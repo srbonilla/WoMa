@@ -41,6 +41,11 @@ Di_mat_id   = {
     "SESAME_water"  : Di_mat_type["SESAME"]*type_factor + 2,    # 7154
     "SS08_water"    : Di_mat_type["SESAME"]*type_factor + 3,    # Senft & Stewart (2008)
     }
+# Temporary (?) separate variables because numba can't handle dictionaries
+id_Til_iron     = Di_mat_id["Til_iron"]
+id_Til_granite  = Di_mat_id["Til_granite"]
+id_Til_water    = Di_mat_id["Til_water"]
+   
 
 ###############################################################################
 ############################### Functions #####################################
@@ -66,11 +71,11 @@ def _P_EoS_Till(u, rho, mat_id):
     """
     # Material constants for Tillotson EoS
     # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
-    iron    = np.array([Di_mat_id["Til_iron"], 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
+    iron    = np.array([id_Til_iron, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
     granite = np.array([101, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0, 0])
     water   = np.array([102, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.925, 0, 0.875])
     
-    if (mat_id == Di_mat_id["Til_iron"]):
+    if (mat_id == id_Til_iron):
         material = iron
     elif (mat_id == 101):
         material = granite
@@ -156,7 +161,7 @@ def P_EoS(u, rho, mat_id):
             P (double)
                 Pressure (SI).
     """
-    if (mat_id == Di_mat_id["Til_iron"]):
+    if (mat_id == id_Til_iron):
         return _P_EoS_Till(u, rho, mat_id)
     elif (mat_id == 101):
         return _P_EoS_Till(u, rho, mat_id)
@@ -179,7 +184,7 @@ def _rho0_material(mat_id):
                 Density (SI).
     
     """
-    if (mat_id == Di_mat_id["Til_iron"]):     # Tillotson iron
+    if (mat_id == id_Til_iron):     # Tillotson iron
         return 7800.
     elif (mat_id == 101):   # Tillotson granite   
         return 2680.
@@ -216,7 +221,7 @@ def _spec_c(mat_id):
                 Capacity (SI).
     
     """
-    if (mat_id == Di_mat_id["Til_iron"]):     # Tillotson iron
+    if (mat_id == id_Til_iron):     # Tillotson iron
         return 449
     elif (mat_id == 101):   # Tillotson granite   
         return 790
@@ -380,7 +385,7 @@ def _ucold_tab(rho, mat_id, ucold_array):
                 cold internal energy (SI).
     """
     mat_id = int(mat_id)
-    if mat_id == Di_mat_id["Til_iron"] or mat_id == 101 or mat_id == 102:
+    if mat_id == id_Til_iron or mat_id == 101 or mat_id == 102:
         
         nrow = ucold_array.shape[0]
         rho_min = 100
@@ -521,7 +526,7 @@ def load_ucold_array(mat_id):
                 with function _create_ucold_array() (SI).
     """
     
-    if mat_id == Di_mat_id["Til_iron"]:
+    if mat_id == id_Til_iron:
         ucold_array = np.load('data/ucold_array_100.npy')
     elif mat_id == 101:
         ucold_array = np.load('data/ucold_array_101.npy')
