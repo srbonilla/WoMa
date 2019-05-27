@@ -14,7 +14,7 @@ import numpy as np
 from numba import jit
 from scipy.interpolate import interp1d
 import seagen
-import eos
+import weos
 from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 
@@ -33,9 +33,9 @@ def set_up():
     
     """
     
-    ucold_array_100 = eos._create_ucold_array(100)
-    ucold_array_101 = eos._create_ucold_array(101)
-    ucold_array_102 = eos._create_ucold_array(102)
+    ucold_array_100 = weos._create_ucold_array(100)
+    ucold_array_101 = weos._create_ucold_array(101)
+    ucold_array_102 = weos._create_ucold_array(102)
     
     np.save("data/ucold_array_100", ucold_array_100)
     np.save("data/ucold_array_101", ucold_array_101)
@@ -113,9 +113,9 @@ def integrate_1layer(N, R, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
     u   = np.zeros(r.shape)
     mat = np.ones(r.shape)*mat_id
     
-    c = eos._spec_c(mat_id)
+    c = weos._spec_c(mat_id)
     
-    us = eos.ucold(rhos, mat_id, 10000) + c*Ts
+    us = weos.ucold(rhos, mat_id, 10000) + c*Ts
     if T_rho_id == 1:
         T_rho_args[0] = Ts*rhos**(-T_rho_args[1])
     
@@ -131,10 +131,10 @@ def integrate_1layer(N, R, M, Ps, Ts, rhos, mat_id, T_rho_id, T_rho_args,
             
         m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
         P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
-        rho[i] = eos._find_rho(P[i], mat_id, T_rho_id, T_rho_args,
+        rho[i] = weos._find_rho(P[i], mat_id, T_rho_id, T_rho_args,
                                rho[i - 1], 1.1*rho[i - 1], ucold_array)
-        T[i]   = eos.T_rho(rho[i], T_rho_id, T_rho_args)
-        u[i]   = eos._ucold_tab(rho[i], mat_id, ucold_array) + c*T[i]
+        T[i]   = weos.T_rho(rho[i], T_rho_id, T_rho_args)
+        u[i]   = weos._ucold_tab(rho[i], mat_id, ucold_array) + c*T[i]
         
         if m[i] < 0:
             
@@ -376,10 +376,10 @@ def integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm,
     u   = np.zeros(r.shape)
     mat = np.zeros(r.shape)
     
-    c_core   = eos._spec_c(mat_id_core)
-    c_mantle = eos._spec_c(mat_id_mantle)
+    c_core   = weos._spec_c(mat_id_core)
+    c_mantle = weos._spec_c(mat_id_mantle)
     
-    us = eos.ucold(rhos, mat_id_mantle, 10000) + c_mantle*Ts
+    us = weos.ucold(rhos, mat_id_mantle, 10000) + c_mantle*Ts
     if T_rho_id_mantle == 1:
         T_rho_args_mantle[0] = Ts*rhos**(-T_rho_args_mantle[1])
     
@@ -399,10 +399,10 @@ def integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+            rho[i] = weos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_mantle)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
             if m[i] < 0: 
@@ -411,7 +411,7 @@ def integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm,
         # boundary core mantle
         elif r[i] <= Bcm and r[i - 1] > Bcm:
             
-            rho_transition = eos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
+            rho_transition = weos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
                                                      mat_id_core, ucold_array_core)
             
             if T_rho_id_core == 1:
@@ -419,10 +419,10 @@ def integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho_transition/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho_transition, ucold_array_core)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
         # core  
@@ -430,10 +430,10 @@ def integrate_2layer(N, R, M, Ps, Ts, rhos, Bcm,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_core)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
             if m[i] < 0: 
@@ -604,7 +604,7 @@ def find_radius_2layer(N, R_max, M, Ps, Ts, rhos, Bcm,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          ucold_array_core, ucold_array_mantle)
     
-    rhos_core = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_core, ucold_array_core)
+    rhos_core = weos._find_rho_fixed_P_T(Ps, Ts, mat_id_core, ucold_array_core)
     
     r, m2, P, T, rho, u, mat = \
         integrate_1layer(N, Bcm, M, Ps, Ts, rhos_core,
@@ -702,14 +702,14 @@ def find_boundary_2layer(N, R, M, Ps, Ts, rhos,
     B_min = 0.
     B_max = R 
     
-    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
+    rhos_mantle = weos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
     
     r, m1, P, T, rho, u, mat = \
         integrate_1layer(N, R, M, Ps, Ts, rhos_mantle,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          ucold_array_mantle)
         
-    rhos_core = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_core, ucold_array_core)
+    rhos_core = weos._find_rho_fixed_P_T(Ps, Ts, mat_id_core, ucold_array_core)
     
     r, m2, P, T, rho, u, mat = \
         integrate_1layer(N, R, M, Ps, Ts, rhos_core,
@@ -852,11 +852,11 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
     u   = np.zeros(r.shape)
     mat = np.zeros(r.shape)
     
-    c_core   = eos._spec_c(mat_id_core)
-    c_mantle = eos._spec_c(mat_id_mantle)
-    c_atm    = eos._spec_c(mat_id_atm)
+    c_core   = weos._spec_c(mat_id_core)
+    c_mantle = weos._spec_c(mat_id_mantle)
+    c_atm    = weos._spec_c(mat_id_atm)
     
-    us = eos.ucold(rhos, mat_id_atm, 10000) + c_atm*Ts
+    us = weos.ucold(rhos, mat_id_atm, 10000) + c_atm*Ts
     if T_rho_id_atm == 1:
         T_rho_args_atm[0] = Ts*rhos**(-T_rho_args_atm[1])        
     
@@ -876,10 +876,10 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+            rho[i] = weos._find_rho(P[i], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_atm)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_atm, T_rho_args_atm)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_atm, ucold_array_atm) + c_atm*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_atm, T_rho_args_atm)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_atm, ucold_array_atm) + c_atm*T[i]
             mat[i] = mat_id_atm
             
             if m[i] < 0: 
@@ -888,7 +888,7 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
         # boundary mantle atm
         elif r[i] <= Bma and r[i - 1] > Bma:
             
-            rho_transition = eos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
+            rho_transition = weos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
                                                      mat_id_mantle, ucold_array_mantle)
             
             if T_rho_id_mantle == 1:
@@ -896,10 +896,10 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho_transition/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+            rho[i] = weos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho_transition, ucold_array_mantle)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
         # mantle
@@ -907,10 +907,10 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+            rho[i] = weos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_mantle)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_mantle, ucold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
             if m[i] < 0: 
@@ -919,7 +919,7 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
         # boundary core mantle
         elif r[i] <= Bcm and r[i - 1] > Bcm:
             
-            rho_transition = eos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
+            rho_transition = weos._find_rho_fixed_P_T(P[i - 1], T[i - 1],
                                                      mat_id_core, ucold_array_core)
             
             if T_rho_id_core == 1:
@@ -927,10 +927,10 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho_transition/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho_transition, ucold_array_core)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
         # core  
@@ -938,10 +938,10 @@ def integrate_3layer(N, R, M, Ps, Ts, rhos, Bcm, Bma,
             
             m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
             P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
-            rho[i] = eos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho[i - 1], ucold_array_core)
-            T[i]   = eos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
-            u[i]   = eos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
+            T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
+            u[i]   = weos._ucold_tab(rho[i], mat_id_core, ucold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
             if m[i] < 0: 
@@ -1149,7 +1149,7 @@ def find_radius_3layer(N, R_max, M, Ps, Ts, rhos, Bcm, Bma,
     
     R_min = Bma
     
-    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
+    rhos_mantle = weos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
     
     r, m, P, T, rho, u, mat = \
         integrate_2layer(N, Bma, M, Ps, Ts, rhos_mantle, Bcm,
@@ -1309,7 +1309,7 @@ def find_Bma_3layer(N, R, M, Ps, Ts, rhos, Bcm,
         print("Try increasing the mass, increasing Bcm or decreasing R.") 
         return Bma_min
         
-    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
+    rhos_mantle = weos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
     
     r, m, P, T, rho, u, mat = \
         integrate_2layer(N, R, M, Ps, Ts, rhos_mantle, Bcm,
@@ -1539,7 +1539,7 @@ def find_boundaries_3layer(N, R, M, Ps, Ts, rhos, MoI,
                 Boundaries core-mantle and mantle-atmosphere of the planet (SI).
             
     """
-    rhos_mantle = eos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
+    rhos_mantle = weos._find_rho_fixed_P_T(Ps, Ts, mat_id_mantle, ucold_array_mantle)
     
     Bcm_I_max = find_boundary_2layer(N, R, M, Ps, Ts, rhos_mantle,
                      mat_id_core, T_rho_id_core, T_rho_args_core,
@@ -1675,7 +1675,7 @@ class _1l_planet(_planet):
     def fix_R_given_M(self, M, R_max):
         """ Computes the correct R for a given M.
         """
-        ucold_array = eos.load_ucold_array(self.mat_id_core)
+        ucold_array = weos.load_ucold_array(self.mat_id_core)
         R = find_radius_1layer(self.N_integ_steps, R_max, M,
                                self.P_surface, self.T_surface, self.rho_surface,
                                self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1708,7 +1708,7 @@ class _1l_planet(_planet):
     
     def fix_M_given_R(self, R, M_max):
         
-        ucold_array = eos.load_ucold_array(self.mat_id_core)
+        ucold_array = weos.load_ucold_array(self.mat_id_core)
         
         print("Finding M given R...")
         
@@ -1737,7 +1737,7 @@ class _1l_planet(_planet):
     
     def compute_spherical_profile_given_R_M(self, R, M):
         
-        ucold_array = eos.load_ucold_array(self.mat_id_core)
+        ucold_array = weos.load_ucold_array(self.mat_id_core)
         
         r, m, P, T, rho, u, mat = \
             integrate_1layer(self.N_integ_steps, R, M,
@@ -1791,8 +1791,8 @@ class _2l_planet(_planet):
     
     def fix_B_given_R_M(self, R, M):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
         
         Bcm = find_boundary_2layer(self.N_integ_steps, R, M,
                                    self.P_surface, self.T_surface, self.rho_surface,
@@ -1830,8 +1830,8 @@ class _2l_planet(_planet):
             
     def fix_M_given_B_R(self, B, R, M_max):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
         
         print("Finding M given B and R...")
         
@@ -1863,8 +1863,8 @@ class _2l_planet(_planet):
     
     def fix_R_given_M_B(self, M, B, R_max):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
         
         R = find_radius_2layer(self.N_integ_steps, R_max, M,
                                self.P_surface, self.T_surface, self.rho_surface, B,
@@ -1902,8 +1902,8 @@ class _2l_planet(_planet):
     
     def compute_spherical_profile_given_R_M_B(self, R, M, B):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
         
         r, m, P, T, rho, u, mat = \
             integrate_2layer(self.N_integ_steps, R, M,
@@ -1971,9 +1971,9 @@ class _3l_planet(_planet):
     
     def fix_Bcm_Bma_given_R_M_I(self, R, M, I):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
-        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = weos.load_ucold_array(self.mat_id_atm)
         
         Bcm, Bma = \
             find_boundaries_3layer(self.N_integ_steps, R, M,
@@ -2022,9 +2022,9 @@ class _3l_planet(_planet):
     
     def fix_Bma_given_R_M_Bcm(self, R, M, Bcm):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
-        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = weos.load_ucold_array(self.mat_id_atm)
         
         Bma = find_Bma_3layer(self.N_integ_steps, R, M,
                               self.P_surface, self.T_surface, self.rho_surface, Bcm, 
@@ -2070,9 +2070,9 @@ class _3l_planet(_planet):
     
     def fix_Bcm_given_R_M_Bma(self, R, M, Bma):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
-        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = weos.load_ucold_array(self.mat_id_atm)
         
         Bcm = find_Bcm_3layer(self.N_integ_steps, R, M,
                               self.P_surface, self.T_surface, self.rho_surface, Bma, 
@@ -2118,9 +2118,9 @@ class _3l_planet(_planet):
     
     def fix_M_given_R_Bcm_Bma(self, R, Bcm, Bma, M_max):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
-        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = weos.load_ucold_array(self.mat_id_atm)
         
         print("Finding M given Bcm, Bma and R...")
         
@@ -2158,9 +2158,9 @@ class _3l_planet(_planet):
     
     def fix_R_given_M_Bcm_Bma(self, M, Bcm, Bma, R_max):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
-        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = weos.load_ucold_array(self.mat_id_atm)
         
         R = find_radius_3layer(self.N_integ_steps, R_max, M,
                                self.P_surface, self.T_surface, self.rho_surface,
@@ -2207,9 +2207,9 @@ class _3l_planet(_planet):
     
     def compute_spherical_profile_given_R_M_Bcm_Bma(self, R, M, Bcm, Bma):
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
-        ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm    = weos.load_ucold_array(self.mat_id_atm)
         
         r, m, P, T, rho, u, mat = \
             integrate_3layer(self.N_integ_steps, R, M,
@@ -2693,7 +2693,7 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
         #print(i)
             
         if P_e[i + 1] >= P_s:
-            rho_e[i + 1] = eos._find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
                                          rho_s - 10, rho_e[i], ucold_array_core) 
         else:
             rho_e[i + 1] = 0.
@@ -2705,7 +2705,7 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
         P_p[i + 1] = P_p[i] + gradP
         
         if P_p[i + 1] >= P_s:
-            rho_p[i + 1] = eos._find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
                                      rho_s - 10, rho_p[i], ucold_array_core)
         else:
             rho_p[i + 1] = 0.
@@ -2971,14 +2971,14 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     x = particles.x
     y = particles.y
     
-    c_core = eos._spec_c(mat_id_core)
+    c_core = weos._spec_c(mat_id_core)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
-        u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
-        u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
-        P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
+        u[k] = weos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
+        u[k] = u[k] + c_core*weos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
+        P[k] = weos.P_EoS(u[k], rho[k], mat_id_core)
     
     #print("Internal energy u computed\n")
     ## Smoothing lengths, crudely estimated from the densities
@@ -3174,11 +3174,11 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
         #print(i)
             
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_i:
-            rho_e[i + 1] = eos._find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
                                      rho_s - 10, rho_e[i], ucold_array_core) 
             
         elif P_e[i + 1] >= P_s and P_e[i + 1] < P_i:
-            rho_e[i + 1] = eos._find_rho(P_e[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                      rho_s - 10, rho_e[i], ucold_array_mantle) 
             
         else:
@@ -3191,11 +3191,11 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
         P_p[i + 1] = P_p[i] + gradP
         
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_i:
-            rho_p[i + 1] = eos._find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
                                      rho_s - 10, rho_p[i], ucold_array_core)
             
         elif P_p[i + 1] >= P_s and P_p[i + 1] < P_i:
-            rho_p[i + 1] = eos._find_rho(P_p[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                      rho_s - 10, rho_p[i], ucold_array_mantle)
             
         else:
@@ -3444,20 +3444,20 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     x = particles.x
     y = particles.y
     
-    c_core = eos._spec_c(mat_id_core)
-    c_mantle = eos._spec_c(mat_id_mantle)
+    c_core = weos._spec_c(mat_id_core)
+    c_mantle = weos._spec_c(mat_id_mantle)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
         if rho[k] > rho_i:
-            u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
-            u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
-            P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
+            u[k] = weos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
+            u[k] = u[k] + c_core*weos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
+            P[k] = weos.P_EoS(u[k], rho[k], mat_id_core)
         else:
-            u[k] = eos._ucold_tab(rho[k], mat_id_mantle, ucold_array_mantle)
-            u[k] = u[k] + c_mantle*eos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
-            P[k] = eos.P_EoS(u[k], rho[k], mat_id_mantle)
+            u[k] = weos._ucold_tab(rho[k], mat_id_mantle, ucold_array_mantle)
+            u[k] = u[k] + c_mantle*weos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
+            P[k] = weos.P_EoS(u[k], rho[k], mat_id_mantle)
     
     #print("Internal energy u computed\n")
     
@@ -3681,15 +3681,15 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
         P_e[i + 1] = P_e[i] + gradP
             
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_cm:
-            rho_e[i + 1] = eos._find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
                                      rho_s - 10, rho_e[i], ucold_array_core) 
             
         elif P_e[i + 1] >= P_s and P_e[i + 1] >= P_ma:
-            rho_e[i + 1] = eos._find_rho(P_e[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                      rho_s - 10, rho_e[i], ucold_array_mantle) 
             
         elif P_e[i + 1] >= P_s:
-            rho_e[i + 1] = eos._find_rho(P_e[i + 1], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                                      rho_s - 10, rho_e[i], ucold_array_atm)
             
         else:
@@ -3702,15 +3702,15 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
         P_p[i + 1] = P_p[i] + gradP
         
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_cm:
-            rho_p[i + 1] = eos._find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
+            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_core, T_rho_id_core, T_rho_args_core,
                                      rho_s - 10, rho_p[i], ucold_array_core)
             
         elif P_p[i + 1] >= P_s and P_p[i + 1] >= P_ma:
-            rho_p[i + 1] = eos._find_rho(P_p[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
+            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                      rho_s - 10, rho_p[i], ucold_array_mantle)
             
         elif P_p[i + 1] >= P_s:
-            rho_p[i + 1] = eos._find_rho(P_p[i + 1], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                                      rho_s - 10, rho_p[i], ucold_array_atm)
             
         else:
@@ -3993,27 +3993,27 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     x = particles.x
     y = particles.y
     
-    c_core   = eos._spec_c(mat_id_core)
-    c_mantle = eos._spec_c(mat_id_mantle)
-    c_atm    = eos._spec_c(mat_id_atm)
+    c_core   = weos._spec_c(mat_id_core)
+    c_mantle = weos._spec_c(mat_id_mantle)
+    c_atm    = weos._spec_c(mat_id_atm)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
         if rho[k] > rho_cm:
-            u[k] = eos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
-            u[k] = u[k] + c_core*eos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
-            P[k] = eos.P_EoS(u[k], rho[k], mat_id_core)
+            u[k] = weos._ucold_tab(rho[k], mat_id_core, ucold_array_core)
+            u[k] = u[k] + c_core*weos.T_rho(rho[k], T_rho_id_core, T_rho_args_core)
+            P[k] = weos.P_EoS(u[k], rho[k], mat_id_core)
             
         elif rho[k] > rho_ma:
-            u[k] = eos._ucold_tab(rho[k], mat_id_mantle, ucold_array_mantle)
-            u[k] = u[k] + c_mantle*eos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
-            P[k] = eos.P_EoS(u[k], rho[k], mat_id_mantle)
+            u[k] = weos._ucold_tab(rho[k], mat_id_mantle, ucold_array_mantle)
+            u[k] = u[k] + c_mantle*weos.T_rho(rho[k], T_rho_id_mantle, T_rho_args_mantle)
+            P[k] = weos.P_EoS(u[k], rho[k], mat_id_mantle)
             
         else:
-            u[k] = eos._ucold_tab(rho[k], mat_id_atm, ucold_array_atm)
-            u[k] = u[k] + c_atm*eos.T_rho(rho[k], T_rho_id_atm, T_rho_args_atm)
-            P[k] = eos.P_EoS(u[k], rho[k], mat_id_atm)
+            u[k] = weos._ucold_tab(rho[k], mat_id_atm, ucold_array_atm)
+            u[k] = u[k] + c_atm*weos.T_rho(rho[k], T_rho_id_atm, T_rho_args_atm)
+            P[k] = weos.P_EoS(u[k], rho[k], mat_id_atm)
     
     #print("Internal energy u computed\n")
     ## Smoothing lengths, crudely estimated from the densities
@@ -4200,7 +4200,7 @@ class _1l_spin(_spin):
         r_array     = np.linspace(0, Re, self.N_steps_spin)
         z_array     = np.linspace(0, Rp, self.N_steps_spin) 
         
-        ucold_array = eos.load_ucold_array(self.mat_id_core) 
+        ucold_array = weos.load_ucold_array(self.mat_id_core) 
         
         profile_e, profile_p = \
             spin1layer(self.iterations, r_array, z_array,
@@ -4255,8 +4255,8 @@ class _2l_spin(_spin):
         r_array     = np.linspace(0, Re, self.N_steps_spin)
         z_array     = np.linspace(0, Rp, self.N_steps_spin)
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core) 
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle) 
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core) 
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle) 
         
         profile_e, profile_p = \
             spin2layer(self.iterations, r_array, z_array,
@@ -4318,9 +4318,9 @@ class _3l_spin(_spin):
         r_array     = np.linspace(0, Re, self.N_steps_spin)
         z_array     = np.linspace(0, Rp, self.N_steps_spin)
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core) 
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
-        ucold_array_atm = eos.load_ucold_array(self.mat_id_atm) 
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core) 
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_atm = weos.load_ucold_array(self.mat_id_atm) 
         
         profile_e, profile_p = \
             spin3layer(self.iterations, r_array, z_array,
@@ -4384,7 +4384,7 @@ class _1l_genspheroid():
         self.T_rho_id_core   = spin_planet.T_rho_id_core
         self.T_rho_args_core = spin_planet.T_rho_args_core
         
-        ucold_array_core = eos.load_ucold_array(self.mat_id_core)
+        ucold_array_core = weos.load_ucold_array(self.mat_id_core)
         
         x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
             picle_placement_1layer(self.A1_equator, self.A1_rho_equator,
@@ -4431,8 +4431,8 @@ class _2l_genspheroid():
         rho_P_model       = interp1d(spin_planet.A1_P, spin_planet.A1_rho)
         self.rho_boundary = rho_P_model(self.P_boundary)
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
         
         x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
             picle_placement_2layer(self.A1_equator, self.A1_rho_equator,
@@ -4486,8 +4486,8 @@ class _3l_genspheroid():
         self.rho_boundary_cm  = rho_P_model(self.P_boundary_cm)
         self.rho_boundary_ma  = rho_P_model(self.P_boundary_ma)
         
-        ucold_array_core   = eos.load_ucold_array(self.mat_id_core)
-        ucold_array_mantle = eos.load_ucold_array(self.mat_id_mantle)
+        ucold_array_core   = weos.load_ucold_array(self.mat_id_core)
+        ucold_array_mantle = weos.load_ucold_array(self.mat_id_mantle)
         ucold_array_atm    = eos.load_ucold_array(self.mat_id_atm)
         
         x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
