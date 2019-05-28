@@ -17,6 +17,8 @@ import seagen
 import weos
 from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
+import os
+import sys
 
 # Global constants
 G = 6.67408E-11;
@@ -28,22 +30,37 @@ M_earth = 5.972E24;
 ###############################################################################
 
 def set_up():
-    """ Creates tabulated values of cold internal energy, 
-        and saves the results in the data folder
-    
+    """ Create tabulated values of cold internal energy if they don't exist, 
+        and save the results in the data/ folder.    
     """
-    print('Creating u cold curve for material Til_iron...\n')
-    u_cold_array_100 = weos._create_u_cold_array(weos.id_Til_iron)
-    np.save("data/u_cold_array_100", u_cold_array_100)
-    del u_cold_array_100
-    print('Creating u cold curve for material Til_granite...\n')
-    u_cold_array_101 = weos._create_u_cold_array(weos.id_Til_granite)
-    np.save("data/u_cold_array_101", u_cold_array_101)
-    del u_cold_array_101
-    print('Creating u cold curve for material Til_water...\n')
-    u_cold_array_102 = weos._create_u_cold_array(weos.id_Til_water)
-    np.save("data/u_cold_array_102", u_cold_array_102)
-    del u_cold_array_102
+    # Make the directory if it doesn't already exist
+    if not os.path.isdir("data"):
+        os.mkdir("data")
+    
+    # Make the files if they don't already exist    
+    if not os.path.isfile(weos.Fp_u_cold_Til_iron):
+        print('Creating u cold curve for material Til_iron... ', end='')
+        sys.stdout.flush()
+        u_cold_array = weos._create_u_cold_array(weos.id_Til_iron)
+        np.save(weos.Fp_u_cold_Til_iron, u_cold_array)
+        del u_cold_array
+        print("Done")
+    
+    if not os.path.isfile(weos.Fp_u_cold_Til_granite):
+        print('Creating u cold curve for material Til_granite... ', end='')
+        sys.stdout.flush()
+        u_cold_array = weos._create_u_cold_array(weos.id_Til_granite)
+        np.save(weos.Fp_u_cold_Til_granite, u_cold_array)
+        del u_cold_array
+        print("Done")
+    
+    if not os.path.isfile(weos.Fp_u_cold_Til_water):
+        print('Creating u cold curve for material Til_water... ', end='')
+        sys.stdout.flush()
+        u_cold_array = weos._create_u_cold_array(weos.id_Til_water)
+        np.save(weos.Fp_u_cold_Til_water, u_cold_array)
+        del u_cold_array
+        print("Done")
       
 ############################## 1 layer ########################################
     
@@ -4535,22 +4552,8 @@ def GenSpheroid(spin_planet, N_particles, N_neig=48, iterations=10):
         
         spheroid = _3l_genspheroid(sp, N_particles, N_neig, iterations)
         return spheroid
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+
+
+# Set up equation of state data
+set_up()
+

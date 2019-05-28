@@ -57,6 +57,10 @@ id_SESAME_basalt    = Di_mat_id["SESAME_basalt"]
 id_SESAME_water     = Di_mat_id["SESAME_water"]
 id_SS08_water       = Di_mat_id["SS08_water"]
 
+# Data files
+Fp_u_cold_Til_iron      = "data/u_cold_array_Til_iron.npy"
+Fp_u_cold_Til_granite   = "data/u_cold_array_Til_granite.npy"
+Fp_u_cold_Til_water     = "data/u_cold_array_Til_water.npy"
 
 ###############################################################################
 ############################### Functions #####################################
@@ -594,11 +598,11 @@ def load_u_cold_array(mat_id):
     if mat_id in [id_idg_HHe, id_idg_N2]:
         return np.array([0.])
     elif mat_id == id_Til_iron:
-        u_cold_array = np.load('data/u_cold_array_100.npy')
+        u_cold_array = np.load(Fp_u_cold_Til_iron)
     elif mat_id == id_Til_granite:
-        u_cold_array = np.load('data/u_cold_array_101.npy')
+        u_cold_array = np.load(Fp_u_cold_Til_granite)
     elif mat_id == id_Til_water:
-        u_cold_array = np.load('data/u_cold_array_102.npy')
+        u_cold_array = np.load(Fp_u_cold_Til_water)
         
     return u_cold_array
 
