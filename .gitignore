@@ -1,0 +1,25 @@
+# General file types
+*.aux
+*.bbl
+*.blg
+*.cprof
+*.csv
+*.dat
+*.gz
+*.log
+*.mp4
+*.npy
+*.ods
+*.out
+*.pdf
+*.png
+*.pyc
+*.swp
+*.tar
+*.toc
+*.xmf
+*.zip
+*.*#
+
+# Folders
+data/
