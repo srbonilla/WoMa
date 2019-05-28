@@ -44,24 +44,18 @@ Notation etc.
 
 To Do etc. (Jacob thoughts in progress)
 ---------------------------------------
-+ If `set_up()` has to be run then it should be called automatically. 
-    Also, if creating those files, then should first check if they already 
-    exist before making. And no need to make them if not using those materials.
-+ Continue replacing all hard-coded EoS IDs with the dictionary names.
 + Replace Tillotson (and all) EoS parameter arrays with simple class objects.
 + Import SEAGen as a normal module instead of copying the file?
 + Add documentation to examples and basic instructions to readme.
 + Why are some `jit`s commented out?
 + Replace `np.nan` with `None` for default function arguments
-+ Tweak some names to match SWIFT and SEAGen nicely
 + Use something more generic than core/mantle/atmosphere for the layer names
 + Simpler way to choose which input parameters are fixed
 + Allow fixing the mass ratios of each layer instead of e.g. outer radius 
-+ Can we integrate outwards to e.g. add an atmosphere onto an existing profile?
 + Make into a PyPI package
 + Sort out eos.py's name to not conflict with GIHR
 + Apparently numba can't handle dictionaries?
-+ `set_up()` takes a while, so print something to say what's happening
 + Zero axes in example plots and non-symbol labels
-+ Tweek --> tweak
 + Examples are using non-Earth materials?
++ Tidy line lengths for where I've messed things up
++ Log axes for e.g. density at least with atmospheres
