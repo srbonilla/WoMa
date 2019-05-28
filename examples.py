@@ -10,19 +10,13 @@ Created on Tue Apr  2 13:11:10 2019
 ####################### Libraries and constants ###############################
 ###############################################################################
 
-# path = '/home/sergio/Documents/WoMa/'     # Set local project folder
-# import os
-# os.chdir(path)
-# import sys
-# sys.path.append(path)
-
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
 import weos
 
-R_earth = 6371000;
-M_earth = 5.972E24;
+R_earth = 6371000
+M_earth = 5.972E24
 
 ###############################################################################
 ########################## Initial set up #####################################

@@ -20,10 +20,15 @@ from tqdm import tqdm
 import os
 import sys
 
+# Go to the WoMa directory
+dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir)
+sys.path.append(dir)
+
 # Global constants
-G = 6.67408E-11;
-R_earth = 6371000;
-M_earth = 5.972E24;
+G = 6.67408E-11
+R_earth = 6371000
+M_earth = 5.972E24
 
 ###############################################################################
 ####################### Spherical profile functions ###########################
@@ -1701,9 +1706,9 @@ class _1l_planet(_planet):
                                self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                u_cold_array, self.iterations)
         
-        print("Tweeking M to avoid peaks at the center of the planet...")
+        print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweek = find_mass_1layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_1layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    u_cold_array)
@@ -1711,12 +1716,12 @@ class _1l_planet(_planet):
         print("Done!")
         
         r, m, P, T, rho, u, mat = \
-            integrate_1layer(self.N_integ_steps, R, M_tweek,
+            integrate_1layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              u_cold_array)
          
-        self.M           = M_tweek
+        self.M           = M_tweak
         self.R           = R
         self.A1_R        = r
         self.A1_M        = m
@@ -1820,16 +1825,16 @@ class _2l_planet(_planet):
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    u_cold_array_core, u_cold_array_mantle, self.iterations)
         
-        print("Tweeking M to avoid peaks at the center of the planet...")
+        print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweek = find_mass_2layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_2layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface, Bcm,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    u_cold_array_core, u_cold_array_mantle)
         
         r, m, P, T, rho, u, mat = \
-            integrate_2layer(self.N_integ_steps, R, M_tweek,
+            integrate_2layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface, Bcm,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
@@ -1837,7 +1842,7 @@ class _2l_planet(_planet):
             
         print("Done!")
             
-        self.M           = M_tweek
+        self.M           = M_tweak
         self.R           = R
         self.Bcm         = Bcm
         self.A1_R        = r
@@ -1892,16 +1897,16 @@ class _2l_planet(_planet):
                                self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                u_cold_array_core, u_cold_array_mantle, self.iterations)
         
-        print("Tweeking M to avoid peaks at the center of the planet...")
+        print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweek = find_mass_2layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_2layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface, B,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    u_cold_array_core, u_cold_array_mantle)
         
         r, m, P, T, rho, u, mat = \
-            integrate_2layer(self.N_integ_steps, R, M_tweek,
+            integrate_2layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface, B,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
@@ -1909,7 +1914,7 @@ class _2l_planet(_planet):
             
         print("Done!")
             
-        self.M           = M_tweek
+        self.M           = M_tweak
         self.R           = R
         self.Bcm         = B
         self.A1_R        = r
@@ -2004,9 +2009,9 @@ class _3l_planet(_planet):
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm,
                                    self.iterations, self.subiterations)
 
-        print("Tweeking M to avoid peaks at the center of the planet...")
+        print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2016,7 +2021,7 @@ class _3l_planet(_planet):
         
         
         r, m, P, T, rho, u, mat = \
-            integrate_3layer(self.N_integ_steps, R, M_tweek,
+            integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2026,7 +2031,7 @@ class _3l_planet(_planet):
             
         print("Done!")
             
-        self.M           = M_tweek
+        self.M           = M_tweak
         self.R           = R
         self.Bcm         = Bcm
         self.Bma         = Bma
@@ -2054,9 +2059,9 @@ class _3l_planet(_planet):
                               u_cold_array_core, u_cold_array_mantle, u_cold_array_atm,
                               self.iterations)
         
-        print("Tweeking M to avoid peaks at the center of the planet...")
+        print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2065,7 +2070,7 @@ class _3l_planet(_planet):
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
 
         r, m, P, T, rho, u, mat = \
-            integrate_3layer(self.N_integ_steps, R, M_tweek,
+            integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2075,7 +2080,7 @@ class _3l_planet(_planet):
             
         print("Done!")
             
-        self.M           = M_tweek
+        self.M           = M_tweak
         self.R           = R
         self.Bcm         = Bcm
         self.Bma         = Bma
@@ -2102,9 +2107,9 @@ class _3l_planet(_planet):
                               u_cold_array_core, u_cold_array_mantle, u_cold_array_atm,
                               self.iterations)
         
-        print("Tweeking M to avoid peaks at the center of the planet...")
+        print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2113,7 +2118,7 @@ class _3l_planet(_planet):
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
 
         r, m, P, T, rho, u, mat = \
-            integrate_3layer(self.N_integ_steps, R, M_tweek,
+            integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2123,7 +2128,7 @@ class _3l_planet(_planet):
             
         print("Done!")
             
-        self.M           = M_tweek
+        self.M           = M_tweak
         self.R           = R
         self.Bcm         = Bcm
         self.Bma         = Bma
@@ -2191,9 +2196,9 @@ class _3l_planet(_planet):
                                u_cold_array_core, u_cold_array_mantle, u_cold_array_atm,
                                self.iterations)
         
-        print("Tweeking M to avoid peaks at the center of the planet...")
+        print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweek = find_mass_3layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_3layer(self.N_integ_steps, R, 2*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2202,7 +2207,7 @@ class _3l_planet(_planet):
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
 
         r, m, P, T, rho, u, mat = \
-            integrate_3layer(self.N_integ_steps, R, M_tweek,
+            integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -2212,7 +2217,7 @@ class _3l_planet(_planet):
             
         print("Done!")
             
-        self.M           = M_tweek
+        self.M           = M_tweak
         self.R           = R
         self.Bcm         = Bcm
         self.Bma         = Bma
@@ -3024,7 +3029,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
         print("Finding neighbors of all particles...")
         distances, indices = nbrs.kneighbors(X)
         
-        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        for _ in tqdm(range(iterations), desc="Tweaking mass of every particle"):
         
             M = _generate_M(indices, mP)
         
@@ -3040,7 +3045,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
         
         k    = particles.N_picle // N_mem
         
-        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        for _ in tqdm(range(iterations), desc="Tweaking mass of every particle"):
             
             mP_prev = mP.copy()
             
@@ -3505,7 +3510,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
         print("Finding neighbors of all particles...")
         distances, indices = nbrs.kneighbors(X)
         
-        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        for _ in tqdm(range(iterations), desc="Tweaking mass of every particle"):
         
             M = _generate_M(indices, mP)
         
@@ -3524,7 +3529,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
         
         k    = particles.N_picle // N_mem
         
-        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        for _ in tqdm(range(iterations), desc="Tweaking mass of every particle"):
             
             mP_prev = mP.copy()
             
@@ -4062,7 +4067,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
         print("Finding neighbors of all particles...")
         distances, indices = nbrs.kneighbors(X)
         
-        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        for _ in tqdm(range(iterations), desc="Tweaking mass of every particle"):
         
             M = _generate_M(indices, mP)
         
@@ -4083,7 +4088,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
         
         k    = particles.N_picle // N_mem
         
-        for _ in tqdm(range(iterations), desc="Tweeking mass of every particle"):
+        for _ in tqdm(range(iterations), desc="Tweaking mass of every particle"):
             
             mP_prev = mP.copy()
             
