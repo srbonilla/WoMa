@@ -17,6 +17,47 @@ R_earth = 6371000;
 M_earth = 5.972E24;  
 R_gas   = 8.3145     # Gas constant (J K^-1 mol^-1)
 
+# Material IDs, same as SWIFT ( = type_id * type_factor + unit_id)
+type_factor = 100
+Di_mat_type = {
+    "idg"       : 0,
+    "Til"       : 1,
+    "HM80"      : 2,
+    "SESAME"    : 3,
+    }
+Di_mat_id   = {
+    # Ideal Gas
+    "idg_HHe"       : Di_mat_type["idg"]*type_factor,
+    "idg_N2"        : Di_mat_type["idg"]*type_factor + 1,
+    # Tillotson
+    "Til_iron"      : Di_mat_type["Til"]*type_factor,
+    "Til_granite"   : Di_mat_type["Til"]*type_factor + 1,
+    "Til_water"     : Di_mat_type["Til"]*type_factor + 2,
+    # Hubbard & MacFarlane (1980) Uranus/Neptune
+    "HM80_HHe"      : Di_mat_type["HM80"]*type_factor,      # Hydrogen-helium atmosphere
+    "HM80_ice"      : Di_mat_type["HM80"]*type_factor + 1,  # H20-CH4-NH3 ice mix
+    "HM80_rock"     : Di_mat_type["HM80"]*type_factor + 2,  # SiO2-MgO-FeS-FeO rock mix
+    # SESAME
+    "SESAME_iron"   : Di_mat_type["SESAME"]*type_factor,        # 2140
+    "SESAME_basalt" : Di_mat_type["SESAME"]*type_factor + 1,    # 7530
+    "SESAME_water"  : Di_mat_type["SESAME"]*type_factor + 2,    # 7154
+    "SS08_water"    : Di_mat_type["SESAME"]*type_factor + 3,    # Senft & Stewart (2008)
+    }
+# Separate variables because numba can't handle dictionaries
+id_idg_HHe          = Di_mat_id["idg_HHe"]
+id_idg_N2           = Di_mat_id["idg_N2"]
+id_Til_iron         = Di_mat_id["Til_iron"]
+id_Til_granite      = Di_mat_id["Til_granite"]
+id_Til_water        = Di_mat_id["Til_water"]
+id_HM80_HHe         = Di_mat_id["HM80_HHe"]
+id_HM80_ice         = Di_mat_id["HM80_ice"]
+id_HM80_rock        = Di_mat_id["HM80_rock"]
+id_SESAME_iron      = Di_mat_id["SESAME_iron"]
+id_SESAME_basalt    = Di_mat_id["SESAME_basalt"]
+id_SESAME_water     = Di_mat_id["SESAME_water"]
+id_SS08_water       = Di_mat_id["SS08_water"]
+
+
 ###############################################################################
 ############################### Functions #####################################
 ###############################################################################
@@ -41,15 +82,15 @@ def _P_EoS_Till(u, rho, mat_id):
     """
     # Material constants for Tillotson EoS
     # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
-    iron    = np.array([100, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
-    granite = np.array([101, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0, 0])
-    water   = np.array([102, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.925, 0, 0.875])
+    iron    = np.array([id_Til_iron, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
+    granite = np.array([id_Til_granite, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0, 0])
+    water   = np.array([id_Til_water, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.925, 0, 0.875])
     
-    if (mat_id == 100):
+    if (mat_id == id_Til_iron):
         material = iron
-    elif (mat_id == 101):
+    elif (mat_id == id_Til_granite):
         material = granite
-    elif (mat_id == 102):
+    elif (mat_id == id_Til_water):
         material = water
     else:
         print("Material not implemented")
@@ -115,7 +156,7 @@ def _P_EoS_Till(u, rho, mat_id):
 
 @jit(nopython=True)
 def _P_EoS_idgas(u, rho, mat_id):
-    """ Computes pressure for Tillotson EoS.
+    """ Computes pressure for the ideal gas EoS.
     
         Args:
             u (double)
@@ -133,12 +174,12 @@ def _P_EoS_idgas(u, rho, mat_id):
     """
     # Material constants for ideal gas EoS
     # mat_id, gamma
-    HHe = np.array([0, 1.4])
-    N2  = np.array([1, 1.4])
+    HHe = np.array([id_idg_HHe, 1.4])
+    N2  = np.array([id_idg_N2, 1.4])
     
-    if (mat_id == 0):
+    if (mat_id == id_idg_HHe):
         material = HHe
-    elif (mat_id == 1):
+    elif (mat_id == id_idg_N2):
         material = N2
     else:
         print("Material not implemented")
@@ -169,15 +210,15 @@ def P_EoS(u, rho, mat_id):
             P (double)
                 Pressure (SI).
     """
-    if (mat_id == 0):
+    if (mat_id == id_idg_HHe):
         return _P_EoS_idgas(u, rho, mat_id)
-    elif (mat_id == 1):
+    elif (mat_id == id_idg_N2):
         return _P_EoS_idgas(u, rho, mat_id)
-    elif (mat_id == 100):
+    elif (mat_id == id_Til_iron):
         return _P_EoS_Till(u, rho, mat_id)
-    elif (mat_id == 101):
+    elif (mat_id == id_Til_granite):
         return _P_EoS_Till(u, rho, mat_id)
-    elif (mat_id == 102):
+    elif (mat_id == id_Til_water):
         return _P_EoS_Till(u, rho, mat_id)
     else:
         print("Material not implemented")
@@ -196,27 +237,27 @@ def _rho0_material(mat_id):
                 Density (SI).
     
     """
-    if (mat_id in [0, 1]): # Ideal gases
+    if (mat_id in [id_idg_HHe, id_idg_N2]):
         return 0
-    elif (mat_id == 100):     # Tillotson iron
+    elif (mat_id == id_Til_iron):
         return 7800.
-    elif (mat_id == 101):   # Tillotson granite   
+    elif (mat_id == id_Til_granite):
         return 2680.
-    elif (mat_id == 102):   # Tillotson water
+    elif (mat_id == id_Til_water):
         return 998.
-    elif (mat_id == 200):   # H&M80 H-He atmosphere
+    elif (mat_id == id_HM80_HHe):
         return None
-    elif (mat_id == 201):   # H&M80 H-He ice mix
+    elif (mat_id == id_HM80_ice):
         return None
-    elif (mat_id == 202):   # H&M80 H-He rock mix
+    elif (mat_id == id_HM80_rock):
         return None
-    elif (mat_id == 300):   # SESAME iron
+    elif (mat_id == id_SESAME_iron):
         return 7902.
-    elif (mat_id == 301):   # SESAME basalt
+    elif (mat_id == id_SESAME_basalt):
         return 2902.
-    elif (mat_id == 302):   # SESAME water
+    elif (mat_id == id_SESAME_water):
         return 1402.
-    elif (mat_id == 303):   # SS08 like-SESAME water
+    elif (mat_id == id_SS08_water):
         return 1002.
     else:
         print("Material not implemented")
@@ -235,29 +276,29 @@ def _spec_c(mat_id):
                 Capacity (SI).
     
     """
-    if mat_id == 0:         # Ideal gas HHe
+    if mat_id == id_idg_HHe:
         return 9093.98
-    elif mat_id == 1:       # Ideal gas N2
+    elif mat_id == id_idg_N2:
         return 742.36
-    elif (mat_id == 100):   # Tillotson iron
+    elif (mat_id == id_Til_iron):
         return 449
-    elif (mat_id == 101):   # Tillotson granite   
+    elif (mat_id == id_Til_granite):
         return 790
-    elif (mat_id == 102):   # Tillotson water
+    elif (mat_id == id_Til_water):
         return 4186
-    elif (mat_id == 200):
+    elif (mat_id == id_HM80_HHe):
         return None
-    elif (mat_id == 201):
+    elif (mat_id == id_HM80_ice):
         return None
-    elif (mat_id == 202):
+    elif (mat_id == id_HM80_rock):
         return None
-    elif (mat_id == 300):   # SESAME iron
+    elif (mat_id == id_SESAME_iron):
         return 449
-    elif (mat_id == 301):   # SESAME basalt
+    elif (mat_id == id_SESAME_basalt):
         return 790
-    elif (mat_id == 302):   # SESAME water
+    elif (mat_id == id_SESAME_water):
         return 4186
-    elif (mat_id == 303):   # SS08 like-SESAME water
+    elif (mat_id == id_SS08_water):
         return 4186
     else:
         print("Material not implemented")
@@ -281,10 +322,10 @@ def ucold(rho, mat_id, N):
             uc (float)
                 Cold internal energy (SI).
     """
-    if mat_id in [0, 1]:
+    if mat_id in [id_idg_HHe, id_idg_N2]:
         return 0
     
-    elif mat_id in [100, 101, 102]:
+    elif mat_id in [id_Til_iron, id_Til_granite, id_Til_water]:
         
         rho0 = _rho0_material(mat_id)
         drho = (rho - rho0)/N
@@ -408,11 +449,11 @@ def _ucold_tab(rho, mat_id, ucold_array):
     """
     mat_id = int(mat_id)
     
-    if mat_id in [0, 1]:
+    if mat_id in [id_idg_HHe, id_idg_N2]:
         
         return 0.
     
-    elif mat_id in [100, 101, 102]:
+    elif mat_id in [id_Til_iron, id_Til_granite, id_Til_water]:
         
         nrow = ucold_array.shape[0]
         rho_min = 100
@@ -552,13 +593,13 @@ def load_ucold_array(mat_id):
                 Precomputed values of cold internal energy
                 with function _create_ucold_array() (SI).
     """
-    if mat_id in [0, 1]:
+    if mat_id in [id_idg_HHe, id_idg_N2]:
         return np.array([0.])
-    elif mat_id == 100:
+    elif mat_id == id_Til_iron:
         ucold_array = np.load('data/ucold_array_100.npy')
-    elif mat_id == 101:
+    elif mat_id == id_Til_granite:
         ucold_array = np.load('data/ucold_array_101.npy')
-    elif mat_id == 102:
+    elif mat_id == id_Til_water:
         ucold_array = np.load('data/ucold_array_102.npy')
         
     return ucold_array

@@ -104,11 +104,11 @@ def plot_spin_profile(spin_planet):
 
 my_planet = woma.Planet(1)
 
-my_planet.set_core_properties(101, 1, [np.nan, 0.])
+my_planet.set_core_properties(weos.id_Til_granite, 1, [np.nan, 0.])
 
 Ps   = 0
 Ts   = 300
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, 101)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_granite)
 
 my_planet.set_P_surface(Ps)
 my_planet.set_T_surface(Ts)
@@ -129,8 +129,8 @@ plot_spin_profile(my_spinning_planet)
 
 my_planet = woma.Planet(2)
 
-my_planet.set_core_properties(101, 1, [None, 0])
-my_planet.set_mantle_properties(1, 1, [None, 0])
+my_planet.set_core_properties(weos.id_Til_granite, 1, [None, 0])
+my_planet.set_mantle_properties(weos.id_idg_N2, 1, [None, 0])
 
 Ps   = 1e4
 Ts   = 300
@@ -159,13 +159,13 @@ plot_spin_profile(my_spinning_planet)
 
 my_planet = woma.Planet(3)
 
-my_planet.set_core_properties(100, 1, [np.nan, 0])
-my_planet.set_mantle_properties(101, 1, [np.nan, 0])
-my_planet.set_atmosphere_properties(102, 1, [np.nan, 0])
+my_planet.set_core_properties(weos.id_Til_iron, 1, [np.nan, 0])
+my_planet.set_mantle_properties(weos.id_Til_granite, 1, [np.nan, 0])
+my_planet.set_atmosphere_properties(weos.id_Til_water, 1, [np.nan, 0])
 
 Ps   = 0
 Ts   = 300
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, 102)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_water)
 
 my_planet.set_P_surface(Ps)
 my_planet.set_T_surface(Ts)
@@ -196,12 +196,12 @@ plot_spin_profile(spin_example)
 proto_earth = woma.Planet(2)
 M = 0.887*M_earth
 
-proto_earth.set_core_properties(100, 1, [None, 0])
-proto_earth.set_mantle_properties(101, 1, [None, 0])
+proto_earth.set_core_properties(weos.id_Til_iron, 1, [None, 0])
+proto_earth.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
 
 Ps   = 1e9
 Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, 101)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_granite)
 
 proto_earth.set_P_surface(Ps)
 proto_earth.set_T_surface(Ts)
@@ -217,7 +217,7 @@ for _ in range(5):
     R_try = (R_low + R_high)/2.
     proto_earth.fix_B_given_R_M(R_try, M)
     
-    core_mass_fraction = np.max(proto_earth.A1_M[proto_earth.A1_material == 100])/proto_earth.M
+    core_mass_fraction = np.max(proto_earth.A1_M[proto_earth.A1_material == weos.id_Til_iron])/proto_earth.M
     print(core_mass_fraction)
     
     if core_mass_fraction < mass_f_core:
@@ -234,12 +234,12 @@ plot_spherical_profile(proto_earth)
 theia = woma.Planet(2)
 M = 0.133*M_earth
 
-theia.set_core_properties(100, 1, [None, 0])
-theia.set_mantle_properties(101, 1, [None, 0])
+theia.set_core_properties(weos.id_Til_iron, 1, [None, 0])
+theia.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
 
 Ps   = 0
 Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, 101)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_granite)
 
 theia.set_P_surface(Ps)
 theia.set_T_surface(Ts)
@@ -253,7 +253,7 @@ for _ in range(10):
     R_try = (R_low + R_high)/2.
     theia.fix_B_given_R_M(R_try, M)
     
-    core_mass_fraction = np.max(theia.A1_M[theia.A1_material == 100])/theia.M
+    core_mass_fraction = np.max(theia.A1_M[theia.A1_material == weos.id_Til_iron])/theia.M
     print(core_mass_fraction)
     
     if core_mass_fraction < mass_f_core:
@@ -271,13 +271,13 @@ proto_earth_watm = woma.Planet(3)
 
 M = proto_earth.M + 1e-6*M_earth
 
-proto_earth_watm.set_core_properties(100, 1, [None, 0])
-proto_earth_watm.set_mantle_properties(101, 1, [None, 0])
-proto_earth_watm.set_atmosphere_properties(0, 1, [None, 0])
+proto_earth_watm.set_core_properties(weos.id_Til_iron, 1, [None, 0])
+proto_earth_watm.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
+proto_earth_watm.set_atmosphere_properties(weos.id_idg_HHe, 1, [None, 0])
 
 Ps   = 5e8
 Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, 0)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_idg_HHe)
 
 proto_earth_watm.set_P_surface(Ps)
 proto_earth_watm.set_T_surface(Ts)
@@ -297,13 +297,13 @@ proto_earth_watm = woma.Planet(3)
 
 M = proto_earth.M + 1e-2*M_earth
 
-proto_earth_watm.set_core_properties(100, 1, [None, 0])
-proto_earth_watm.set_mantle_properties(101, 1, [None, 0])
-proto_earth_watm.set_atmosphere_properties(1, 1, [None, 0])
+proto_earth_watm.set_core_properties(weos.id_Til_iron, 1, [None, 0])
+proto_earth_watm.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
+proto_earth_watm.set_atmosphere_properties(weos.id_idg_N2, 1, [None, 0])
 
 Ps   = 1e7
 Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, 1)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_idg_N2)
 
 proto_earth_watm.set_P_surface(Ps)
 proto_earth_watm.set_T_surface(Ts)
