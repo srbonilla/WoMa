@@ -106,13 +106,13 @@ my_planet = woma.Planet(1)
 
 my_planet.set_core_properties(weos.id_Til_granite, 1, [np.nan, 0.])
 
-Ps   = 0
-Ts   = 300
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_granite)
+P_s  = 0
+T_s  = 300
+rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_Til_granite)
 
-my_planet.set_P_surface(Ps)
-my_planet.set_T_surface(Ts)
-my_planet.set_rho_surface(rhos)
+my_planet.set_P_surface(P_s)
+my_planet.set_T_surface(T_s)
+my_planet.set_rho_surface(rho_s)
 
 my_planet.fix_M_given_R(R_earth, 1*M_earth)
 
@@ -132,13 +132,13 @@ my_planet = woma.Planet(2)
 my_planet.set_core_properties(weos.id_Til_granite, 1, [None, 0])
 my_planet.set_mantle_properties(weos.id_idg_N2, 1, [None, 0])
 
-Ps   = 1e4
-Ts   = 300
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, 1)
+P_s  = 1e4
+T_s  = 300
+rho_s = weos.find_rho_fixed_P_T(P_s, T_s, 1)
 
-my_planet.set_P_surface(Ps)
-my_planet.set_T_surface(Ts)
-my_planet.set_rho_surface(rhos)
+my_planet.set_P_surface(P_s)
+my_planet.set_T_surface(T_s)
+my_planet.set_rho_surface(rho_s)
 
 #my_planet.fix_B_given_R_M(R_earth, M_earth)
 my_planet.fix_M_given_B_R(0.99*R_earth, R_earth, M_earth)
@@ -163,13 +163,13 @@ my_planet.set_core_properties(weos.id_Til_iron, 1, [np.nan, 0])
 my_planet.set_mantle_properties(weos.id_Til_granite, 1, [np.nan, 0])
 my_planet.set_atmosphere_properties(weos.id_Til_water, 1, [np.nan, 0])
 
-Ps   = 0
-Ts   = 300
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_water)
+P_s  = 0
+T_s  = 300
+rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_Til_water)
 
-my_planet.set_P_surface(Ps)
-my_planet.set_T_surface(Ts)
-my_planet.set_rho_surface(rhos)
+my_planet.set_P_surface(P_s)
+my_planet.set_T_surface(T_s)
+my_planet.set_rho_surface(rho_s)
 
 #my_planet.fix_Bcm_Bma_given_R_M_I(R_earth, M_earth, 0.3*M_earth*R_earth**2)
 #my_planet.fix_Bma_given_R_M_Bcm(R_earth, M_earth, 0.49*R_earth)
@@ -199,13 +199,13 @@ M = 0.887*M_earth
 proto_earth.set_core_properties(weos.id_Til_iron, 1, [None, 0])
 proto_earth.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
 
-Ps   = 1e9
-Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_granite)
+P_s  = 1e9
+T_s  = 2000
+rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_Til_granite)
 
-proto_earth.set_P_surface(Ps)
-proto_earth.set_T_surface(Ts)
-proto_earth.set_rho_surface(rhos)
+proto_earth.set_P_surface(P_s)
+proto_earth.set_T_surface(T_s)
+proto_earth.set_rho_surface(rho_s)
 
 #proto_earth.fix_B_given_R_M(1.00*R_earth, M)
 
@@ -237,13 +237,13 @@ M = 0.133*M_earth
 theia.set_core_properties(weos.id_Til_iron, 1, [None, 0])
 theia.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
 
-Ps   = 0
-Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_Til_granite)
+P_s  = 0
+T_s  = 2000
+rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_Til_granite)
 
-theia.set_P_surface(Ps)
-theia.set_T_surface(Ts)
-theia.set_rho_surface(rhos)
+theia.set_P_surface(P_s)
+theia.set_T_surface(T_s)
+theia.set_rho_surface(rho_s)
 
 R_low = 0.60*R_earth
 R_high = 0.65*R_earth
@@ -275,13 +275,13 @@ proto_earth_watm.set_core_properties(weos.id_Til_iron, 1, [None, 0])
 proto_earth_watm.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
 proto_earth_watm.set_atmosphere_properties(weos.id_idg_HHe, 1, [None, 0])
 
-Ps   = 5e8
-Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_idg_HHe)
+P_s  = 5e8
+T_s  = 2000
+rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_idg_HHe)
 
-proto_earth_watm.set_P_surface(Ps)
-proto_earth_watm.set_T_surface(Ts)
-proto_earth_watm.set_rho_surface(rhos)
+proto_earth_watm.set_P_surface(P_s)
+proto_earth_watm.set_T_surface(T_s)
+proto_earth_watm.set_rho_surface(rho_s)
 
 B_cm = proto_earth.Bcm
 B_ma = proto_earth.R
@@ -301,13 +301,13 @@ proto_earth_watm.set_core_properties(weos.id_Til_iron, 1, [None, 0])
 proto_earth_watm.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
 proto_earth_watm.set_atmosphere_properties(weos.id_idg_N2, 1, [None, 0])
 
-Ps   = 1e7
-Ts   = 2000
-rhos = weos.find_rho_fixed_P_T(Ps, Ts, weos.id_idg_N2)
+P_s  = 1e7
+T_s  = 2000
+rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_idg_N2)
 
-proto_earth_watm.set_P_surface(Ps)
-proto_earth_watm.set_T_surface(Ts)
-proto_earth_watm.set_rho_surface(rhos)
+proto_earth_watm.set_P_surface(P_s)
+proto_earth_watm.set_T_surface(T_s)
+proto_earth_watm.set_rho_surface(rho_s)
 
 B_cm = proto_earth.Bcm
 B_ma = proto_earth.R
