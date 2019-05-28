@@ -10,7 +10,7 @@ Created on Tue Apr  2 13:11:10 2019
 ####################### Libraries and constants ###############################
 ###############################################################################
 
-path = '/home/sergio/Documents/SpiPGen/'     # Set local project folder
+path = '/home/sergio/Documents/WoMa/'     # Set local project folder
 import os
 os.chdir(path)
 import sys
@@ -19,7 +19,7 @@ sys.path.append(path)
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
-import eos
+import weos
 
 R_earth = 6371000;
 M_earth = 5.972E24;
@@ -108,7 +108,7 @@ my_planet.set_core_properties(101, 1, [np.nan, 0.])
 
 Ps   = 0
 Ts   = 300
-rhos = eos.find_rho_fixed_P_T(Ps, Ts, 101)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, 101)
 
 my_planet.set_P_surface(Ps)
 my_planet.set_T_surface(Ts)
@@ -129,20 +129,22 @@ plot_spin_profile(my_spinning_planet)
 
 my_planet = woma.Planet(2)
 
-my_planet.set_core_properties(101, 1, [np.nan, 0])
-my_planet.set_mantle_properties(102, 1, [np.nan, 0])
+my_planet.set_core_properties(101, 1, [None, 0])
+my_planet.set_mantle_properties(1, 1, [None, 0])
 
-Ps   = 0
-Ts   = 600
-rhos = eos.find_rho_fixed_P_T(Ps, Ts, 102)
+Ps   = 1e4
+Ts   = 300
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, 1)
 
 my_planet.set_P_surface(Ps)
 my_planet.set_T_surface(Ts)
 my_planet.set_rho_surface(rhos)
 
-my_planet.fix_B_given_R_M(R_earth, 0.5*M_earth)
-#my_planet.fix_M_given_B_R(0.2*R_earth, R_earth, M_earth)
+#my_planet.fix_B_given_R_M(R_earth, M_earth)
+my_planet.fix_M_given_B_R(0.99*R_earth, R_earth, M_earth)
 #my_planet.fix_R_given_M_B(2*M_earth, 0.6*R_earth, 20*R_earth)
+
+my_planet.compute_spherical_profile_given_R_M_B(R_earth, M_earth, 0.99*R_earth)
 
 plot_spherical_profile(my_planet)
 
@@ -163,7 +165,7 @@ my_planet.set_atmosphere_properties(102, 1, [np.nan, 0])
 
 Ps   = 0
 Ts   = 300
-rhos = eos.find_rho_fixed_P_T(Ps, Ts, 102)
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, 102)
 
 my_planet.set_P_surface(Ps)
 my_planet.set_T_surface(Ts)
@@ -184,3 +186,134 @@ spin_example = woma.Spin(my_planet)
 spin_example.solve(4, 1.2*my_planet.R, 1.1*my_planet.R)
 
 plot_spin_profile(spin_example)
+
+##################################################
+############ jacob planets #######################
+
+# + ~canonical proto-Earth: m = 0.887 M_E, mass ratio 30 iron : 70 granite (both Tillotson).
+# isothermal 2000 K
+
+proto_earth = woma.Planet(2)
+M = 0.887*M_earth
+
+proto_earth.set_core_properties(100, 1, [None, 0])
+proto_earth.set_mantle_properties(101, 1, [None, 0])
+
+Ps   = 1e9
+Ts   = 2000
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, 101)
+
+proto_earth.set_P_surface(Ps)
+proto_earth.set_T_surface(Ts)
+proto_earth.set_rho_surface(rhos)
+
+#proto_earth.fix_B_given_R_M(1.00*R_earth, M)
+
+R_low = 0.98*R_earth
+R_high = 1.00*R_earth
+mass_f_core = 0.3
+
+for _ in range(5):
+    R_try = (R_low + R_high)/2.
+    proto_earth.fix_B_given_R_M(R_try, M)
+    
+    core_mass_fraction = np.max(proto_earth.A1_M[proto_earth.A1_material == 100])/proto_earth.M
+    print(core_mass_fraction)
+    
+    if core_mass_fraction < mass_f_core:
+        R_high = R_try
+    else:
+        R_low = R_try
+
+
+plot_spherical_profile(proto_earth)
+
+# + ~canonical Theia: m = 0.133, same mass ratio (same mass ratio)
+# isothermal 2000 K
+
+theia = woma.Planet(2)
+M = 0.133*M_earth
+
+theia.set_core_properties(100, 1, [None, 0])
+theia.set_mantle_properties(101, 1, [None, 0])
+
+Ps   = 0
+Ts   = 2000
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, 101)
+
+theia.set_P_surface(Ps)
+theia.set_T_surface(Ts)
+theia.set_rho_surface(rhos)
+
+R_low = 0.60*R_earth
+R_high = 0.65*R_earth
+mass_f_core = 0.3
+
+for _ in range(10):
+    R_try = (R_low + R_high)/2.
+    theia.fix_B_given_R_M(R_try, M)
+    
+    core_mass_fraction = np.max(theia.A1_M[theia.A1_material == 100])/theia.M
+    print(core_mass_fraction)
+    
+    if core_mass_fraction < mass_f_core:
+        R_high = R_try
+    else:
+        R_low = R_try
+
+
+plot_spherical_profile(theia)
+
+# + proto-Earth with atmosphere: atmosphere mass = 1e-2, 1e-3, 1e-4, 1e-5, 1e-6 M_E
+# HHe atm
+
+proto_earth_watm = woma.Planet(3)
+
+M = proto_earth.M + 1e-6*M_earth
+
+proto_earth_watm.set_core_properties(100, 1, [None, 0])
+proto_earth_watm.set_mantle_properties(101, 1, [None, 0])
+proto_earth_watm.set_atmosphere_properties(0, 1, [None, 0])
+
+Ps   = 5e8
+Ts   = 2000
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, 0)
+
+proto_earth_watm.set_P_surface(Ps)
+proto_earth_watm.set_T_surface(Ts)
+proto_earth_watm.set_rho_surface(rhos)
+
+B_cm = proto_earth.Bcm
+B_ma = proto_earth.R
+
+proto_earth_watm.fix_R_given_M_Bcm_Bma(M, B_cm, B_ma, 1.5*B_ma)
+
+plot_spherical_profile(proto_earth_watm)
+
+# + proto-Earth with atmosphere: atmosphere mass = 1e-2, 1e-3, 1e-4, 1e-5, 1e-6 M_E
+# N2 atm
+
+proto_earth_watm = woma.Planet(3)
+
+M = proto_earth.M + 1e-2*M_earth
+
+proto_earth_watm.set_core_properties(100, 1, [None, 0])
+proto_earth_watm.set_mantle_properties(101, 1, [None, 0])
+proto_earth_watm.set_atmosphere_properties(1, 1, [None, 0])
+
+Ps   = 1e7
+Ts   = 2000
+rhos = weos.find_rho_fixed_P_T(Ps, Ts, 1)
+
+proto_earth_watm.set_P_surface(Ps)
+proto_earth_watm.set_T_surface(Ts)
+proto_earth_watm.set_rho_surface(rhos)
+
+B_cm = proto_earth.Bcm
+B_ma = proto_earth.R
+
+proto_earth_watm.fix_R_given_M_Bcm_Bma(M, B_cm, B_ma, 1.1*B_ma)
+
+proto_earth_watm.compute_spherical_profile_given_R_M_Bcm_Bma(1.06*B_ma, M, B_cm, B_ma)
+
+plot_spherical_profile(proto_earth_watm)

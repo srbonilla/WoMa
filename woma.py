@@ -32,14 +32,19 @@ def set_up():
         and saves the results in the data folder
     
     """
-    
+    print('Creating u cold curve for material 100...\n')
     ucold_array_100 = weos._create_ucold_array(100)
-    ucold_array_101 = weos._create_ucold_array(101)
-    ucold_array_102 = weos._create_ucold_array(102)
-    
     np.save("data/ucold_array_100", ucold_array_100)
+    del ucold_array_100
+    print('Creating u cold curve for material 101...\n')
+    ucold_array_101 = weos._create_ucold_array(101)
     np.save("data/ucold_array_101", ucold_array_101)
+    del ucold_array_101
+    print('Creating u cold curve for material 102...\n')
+    ucold_array_102 = weos._create_ucold_array(102)
     np.save("data/ucold_array_102", ucold_array_102)
+    del ucold_array_102
+
       
 ############################## 1 layer ########################################
     

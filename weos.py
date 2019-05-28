@@ -14,38 +14,8 @@ from numba import jit
 
 G       = 6.67408E-11;
 R_earth = 6371000;
-M_earth = 5.972E24;
-
-# Material IDs ( = type_id * type_factor + unit_id)
-type_factor = 100
-Di_mat_type = {
-    "idg"       : 0,
-    "Til"       : 1,
-    "HM80"      : 2,
-    "SESAME"    : 3,
-    }
-Di_mat_id   = {
-    # Ideal Gas
-    "idg_HHe"       : Di_mat_type["idg"]*type_factor,
-    # Tillotson
-    "Til_iron"      : Di_mat_type["Til"]*type_factor,
-    "Til_granite"   : Di_mat_type["Til"]*type_factor + 1,
-    "Til_water"     : Di_mat_type["Til"]*type_factor + 2,
-    # Hubbard & MacFarlane (1980) Uranus/Neptune
-    "HM80_HHe"      : Di_mat_type["HM80"]*type_factor,      # Hydrogen-helium atmosphere
-    "HM80_ice"      : Di_mat_type["HM80"]*type_factor + 1,  # H20-CH4-NH3 ice mix
-    "HM80_rock"     : Di_mat_type["HM80"]*type_factor + 2,  # SiO2-MgO-FeS-FeO rock mix
-    # SESAME
-    "SESAME_iron"   : Di_mat_type["SESAME"]*type_factor,        # 2140
-    "SESAME_basalt" : Di_mat_type["SESAME"]*type_factor + 1,    # 7530
-    "SESAME_water"  : Di_mat_type["SESAME"]*type_factor + 2,    # 7154
-    "SS08_water"    : Di_mat_type["SESAME"]*type_factor + 3,    # Senft & Stewart (2008)
-    }
-# Temporary (?) separate variables because numba can't handle dictionaries
-id_Til_iron     = Di_mat_id["Til_iron"]
-id_Til_granite  = Di_mat_id["Til_granite"]
-id_Til_water    = Di_mat_id["Til_water"]
-   
+M_earth = 5.972E24;  
+R_gas   = 8.3145     # Gas constant (J K^-1 mol^-1)
 
 ###############################################################################
 ############################### Functions #####################################
@@ -71,11 +41,11 @@ def _P_EoS_Till(u, rho, mat_id):
     """
     # Material constants for Tillotson EoS
     # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
-    iron    = np.array([id_Til_iron, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
+    iron    = np.array([100, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
     granite = np.array([101, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0, 0])
     water   = np.array([102, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.925, 0, 0.875])
     
-    if (mat_id == id_Til_iron):
+    if (mat_id == 100):
         material = iron
     elif (mat_id == 101):
         material = granite
@@ -144,6 +114,44 @@ def _P_EoS_Till(u, rho, mat_id):
 
 
 @jit(nopython=True)
+def _P_EoS_idgas(u, rho, mat_id):
+    """ Computes pressure for Tillotson EoS.
+    
+        Args:
+            u (double)
+                Internal energy (SI).
+                
+            rho (double) 
+                Density (SI).
+            
+            mat_id ([int])
+                Material id.
+                
+        Returns:
+            P (double)
+                Pressure (SI).
+    """
+    # Material constants for ideal gas EoS
+    # mat_id, gamma
+    HHe = np.array([0, 1.4])
+    N2  = np.array([1, 1.4])
+    
+    if (mat_id == 0):
+        material = HHe
+    elif (mat_id == 1):
+        material = N2
+    else:
+        print("Material not implemented")
+        return None
+        
+    gamma    = material[1]
+
+    P = (gamma - 1)*u*rho
+        
+    return P
+
+
+@jit(nopython=True)
 def P_EoS(u, rho, mat_id):
     """ Computes pressure for a given material.
     
@@ -161,7 +169,11 @@ def P_EoS(u, rho, mat_id):
             P (double)
                 Pressure (SI).
     """
-    if (mat_id == id_Til_iron):
+    if (mat_id == 0):
+        return _P_EoS_idgas(u, rho, mat_id)
+    elif (mat_id == 1):
+        return _P_EoS_idgas(u, rho, mat_id)
+    elif (mat_id == 100):
         return _P_EoS_Till(u, rho, mat_id)
     elif (mat_id == 101):
         return _P_EoS_Till(u, rho, mat_id)
@@ -184,7 +196,9 @@ def _rho0_material(mat_id):
                 Density (SI).
     
     """
-    if (mat_id == id_Til_iron):     # Tillotson iron
+    if (mat_id in [0, 1]): # Ideal gases
+        return 0
+    elif (mat_id == 100):     # Tillotson iron
         return 7800.
     elif (mat_id == 101):   # Tillotson granite   
         return 2680.
@@ -221,7 +235,11 @@ def _spec_c(mat_id):
                 Capacity (SI).
     
     """
-    if (mat_id == id_Til_iron):     # Tillotson iron
+    if mat_id == 0:         # Ideal gas HHe
+        return 9093.98
+    elif mat_id == 1:       # Ideal gas N2
+        return 742.36
+    elif (mat_id == 100):   # Tillotson iron
         return 449
     elif (mat_id == 101):   # Tillotson granite   
         return 790
@@ -263,15 +281,19 @@ def ucold(rho, mat_id, N):
             uc (float)
                 Cold internal energy (SI).
     """
-
-    rho0 = _rho0_material(mat_id)
-    drho = (rho - rho0)/N
-    x = rho0
-    uc = 1e-9
-
-    for j in range(N):
-        x += drho
-        uc += P_EoS(uc, x, mat_id)*drho/x**2
+    if mat_id in [0, 1]:
+        return 0
+    
+    elif mat_id in [100, 101, 102]:
+        
+        rho0 = _rho0_material(mat_id)
+        drho = (rho - rho0)/N
+        x = rho0
+        uc = 1e-9
+    
+        for j in range(N):
+            x += drho
+            uc += P_EoS(uc, x, mat_id)*drho/x**2
 
     return uc
 
@@ -385,7 +407,12 @@ def _ucold_tab(rho, mat_id, ucold_array):
                 cold internal energy (SI).
     """
     mat_id = int(mat_id)
-    if mat_id == id_Til_iron or mat_id == 101 or mat_id == 102:
+    
+    if mat_id in [0, 1]:
+        
+        return 0.
+    
+    elif mat_id in [100, 101, 102]:
         
         nrow = ucold_array.shape[0]
         rho_min = 100
@@ -525,8 +552,9 @@ def load_ucold_array(mat_id):
                 Precomputed values of cold internal energy
                 with function _create_ucold_array() (SI).
     """
-    
-    if mat_id == id_Til_iron:
+    if mat_id in [0, 1]:
+        return np.array([0.])
+    elif mat_id == 100:
         ucold_array = np.load('data/ucold_array_100.npy')
     elif mat_id == 101:
         ucold_array = np.load('data/ucold_array_101.npy')
@@ -633,3 +661,19 @@ def find_P_fixed_T_rho(T, rho, mat_id):
         return 0
     
     return -1
+
+
+
+# =============================================================================
+# gamma = 7/5
+# 
+# n_H2_n_He   = 2 / (1/0.75 - 1)
+# m_mol_HHe   = (2*n_H2_n_He + 4) / (n_H2_n_He + 1)
+# 
+# m_mol_N2 = 28
+# cgs_to_SI_m = 0.001
+# 
+# m_mol = m_mol_HHe
+# 
+# R_gas / (m_mol * cgs_to_SI_m * (gamma - 1))
+# =============================================================================

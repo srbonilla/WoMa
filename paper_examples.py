@@ -10,7 +10,7 @@ Created on Tue Apr  2 13:11:10 2019
 ####################### Libraries and constants ###############################
 ###############################################################################
 
-path = '/home/sergio/Documents/SpiPGen/'     # Set local project folder
+path = '/home/sergio/Documents/WoMa/'     # Set local project folder
 import os
 os.chdir(path)
 import sys
