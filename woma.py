@@ -2289,6 +2289,95 @@ def Planet(N_layers):
         print("for the core, mantle and atmosphere of the planet.")
         planet = _3l_planet()
         return planet
+    
+# Extra functions
+        
+def add_atmosphere(planet, mat_id_atm, T_rho_id_atm, T_rho_args_atm, rho_stop=1e-3):
+    
+    A1_R_old        = planet.A1_R
+    A1_M_old        = planet.A1_M
+    A1_P_old        = planet.A1_P
+    A1_T_old        = planet.A1_T
+    A1_rho_old      = planet.A1_rho
+    A1_u_old        = planet.A1_u
+    A1_material_old = planet.A1_material
+    
+    A1_R = [A1_R_old[0]]
+    A1_M = [A1_M_old[0]]
+    A1_P = [A1_P_old[0]]
+    A1_T = [A1_T_old[0]]
+    A1_rho = []
+    A1_u = [A1_u_old[0]]
+    A1_material = [mat_id_atm]
+    
+    dr = A1_R_old[-2]
+    
+    u_cold_array_atm = weos.load_u_cold_array(mat_id_atm)
+    
+    rho_transition = weos._find_rho_fixed_P_T(A1_P_old[0], A1_T_old[0],
+                                              mat_id_atm, u_cold_array_atm)
+    
+    A1_rho.append(rho_transition)
+    
+    c_atm = weos._C_V(mat_id_atm)
+    
+    if T_rho_id_atm == 1:
+        T_rho_args_atm[0] = A1_T[0]*rho_transition**(-T_rho_args_atm[1])
+        
+    T_rho_args_atm = np.array(T_rho_args_atm)
+    
+    max_iteration = 5000
+    iteration = 1
+        
+    while A1_rho[-1] > rho_stop:
+        A1_R.append(A1_R[-1] + dr)
+        A1_M.append(A1_M[-1] + 4*np.pi*A1_R[-1]*A1_R[-1]*A1_rho[-1]*dr)
+        A1_P.append(A1_P[-1] - G*A1_M[-1]*A1_rho[-1]/(A1_R[-1]**2)*dr)
+        rho = weos._find_rho(A1_P[-1], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
+                             0.9*A1_rho[-1], A1_rho[-1], u_cold_array_atm)
+        A1_rho.append(rho)
+        A1_T.append(weos.T_rho(rho, T_rho_id_atm, T_rho_args_atm))
+        u = weos._u_cold_tab(rho, mat_id_atm, u_cold_array_atm) + c_atm*A1_T[-1]
+        A1_u.append(u)
+        A1_material.append(mat_id_atm)   
+
+        iteration = iteration + 1
+        if iteration >= max_iteration:
+            break
+
+    M_new = A1_M[-1]
+    R_new = A1_R[-1]
+    A1_R_new = np.concatenate((np.flip(A1_R[1:]), A1_R_old))
+    A1_M_new = np.concatenate((np.flip(A1_M[1:]), A1_M_old))
+    A1_P_new = np.concatenate((np.flip(A1_P[1:]), A1_P_old))
+    A1_T_new = np.concatenate((np.flip(A1_T[1:]), A1_T_old))
+    A1_rho_new = np.concatenate((np.flip(A1_rho[1:]), A1_rho_old))
+    A1_u_new = np.concatenate((np.flip(A1_u[1:]), A1_u_old))
+    A1_material_new = np.concatenate((np.flip(A1_material[1:]), A1_material_old))
+    
+    if planet.N_layers == 2:
+        
+        new_planet = Planet(3)
+             
+        new_planet.set_core_properties(planet.mat_id_core, planet.T_rho_id_core, planet.T_rho_args_core)
+        new_planet.set_mantle_properties(planet.mat_id_mantle, planet.T_rho_id_mantle, planet.T_rho_args_mantle)
+        new_planet.set_atmosphere_properties(mat_id_atm, T_rho_id_atm, T_rho_args_atm)
+        
+        new_planet.M           = M_new
+        new_planet.R           = R_new
+        new_planet.Bcm         = planet.Bcm
+        new_planet.Bma         = planet.R
+        new_planet.I           = np.nan 
+        new_planet.A1_R        = A1_R_new
+        new_planet.A1_M        = A1_M_new
+        new_planet.A1_P        = A1_P_new
+        new_planet.A1_T        = A1_T_new
+        new_planet.A1_rho      = A1_rho_new
+        new_planet.A1_u        = A1_u_new
+        new_planet.A1_material = A1_material_new
+        
+    return new_planet
+        
 
 ###############################################################################
 ####################### Spining profile functions #############################
@@ -4505,7 +4594,7 @@ class _3l_genspheroid():
         
         u_cold_array_core   = weos.load_u_cold_array(self.mat_id_core)
         u_cold_array_mantle = weos.load_u_cold_array(self.mat_id_mantle)
-        u_cold_array_atm    = eos.load_u_cold_array(self.mat_id_atm)
+        u_cold_array_atm    = weos.load_u_cold_array(self.mat_id_atm)
         
         x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
             picle_placement_3layer(self.A1_equator, self.A1_rho_equator,
