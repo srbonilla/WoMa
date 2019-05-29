@@ -29,6 +29,7 @@ Di_mat_id   = {
     # Ideal Gas
     "idg_HHe"       : Di_mat_type["idg"]*type_factor,
     "idg_N2"        : Di_mat_type["idg"]*type_factor + 1,
+    "idg_CO2"       : Di_mat_type["idg"]*type_factor + 2,
     # Tillotson
     "Til_iron"      : Di_mat_type["Til"]*type_factor,
     "Til_granite"   : Di_mat_type["Til"]*type_factor + 1,
@@ -46,6 +47,7 @@ Di_mat_id   = {
 # Separate variables because numba can't handle dictionaries
 id_idg_HHe          = Di_mat_id["idg_HHe"]
 id_idg_N2           = Di_mat_id["idg_N2"]
+id_idg_CO2          = Di_mat_id["idg_CO2"]
 id_Til_iron         = Di_mat_id["Til_iron"]
 id_Til_granite      = Di_mat_id["Til_granite"]
 id_Til_water        = Di_mat_id["Til_water"]
@@ -179,11 +181,14 @@ def _P_EoS_idg(u, rho, mat_id):
     # mat_id, gamma
     HHe = np.array([id_idg_HHe, 1.4])
     N2  = np.array([id_idg_N2, 1.4])
+    CO2 = np.array([id_idg_CO2, 1.29])
     
     if (mat_id == id_idg_HHe):
         material = HHe
     elif (mat_id == id_idg_N2):
         material = N2
+    elif (mat_id == id_idg_CO2):
+        material = CO2
     else:
         print("Material not implemented")
         return None
@@ -216,6 +221,8 @@ def P_EoS(u, rho, mat_id):
         return _P_EoS_idg(u, rho, mat_id)
     elif (mat_id == id_idg_N2):
         return _P_EoS_idg(u, rho, mat_id)
+    elif (mat_id == id_idg_CO2):
+        return _P_EoS_idg(u, rho, mat_id)
     elif (mat_id == id_Til_iron):
         return _P_EoS_Till(u, rho, mat_id)
     elif (mat_id == id_Til_granite):
@@ -239,7 +246,7 @@ def _rho_0_material(mat_id):
                 Density (SI).
     
     """
-    if (mat_id in [id_idg_HHe, id_idg_N2]):
+    if (mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]):
         return 0
     elif (mat_id == id_Til_iron):
         return 7800.
@@ -282,6 +289,8 @@ def _C_V(mat_id):
         return 9093.98
     elif mat_id == id_idg_N2:
         return 742.36
+    elif mat_id == id_idg_CO2:
+        return 661.38
     elif (mat_id == id_Til_iron):
         return 449
     elif (mat_id == id_Til_granite):
@@ -324,7 +333,7 @@ def u_cold(rho, mat_id, N):
             u_cold (float)
                 Cold internal energy (SI).
     """
-    if mat_id in [id_idg_HHe, id_idg_N2]:
+    if mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
         return 0
     
     elif mat_id in [id_Til_iron, id_Til_granite, id_Til_water]:
@@ -451,7 +460,7 @@ def _u_cold_tab(rho, mat_id, u_cold_array):
     """
     mat_id = int(mat_id)
     
-    if mat_id in [id_idg_HHe, id_idg_N2]:
+    if mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
         
         return 0.
     
@@ -595,7 +604,7 @@ def load_u_cold_array(mat_id):
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() (SI).
     """
-    if mat_id in [id_idg_HHe, id_idg_N2]:
+    if mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
         return np.array([0.])
     elif mat_id == id_Til_iron:
         u_cold_array = np.load(Fp_u_cold_Til_iron)
