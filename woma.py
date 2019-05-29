@@ -19,6 +19,7 @@ from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 import os
 import sys
+import h5py
 
 # Go to the WoMa directory
 dir = os.path.dirname(os.path.realpath(__file__))
@@ -30,6 +31,92 @@ G = 6.67408E-11
 R_earth = 6371000
 M_earth = 5.972E24
 
+# Misc utilities (move to separate file...)
+def check_end(string, end):
+    """ Check that a string ends with the required characters and append them
+        if not.
+    """
+    if string[-len(end):] != end:
+        string  += end
+
+    return string
+
+# Output
+Di_hdf5_prof_label  = {
+    "N_layers"  : "Number of Layers",
+    "r"         : "Radii",
+    "m_enc"     : "Enclosed Masses",
+    "rho"       : "Densities",
+    "T"         : "Temperatures",
+    "u"         : "Specific Internal Energies",
+    "P"         : "Pressures",
+    "mat_id"    : "Material ID",
+    }
+
+def save_prof_data(f, N_layers, A1_r, A1_m_enc, A1_rho, A1_T, A1_P, A1_u, 
+                   A1_mat_id):
+    """ Save the profile data.
+
+        Args:
+            f (h5py File)
+                The opened hdf5 data file (with "w").
+
+            ...
+    """
+    # Group
+    grp = f.create_group("/profile")
+
+    # Attributes
+    grp.attrs[Di_hdf5_prof_label["N_layers"]]   = N_layers
+
+    # Arrays
+    grp.create_dataset(Di_hdf5_prof_label["r"], data=A1_r, dtype="d")
+    grp.create_dataset(Di_hdf5_prof_label["m_enc"], data=A1_m_enc, dtype="d")
+    grp.create_dataset(Di_hdf5_prof_label["rho"], data=A1_rho, dtype="d")
+    grp.create_dataset(Di_hdf5_prof_label["T"], data=A1_T, dtype="d")
+    grp.create_dataset(Di_hdf5_prof_label["P"], data=A1_P, dtype="d")
+    grp.create_dataset(Di_hdf5_prof_label["u"], data=A1_u, dtype="d")
+    grp.create_dataset(Di_hdf5_prof_label["mat_id"], data=A1_mat_id, dtype="i")
+
+def get_prof_data(f, param):
+    """ Load a profile attribute or array.
+
+        Args:
+            f (h5py File)
+                The opened hdf5 data file (with "r").
+
+            param (str)
+                The array or attribute to get. See Di_hdf5_prof_label for
+                details.
+
+        Returns:
+            data (?)
+                The array or attribute (std units).
+    """
+    return f["profile/" + Di_hdf5_prof_label[param]][()]
+
+def multi_get_prof_data(f, A1_param):
+    """ Load multiple profile attributes or arrays.
+
+        Args:
+            f (h5py File)
+                The opened hdf5 data file (with "r").
+
+            A1_param ([str])
+                List of the arrays or attributes to get. See Di_hdf5_prof_label
+                for details.
+
+        Returns:
+            A1_data ([?])
+                The list of the arrays or attributes (std units).
+    """
+    A1_data = []
+    # Load each requested array
+    for param in A1_param:
+        A1_data.append(get_prof_data(f, param))
+
+    return A1_data
+    
 ###############################################################################
 ####################### Spherical profile functions ###########################
 ###############################################################################
@@ -111,7 +198,7 @@ def integrate_1layer(N, R, M, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_args,
             r ([float]):
                 Array of radii (SI).
                 
-            m ([float]):
+            m_enc ([float]):
                 Array of cumulative mass (SI).
                 
             P ([float]):
@@ -132,7 +219,7 @@ def integrate_1layer(N, R, M, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_args,
     """
     
     r   = np.linspace(R, 0, int(N))
-    m   = np.zeros(r.shape)
+    m_enc   = np.zeros(r.shape)
     P   = np.zeros(r.shape)
     T   = np.zeros(r.shape)
     rho = np.zeros(r.shape)
@@ -147,7 +234,7 @@ def integrate_1layer(N, R, M, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_args,
     
     dr = r[0] - r[1]
     
-    m[0]    = M
+    m_enc[0]    = M
     P[0]    = P_s
     T[0]    = T_s
     rho[0]  = rho_s
@@ -155,25 +242,25 @@ def integrate_1layer(N, R, M, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_args,
     
     for i in range(1, r.shape[0]):
             
-        m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
-        P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
+        m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
+        P[i]   = P[i - 1] + G*m_enc[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
         rho[i] = weos._find_rho(P[i], mat_id, T_rho_id, T_rho_args,
                                rho[i - 1], 1.1*rho[i - 1], u_cold_array)
         T[i]   = weos.T_rho(rho[i], T_rho_id, T_rho_args)
         u[i]   = weos._u_cold_tab(rho[i], mat_id, u_cold_array) + C_V*T[i]
         
-        if m[i] < 0:
+        if m_enc[i] < 0:
             
-            return r, m, P, T, rho, u, mat
+            return r, m_enc, P, T, rho, u, mat
         
-    return r, m, P, T, rho, u, mat
+    return r, m_enc, P, T, rho, u, mat
 
 @jit(nopython=True)
 def find_mass_1layer(N, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_args,
                      u_cold_array):
     
     """ Finder of the total mass of the planet.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -216,20 +303,20 @@ def find_mass_1layer(N, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_args,
     
     M_min = 0.
     
-    r, m, P, T, rho, u, mat = integrate_1layer(N, R, M_max, P_s, T_s, rho_s, mat_id,
+    r, m_enc, P, T, rho, u, mat = integrate_1layer(N, R, M_max, P_s, T_s, rho_s, mat_id,
                                                T_rho_id, T_rho_args, u_cold_array)
     
-    if m[-1] > 0.:
+    if m_enc[-1] > 0.:
         
         while np.abs(M_min - M_max) > 1e-10*M_min:
             
             M_try = (M_min + M_max)/2.
             
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_1layer(N, R, M_try, P_s, T_s, rho_s, mat_id,
                                    T_rho_id, T_rho_args, u_cold_array)
             
-            if m[-1] > 0.:
+            if m_enc[-1] > 0.:
                 M_max = M_try
             else:
                 M_min = M_try
@@ -245,7 +332,7 @@ def find_radius_1layer(N, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_arg
                        u_cold_array, iterations = 40):
     
     """ Finder of the total radius of the planet.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -288,20 +375,20 @@ def find_radius_1layer(N, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_id, T_rho_arg
     
     R_min = 0.
     
-    r, m, P, T, rho, u, mat = integrate_1layer(N, R_max, M, P_s, T_s, rho_s, mat_id,
+    r, m_enc, P, T, rho, u, mat = integrate_1layer(N, R_max, M, P_s, T_s, rho_s, mat_id,
                                                T_rho_id, T_rho_args, u_cold_array)
     
-    if m[-1] == 0.:
+    if m_enc[-1] == 0.:
         
         for i in tqdm(range(iterations), desc="Finding R given M"):
             
             R_try = (R_min + R_max)/2.
             
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_1layer(N, R_try, M, P_s, T_s, rho_s, mat_id,
                                    T_rho_id, T_rho_args, u_cold_array)
             
-            if m[-1] > 0.:
+            if m_enc[-1] > 0.:
                 R_min = R_try
             else:
                 R_max = R_try
@@ -375,7 +462,7 @@ def integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm,
             r ([float]):
                 Array of radii (SI).
                 
-            m ([float]):
+            m_enc ([float]):
                 Array of cumulative mass (SI).
                 
             P ([float]):
@@ -395,7 +482,7 @@ def integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm,
             
     """
     r   = np.linspace(R, 0, int(N))
-    m   = np.zeros(r.shape)
+    m_enc   = np.zeros(r.shape)
     P   = np.zeros(r.shape)
     T   = np.zeros(r.shape)
     rho = np.zeros(r.shape)
@@ -411,7 +498,7 @@ def integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm,
     
     dr = r[0] - r[1]
     
-    m[0]    = M
+    m_enc[0]    = M
     P[0]    = P_s
     T[0]    = T_s
     rho[0]  = rho_s
@@ -423,16 +510,16 @@ def integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm,
         # mantle
         if r[i] > Bcm:
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho[i - 1], u_cold_array_mantle)
             T[i]   = weos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
             u[i]   = weos._u_cold_tab(rho[i], mat_id_mantle, u_cold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
-            if m[i] < 0: 
-                return r, m, P, T, rho, u, mat
+            if m_enc[i] < 0: 
+                return r, m_enc, P, T, rho, u, mat
         
         # boundary core mantle
         elif r[i] <= Bcm and r[i - 1] > Bcm:
@@ -443,8 +530,8 @@ def integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm,
             if T_rho_id_core == 1:
                 T_rho_args_core[0] = T[i - 1]*rho_transition**(-T_rho_args_core[1])
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho_transition/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho_transition/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho_transition, u_cold_array_core)
             T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
@@ -454,18 +541,18 @@ def integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm,
         # core  
         elif r[i] <= Bcm:
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho[i - 1], u_cold_array_core)
             T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
             u[i]   = weos._u_cold_tab(rho[i], mat_id_core, u_cold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
-            if m[i] < 0: 
-                return r, m, P, T, rho, u, mat
+            if m_enc[i] < 0: 
+                return r, m_enc, P, T, rho, u, mat
         
-    return r, m, P, T, rho, u, mat
+    return r, m_enc, P, T, rho, u, mat
 
 @jit(nopython=True)
 def find_mass_2layer(N, R, M_max, P_s, T_s, rho_s, Bcm,
@@ -473,7 +560,7 @@ def find_mass_2layer(N, R, M_max, P_s, T_s, rho_s, Bcm,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      u_cold_array_core, u_cold_array_mantle):
     """ Finder of the total mass of the planet.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -531,25 +618,25 @@ def find_mass_2layer(N, R, M_max, P_s, T_s, rho_s, Bcm,
     """
     M_min = 0.
     
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_2layer(N, R, M_max, P_s, T_s, rho_s, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle)
     
-    if m[-1] > 0.:
+    if m_enc[-1] > 0.:
         
         while np.abs(M_min - M_max) > 1e-10*M_min:
             
             M_try = (M_min + M_max)/2.
             
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_2layer(N, R, M_try, P_s, T_s, rho_s, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle)
             
-            if m[-1] > 0.:
+            if m_enc[-1] > 0.:
                 M_max = M_try
             else:
                 M_min = M_try
@@ -566,7 +653,7 @@ def find_radius_2layer(N, R_max, M, P_s, T_s, rho_s, Bcm,
                      mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                      u_cold_array_core, u_cold_array_mantle, iterations = 40):
     """ Finder of the total radius of the planet.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -652,13 +739,13 @@ def find_radius_2layer(N, R_max, M, P_s, T_s, rho_s, Bcm,
             
             R_try = (R_min + R_max)/2.
             
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_2layer(N, R_try, M, P_s, T_s, rho_s, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle)
             
-            if m[-1] > 0.:
+            if m_enc[-1] > 0.:
                 R_min = R_try
             else:
                 R_max = R_try
@@ -671,7 +758,7 @@ def find_boundary_2layer(N, R, M, P_s, T_s, rho_s,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle, iterations = 40):
     """ Finder of the boundary of the planet.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -758,13 +845,13 @@ def find_boundary_2layer(N, R, M, P_s, T_s, rho_s,
             
             B_try = (B_min + B_max)/2.
             
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_2layer(N, R, M, P_s, T_s, rho_s, B_try,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle)
             
-            if m[-1] > 0.:
+            if m_enc[-1] > 0.:
                 B_min = B_try
             else:
                 B_max = B_try
@@ -850,7 +937,7 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
             r ([float]):
                 Array of radii (SI).
                 
-            m ([float]):
+            m_enc ([float]):
                 Array of cumulative mass (SI).
                 
             P ([float]):
@@ -871,7 +958,7 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
     """
     
     r   = np.linspace(R, 0, int(N))
-    m   = np.zeros(r.shape)
+    m_enc   = np.zeros(r.shape)
     P   = np.zeros(r.shape)
     T   = np.zeros(r.shape)
     rho = np.zeros(r.shape)
@@ -888,7 +975,7 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
     
     dr = r[0] - r[1]
     
-    m[0]    = M
+    m_enc[0]    = M
     P[0]    = P_s
     T[0]    = T_s
     rho[0]  = rho_s
@@ -900,16 +987,16 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
         # atm
         if r[i] > Bma:
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                                    rho[i - 1], 1.1*rho[i - 1], u_cold_array_atm)
             T[i]   = weos.T_rho(rho[i], T_rho_id_atm, T_rho_args_atm)
             u[i]   = weos._u_cold_tab(rho[i], mat_id_atm, u_cold_array_atm) + c_atm*T[i]
             mat[i] = mat_id_atm
             
-            if m[i] < 0: 
-                return r, m, P, T, rho, u, mat
+            if m_enc[i] < 0: 
+                return r, m_enc, P, T, rho, u, mat
         
         # boundary mantle atm
         elif r[i] <= Bma and r[i - 1] > Bma:
@@ -920,8 +1007,8 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
             if T_rho_id_mantle == 1:
                 T_rho_args_mantle[0] = T[i - 1]*rho_transition**(-T_rho_args_mantle[1])
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho_transition/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho_transition/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho_transition, u_cold_array_mantle)
             T[i]   = weos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
@@ -931,16 +1018,16 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
         # mantle
         elif r[i] > Bcm:
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                                    rho[i - 1], 1.1*rho[i - 1], u_cold_array_mantle)
             T[i]   = weos.T_rho(rho[i], T_rho_id_mantle, T_rho_args_mantle)
             u[i]   = weos._u_cold_tab(rho[i], mat_id_mantle, u_cold_array_mantle) + c_mantle*T[i]
             mat[i] = mat_id_mantle
             
-            if m[i] < 0: 
-                return r, m, P, T, rho, u, mat
+            if m_enc[i] < 0: 
+                return r, m_enc, P, T, rho, u, mat
         
         # boundary core mantle
         elif r[i] <= Bcm and r[i - 1] > Bcm:
@@ -951,8 +1038,8 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
             if T_rho_id_core == 1:
                 T_rho_args_core[0] = T[i - 1]*rho_transition**(-T_rho_args_core[1])
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho_transition/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho_transition*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho_transition/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho_transition, u_cold_array_core)
             T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
@@ -962,18 +1049,18 @@ def integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma,
         # core  
         elif r[i] <= Bcm:
             
-            m[i]   = m[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
-            P[i]   = P[i - 1] + G*m[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
+            m_enc[i]   = m_enc[i - 1] - 4*np.pi*r[i - 1]*r[i - 1]*rho[i - 1]*dr
+            P[i]   = P[i - 1] + G*m_enc[i - 1]*rho[i - 1]/(r[i - 1]**2)*dr
             rho[i] = weos._find_rho(P[i], mat_id_core, T_rho_id_core, T_rho_args_core,
                                    rho[i - 1], 1.1*rho[i - 1], u_cold_array_core)
             T[i]   = weos.T_rho(rho[i], T_rho_id_core, T_rho_args_core)
             u[i]   = weos._u_cold_tab(rho[i], mat_id_core, u_cold_array_core) + c_core*T[i]
             mat[i] = mat_id_core
             
-            if m[i] < 0: 
-                return r, m, P, T, rho, u, mat
+            if m_enc[i] < 0: 
+                return r, m_enc, P, T, rho, u, mat
         
-    return r, m, P, T, rho, u, mat
+    return r, m_enc, P, T, rho, u, mat
 
 @jit(nopython=True)
 def find_mass_3layer(N, R, M_max, P_s, T_s, rho_s, Bcm, Bma,
@@ -982,7 +1069,7 @@ def find_mass_3layer(N, R, M_max, P_s, T_s, rho_s, Bcm, Bma,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                      u_cold_array_core, u_cold_array_mantle, u_cold_array_atm):
     """ Finder of the total mass of the planet.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -1057,27 +1144,27 @@ def find_mass_3layer(N, R, M_max, P_s, T_s, rho_s, Bcm, Bma,
     
     M_min = 0.
     
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_3layer(N, R, M_max, P_s, T_s, rho_s, Bcm, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
     
-    if m[-1] > 0.:
+    if m_enc[-1] > 0.:
         
         while np.abs(M_min - M_max) > 1e-10*M_min:
             
             M_try = (M_min + M_max)/2.
             
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_3layer(N, R, M_try, P_s, T_s, rho_s, Bcm, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
             
-            if m[-1] > 0.:
+            if m_enc[-1] > 0.:
                 M_max = M_try
             else:
                 M_min = M_try
@@ -1096,7 +1183,7 @@ def find_radius_3layer(N, R_max, M, P_s, T_s, rho_s, Bcm, Bma,
                      u_cold_array_core, u_cold_array_mantle, u_cold_array_atm,
                      iterations=40):
     """ Finder of the total mass of the planet.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -1176,25 +1263,25 @@ def find_radius_3layer(N, R_max, M, P_s, T_s, rho_s, Bcm, Bma,
     
     rhos_mantle = weos._find_rho_fixed_P_T(P_s, T_s, mat_id_mantle, u_cold_array_mantle)
     
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_2layer(N, Bma, M, P_s, T_s, rhos_mantle, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle)
         
-    if m[-1] == 0:
+    if m_enc[-1] == 0:
         print("Ran out of mass for a 2 layer planet with core and mantle.")
         print("Try increase the mass or reduce Bcm")
         return R_min
         
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_3layer(N, R_max, M, P_s, T_s, rho_s, Bcm, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
         
-    if m[-1] > 0:
+    if m_enc[-1] > 0:
         print("Excess of mass for a 3 layer planet with R = R_max.")
         print("Try reduce the mass or increase R_max")
         return R_max
@@ -1203,14 +1290,14 @@ def find_radius_3layer(N, R_max, M, P_s, T_s, rho_s, Bcm, Bma,
             
             R_try = (R_min + R_max)/2.
             
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_3layer(N, R_try, M, P_s, T_s, rho_s, Bcm, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
             
-            if m[-1] > 0.:
+            if m_enc[-1] > 0.:
                 R_min = R_try
             else:
                 R_max = R_try
@@ -1251,7 +1338,7 @@ def find_Bma_3layer(N, R, M, P_s, T_s, rho_s, Bcm,
                      iterations=40):
     """ Finder of the boundary mantle-atmosphere of the planet for
         fixed boundary core-mantle.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -1323,26 +1410,26 @@ def find_Bma_3layer(N, R, M, P_s, T_s, rho_s, Bcm,
     Bma_min = Bcm
     Bma_max = R
     
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_atm)
         
-    if m[-1] == 0:
+    if m_enc[-1] == 0:
         print("A planet made of core and atm. materials lacks mass.")
         print("Try increasing the mass, increasing Bcm or decreasing R.") 
         return Bma_min
         
     rhos_mantle = weos._find_rho_fixed_P_T(P_s, T_s, mat_id_mantle, u_cold_array_mantle)
     
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_2layer(N, R, M, P_s, T_s, rhos_mantle, Bcm,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle)
         
-    if m[-1] > 0:
+    if m_enc[-1] > 0:
         print("A planet made of core and mantle materials excess mass.")  
         print("Try decreasing the mass, decreasing Bcm or increasing R")
         return Bma_max
@@ -1351,14 +1438,14 @@ def find_Bma_3layer(N, R, M, P_s, T_s, rho_s, Bcm,
             
         Bma_try = (Bma_min + Bma_max)/2.
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm, Bma_try,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
             
-        if m[-1] > 0.:
+        if m_enc[-1] > 0.:
             Bma_min = Bma_try
         else:
             Bma_max = Bma_try
@@ -1374,7 +1461,7 @@ def find_Bcm_3layer(N, R, M, P_s, T_s, rho_s, Bma,
                      iterations=40):
     """ Finder of the boundary mantle-atmosphere of the planet for
         fixed boundary core-mantle.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -1446,24 +1533,24 @@ def find_Bcm_3layer(N, R, M, P_s, T_s, rho_s, Bma,
     Bcm_min = 0.
     Bcm_max = Bma
     
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_2layer(N, R, M, P_s, T_s, rho_s, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_atm)
         
-    if m[-1] > 0:
+    if m_enc[-1] > 0:
         print("A planet made of core and atm. materials excess mass.")
         print("Try decreasing the mass, increasing Bma or increasing R")
         return Bcm_min
     
-    r, m, P, T, rho, u, mat = \
+    r, m_enc, P, T, rho, u, mat = \
         integrate_2layer(N, R, M, P_s, T_s, rho_s, Bma,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_mantle, u_cold_array_atm)
         
-    if m[-1] == 0:
+    if m_enc[-1] == 0:
         print("A planet made of mantle and atm. materials lacks mass.")  
         print("Try increasing the mass, increasing Bma or decreasing R")
         return Bcm_max
@@ -1472,14 +1559,14 @@ def find_Bcm_3layer(N, R, M, P_s, T_s, rho_s, Bma,
             
         Bcm_try = (Bcm_min + Bcm_max)/2.
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm_try, Bma,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                          u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
             
-        if m[-1] > 0.:
+        if m_enc[-1] > 0.:
             Bcm_min = Bcm_try
         else:
             Bcm_max = Bcm_try
@@ -1495,7 +1582,7 @@ def find_boundaries_3layer(N, R, M, P_s, T_s, rho_s, MoI,
                      iterations=20, subiterations=10):
     """ Finder of the boundaries of the planet for a
         fixed moment of inertia.
-        The correct value yields m -> 0 at the center of the planet. 
+        The correct value yields m_enc -> 0 at the center of the planet. 
     
         Args:
             N (int):
@@ -1576,13 +1663,13 @@ def find_boundaries_3layer(N, R, M, P_s, T_s, rho_s, MoI,
                      mat_id_atm, T_rho_id_atm, T_rho_args_atm,
                      u_cold_array_core, u_cold_array_atm)
     
-    r_max, m, P, T, rho_max, u, mat = \
+    r_max, m_enc, P, T, rho_max, u, mat = \
         integrate_2layer(N, R, M, P_s, T_s, rhos_mantle, Bcm_I_max,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
                          u_cold_array_core, u_cold_array_mantle)
         
-    r_min, m, P, T, rho_min, u, mat = \
+    r_min, m_enc, P, T, rho_min, u, mat = \
         integrate_2layer(N, R, M, P_s, T_s, rho_s, Bcm_I_min,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_atm, T_rho_id_atm, T_rho_args_atm,
@@ -1607,7 +1694,7 @@ def find_boundaries_3layer(N, R, M, P_s, T_s, rho_s, MoI,
                              u_cold_array_core, u_cold_array_mantle, u_cold_array_atm,
                              subiterations)
                     
-            r, m, P, T, rho, u, mat = \
+            r, m_enc, P, T, rho, u, mat = \
                   integrate_3layer(N, R, M, P_s, T_s, rho_s, Bcm_try, Bma_try,
                          mat_id_core, T_rho_id_core, T_rho_args_core,
                          mat_id_mantle, T_rho_id_mantle, T_rho_args_mantle,
@@ -1652,7 +1739,17 @@ def _print_banner():
     print("\n")
     
 class _planet():
+    """ Primary planet class ...
     
+        Args:
+            name (str)
+                The name of the planet object.
+                
+            Fp_prof (str)
+                The profile data file path. Default to "data/<name>.hdf5".
+                
+            ...
+    """
     N_integ_steps = 10000
     iterations    = 40
     
@@ -1660,8 +1757,12 @@ class _planet():
     P_surface     = np.nan
     rho_surface   = np.nan
     
-    def __init__(self):
-        return None
+    def __init__(self, name, Fp_prof=None):
+        self.name       = name
+        self.Fp_prof    = Fp_prof
+        
+        if self.Fp_prof is None:
+            self.Fp_prof    = "data/%s.hdf5" % self.name
     
     def set_T_surface(self, T):
         self.T_surface = T
@@ -1670,7 +1771,34 @@ class _planet():
         self.P_surface = P
         
     def set_rho_surface(self, rho):
-        self.rho_surface = rho          
+        self.rho_surface = rho   
+        
+    def save_profile(self):
+        Fp_prof = check_end(self.Fp_prof, ".hdf5")
+        
+        print("Saving profile data to %s... " % Fp_prof[-30:], end='')
+        sys.stdout.flush()
+        
+        with h5py.File(Fp_prof, "w") as f:
+            save_prof_data(
+                f, self.N_layers, self.A1_r, self.A1_m_enc, self.A1_rho, 
+                self.A1_T, self.A1_P, self.A1_u, self.A1_mat_id
+                )
+                
+        print("Done")
+        
+    def load_profile_arrays(self):
+        Fp_prof = check_end(self.Fp_prof, ".hdf5")
+        
+        print("Loading profile data from %s... " % Fp_prof[-30:], end='')
+        sys.stdout.flush()
+        
+        with h5py.File(Fp_prof, "r") as f:
+            (self.A1_r, self.A1_m_enc, self.A1_rho, self.A1_T, self.A1_P, 
+             self.A1_u, self.A1_mat_id) = multi_get_prof_data(
+                f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
+                
+        print("Done")
     
 class _1l_planet(_planet):
     
@@ -1681,16 +1809,16 @@ class _1l_planet(_planet):
     
     M           = np.nan # Total mass of the planet (SI).
     R           = np.nan # Radius of the planet (SI).
-    A1_R        = np.nan # Vector of radial distances (SI).
-    A1_M        = np.nan # Vector of cumulative mass of the planet (SI).
+    A1_r        = np.nan # Vector of radial distances (SI).
+    A1_m_enc        = np.nan # Vector of cumulative mass of the planet (SI).
     A1_P        = np.nan # Pressure profile (SI).
     A1_T        = np.nan # Temperature profile (SI).
     A1_rho      = np.nan # Density profile (SI).
     A1_u        = np.nan # Internal energy profile (SI).
-    A1_material = np.nan # Material profile
+    A1_mat_id = np.nan # Material profile
     
-    def __init__(self):
-        return None
+    def __init__(self, name, Fp_prof=None):
+        _planet(self, name, Fp_prof)
     
     def set_core_properties(self, mat_id_core, T_rho_id_core, T_rho_args_core):
         self.mat_id_core     = mat_id_core
@@ -1715,7 +1843,7 @@ class _1l_planet(_planet):
         
         print("Done!")
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_1layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1723,13 +1851,13 @@ class _1l_planet(_planet):
          
         self.M           = M_tweak
         self.R           = R
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def fix_M_given_R(self, R, M_max):
         
@@ -1742,7 +1870,7 @@ class _1l_planet(_planet):
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
                              u_cold_array)
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_1layer(self.N_integ_steps, R, M,
                              self.P_surface, self.T_surface, self.rho_surface,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1752,19 +1880,19 @@ class _1l_planet(_planet):
             
         self.M           = M
         self.R           = R
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def compute_spherical_profile_given_R_M(self, R, M):
         
         u_cold_array = weos.load_u_cold_array(self.mat_id_core)
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_1layer(self.N_integ_steps, R, M,
                              self.P_surface, self.T_surface, self.rho_surface,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1772,13 +1900,13 @@ class _1l_planet(_planet):
             
         self.M           = M
         self.R           = R
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
 
 class _2l_planet(_planet):
     
@@ -1793,16 +1921,16 @@ class _2l_planet(_planet):
     M           = np.nan # Total mass of the planet (SI).
     R           = np.nan # Radius of the planet (SI).
     Bcm         = np.nan # Boundary core-mantle (SI).
-    A1_R        = np.nan # Vector of radial distances (SI).
-    A1_M        = np.nan # Vector of cumulative mass of the planet (SI).
+    A1_r        = np.nan # Vector of radial distances (SI).
+    A1_m_enc        = np.nan # Vector of cumulative mass of the planet (SI).
     A1_P        = np.nan # Pressure profile (SI).
     A1_T        = np.nan # Temperature profile (SI).
     A1_rho      = np.nan # Density profile (SI).
     A1_u        = np.nan # Internal energy profile (SI).
-    A1_material = np.nan # Material profile
+    A1_mat_id = np.nan # Material profile
         
-    def __init__(self):
-        return None
+    def __init__(self, name, Fp_prof=None):
+        _planet.__init__(self, name, Fp_prof)
     
     def set_core_properties(self, mat_id_core, T_rho_id_core, T_rho_args_core):  
         self.mat_id_core     = mat_id_core
@@ -1833,7 +1961,7 @@ class _2l_planet(_planet):
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    u_cold_array_core, u_cold_array_mantle)
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_2layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface, Bcm,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1845,13 +1973,13 @@ class _2l_planet(_planet):
         self.M           = M_tweak
         self.R           = R
         self.Bcm         = Bcm
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id   = mat
             
     def fix_M_given_B_R(self, B, R, M_max):
         
@@ -1866,7 +1994,7 @@ class _2l_planet(_planet):
                              self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                              u_cold_array_core, u_cold_array_mantle)
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_2layer(self.N_integ_steps, R, M,
                              self.P_surface, self.T_surface, self.rho_surface, B,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1878,13 +2006,13 @@ class _2l_planet(_planet):
         self.M           = M
         self.R           = R
         self.Bcm         = B
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def fix_R_given_M_B(self, M, B, R_max):
         
@@ -1905,7 +2033,7 @@ class _2l_planet(_planet):
                                    self.mat_id_mantle, self.T_rho_id_mantle, self.T_rho_args_mantle,
                                    u_cold_array_core, u_cold_array_mantle)
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_2layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface, B,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1917,20 +2045,20 @@ class _2l_planet(_planet):
         self.M           = M_tweak
         self.R           = R
         self.Bcm         = B
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def compute_spherical_profile_given_R_M_B(self, R, M, B):
         
         u_cold_array_core   = weos.load_u_cold_array(self.mat_id_core)
         u_cold_array_mantle = weos.load_u_cold_array(self.mat_id_mantle)
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_2layer(self.N_integ_steps, R, M,
                              self.P_surface, self.T_surface, self.rho_surface, B,
                              self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -1940,13 +2068,13 @@ class _2l_planet(_planet):
         self.M           = M
         self.R           = R
         self.Bcm         = B
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
 
 class _3l_planet(_planet):
     
@@ -1968,16 +2096,16 @@ class _3l_planet(_planet):
     Bcm         = np.nan # Boundary core-mantle (SI).
     Bma         = np.nan # Boundary mantle-atmosphere (SI).
     I           = np.nan # Moment of inertia (SI).
-    A1_R        = np.nan # Vector of radial distances (SI).
-    A1_M        = np.nan # Vector of cumulative mass of the planet (SI).
+    A1_r        = np.nan # Vector of radial distances (SI).
+    A1_m_enc        = np.nan # Vector of cumulative mass of the planet (SI).
     A1_P        = np.nan # Pressure profile (SI).
     A1_T        = np.nan # Temperature profile (SI).
     A1_rho      = np.nan # Density profile (SI).
     A1_u        = np.nan # Internal energy profile (SI).
-    A1_material = np.nan # Material profile
+    A1_mat_id = np.nan # Material profile
         
-    def __init__(self):
-        return None
+    def __init__(self, name, Fp_prof=None):
+        _planet(self, name, Fp_prof)
     
     def set_core_properties(self, mat_id_core, T_rho_id_core, T_rho_args_core):  
         self.mat_id_core     = mat_id_core
@@ -2020,7 +2148,7 @@ class _3l_planet(_planet):
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
         
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
@@ -2036,13 +2164,13 @@ class _3l_planet(_planet):
         self.Bcm         = Bcm
         self.Bma         = Bma
         self.I           = moi(r, rho)
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
         
     
     def fix_Bma_given_R_M_Bcm(self, R, M, Bcm):
@@ -2069,7 +2197,7 @@ class _3l_planet(_planet):
                                    self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
 
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
@@ -2085,13 +2213,13 @@ class _3l_planet(_planet):
         self.Bcm         = Bcm
         self.Bma         = Bma
         self.I           = moi(r, rho)
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def fix_Bcm_given_R_M_Bma(self, R, M, Bma):
         
@@ -2117,7 +2245,7 @@ class _3l_planet(_planet):
                                    self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
 
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
@@ -2133,13 +2261,13 @@ class _3l_planet(_planet):
         self.Bcm         = Bcm
         self.Bma         = Bma
         self.I           = moi(r, rho)
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def fix_M_given_R_Bcm_Bma(self, R, Bcm, Bma, M_max):
         
@@ -2157,7 +2285,7 @@ class _3l_planet(_planet):
                              self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                              u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
 
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(self.N_integ_steps, R, M,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
@@ -2173,13 +2301,13 @@ class _3l_planet(_planet):
         self.Bcm         = Bcm
         self.Bma         = Bma
         self.I           = moi(r, rho)
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def fix_R_given_M_Bcm_Bma(self, M, Bcm, Bma, R_max):
         
@@ -2206,7 +2334,7 @@ class _3l_planet(_planet):
                                    self.mat_id_atm, self.T_rho_id_atm, self.T_rho_args_atm,
                                    u_cold_array_core, u_cold_array_mantle, u_cold_array_atm)
 
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(self.N_integ_steps, R, M_tweak,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
@@ -2222,13 +2350,13 @@ class _3l_planet(_planet):
         self.Bcm         = Bcm
         self.Bma         = Bma
         self.I           = moi(r, rho)
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
     
     def compute_spherical_profile_given_R_M_Bcm_Bma(self, R, M, Bcm, Bma):
         
@@ -2236,7 +2364,7 @@ class _3l_planet(_planet):
         u_cold_array_mantle = weos.load_u_cold_array(self.mat_id_mantle)
         u_cold_array_atm    = weos.load_u_cold_array(self.mat_id_atm)
         
-        r, m, P, T, rho, u, mat = \
+        r, m_enc, P, T, rho, u, mat = \
             integrate_3layer(self.N_integ_steps, R, M,
                              self.P_surface, self.T_surface, self.rho_surface,
                              Bcm, Bma,
@@ -2250,13 +2378,13 @@ class _3l_planet(_planet):
         self.Bcm         = Bcm
         self.Bma         = Bma
         self.I           = moi(r, rho)
-        self.A1_R        = r
-        self.A1_M        = m
+        self.A1_r        = r
+        self.A1_m_enc    = m_enc
         self.A1_P        = P
         self.A1_T        = T
         self.A1_rho      = rho
         self.A1_u        = u
-        self.A1_material = mat
+        self.A1_mat_id = mat
 
 def Planet(N_layers):
         
@@ -2858,12 +2986,12 @@ def SPH_density(M, R, H):
     return rho_sph
 
 @jit(nopython=True)
-def _generate_M(indices, m):
+def _generate_M(indices, m_enc):
     
     M = np.zeros(indices.shape)
     
     for i in range(M.shape[0]):
-        M[i,:] = m[indices[i]]
+        M[i,:] = m_enc[indices[i]]
         
     return M
 
@@ -2929,7 +3057,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
             vz ([float]):
                 Velocity in z of each particle (SI).
                 
-            m ([float]):
+            m_enc ([float]):
                 Mass of every particle (SI).
                 
             h ([float]):
@@ -2971,7 +3099,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     f = Z/R
     zP = particles.z*f
     
-    mP = particles.m*f 
+    mP = particles.m_enc*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -3008,7 +3136,7 @@ def picle_placement_1layer(r_array, rho_e, z_array, rho_p, Tw, N,
     A1_mat_id = np.ones((mP.shape[0],))*mat_id_core
     
     ############
-    mP = particles.m*f 
+    mP = particles.m_enc*f 
     unique_R = np.unique(R)
     
     x_reshaped  = x.reshape((-1,1))
@@ -3401,7 +3529,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             vz ([float]):
                 Velocity in z of each particle (SI).
                 
-            m ([float]):
+            m_enc ([float]):
                 Mass of every particle (SI).
                 
             h ([float]):
@@ -3444,7 +3572,7 @@ def picle_placement_2layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     f = Z/R
     zP = particles.z*f
     
-    mP = particles.m*f 
+    mP = particles.m_enc*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -3950,7 +4078,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
             vz ([float]):
                 Velocity in z of each particle (SI).
                 
-            m ([float]):
+            m_enc ([float]):
                 Mass of every particle (SI).
                 
             h ([float]):
@@ -3992,7 +4120,7 @@ def picle_placement_3layer(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma
     f = Z/R
     zP = particles.z*f
     
-    mP = particles.m*f 
+    mP = particles.m_enc*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -4208,7 +4336,7 @@ class _1l_spin(_spin):
         self.T_center    = planet.A1_T[-1]
         self.rho_center  = planet.A1_rho[-1]
         
-        self.A1_R   = planet.A1_R
+        self.A1_r   = planet.A1_r
         self.A1_rho = planet.A1_rho
         self.A1_P   = planet.A1_P
         
@@ -4221,7 +4349,7 @@ class _1l_spin(_spin):
         
         profile_e, profile_p = \
             spin1layer(self.iterations, r_array, z_array,
-                       self.A1_R, self.A1_rho, Tw,
+                       self.A1_r, self.A1_rho, Tw,
                        self.P_center, self.P_surface,
                        self.rho_center, self.rho_surface,
                        self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -4258,12 +4386,12 @@ class _2l_spin(_spin):
         self.T_center    = planet.A1_T[-1]
         self.rho_center  = planet.A1_rho[-1]
         
-        k               = np.sum(planet.A1_material == planet.mat_id_core)
+        k               = np.sum(planet.A1_mat_id == planet.mat_id_core)
         self.P_boundary = planet.A1_P[planet.N_integ_steps - k] + \
                           planet.A1_P[planet.N_integ_steps - k - 1]
         self.P_boundary = self.P_boundary/2.
         
-        self.A1_R   = planet.A1_R
+        self.A1_r   = planet.A1_r
         self.A1_rho = planet.A1_rho
         self.A1_P   = planet.A1_P
         
@@ -4277,7 +4405,7 @@ class _2l_spin(_spin):
         
         profile_e, profile_p = \
             spin2layer(self.iterations, r_array, z_array,
-                       self.A1_R, self.A1_rho, Tw,
+                       self.A1_r, self.A1_rho, Tw,
                        self.P_center, self.P_boundary, self.P_surface,
                        self.rho_center, self.rho_surface,
                        self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -4314,19 +4442,19 @@ class _3l_spin(_spin):
         self.T_surface   = planet.T_surface
         self.rho_surface = planet.rho_surface
         
-        k                  = np.sum(planet.A1_material == planet.mat_id_core)
+        k                  = np.sum(planet.A1_mat_id == planet.mat_id_core)
         self.P_boundary_cm = planet.A1_P[planet.N_integ_steps - k] + \
                              planet.A1_P[planet.N_integ_steps - k - 1]
         self.P_boundary_cm = self.P_boundary_cm/2.
         
-        k                  = np.sum(planet.A1_material == planet.mat_id_atm)
+        k                  = np.sum(planet.A1_mat_id == planet.mat_id_atm)
         self.P_boundary_ma = (planet.A1_P[k] + planet.A1_P[k - 1])/2.
         
         self.P_center    = planet.A1_P[-1]
         self.T_center    = planet.A1_T[-1]
         self.rho_center  = planet.A1_rho[-1]
         
-        self.A1_R   = planet.A1_R
+        self.A1_r   = planet.A1_r
         self.A1_rho = planet.A1_rho
         self.A1_P   = planet.A1_P
         
@@ -4341,7 +4469,7 @@ class _3l_spin(_spin):
         
         profile_e, profile_p = \
             spin3layer(self.iterations, r_array, z_array,
-                       self.A1_R, self.A1_rho, Tw,
+                       self.A1_r, self.A1_rho, Tw,
                        self.P_center, self.P_boundary_cm, self.P_boundary_ma, self.P_surface,
                        self.rho_center, self.rho_surface,
                        self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -4403,7 +4531,7 @@ class _1l_genspheroid():
         
         u_cold_array_core = weos.load_u_cold_array(self.mat_id_core)
         
-        x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+        x, y, z, vx, vy, vz, m_enc, h, rho, P, u, mat_id, picle_id = \
             picle_placement_1layer(self.A1_equator, self.A1_rho_equator,
                                    self.A1_pole, self.A1_rho_pole, self.Tw, N_particles,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
@@ -4415,7 +4543,7 @@ class _1l_genspheroid():
         self.A1_vx  = vx
         self.A1_vy  = vy
         self.A1_vz  = vz
-        self.A1_m   = m
+        self.A1_m_enc   = m_enc
         self.A1_h   = h
         self.A1_rho = rho
         self.A1_P   = P
@@ -4451,7 +4579,7 @@ class _2l_genspheroid():
         u_cold_array_core   = weos.load_u_cold_array(self.mat_id_core)
         u_cold_array_mantle = weos.load_u_cold_array(self.mat_id_mantle)
         
-        x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+        x, y, z, vx, vy, vz, m_enc, h, rho, P, u, mat_id, picle_id = \
             picle_placement_2layer(self.A1_equator, self.A1_rho_equator,
                                    self.A1_pole, self.A1_rho_pole,
                                    self.Tw, N_particles, self.rho_boundary,
@@ -4466,7 +4594,7 @@ class _2l_genspheroid():
         self.A1_vx  = vx
         self.A1_vy  = vy
         self.A1_vz  = vz
-        self.A1_m   = m
+        self.A1_m_enc   = m_enc
         self.A1_h   = h
         self.A1_rho = rho
         self.A1_P   = P
@@ -4507,7 +4635,7 @@ class _3l_genspheroid():
         u_cold_array_mantle = weos.load_u_cold_array(self.mat_id_mantle)
         u_cold_array_atm    = eos.load_u_cold_array(self.mat_id_atm)
         
-        x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+        x, y, z, vx, vy, vz, m_enc, h, rho, P, u, mat_id, picle_id = \
             picle_placement_3layer(self.A1_equator, self.A1_rho_equator,
                                    self.A1_pole, self.A1_rho_pole,
                                    self.Tw, N_particles, self.rho_boundary_cm, self.rho_boundary_ma,
@@ -4523,7 +4651,7 @@ class _3l_genspheroid():
         self.A1_vx  = vx
         self.A1_vy  = vy
         self.A1_vz  = vz
-        self.A1_m   = m
+        self.A1_m_enc   = m
         self.A1_h   = h
         self.A1_rho = rho
         self.A1_P   = P
