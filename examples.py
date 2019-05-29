@@ -9,6 +9,13 @@ Created on Tue Apr  2 13:11:10 2019
 ###############################################################################
 ####################### Libraries and constants ###############################
 ###############################################################################
+import sys
+import os
+
+# Go to the WoMa directory
+path = '/home/sergio/Documents/WoMa/'
+os.chdir(path)
+sys.path.append(path)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -31,6 +38,7 @@ def plot_spherical_profile(planet):
     ax[0,0].plot(planet.A1_R/R_earth, planet.A1_rho)
     ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
     ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
+    ax[0,0].set_yscale('log')
     
     ax[1,0].plot(planet.A1_R/R_earth, planet.A1_M/M_earth)
     ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
@@ -184,18 +192,20 @@ plot_spin_profile(spin_example)
 # isothermal 2000 K
 
 proto_earth = woma.Planet(2)
-M = 0.887*M_earth
+M = M_earth
 
-proto_earth.set_core_properties(weos.id_Til_iron, 1, [None, 0])
-proto_earth.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
+proto_earth.set_core_properties(weos.id_Til_iron, 1, [None, 2.5])
+proto_earth.set_mantle_properties(weos.id_Til_granite, 1, [None, 2.5])
 
-P_s  = 1e9
-T_s  = 2000
+P_s  = 1e5
+T_s  = 300
 rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_Til_granite)
 
 proto_earth.set_P_surface(P_s)
 proto_earth.set_T_surface(T_s)
 proto_earth.set_rho_surface(rho_s)
+
+proto_earth.fix_B_given_R_M(R_earth, M)
 
 #proto_earth.fix_B_given_R_M(1.00*R_earth, M)
 
@@ -203,7 +213,7 @@ R_low = 0.98*R_earth
 R_high = 1.00*R_earth
 mass_f_core = 0.3
 
-for _ in range(5):
+for _ in range(3):
     R_try = (R_low + R_high)/2.
     proto_earth.fix_B_given_R_M(R_try, M)
     
@@ -215,17 +225,17 @@ for _ in range(5):
     else:
         R_low = R_try
 
-
 plot_spherical_profile(proto_earth)
 
 # + ~canonical Theia: m = 0.133, same mass ratio (same mass ratio)
 # isothermal 2000 K
 
-theia = woma.Planet(2)
+theia = woma.Planet(2, mat_id_core=weos.id_Til_iron)
 M = 0.133*M_earth
 
 theia.set_core_properties(weos.id_Til_iron, 1, [None, 0])
 theia.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
+theia.mat_id_core = weos.id_Til_iron
 
 P_s  = 0
 T_s  = 2000
@@ -239,7 +249,7 @@ R_low = 0.60*R_earth
 R_high = 0.65*R_earth
 mass_f_core = 0.3
 
-for _ in range(10):
+for _ in range(3):
     R_try = (R_low + R_high)/2.
     theia.fix_B_given_R_M(R_try, M)
     
@@ -253,57 +263,3 @@ for _ in range(10):
 
 
 plot_spherical_profile(theia)
-
-# + proto-Earth with atmosphere: atmosphere mass = 1e-2, 1e-3, 1e-4, 1e-5, 1e-6 M_E
-# HHe atm
-
-proto_earth_watm = woma.Planet(3)
-
-M = proto_earth.M + 1e-6*M_earth
-
-proto_earth_watm.set_core_properties(weos.id_Til_iron, 1, [None, 0])
-proto_earth_watm.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
-proto_earth_watm.set_atmosphere_properties(weos.id_idg_HHe, 1, [None, 0])
-
-P_s  = 5e8
-T_s  = 2000
-rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_idg_HHe)
-
-proto_earth_watm.set_P_surface(P_s)
-proto_earth_watm.set_T_surface(T_s)
-proto_earth_watm.set_rho_surface(rho_s)
-
-B_cm = proto_earth.Bcm
-B_ma = proto_earth.R
-
-proto_earth_watm.fix_R_given_M_Bcm_Bma(M, B_cm, B_ma, 1.5*B_ma)
-
-plot_spherical_profile(proto_earth_watm)
-
-# + proto-Earth with atmosphere: atmosphere mass = 1e-2, 1e-3, 1e-4, 1e-5, 1e-6 M_E
-# N2 atm
-
-proto_earth_watm = woma.Planet(3)
-
-M = proto_earth.M + 1e-2*M_earth
-
-proto_earth_watm.set_core_properties(weos.id_Til_iron, 1, [None, 0])
-proto_earth_watm.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
-proto_earth_watm.set_atmosphere_properties(weos.id_idg_N2, 1, [None, 0])
-
-P_s  = 1e7
-T_s  = 2000
-rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_idg_N2)
-
-proto_earth_watm.set_P_surface(P_s)
-proto_earth_watm.set_T_surface(T_s)
-proto_earth_watm.set_rho_surface(rho_s)
-
-B_cm = proto_earth.Bcm
-B_ma = proto_earth.R
-
-proto_earth_watm.fix_R_given_M_Bcm_Bma(M, B_cm, B_ma, 1.1*B_ma)
-
-proto_earth_watm.compute_spherical_profile_given_R_M_Bcm_Bma(1.06*B_ma, M, B_cm, B_ma)
-
-plot_spherical_profile(proto_earth_watm)

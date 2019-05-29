@@ -10,6 +10,7 @@ Created on Mon Apr  1 10:38:18 2019
 ###############################################################################
 
 import numpy as np
+import matplotlib.pyplot as plt
 from numba import jit
 
 G       = 6.67408E-11;
@@ -714,8 +715,6 @@ def find_P_fixed_T_rho(T, rho, mat_id):
     
     return -1
 
-
-
 # =============================================================================
 # gamma = 7/5
 # 
@@ -729,3 +728,83 @@ def find_P_fixed_T_rho(T, rho, mat_id):
 # 
 # R_gas / (m_mol * cgs_to_SI_m * (gamma - 1))
 # =============================================================================
+
+def plot_eos_P_vs_rho_fixed_T(mat_id, T_array=np.linspace(0, 1000, 4), rho_min=1, rho_max=10000):
+    
+    rho_array = np.linspace(rho_min, rho_max, 100)
+    
+    fig, ax = plt.subplots(1,1, figsize=(12,12))
+    #ax.set_xscale('log')
+    #ax.set_yscale('log')
+    
+    for T in T_array:
+        P_array = np.zeros(rho_array.shape)
+        for i, rho in enumerate(rho_array):
+            u = u_cold(rho, mat_id, 10000) + _C_V(mat_id)*T
+            P_array[i] = P_EoS(u, rho, mat_id)
+        ax.plot(rho_array, P_array, label=str(int(T)) + ' K')
+    
+    ax.legend()
+    ax.set_xlabel(r"$\rho$ $[Kg/m^3]$")
+    ax.set_ylabel(r"$P$ $[Pa]$")
+    plt.show()
+    
+    return 0
+
+def plot_eos_T_vs_rho_fixed_P(mat_id, P_array=np.logspace(6, 11, 4),
+                              T_min=0, T_max=1000):
+    
+    T_array = np.linspace(T_min, T_max, 100)
+    
+    fig, ax = plt.subplots(1,1, figsize=(12,12))
+    #ax.set_xscale('log')
+    #ax.set_yscale('log')
+    
+    for P in P_array:
+        rho_array = np.zeros(T_array.shape)
+        for i, T in enumerate(T_array):
+            rho_array[i] = find_rho_fixed_P_T(P, T, mat_id)
+        ax.plot(T_array, rho_array, label="{:.2e}".format(P) + ' Pa')
+    
+    ax.legend()
+    ax.set_xlabel(r"$T$ $[K]$")
+    ax.set_ylabel(r"$\rho$ $[Kg/m^3]$")
+    plt.show()
+    
+    return 0
+
+
+# =============================================================================
+# mat_id = 101
+# T_array = np.linspace(1, 3000, 4)
+# rho_min = 1
+# rho_max = 3000
+# 
+# plot_eos_P_vs_rho_fixed_T(mat_id, T_array, rho_min, rho_max)
+# 
+# 
+# mat_id = 1
+# P_array = np.logspace(4, 5, 6)
+# T_min = 200
+# T_max = 300
+# 
+# plot_eos_T_vs_rho_fixed_P(mat_id, P_array, T_min, T_max)
+# =============================================================================
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -2198,7 +2198,7 @@ class _3l_planet(_planet):
         
         print("Tweaking M to avoid peaks at the center of the planet...")
         
-        M_tweak = find_mass_3layer(self.N_integ_steps, R, 2*M,
+        M_tweak = find_mass_3layer(self.N_integ_steps, R, 1.01*M,
                                    self.P_surface, self.T_surface, self.rho_surface,
                                    Bcm, Bma,
                                    self.mat_id_core, self.T_rho_id_core, self.T_rho_args_core,
