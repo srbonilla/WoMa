@@ -58,4 +58,9 @@ To Do etc. (Jacob thoughts in progress)
 + Zero axes in example plots and non-symbol labels
 + Examples are using non-Earth materials?
 + Tidy line lengths for where I've messed things up
-+ Log axes for e.g. density at least with atmospheres
++ Edit/remove Planet() function. Could even just use the main class instead
++ Print output variables like boundaries when done
++ Add all output variables to the hdf5 file
++ Rename array variables e.g. r -> A1_r (or whatever) everywhere
++ Change the iterations to be for some tolerance not a number of iterations
++ Add units to hdf5 file
