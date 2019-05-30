@@ -44,25 +44,20 @@ Notation etc.
 
 To Do etc. (Jacob thoughts in progress)
 ---------------------------------------
-+ Replace Tillotson (and all) EoS parameter arrays with simple class objects.
++ Tidy EoS parameter arrays etc.
 + Import SEAGen as a normal module instead of copying the file?
 + Add documentation to examples and basic instructions to readme.
-+ Why are some `jit`s commented out?
 + Replace `np.nan` with `None` for default function arguments
-+ Use something more generic than core/mantle/atmosphere for the layer names
-+ Simpler way to choose which input parameters are fixed
 + Allow fixing the mass ratios of each layer instead of e.g. outer radius 
 + Make into a PyPI package
-+ Sort out eos.py's name to not conflict with GIHR
-+ Apparently numba can't handle dictionaries?
 + Zero axes in example plots and non-symbol labels
 + Examples are using non-Earth materials?
 + Tidy line lengths for where I've messed things up
-+ Edit/remove Planet() function. Could even just use the main class instead
 + Print output variables like boundaries when done
 + Add all output variables to the hdf5 file
-+ Rename array variables e.g. r -> A1_r (or whatever) everywhere
 + Change the iterations to be for some tolerance not a number of iterations
 + Add units to hdf5 file
 + Set A1_r_layer and all other things that can be set after calculating profiles
 + Move the add-L3 function out of the class, like the others
++ Automatically choose how to gen profiles depending on which inputs are given
++ See `###` and `...` notes throughout the code
