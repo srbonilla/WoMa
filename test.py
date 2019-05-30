@@ -53,29 +53,49 @@ def plot_spherical_profile(planet):
     plt.show()
     
 ###############################################################################
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 1,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[0., 0.], [0., 0.]],
+    A1_r_layer      = [None, 0.988 * R_earth],
+    M               = 0.887 * M_earth,
+    P_s             = 1e5,
+    T_s             = 2000,
+    )
+
+prof_pE.gen_prof_L2_fix_R1_given_R_M()
+
+prof_pE.save_profile()
+
+# Load and plot the profile
+prof_pE.load_profile_arrays()
+
+plot_spherical_profile(prof_pE)
+
+###############################################################################
+
+
+
+
+
+
+
+
+
+
+
 # canonical proto-Earth: m = 0.887 M_E, mass ratio 30 iron : 70 granite (both Tillotson).
 # isothermal 2000 K
 
-prof_pE = woma._2l_planet("prof_pE")
-M = 0.887*M_earth
-
-prof_pE.set_core_properties(weos.id_Til_iron, 1, [None, 0])
-prof_pE.set_mantle_properties(weos.id_Til_granite, 1, [None, 0])
-
-P_s  = 1e5
-T_s  = 2000
-rho_s = weos.find_rho_fixed_P_T(P_s, T_s, weos.id_Til_granite)
-
-prof_pE.set_P_surface(P_s)
-prof_pE.set_T_surface(T_s)
-prof_pE.set_rho_surface(rho_s)
-
-R_low = 0.95*R_earth
-R_high = 1.02*R_earth
-mass_f_core = 0.3
-
-# prof_pE.fix_B_given_R_M((R_low + R_high)/2., M)
-
+# R_low = 0.95*R_earth 
+# R_high = 1.02*R_earth
+# mass_f_core = 0.3
+# 
+# prof_pE.gen_prof_L2_fix_R1_given_R_M()
+# 
 # # Make sure the following computations work and the mass fraction resulting
 # # is between the desired value
 # prof_pE.fix_B_given_R_M(R_high, M)
@@ -95,13 +115,13 @@ mass_f_core = 0.3
 #         R_high = R_try
 #     else:
 #         R_low = R_try
-        
+# 
 # prof_pE.save_profile()
-
-# Load and plot the profile
-prof_pE.load_profile_arrays()
-
-plot_spherical_profile(prof_pE)
+# 
+# # Load and plot the profile
+# prof_pE.load_profile_arrays()
+# 
+# plot_spherical_profile(prof_pE)
 
 
 # ###############################################################################
