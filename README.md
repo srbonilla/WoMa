@@ -63,3 +63,4 @@ To Do etc. (Jacob thoughts in progress)
 + See `###` and `...` notes throughout the code
 + Reverse profile arrays to be ordered by increasing radius
 + Continue writing `set_layer_info()`, `save_planet()`, `load_planet()`
++ Check that MoI is the reduced MoI everywhere

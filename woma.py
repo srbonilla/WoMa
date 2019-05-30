@@ -289,7 +289,7 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         # if i > 100:
         #     exit()###
         
-        if A1_m_enc[i] < 0:            
+        if A1_m_enc[i] < 0:
             return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
         
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
@@ -1844,14 +1844,39 @@ class Planet():
     # ========
     # General
     # ========
-    def set_layer_info(self):
-        """ Find and set the information about each planet layer after making
-            the profiles.
+    def update_attributes(self):
+        """ Set all planet information after making the profiles.
         """
+        # Reverse profile arrays to be ordered by increasing radius
+        if self.A1_r[-1] < self.A1_r[0]:
+            self.A1_r       = self.A1_r[::-1]
+            self.A1_m_enc   = self.A1_m_enc[::-1]
+            self.A1_P       = self.A1_P[::-1]
+            self.A1_T       = self.A1_T[::-1]
+            self.A1_rho     = self.A1_rho[::-1]
+            self.A1_u       = self.A1_u[::-1]
+            self.A1_mat_id  = self.A1_mat_id[::-1]
+        
         # Boundary radii
-        self.A1_R_layer[-1] = self.A1_r[-1]
-        self.R              = self.A1_R_layer[-1]
-        ###WIP
+        # Find where the material ID changes
+        A1_idx_layer    = np.where(np.diff(self.A1_mat_id) != 0)[0]
+        A1_idx_layer    = np.append(A1_idx_layer, self.num_prof - 1)
+        self.A1_R_layer = self.A1_r[A1_idx_layer]
+        self.R          = self.A1_R_layer[-1]
+        
+        # Layer masses
+        self.A1_M_layer = self.A1_m_enc[A1_idx_layer]
+        if self.num_layer > 1:
+            self.A1_M_layer[1:] -= self.A1_M_layer[1:]
+        self.M  = np.sum(self.A1_M_layer)
+        
+        # Moment of inertia
+        self.I_MR2  = moi(self.A1_r, self.A1_rho)
+        
+        print(self.A1_R_layer / R_earth)###wilo
+        print(self.R / R_earth)
+        print(self.A1_M_layer / M_earth)
+        print(self.M / M_earth)
     
     def save_planet(self):
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
@@ -1924,6 +1949,8 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], u_cold_array
             )
+
+        self.update_attributes()
     
     def gen_prof_L1_fix_M_given_R(self):
         # Check for necessary input
@@ -1955,6 +1982,8 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], u_cold_array
             )
+
+        self.update_attributes()
     
     def gen_prof_L1_given_R_M(self):
         # Check for necessary input
@@ -1976,6 +2005,8 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], u_cold_array
             )
+
+        self.update_attributes()
     
     # ========
     # 2 Layers
@@ -2024,6 +2055,8 @@ class Planet():
             )
             
         print("Done!")
+
+        self.update_attributes()
             
     def gen_prof_L2_fix_M_given_R1_R(self):
         # Check for necessary input
@@ -2062,6 +2095,8 @@ class Planet():
             )
             
         print("Done!")
+
+        self.update_attributes()
 
     def gen_prof_L2_fix_R_given_M_R1(self):
         # Check for necessary input
@@ -2110,6 +2145,8 @@ class Planet():
             u_cold_array_L2
             )
 
+        self.update_attributes()
+
     def gen_prof_L2_given_R_M_R1(self):
         # Check for necessary input
         assert(self.num_layer == 2)
@@ -2135,6 +2172,8 @@ class Planet():
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
             )
+
+        self.update_attributes()
         
     # ========
     # 3 Layers
@@ -2193,6 +2232,8 @@ class Planet():
             )
             
         print("Done!")
+
+        self.update_attributes()
         
     def gen_prof_L3_fix_R2_given_R_M_R1(self):
         # Check for necessary input
@@ -2248,8 +2289,8 @@ class Planet():
             )
             
         print("Done!")
-        
-        self.I_MR2  = moi(self.A1_r, self.A1_rho)
+
+        self.update_attributes()
     
     def gen_prof_L3_fix_R1_given_R_M_R2(self):
         # Check for necessary input
@@ -2306,7 +2347,7 @@ class Planet():
             
         print("Done!")
         
-        self.I_MR2  = moi(self.A1_r, self.A1_rho)
+        self.update_attributes()
     
     def gen_prof_L3_fix_M_given_R_R1_R2(self):
         # Check for necessary input
@@ -2354,7 +2395,7 @@ class Planet():
             
         print("Done!")
         
-        self.I_MR2  = moi(self.A1_r, self.A1_rho)
+        self.update_attributes()
     
     def gen_prof_L3_fix_R_given_M_R1_R2(self):
         # Check for necessary input
@@ -2413,7 +2454,7 @@ class Planet():
             
         print("Done!")
         
-        self.I_MR2  = moi(self.A1_r, self.A1_rho)
+        self.update_attributes()
     
     def gen_prof_L3_given_R_M_R1_R2(self):
         # Check for necessary input
@@ -2447,7 +2488,7 @@ class Planet():
             u_cold_array_L2, u_cold_array_L3
             )
             
-        self.I_MR2  = moi(self.A1_r, self.A1_rho)
+        self.update_attributes()
     
     def gen_prof_L3_given_prof_L2(self, mat_id=None, T_rho_type=None, 
                                   T_rho_args=None, rho_min=None):
@@ -2486,20 +2527,30 @@ class Planet():
         if rho_min is not None:
             self.rho_min    = rho_min
             
-        dr              = self.A1_r[-2]
+        dr              = self.A1_r[1]
         mat_id_L3       = self.A1_mat_id_layer[2]        
         u_cold_array_L3 = weos.load_u_cold_array(mat_id_L3)
         C_V_L3          = weos._C_V(mat_id_L3)
         
+        # Reverse profile arrays to be ordered by increasing radius
+        if self.A1_r[-1] < self.A1_r[0]:
+            self.A1_r       = self.A1_r[::-1]
+            self.A1_m_enc   = self.A1_m_enc[::-1]
+            self.A1_P       = self.A1_P[::-1]
+            self.A1_T       = self.A1_T[::-1]
+            self.A1_rho     = self.A1_rho[::-1]
+            self.A1_u       = self.A1_u[::-1]
+            self.A1_mat_id  = self.A1_mat_id[::-1]
+        
         # Initialise the new profiles
-        A1_r        = [self.A1_r[0]]
-        A1_m_enc    = [self.A1_m_enc[0]]
-        A1_P        = [self.A1_P[0]]
-        A1_T        = [self.A1_T[0]]
-        A1_u        = [self.A1_u[0]]
+        A1_r        = [self.A1_r[-1]]
+        A1_m_enc    = [self.A1_m_enc[-1]]
+        A1_P        = [self.A1_P[-1]]
+        A1_T        = [self.A1_T[-1]]
+        A1_u        = [self.A1_u[-1]]
         A1_mat_id   = [mat_id_L3]
-        A1_rho      = [weos._find_rho_fixed_P_T(self.A1_P[0], self.A1_T[0], 
-                                                mat_id_L3, u_cold_array_L3)]
+        A1_rho      = [weos._find_rho_fixed_P_T(A1_P[0], A1_T[0], mat_id_L3, 
+                                                u_cold_array_L3)]
         
         if self.A1_T_rho_type[2] == 1:
             self.A1_T_rho_args[2][0] = (
@@ -2525,19 +2576,18 @@ class Planet():
                 break
         
         # Apppend the new layer to the profiles 
-        self.A1_r       = np.append(A1_r[1:][::-1], self.A1_r)
-        self.A1_m_enc   = np.append(A1_m_enc[1:][::-1], self.A1_m_enc)
-        self.A1_P       = np.append(A1_P[1:][::-1], self.A1_P)
-        self.A1_T       = np.append(A1_T[1:][::-1], self.A1_T)
-        self.A1_rho     = np.append(A1_rho[1:][::-1], self.A1_rho)
-        self.A1_u       = np.append(A1_u[1:][::-1], self.A1_u)
-        self.A1_mat_id  = np.append(A1_mat_id[1:][::-1], self.A1_mat_id)
-        
-        self.A1_R_layer = list(self.A1_R_layer).append(np.max(self.A1_r))
-        self.A1_R_layer = np.array(self.A1_R_layer)
+        self.A1_r       = np.append(self.A1_r, A1_r[1:])
+        self.A1_m_enc   = np.append(self.A1_m_enc, A1_m_enc[1:])
+        self.A1_P       = np.append(self.A1_P, A1_P[1:])
+        self.A1_T       = np.append(self.A1_T, A1_T[1:])
+        self.A1_rho     = np.append(self.A1_rho, A1_rho[1:])
+        self.A1_u       = np.append(self.A1_u, A1_u[1:])
+        self.A1_mat_id  = np.append(self.A1_mat_id, A1_mat_id[1:])
+
+        self.update_attributes()
 
 def load_planet(name, Fp_planet):
-    """ Load a full Planet object from a file.
+    """ Return a new Planet object loaded from a file.
     
         Args:
             name (str)
