@@ -1795,6 +1795,12 @@ class Planet():
             self.A1_M_layer = [None] * self.num_layer
         self.R  = self.A1_R_layer[-1]
         
+        # Force types for numba
+        if self.A1_R_layer is not None:
+            self.A1_R_layer = np.array(self.A1_R_layer, dtype="float")
+        if self.A1_T_rho_args is not None:
+            self.A1_T_rho_args = np.array(self.A1_T_rho_args, dtype="float")
+        
         # Two of P, T, rho must be provided at the surface to calculate the 
         # third. If all three are provided then rho is overwritten.
         if self.P_s is not None and self.T_s is not None:

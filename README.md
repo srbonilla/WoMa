@@ -45,22 +45,20 @@ Notation etc.
 To Do etc. (Jacob thoughts in progress)
 ---------------------------------------
 + Tidy EoS parameter arrays etc.
-+ Import SEAGen as a normal module instead of copying the file?
-+ Add documentation to examples and basic instructions to readme.
-+ Replace `np.nan` with `None` for default function arguments
++ Import SEAGen as a normal module instead of copying the file
++ Add documentation to examples and basic instructions to readme
 + Allow fixing the mass ratios of each layer instead of e.g. outer radius 
 + Make into a PyPI package
 + Zero axes in example plots and non-symbol labels
-+ Examples are using non-Earth materials?
 + Tidy line lengths for where I've messed things up
 + Print output variables like boundaries when done
 + Add all output variables to the hdf5 file
 + Change the iterations to be for some tolerance not a number of iterations
-+ Add units to hdf5 file
-+ Set A1_r_layer and all other things that can be set after calculating profiles
 + Move the add-L3 function out of the class, like the others
 + Automatically choose how to gen profiles depending on which inputs are given
 + See `###` and `...` notes throughout the code
-+ Reverse profile arrays to be ordered by increasing radius
-+ Continue writing `set_layer_info()`, `save_planet()`, `load_planet()`
 + Check that MoI is the reduced MoI everywhere
++ Add doc strings and prints to the examples, explain what they're trying to do
+    and how, so that someone can copy them and understand.
++ Make the examples faster to run. Maybe start close to the right answer and 
+    do fewer iterations.
