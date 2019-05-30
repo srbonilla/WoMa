@@ -552,16 +552,16 @@ def L2_integrate(
                 return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id        
         # Layer 1, 2 boundary
         elif A1_r[i] <= R1 and A1_r[i - 1] > R1:            
-            rho_transition = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
+            rho_L2 = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
                                                      mat_id_L1, u_cold_array_L1)
             
             if T_rho_type_L1 == 1:
-                T_rho_args_L1[0] = A1_T[i - 1]*rho_transition**(-T_rho_args_L1[1])
+                T_rho_args_L1[0] = A1_T[i - 1]*rho_L2**(-T_rho_args_L1[1])
             
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_transition*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_transition/(A1_r[i - 1]**2)*dr
+            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_L2*dr
+            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_L2/(A1_r[i - 1]**2)*dr
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                   A1_rho[i - 1], 1.1*rho_transition, u_cold_array_L1)
+                                   A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L1)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
             A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
             A1_mat_id[i] = mat_id_L1            
@@ -1010,16 +1010,16 @@ def L3_integrate(
                 return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id         
         # Layer 2, 3 boundary
         elif A1_r[i] <= R2 and A1_r[i - 1] > R2:            
-            rho_transition = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
+            rho_L2 = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
                                                      mat_id_L2, u_cold_array_L2)
             
             if T_rho_type_L2 == 1:
-                T_rho_args_L2[0] = A1_T[i - 1]*rho_transition**(-T_rho_args_L2[1])
+                T_rho_args_L2[0] = A1_T[i - 1]*rho_L2**(-T_rho_args_L2[1])
             
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_transition*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_transition/(A1_r[i - 1]**2)*dr
+            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_L2*dr
+            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_L2/(A1_r[i - 1]**2)*dr
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                   A1_rho[i - 1], 1.1*rho_transition, u_cold_array_L2)
+                                   A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L2)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L2, T_rho_args_L2)
             A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
             A1_mat_id[i] = mat_id_L2            
@@ -1038,16 +1038,16 @@ def L3_integrate(
         # Layer 1, 2 boundary
         elif A1_r[i] <= R1 and A1_r[i - 1] > R1:
             
-            rho_transition = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
+            rho_L2 = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
                                                      mat_id_L1, u_cold_array_L1)
             
             if T_rho_type_L1 == 1:
-                T_rho_args_L1[0] = A1_T[i - 1]*rho_transition**(-T_rho_args_L1[1])
+                T_rho_args_L1[0] = A1_T[i - 1]*rho_L2**(-T_rho_args_L1[1])
             
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_transition*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_transition/(A1_r[i - 1]**2)*dr
+            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_L2*dr
+            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_L2/(A1_r[i - 1]**2)*dr
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                   A1_rho[i - 1], 1.1*rho_transition, u_cold_array_L1)
+                                   A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L1)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
             A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
             A1_mat_id[i] = mat_id_L1            
@@ -1755,6 +1755,9 @@ class Planet():
             R_max (float)
                 ...
                 
+            rho_min (float)
+                The minimum density for the outer edge of the profile.
+                
             num_prof (int)
                 The number of profile integration steps.
                 
@@ -1765,7 +1768,8 @@ class Planet():
         self, name, Fp_prof=None, num_layer=None, A1_mat_id_layer=None,
         A1_T_rho_type=None, A1_T_rho_args=None, A1_r_layer=None, 
         A1_m_layer=None, M=None, P_s=None, T_s=None, rho_s=None, I_MR2=None, 
-        M_max=None, R_max=None, num_prof=10000, num_attempt=40, num_attempt_2=40
+        M_max=None, R_max=None, rho_min=None, num_prof=10000, num_attempt=40, 
+        num_attempt_2=40
         ):
         self.name               = name
         self.Fp_prof            = Fp_prof
@@ -1782,6 +1786,7 @@ class Planet():
         self.I_MR2              = I_MR2
         self.M_max              = M_max
         self.R_max              = R_max
+        self.rho_min            = rho_min
         self.num_prof           = num_prof
         self.num_attempt        = num_attempt
         self.num_attempt_2      = num_attempt_2
@@ -2229,7 +2234,63 @@ class Planet():
             )
             
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
+    
+    def gen_prof_L3_given_prof_L2(self):
+        """ Add a third layer (atmosphere) on top of existing 2 layer profiles.
         
+            Requires:
+                ...
+                
+            Sets:
+                ...
+        """   
+        dr              = self.A1_r[-2]
+        mat_id_L3       = self.A1_mat_id_layer[2]        
+        u_cold_array_L3 = weos.load_u_cold_array(mat_id_L3)
+        C_V_L3          = weos._C_V(mat_id_L3)
+        
+        # Initialise the new profiles
+        A1_r        = [self.A1_r[0]]    ### + dr?
+        A1_m_enc    = [self.A1_m_enc[0]]
+        A1_P        = [self.A1_P[0]]    ### + dP?
+        A1_T        = [self.A1_T[0]]
+        A1_u        = [self.A1_u[0]]
+        A1_mat_id   = [mat_id_L3]
+        A1_rho      = [weos._find_rho_fixed_P_T(self.A1_P[0], self.A1_T[0], 
+                                                mat_id_L3, u_cold_array_L3)]
+        
+        if self.A1_T_rho_type[2] == 1:
+            self.A1_T_rho_args[2][0] = (
+                self.A1_T[0] * A1_rho[0]**(-self.A1_T_rho_args[2][1]))            
+        self.A1_T_rho_args[2] = np.array(self.A1_T_rho_args[2])
+
+        # Integrate outwards until the minimum density
+        step = 1            
+        while A1_rho[-1] > self.rho_min:
+            A1_r.append(A1_r[-1] + dr)
+            A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
+            A1_P.append(A1_P[-1] - G*A1_m_enc[-1]*A1_rho[-1]/(A1_r[-1]**2)*dr)
+            rho = weos._find_rho(A1_P[-1], mat_id_L3, self.A1_T_rho_type[2], self.A1_T_rho_args[2],
+                                 0.9*A1_rho[-1], A1_rho[-1], u_cold_array_L3)
+            A1_rho.append(rho)
+            A1_T.append(weos.T_rho(rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2]))
+            A1_u.append(weos._u_cold_tab(rho, mat_id_L3, u_cold_array_L3) + C_V_L3*A1_T[-1])
+            A1_mat_id.append(mat_id_L3)   
+
+            step += 1
+            if step >= self.num_prof:
+                print("Layer 3 goes out too far!")
+                break
+        
+        # Apppend the new layer to the profiles 
+        self.A1_r       = np.append(A1_r[::-1], self.A1_r)
+        self.A1_m_enc   = np.append(A1_m_enc[::-1], self.A1_m_enc)
+        self.A1_P       = np.append(A1_P[::-1], self.A1_P)
+        self.A1_T       = np.append(A1_T[::-1], self.A1_T)
+        self.A1_rho     = np.append(A1_rho[::-1], self.A1_rho)
+        self.A1_u       = np.append(A1_u[::-1], self.A1_u)
+        self.A1_mat_id  = np.append(A1_mat_id[::-1], self.A1_mat_id)
+                
     # ========
     # Output
     # ========

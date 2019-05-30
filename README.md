@@ -64,3 +64,5 @@ To Do etc. (Jacob thoughts in progress)
 + Rename array variables e.g. r -> A1_r (or whatever) everywhere
 + Change the iterations to be for some tolerance not a number of iterations
 + Add units to hdf5 file
++ Set A1_r_layer and all other things that can be set after calculating profiles
++ Move the add-L3 function out of the class, like the others
