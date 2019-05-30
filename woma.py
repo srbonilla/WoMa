@@ -4476,7 +4476,135 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
 ###############################################################################
 ####################### Spining profile classes ###############################
 ###############################################################################
+class SpinPlanet():
     
+    def __init__(
+    self, name, planet=None, Fp_planet=None, Tw=None, num_layer=None, 
+    A1_mat_id_layer=None, A1_R_layer=None,
+    A1_T_rho_type=None, A1_T_rho_args=None, A1_r=None, A1_P=None, A1_T=None,
+    A1_rho=None, num_prof=1000, num_attempt=15, R_e=None, R_p=None
+    ):
+        
+        self.name               = name
+        self.Fp_planet          = Fp_planet
+        self.num_prof           = num_prof
+        self.num_attempt        = num_attempt
+        self.R_e                = R_e
+        self.R_p                = R_p
+        self.Tw                 = Tw
+        
+        if planet is not None:
+            self.num_layer       = planet.num_layer
+            self.A1_R_layer      = planet.A1_R_layer
+            self.A1_mat_id_layer = planet.A1_mat_id_layer
+            self.A1_T_rho_type   = planet.A1_T_rho_type
+            self.A1_T_rho_args   = planet.A1_T_rho_args
+            self.A1_r            = planet.A1_r
+            self.A1_P            = planet.A1_P
+            self.A1_T            = planet.A1_T
+            self.A1_rho          = planet.A1_rho
+            
+        else:
+            self.num_layer       = num_layer
+            self.A1_R_layer      = A1_R_layer
+            self.A1_mat_id_layer = A1_mat_id_layer
+            self.A1_T_rho_type   = A1_T_rho_type
+            self.A1_T_rho_args   = A1_T_rho_args
+            self.A1_r            = A1_r
+            self.A1_P            = A1_P
+            self.A1_T            = A1_T
+            self.A1_rho          = A1_rho
+            
+        assert(self.num_layer in [1, 2, 3])
+        
+    def spin(self):
+        
+        P_c   = np.max(self.A1_P)
+        P_s   = np.min(self.A1_P)
+        rho_c = np.max(self.A1_rho)
+        rho_s = np.min(self.A1_rho)
+        
+        r_array     = np.linspace(0, self.R_e, self.num_prof)
+        z_array     = np.linspace(0, self.R_p, self.num_prof)
+        
+        if self.num_layer == 1:
+            
+            u_cold_array = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
+        
+            profile_e, profile_p = \
+                spin1layer(self.num_attempt, r_array, z_array,
+                           self.A1_r, self.A1_rho, self.Tw,
+                           P_c, P_s,
+                           rho_c, rho_s,
+                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
+                           u_cold_array)
+            
+            print("\nDone!")
+        
+            self.A1_r_equator   = r_array
+            self.A1_r_pole      = z_array
+            self.A1_rho_equator = profile_e[-1]
+            self.A1_rho_pole    = profile_p[-1]
+            
+        elif self.num_layer == 2:
+            
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary = 0.5*(a + b)
+            
+            u_cold_array_L1   = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
+            u_cold_array_L2   = weos.load_u_cold_array(self.A1_mat_id_layer[1]) 
+            
+            profile_e, profile_p = \
+                spin2layer(self.num_attempt, r_array, z_array,
+                           self.A1_r, self.A1_rho, self.Tw,
+                           P_c, P_boundary, P_s,
+                           rho_c, rho_s,
+                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
+                           self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+                           u_cold_array_L1, u_cold_array_L2)
+                
+            print("\nDone!")
+            
+            self.A1_r_equator     = r_array
+            self.A1_r_pole        = z_array
+            self.A1_rho_equator   = profile_e[-1]
+            self.A1_rho_pole      = profile_p[-1]
+            
+            
+        elif self.num_layer == 3:
+            
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary_cm = 0.5*(a + b)
+            
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
+            P_boundary_ma = 0.5*(a + b)
+        
+            u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
+            u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
+            u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2]) 
+            
+            profile_e, profile_p = \
+                spin3layer(self.num_attempt, r_array, z_array,
+                           self.A1_r, self.A1_rho, self.Tw,
+                           P_c, P_boundary_cm, P_boundary_ma, P_s,
+                           rho_c, rho_s,
+                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
+                           self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+                           self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
+                           u_cold_array_L1, u_cold_array_L2, u_cold_array_L3)
+                
+            print("\nDone!")
+            
+            self.A1_r_equator     = r_array
+            self.A1_r_pole        = z_array
+            self.A1_rho_equator = profile_e[-1]
+            self.A1_rho_pole    = profile_p[-1]
+            
+        
+
 class _spin():
     
     N_steps_spin = 1000
