@@ -1712,8 +1712,8 @@ class Planet():
             name (str)
                 The name of the planet object.
                 
-            Fp_prof (str)
-                The profile data file path. Default to "data/<name>.hdf5".
+            Fp_planet (str)
+                The object data file path. Default to "data/<name>.hdf5".
             
             num_layer (int)
                 The number of planetary layers.
@@ -1731,11 +1731,11 @@ class Planet():
             A1_T_rho_args ([?])
                 ...
 
-            A1_r_layer ([float])
+            A1_R_layer ([float])
                 The outer radii of each layer, from the central layer outwards
                 (R_E).
 
-            A1_m_layer ([float])
+            A1_M_layer ([float])
                 The mass within each layer, starting from the from the central
                 layer outwards (M_E).
 
@@ -1763,22 +1763,28 @@ class Planet():
                 
             num_attempt, num_attempt_2 (int)
                 The maximum number of iteration attempts.
+                
+        Attrs (in addition to the args):
+            A1_r ([float])
+                The profile radii, in increasing order.
+                
+            ...
     """    
     def __init__(
-        self, name, Fp_prof=None, num_layer=None, A1_mat_id_layer=None,
-        A1_T_rho_type=None, A1_T_rho_args=None, A1_r_layer=None, 
-        A1_m_layer=None, M=None, P_s=None, T_s=None, rho_s=None, I_MR2=None, 
+        self, name, Fp_planet=None, num_layer=None, A1_mat_id_layer=None,
+        A1_T_rho_type=None, A1_T_rho_args=None, A1_R_layer=None, 
+        A1_M_layer=None, M=None, P_s=None, T_s=None, rho_s=None, I_MR2=None, 
         M_max=None, R_max=None, rho_min=None, num_prof=10000, num_attempt=40, 
         num_attempt_2=40
         ):
         self.name               = name
-        self.Fp_prof            = Fp_prof
+        self.Fp_planet          = Fp_planet
         self.num_layer          = num_layer
         self.A1_mat_id_layer    = A1_mat_id_layer
         self.A1_T_rho_type      = A1_T_rho_type
         self.A1_T_rho_args      = A1_T_rho_args
-        self.A1_r_layer         = A1_r_layer
-        self.A1_m_layer         = A1_m_layer
+        self.A1_R_layer         = A1_R_layer
+        self.A1_M_layer         = A1_M_layer
         self.M                  = M
         self.P_s                = P_s
         self.T_s                = T_s
@@ -1791,14 +1797,14 @@ class Planet():
         self.num_attempt        = num_attempt
         self.num_attempt_2      = num_attempt_2
         
-        if self.Fp_prof is None:
-            self.Fp_prof    = "data/%s.hdf5" % self.name
-        if self.A1_r_layer is None:
-            self.A1_r_layer = [None] * self.num_layer
-        if self.A1_m_layer is None:
-            self.A1_m_layer = [None] * self.num_layer
+        if self.Fp_planet is None:
+            self.Fp_planet  = "data/%s.hdf5" % self.name
+        if self.A1_R_layer is None:
+            self.A1_R_layer = [None] * self.num_layer
+        if self.A1_M_layer is None:
+            self.A1_M_layer = [None] * self.num_layer
 
-        self.R  = self.A1_r_layer[-1]
+        self.R  = self.A1_R_layer[-1]
         
         # Two of P, T, rho must be provided at the surface to calculate the 
         # third. If all three are provided then rho is overwritten.
@@ -1834,6 +1840,46 @@ class Planet():
                 print("pressure, temperature and density at the surface of the planet,")
                 print("materials, relations between temperature and density with any desired aditional parameters,")
                 print("for layer 1, mantle and atmosphere of the planet.")
+                        
+    # ========
+    # General
+    # ========
+    def set_layer_info(self):
+        """ Find and set the information about each planet layer after making
+            the profiles.
+        """
+        # Boundary radii
+        self.A1_R_layer[-1] = self.A1_r[-1]
+        self.R              = self.A1_R_layer[-1]
+        ###WIP
+    
+    def save_planet(self):
+        Fp_planet = check_end(self.Fp_planet, ".hdf5")
+        
+        print("Saving planet data to %s... " % Fp_planet[-30:], end='')
+        sys.stdout.flush()
+        
+        ###WIP save all attributes
+        with h5py.File(Fp_planet, "w") as f:
+            save_prof_data(
+                f, self.num_layer, self.A1_r, self.A1_m_enc, self.A1_rho, 
+                self.A1_T, self.A1_P, self.A1_u, self.A1_mat_id
+                )
+        
+        print("Done")
+        
+    def load_planet_profiles(self):
+        Fp_planet = check_end(self.Fp_planet, ".hdf5")
+        
+        print("Loading profile data from %s... " % Fp_planet[-30:], end='')
+        sys.stdout.flush()
+        
+        with h5py.File(Fp_planet, "r") as f:
+            (self.A1_r, self.A1_m_enc, self.A1_rho, self.A1_T, self.A1_P, 
+             self.A1_u, self.A1_mat_id) = multi_get_prof_data(
+                f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
+                
+        print("Done")
         
     # ========
     # 1 Layer
@@ -1851,7 +1897,7 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], u_cold_array, self.num_attempt
             )
-        self.A1_r_layer[-1] = self.R
+        self.A1_R_layer[-1] = self.R
         
         print("Tweaking M to avoid peaks at the center of the planet...")
         
@@ -1914,7 +1960,7 @@ class Planet():
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         
-        self.A1_r_layer[0] = L2_find_R1(
+        self.A1_R_layer[0] = L2_find_R1(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
@@ -1926,7 +1972,7 @@ class Planet():
         
         self.M = L2_find_mass(
             self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
@@ -1935,7 +1981,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
@@ -1951,7 +1997,7 @@ class Planet():
         
         self.M = L2_find_mass(
             self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
@@ -1960,7 +2006,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
@@ -1974,18 +2020,18 @@ class Planet():
         
         self.R = L2_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2, self.num_attempt
             )
-        self.A1_r_layer[-1] = self.R
+        self.A1_R_layer[-1] = self.R
         
         print("Tweaking M to avoid peaks at the center of the planet...")
         
         self.M = L2_find_mass(
             self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
@@ -1996,7 +2042,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
@@ -2009,7 +2055,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
             u_cold_array_L2
@@ -2023,7 +2069,7 @@ class Planet():
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
         
-        self.A1_r_layer[0], self.A1_r_layer[1] = L3_find_R1_R2(
+        self.A1_R_layer[0], self.A1_R_layer[1] = L3_find_R1_R2(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s, 
             self.I_MR2, self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
@@ -2037,7 +2083,7 @@ class Planet():
         
         self.M = L3_find_mass(
             self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0], 
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2048,7 +2094,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0], 
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2063,9 +2109,9 @@ class Planet():
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
         
-        self.A1_r_layer[1] = L3_find_R2(
+        self.A1_R_layer[1] = L3_find_R2(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], 
             self.A1_mat_id_layer[2], self.A1_T_rho_type[2], 
@@ -2077,7 +2123,7 @@ class Planet():
         
         self.M = L3_find_mass(
             self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2088,7 +2134,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0], 
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2105,9 +2151,9 @@ class Planet():
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
         
-        self.A1_r_layer[0] = L3_find_R1(
+        self.A1_R_layer[0] = L3_find_R1(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s, 
-            self.A1_r_layer[1], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
+            self.A1_R_layer[1], self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1], 
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], 
             self.A1_mat_id_layer[2], self.A1_T_rho_type[2], 
@@ -2119,7 +2165,7 @@ class Planet():
         
         self.M = L3_find_mass(
             self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0], 
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2130,7 +2176,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0], 
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2151,7 +2197,7 @@ class Planet():
         
         self.M = L3_find_mass(
             self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0], 
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2162,7 +2208,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2181,20 +2227,20 @@ class Planet():
         
         self.R = L3_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
             self.A1_T_rho_type[2], self.A1_T_rho_args[2], u_cold_array_L1, 
             u_cold_array_L2, u_cold_array_L3, self.num_attempt
             )
-        self.A1_r_layer[-1] = self.R
+        self.A1_R_layer[-1] = self.R
         
         print("Tweaking M to avoid peaks at the center of the planet...")
         
         self.M = L3_find_mass(
             self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0], 
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2205,7 +2251,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2225,7 +2271,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u, 
          self.A1_mat_id) = L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_r_layer[0], self.A1_r_layer[1], self.A1_mat_id_layer[0], 
+            self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0], 
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1], 
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2], 
@@ -2235,24 +2281,35 @@ class Planet():
             
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
     
-    def gen_prof_L3_given_prof_L2(self):
+    def gen_prof_L3_given_prof_L2(self, mat_id=None, T_rho_type=None, 
+                                  T_rho_args=None, rho_min=None):
         """ Add a third layer (atmosphere) on top of existing 2 layer profiles.
         
-            Requires:
+            Args or set attributes:
                 ...
                 
             Sets:
                 ...
         """   
+        self.num_layer   = 3
+        if mat_id is not None:
+            self.A1_mat_id_layer.append(mat_id)
+        if T_rho_type is not None:
+            self.A1_T_rho_type.append(T_rho_type)
+        if T_rho_args is not None:
+            self.A1_T_rho_args.append(T_rho_args)
+        if rho_min is not None:
+            self.rho_min    = rho_min
+            
         dr              = self.A1_r[-2]
         mat_id_L3       = self.A1_mat_id_layer[2]        
         u_cold_array_L3 = weos.load_u_cold_array(mat_id_L3)
         C_V_L3          = weos._C_V(mat_id_L3)
         
         # Initialise the new profiles
-        A1_r        = [self.A1_r[0]]    ### + dr?
+        A1_r        = [self.A1_r[0]]
         A1_m_enc    = [self.A1_m_enc[0]]
-        A1_P        = [self.A1_P[0]]    ### + dP?
+        A1_P        = [self.A1_P[0]]
         A1_T        = [self.A1_T[0]]
         A1_u        = [self.A1_u[0]]
         A1_mat_id   = [mat_id_L3]
@@ -2283,43 +2340,30 @@ class Planet():
                 break
         
         # Apppend the new layer to the profiles 
-        self.A1_r       = np.append(A1_r[::-1], self.A1_r)
-        self.A1_m_enc   = np.append(A1_m_enc[::-1], self.A1_m_enc)
-        self.A1_P       = np.append(A1_P[::-1], self.A1_P)
-        self.A1_T       = np.append(A1_T[::-1], self.A1_T)
-        self.A1_rho     = np.append(A1_rho[::-1], self.A1_rho)
-        self.A1_u       = np.append(A1_u[::-1], self.A1_u)
-        self.A1_mat_id  = np.append(A1_mat_id[::-1], self.A1_mat_id)
+        self.A1_r       = np.append(A1_r[1:][::-1], self.A1_r)
+        self.A1_m_enc   = np.append(A1_m_enc[1:][::-1], self.A1_m_enc)
+        self.A1_P       = np.append(A1_P[1:][::-1], self.A1_P)
+        self.A1_T       = np.append(A1_T[1:][::-1], self.A1_T)
+        self.A1_rho     = np.append(A1_rho[1:][::-1], self.A1_rho)
+        self.A1_u       = np.append(A1_u[1:][::-1], self.A1_u)
+        self.A1_mat_id  = np.append(A1_mat_id[1:][::-1], self.A1_mat_id)
+
+def load_planet(name, Fp_planet):
+    """ Load a full Planet object from a file.
+    
+        Args:
+            name (str)
+                The name of the planet object.
                 
-    # ========
-    # Output
-    # ========
-    def save_profile(self):
-        Fp_prof = check_end(self.Fp_prof, ".hdf5")
-        
-        print("Saving profile data to %s... " % Fp_prof[-30:], end='')
-        sys.stdout.flush()
-        
-        with h5py.File(Fp_prof, "w") as f:
-            save_prof_data(
-                f, self.num_layer, self.A1_r, self.A1_m_enc, self.A1_rho, 
-                self.A1_T, self.A1_P, self.A1_u, self.A1_mat_id
-                )
-                
-        print("Done")
-        
-    def load_profile_arrays(self):
-        Fp_prof = check_end(self.Fp_prof, ".hdf5")
-        
-        print("Loading profile data from %s... " % Fp_prof[-30:], end='')
-        sys.stdout.flush()
-        
-        with h5py.File(Fp_prof, "r") as f:
-            (self.A1_r, self.A1_m_enc, self.A1_rho, self.A1_T, self.A1_P, 
-             self.A1_u, self.A1_mat_id) = multi_get_prof_data(
-                f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
-                
-        print("Done")
+            Fp_planet (str)
+                The object data file path.
+    """
+    planet  = Planet(name=name, Fp_planet=Fp_planet)
+    
+    # Load and set all the attributes
+    ###WIP
+    
+    return planet
 
 ###############################################################################
 ####################### Spining profile functions #############################

@@ -56,11 +56,11 @@ def plot_spherical_profile(planet):
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 1,
+    num_layer       = 2,
     A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[0., 0.], [0., 0.]],
-    A1_r_layer      = [None, 0.988 * R_earth],
+    A1_R_layer      = [None, 0.988 * R_earth],
     M               = 0.887 * M_earth,
     P_s             = 1e5,
     T_s             = 2000,
@@ -68,22 +68,20 @@ prof_pE = woma.Planet(
 
 # prof_pE.gen_prof_L2_fix_R1_given_R_M()
 # 
-# prof_pE.save_profile()
+# prof_pE.save_planet()
 
-# Load and plot the profile
-prof_pE.load_profile_arrays()
+# Load and plot the profiles
+prof_pE.load_planet_profiles()
 
-plot_spherical_profile(prof_pE)
+# plot_spherical_profile(prof_pE)
 
 # Add atmosphere
-prof_pE.num_layer       = 3
-prof_pE.A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_idg_N2]
-prof_pE.A1_T_rho_type   = [1, 1, 1]
-prof_pE.A1_T_rho_args   = [[0., 0.], [0., 0.], [0., 0.]]
-prof_pE.A1_r_layer      = [None, 0.988 * R_earth, None]
-prof_pE.rho_min         = 1e-3
-
-prof_pE.gen_prof_L3_given_prof_L2()
+prof_pE.gen_prof_L3_given_prof_L2(
+    mat_id      = weos.id_idg_N2,
+    T_rho_type  = 1,
+    T_rho_args  = [0., 0.],
+    rho_min     = 1e-3,
+    )
 
 plot_spherical_profile(prof_pE)
 

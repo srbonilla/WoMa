@@ -61,3 +61,5 @@ To Do etc. (Jacob thoughts in progress)
 + Move the add-L3 function out of the class, like the others
 + Automatically choose how to gen profiles depending on which inputs are given
 + See `###` and `...` notes throughout the code
++ Reverse profile arrays to be ordered by increasing radius
++ Continue writing `set_layer_info()`, `save_planet()`, `load_planet()`
