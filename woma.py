@@ -69,68 +69,58 @@ def moi(A1_r, A1_rho):
     return MoI
 
 # Output
-Di_hdf5_prof_label  = {
-    "num_layer" : "Number of Layers",
-    "r"         : "Radii",
-    "m_enc"     : "Enclosed Masses",
-    "rho"       : "Densities",
-    "T"         : "Temperatures",
-    "u"         : "Specific Internal Energies",
-    "P"         : "Pressures",
-    "mat_id"    : "Material ID",
+Di_hdf5_planet_label  = {
+    "num_layer"     : "Number of Layers",
+    "mat_id_layer"  : "Layer Material IDs",
+    "T_rho_type"    : "Layer T-rho Type",
+    "T_rho_args"    : "Layer T-rho Args",
+    "R_layer"       : "Layer Boundary Radii",
+    "M_layer"       : "Mass in each Layer",
+    "M"             : "Total Mass",
+    "R"             : "Total Radius",
+    "P_s"           : "Surface Pressure",
+    "T_s"           : "Surface Temperature",
+    "rho_s"         : "Surface Density",
+    "r"             : "Profile Radii",
+    "m_enc"         : "Profile Enclosed Masses",
+    "rho"           : "Profile Densities",
+    "T"             : "Profile Temperatures",
+    "u"             : "Profile Specific Internal Energies",
+    "P"             : "Profile Pressures",
+    "mat_id"        : "Profile Material IDs",
     }
 
-def save_prof_data(f, num_layer, A1_r, A1_m_enc, A1_rho, A1_T, A1_P, A1_u, 
-                   A1_mat_id):
-    """ Save the profile data.
-
-        Args:
-            f (h5py File)
-                The opened hdf5 data file (with "w").
-
-            ...
-    """
-    # Group
-    grp = f.create_group("/profile")
-
-    # Attributes
-    grp.attrs[Di_hdf5_prof_label["num_layer"]]   = num_layer
-
-    # Arrays
-    grp.create_dataset(Di_hdf5_prof_label["r"], data=A1_r, dtype="d")
-    grp.create_dataset(Di_hdf5_prof_label["m_enc"], data=A1_m_enc, dtype="d")
-    grp.create_dataset(Di_hdf5_prof_label["rho"], data=A1_rho, dtype="d")
-    grp.create_dataset(Di_hdf5_prof_label["T"], data=A1_T, dtype="d")
-    grp.create_dataset(Di_hdf5_prof_label["P"], data=A1_P, dtype="d")
-    grp.create_dataset(Di_hdf5_prof_label["u"], data=A1_u, dtype="d")
-    grp.create_dataset(Di_hdf5_prof_label["mat_id"], data=A1_mat_id, dtype="i")
-
-def get_prof_data(f, param):
-    """ Load a profile attribute or array.
+def get_planet_data(f, param):
+    """ Load a planet attribute or array.
 
         Args:
             f (h5py File)
                 The opened hdf5 data file (with "r").
 
             param (str)
-                The array or attribute to get. See Di_hdf5_prof_label for
+                The array or attribute to get. See Di_hdf5_planet_label for
                 details.
 
         Returns:
             data (?)
                 The array or attribute (std units).
     """
-    return f["profile/" + Di_hdf5_prof_label[param]][()]
+    # Attributes
+    try:
+        return f["planet"].attrs[Di_hdf5_planet_label[param]]
+    # Datasets
+    except KeyError:
+        return f["planet/" + Di_hdf5_planet_label[param]][()]
 
-def multi_get_prof_data(f, A1_param):
-    """ Load multiple profile attributes or arrays.
+def multi_get_planet_data(f, A1_param):
+    """ Load multiple planet attributes or arrays.
 
         Args:
             f (h5py File)
                 The opened hdf5 data file (with "r").
 
             A1_param ([str])
-                List of the arrays or attributes to get. See Di_hdf5_prof_label
+                List of the arrays or attributes to get. See Di_hdf5_planet_label
                 for details.
 
         Returns:
@@ -140,7 +130,7 @@ def multi_get_prof_data(f, A1_param):
     A1_data = []
     # Load each requested array
     for param in A1_param:
-        A1_data.append(get_prof_data(f, param))
+        A1_data.append(get_planet_data(f, param))
 
     return A1_data
     
@@ -1771,7 +1761,7 @@ class Planet():
             ...
     """    
     def __init__(
-        self, name, Fp_planet=None, num_layer=None, A1_mat_id_layer=None,
+        self, name, Fp_planet=None, num_layer=1, A1_mat_id_layer=None,
         A1_T_rho_type=None, A1_T_rho_args=None, A1_R_layer=None, 
         A1_M_layer=None, M=None, P_s=None, T_s=None, rho_s=None, I_MR2=None, 
         M_max=None, R_max=None, rho_min=None, num_prof=10000, num_attempt=40, 
@@ -1782,8 +1772,8 @@ class Planet():
         self.num_layer          = num_layer
         self.A1_mat_id_layer    = A1_mat_id_layer
         self.A1_T_rho_type      = A1_T_rho_type
-        self.A1_T_rho_args      = np.array(A1_T_rho_args, dtype='float')
-        self.A1_R_layer         = np.array(A1_R_layer, dtype='float')
+        self.A1_T_rho_args      = A1_T_rho_args
+        self.A1_R_layer         = A1_R_layer
         self.A1_M_layer         = A1_M_layer
         self.M                  = M
         self.P_s                = P_s
@@ -1803,7 +1793,6 @@ class Planet():
             self.A1_R_layer = [None] * self.num_layer
         if self.A1_M_layer is None:
             self.A1_M_layer = [None] * self.num_layer
-
         self.R  = self.A1_R_layer[-1]
         
         # Two of P, T, rho must be provided at the surface to calculate the 
@@ -1818,8 +1807,6 @@ class Planet():
         # elif self.rho_s is not None and self.T_s is not None:
         #     self.P_s    = weos.find_P_fixed_rho_T(self.rho_s, self.T_s, 
         #                                           self.A1_mat_id_layer[-1])
-        else:
-            raise ValueError("Two of the surface P, T, rho values are required")
         
         ### default M_max and R_max?
         
@@ -1847,6 +1834,8 @@ class Planet():
     def update_attributes(self):
         """ Set all planet information after making the profiles.
         """
+        self.num_prof   = len(self.A1_r)
+        
         # Reverse profile arrays to be ordered by increasing radius
         if self.A1_r[-1] < self.A1_r[0]:
             self.A1_r       = self.A1_r[::-1]
@@ -1867,41 +1856,64 @@ class Planet():
         # Layer masses
         self.A1_M_layer = self.A1_m_enc[A1_idx_layer]
         if self.num_layer > 1:
-            self.A1_M_layer[1:] -= self.A1_M_layer[1:]
+            self.A1_M_layer[1:] -= self.A1_M_layer[:-1]
         self.M  = np.sum(self.A1_M_layer)
         
         # Moment of inertia
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
-        
-        print(self.A1_R_layer / R_earth)###wilo
-        print(self.R / R_earth)
-        print(self.A1_M_layer / M_earth)
-        print(self.M / M_earth)
     
     def save_planet(self):
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
         
-        print("Saving planet data to %s... " % Fp_planet[-30:], end='')
+        print("Saving \"%s\"... " % Fp_planet[-60:], end='')
         sys.stdout.flush()
         
-        ###WIP save all attributes
         with h5py.File(Fp_planet, "w") as f:
-            save_prof_data(
-                f, self.num_layer, self.A1_r, self.A1_m_enc, self.A1_rho, 
-                self.A1_T, self.A1_P, self.A1_u, self.A1_mat_id
-                )
-        
+            # Group
+            grp = f.create_group("/planet")
+
+            # Attributes
+            grp.attrs[Di_hdf5_planet_label["num_layer"]]    = self.num_layer
+            grp.attrs[Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
+            grp.attrs[Di_hdf5_planet_label["T_rho_type"]]   = self.A1_T_rho_type
+            grp.attrs[Di_hdf5_planet_label["T_rho_args"]]   = self.A1_T_rho_args
+            grp.attrs[Di_hdf5_planet_label["R_layer"]]      = self.A1_R_layer
+            grp.attrs[Di_hdf5_planet_label["M_layer"]]      = self.A1_M_layer
+            grp.attrs[Di_hdf5_planet_label["M"]]            = self.M
+            grp.attrs[Di_hdf5_planet_label["R"]]            = self.R
+            grp.attrs[Di_hdf5_planet_label["P_s"]]          = self.P_s
+            grp.attrs[Di_hdf5_planet_label["T_s"]]          = self.T_s
+            grp.attrs[Di_hdf5_planet_label["rho_s"]]        = self.rho_s
+
+            # Arrays
+            grp.create_dataset(
+                Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
+            grp.create_dataset(
+                Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d")
+            grp.create_dataset(
+                Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
+            grp.create_dataset(
+                Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
+            grp.create_dataset(                
+                Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
+            grp.create_dataset(
+                Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
+            grp.create_dataset(
+                Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i")
+                        
         print("Done")
         
     def load_planet_profiles(self):
+        """ Load the profiles arrays for an existing Planet object from a file.
+        """
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
         
-        print("Loading profile data from %s... " % Fp_planet[-30:], end='')
+        print("Loading \"%s\"... " % Fp_planet[-60:], end='')
         sys.stdout.flush()
         
         with h5py.File(Fp_planet, "r") as f:
             (self.A1_r, self.A1_m_enc, self.A1_rho, self.A1_T, self.A1_P, 
-             self.A1_u, self.A1_mat_id) = multi_get_prof_data(
+             self.A1_u, self.A1_mat_id) = multi_get_planet_data(
                 f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
                 
         print("Done")
@@ -2516,9 +2528,9 @@ class Planet():
         
         self.num_layer   = 3
         if mat_id is not None:
-            self.A1_mat_id_layer.append(mat_id)
+            self.A1_mat_id_layer = np.append(self.A1_mat_id_layer, mat_id)
         if T_rho_type is not None:
-            self.A1_T_rho_type.append(T_rho_type)
+            self.A1_T_rho_type = np.append(self.A1_T_rho_type, T_rho_type)
         if T_rho_args is not None:
             A1_T_rho_args_aux = np.zeros((3,2))
             A1_T_rho_args_aux[0:2] = self.A1_T_rho_args
@@ -2596,12 +2608,28 @@ def load_planet(name, Fp_planet):
             Fp_planet (str)
                 The object data file path.
     """
-    planet  = Planet(name=name, Fp_planet=Fp_planet)
+    p = Planet(name=name, Fp_planet=Fp_planet)
     
-    # Load and set all the attributes
-    ###WIP
+    Fp_planet = check_end(p.Fp_planet, ".hdf5")
     
-    return planet
+    print("Loading \"%s\"... " % Fp_planet[-60:], end='')
+    sys.stdout.flush()
+    
+    with h5py.File(Fp_planet, "r") as f:
+        (p.num_layer, p.A1_mat_id_layer, p.A1_T_rho_type, p.A1_T_rho_args, 
+         p.A1_R_layer, p.A1_M_layer, p.M, p.R, p.P_s, p.T_s, p.rho_s, p.A1_r, 
+         p.A1_m_enc, p.A1_rho, p.A1_T, p.A1_P, p.A1_u, p.A1_mat_id
+         ) = multi_get_planet_data(
+            f, ["num_layer", "mat_id_layer", "T_rho_type", "T_rho_args", 
+                "R_layer", "M_layer", "M", "R", "P_s", "T_s", "rho_s", "r", 
+                "m_enc", "rho", "T", "P", "u", "mat_id"]
+            )
+            
+    print("Done")
+    
+    p.update_attributes()
+    
+    return p
 
 ###############################################################################
 ####################### Spining profile functions #############################
