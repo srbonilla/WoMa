@@ -347,9 +347,8 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
     if A1_m_enc[-1] < 0:   
         print("M_max is too low, ran out of mass in first iteration")
     
-    # Iterate the mass
-    M_tol   = 1e-10 * M_min     
-    while np.abs(M_min - M_max) > M_tol:            
+    # Iterate the mass     
+    while np.abs(M_min - M_max) > 1e-8*M_min:            
         M_try = (M_min + M_max) * 0.5
         
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
@@ -1392,8 +1391,8 @@ def L3_find_R2(
         )
         
     if A1_m_enc[-1] == 0:
-        print("A planet made of core and atm. materials lacks mass.")
-        print("Try increasing the mass, increasing R1 or decreasing R.") 
+        print("A planet made of core and mantle materials excess mass.")  
+        print("Try decreasing the mass, decreasing R1 or increasing R")
         return R2_min
         
     rho_s_L2 = weos._find_rho_fixed_P_T(P_s, T_s, mat_id_L2, u_cold_array_L2)
@@ -1405,8 +1404,9 @@ def L3_find_R2(
         )
         
     if A1_m_enc[-1] > 0:
-        print("A planet made of core and mantle materials excess mass.")  
-        print("Try decreasing the mass, decreasing R1 or increasing R")
+        print("A planet made of core and atm. materials lacks mass.")
+        print("Try increasing the mass, increasing R1 or decreasing R.") 
+        
         return R2_max
     
     for i in tqdm(range(num_attempt), desc="Finding R2 given M, R, R1"):
@@ -1733,11 +1733,11 @@ class Planet():
 
             A1_R_layer ([float])
                 The outer radii of each layer, from the central layer outwards
-                (R_E).
+                (SI).
 
             A1_M_layer ([float])
                 The mass within each layer, starting from the from the central
-                layer outwards (M_E).
+                layer outwards (SI).
 
             M (float)
                 The total mass.
@@ -1747,7 +1747,7 @@ class Planet():
                 of the three must be provided (Pa, K, kg m^-3).
 
             I_MR2 (float)
-                The reduced moment of inertia.
+                The reduced moment of inertia. (SI)
             
             M_max (float)
                 ...
@@ -1782,8 +1782,8 @@ class Planet():
         self.num_layer          = num_layer
         self.A1_mat_id_layer    = A1_mat_id_layer
         self.A1_T_rho_type      = A1_T_rho_type
-        self.A1_T_rho_args      = A1_T_rho_args
-        self.A1_R_layer         = A1_R_layer
+        self.A1_T_rho_args      = np.array(A1_T_rho_args, dtype='float')
+        self.A1_R_layer         = np.array(A1_R_layer, dtype='float')
         self.A1_M_layer         = A1_M_layer
         self.M                  = M
         self.P_s                = P_s
@@ -1888,12 +1888,20 @@ class Planet():
         """ Compute the profile of a planet with 1 layer by finding the correct 
             radius for a given mass.
         """
+        # Check for necessary input
         assert(self.num_layer == 1)
+        assert(self.R_max is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
         
         u_cold_array = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         
         self.R = L1_find_radius(
-            self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], u_cold_array, self.num_attempt
             )
@@ -1918,7 +1926,15 @@ class Planet():
             )
     
     def gen_prof_L1_fix_M_given_R(self):
+        # Check for necessary input
         assert(self.num_layer == 1)
+        assert(self.R is not None)
+        assert(self.M_max is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
     
         u_cold_array = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         
@@ -1941,7 +1957,15 @@ class Planet():
             )
     
     def gen_prof_L1_given_R_M(self):
+        # Check for necessary input
         assert(self.num_layer == 1)
+        assert(self.R is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
         
         u_cold_array = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         
@@ -1957,6 +1981,18 @@ class Planet():
     # 2 Layers
     # ========
     def gen_prof_L2_fix_R1_given_R_M(self):
+        # Check for necessary input
+        assert(self.num_layer == 2)
+        assert(self.R is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         
@@ -1990,6 +2026,19 @@ class Planet():
         print("Done!")
             
     def gen_prof_L2_fix_M_given_R1_R(self):
+        # Check for necessary input
+        assert(self.num_layer == 2)
+        assert(self.R is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.M_max is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         
@@ -2015,6 +2064,19 @@ class Planet():
         print("Done!")
 
     def gen_prof_L2_fix_R_given_M_R1(self):
+        # Check for necessary input
+        assert(self.num_layer == 2)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.R_max is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         
@@ -2049,6 +2111,19 @@ class Planet():
             )
 
     def gen_prof_L2_given_R_M_R1(self):
+        # Check for necessary input
+        assert(self.num_layer == 2)
+        assert(self.R is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         
@@ -2065,6 +2140,21 @@ class Planet():
     # 3 Layers
     # ========
     def gen_prof_L3_fix_R1_R2_given_R_M_I(self):
+        # Check for necessary input
+        assert(self.num_layer == 3)
+        assert(self.R is not None)
+        assert(self.M is not None)
+        assert(self.I_MR2 is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_mat_id_layer[2] is not None)
+        assert(self.A1_T_rho_type[2] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
@@ -2105,6 +2195,21 @@ class Planet():
         print("Done!")
         
     def gen_prof_L3_fix_R2_given_R_M_R1(self):
+        # Check for necessary input
+        assert(self.num_layer == 3)
+        assert(self.R is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_mat_id_layer[2] is not None)
+        assert(self.A1_T_rho_type[2] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
@@ -2147,6 +2252,21 @@ class Planet():
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
     
     def gen_prof_L3_fix_R1_given_R_M_R2(self):
+        # Check for necessary input
+        assert(self.num_layer == 3)
+        assert(self.R is not None)
+        assert(self.A1_R_layer[1] is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_mat_id_layer[2] is not None)
+        assert(self.A1_T_rho_type[2] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
@@ -2189,6 +2309,22 @@ class Planet():
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
     
     def gen_prof_L3_fix_M_given_R_R1_R2(self):
+        # Check for necessary input
+        assert(self.num_layer == 3)
+        assert(self.R is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.A1_R_layer[1] is not None)
+        assert(self.M_max is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_mat_id_layer[2] is not None)
+        assert(self.A1_T_rho_type[2] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
@@ -2221,6 +2357,22 @@ class Planet():
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
     
     def gen_prof_L3_fix_R_given_M_R1_R2(self):
+        # Check for necessary input
+        assert(self.num_layer == 3)
+        assert(self.R_max is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.A1_R_layer[1] is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_mat_id_layer[2] is not None)
+        assert(self.A1_T_rho_type[2] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
@@ -2264,6 +2416,22 @@ class Planet():
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
     
     def gen_prof_L3_given_R_M_R1_R2(self):
+        # Check for necessary input
+        assert(self.num_layer == 3)
+        assert(self.R is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.A1_R_layer[1] is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_mat_id_layer[2] is not None)
+        assert(self.A1_T_rho_type[2] is not None)
+        
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
@@ -2291,13 +2459,30 @@ class Planet():
             Sets:
                 ...
         """   
+        # Check for necessary input
+        assert(self.num_layer == 2)
+        assert(self.R is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.A1_R_layer[1] is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type[1] is not None)
+        
         self.num_layer   = 3
         if mat_id is not None:
             self.A1_mat_id_layer.append(mat_id)
         if T_rho_type is not None:
             self.A1_T_rho_type.append(T_rho_type)
         if T_rho_args is not None:
-            self.A1_T_rho_args.append(T_rho_args)
+            A1_T_rho_args_aux = np.zeros((3,2))
+            A1_T_rho_args_aux[0:2] = self.A1_T_rho_args
+            A1_T_rho_args_aux[2] = np.array(T_rho_args, dtype='float')
+            self.A1_T_rho_args = A1_T_rho_args_aux
         if rho_min is not None:
             self.rho_min    = rho_min
             
@@ -2347,6 +2532,9 @@ class Planet():
         self.A1_rho     = np.append(A1_rho[1:][::-1], self.A1_rho)
         self.A1_u       = np.append(A1_u[1:][::-1], self.A1_u)
         self.A1_mat_id  = np.append(A1_mat_id[1:][::-1], self.A1_mat_id)
+        
+        self.A1_R_layer = list(self.A1_R_layer).append(np.max(self.A1_r))
+        self.A1_R_layer = np.array(self.A1_R_layer)
 
 def load_planet(name, Fp_planet):
     """ Load a full Planet object from a file.

@@ -9,6 +9,13 @@ Created on Wed May 29 13:07:49 2019
 ###############################################################################
 ####################### Libraries and constants ###############################
 ###############################################################################
+import sys
+import os
+
+# Go to the WoMa directory
+path = '/home/sergio/Documents/WoMa/'
+os.chdir(path)
+sys.path.append(path)
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -53,47 +60,233 @@ def plot_spherical_profile(planet):
     plt.show()
     
 ###############################################################################
+# Example 1.1
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 1,
+    A1_mat_id_layer = [weos.id_Til_granite],
+    A1_T_rho_type   = [1],
+    A1_T_rho_args   = [[None, 0.]],
+    A1_R_layer      = [0.988 * R_earth],
+    M               = 0.8*M_earth,
+    P_s             = 0,
+    T_s             = 300,
+    )
+
+prof_pE.R_max = R_earth
+
+prof_pE.gen_prof_L1_fix_R_given_M()
+
+plot_spherical_profile(prof_pE)
+
+###############################################################################
+# Example 1.2
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 1,
+    A1_mat_id_layer = [weos.id_Til_granite],
+    A1_T_rho_type   = [1],
+    A1_T_rho_args   = [[None, 0.]],
+    A1_R_layer      = [R_earth],
+    P_s             = 0,
+    T_s             = 300,
+    )
+
+prof_pE.M_max = M_earth
+
+prof_pE.gen_prof_L1_fix_M_given_R()
+
+plot_spherical_profile(prof_pE)
+
+###############################################################################
+# Example 2.1
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
     num_layer       = 2,
     A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
     A1_T_rho_type   = [1, 1],
-    A1_T_rho_args   = [[0., 0.], [0., 0.]],
-    A1_R_layer      = [None, 0.988 * R_earth],
-    M               = 0.887 * M_earth,
-    P_s             = 1e5,
-    T_s             = 2000,
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [None, R_earth],
+    M               = M_earth,
+    P_s             = 0,
+    T_s             = 300,
     )
 
-# prof_pE.gen_prof_L2_fix_R1_given_R_M()
-# 
-# prof_pE.save_planet()
+prof_pE.gen_prof_L2_fix_R1_given_R_M()
 
-# Load and plot the profiles
-prof_pE.load_planet_profiles()
+plot_spherical_profile(prof_pE)
 
-# plot_spherical_profile(prof_pE)
+###############################################################################
+# Example 2.2
 
-# Add atmosphere
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 2,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [0.40*R_earth, R_earth],
+    M               = M_earth,
+    P_s             = 0,
+    T_s             = 300,
+    )
+
+prof_pE.R_max = 2*R_earth
+prof_pE.gen_prof_L2_fix_R_given_M_R1()
+
+plot_spherical_profile(prof_pE)
+
+###############################################################################
+# Example 2.3
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 2,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [0.40*R_earth, R_earth],
+    P_s             = 0,
+    T_s             = 300,
+    )
+
+prof_pE.M_max = 2*M_earth
+prof_pE.gen_prof_L2_fix_M_given_R1_R()
+
+plot_spherical_profile(prof_pE)
+
+###############################################################################
+# Example 2.4
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 2,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [None, R_earth],
+    M               = 0.887*M_earth,
+    P_s             = 1e5,
+    T_s             = 2000,
+    num_attempt     = 10
+    )
+
+prof_pE.gen_prof_L2_fix_R1_given_R_M()
+
+mat_id_atm = weos.id_idg_N2
+T_rho_type_atm = 1
+T_rho_args_atm = [None, 0]
+
 prof_pE.gen_prof_L3_given_prof_L2(
-    mat_id      = weos.id_idg_N2,
-    T_rho_type  = 1,
-    T_rho_args  = [0., 0.],
-    rho_min     = 1e-3,
+    mat_id_atm,
+    T_rho_type_atm,
+    T_rho_args_atm,
+    rho_min=1e-6
     )
 
 plot_spherical_profile(prof_pE)
 
 ###############################################################################
+# Example 3.1
 
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 3,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+    A1_T_rho_type   = [1, 1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
+    A1_R_layer      = [None, None, R_earth],
+    P_s             = 0,
+    T_s             = 300,
+    I_MR2           = 0.3*M_earth*R_earth**2,
+    M               = M_earth,
+    num_attempt     = 5,
+    num_attempt_2   = 5
+    )
 
+prof_pE.gen_prof_L3_fix_R1_R2_given_R_M_I()
 
+plot_spherical_profile(prof_pE)
 
+###############################################################################
+# Example 3.2
 
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 3,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+    A1_T_rho_type   = [1, 1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
+    A1_R_layer      = [0.55*R_earth, None, R_earth],
+    P_s             = 0,
+    T_s             = 300,
+    M               = M_earth
+    )
 
+prof_pE.gen_prof_L3_fix_R2_given_R_M_R1()
 
+plot_spherical_profile(prof_pE)
 
+###############################################################################
+# Example 3.3
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 3,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+    A1_T_rho_type   = [1, 1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
+    A1_R_layer      = [None, 0.9*R_earth, R_earth],
+    P_s             = 0,
+    T_s             = 300,
+    M               = M_earth
+    )
+
+prof_pE.gen_prof_L3_fix_R1_given_R_M_R2()
+
+plot_spherical_profile(prof_pE)
+
+###############################################################################
+# Example 3.4
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 3,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+    A1_T_rho_type   = [1, 1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
+    A1_R_layer      = [0.5*R_earth, 0.9*R_earth, R_earth],
+    P_s             = 0,
+    T_s             = 300,
+    M_max           = 2*M_earth
+    )
+
+prof_pE.gen_prof_L3_fix_M_given_R_R1_R2()
+
+plot_spherical_profile(prof_pE)
+
+###############################################################################
+# Example 3.5
+
+prof_pE = woma.Planet(
+    name            = "prof_pE",
+    num_layer       = 3,
+    A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+    A1_T_rho_type   = [1, 1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
+    A1_R_layer      = [0.5*R_earth, 0.9*R_earth, None],
+    P_s             = 0,
+    T_s             = 300,
+    M               = M_earth,
+    R_max           = 2*R_earth
+    )
+
+prof_pE.gen_prof_L3_fix_R_given_M_R1_R2()
+
+plot_spherical_profile(prof_pE)
 
 
 
