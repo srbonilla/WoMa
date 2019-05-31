@@ -613,6 +613,8 @@ def load_u_cold_array(mat_id):
         u_cold_array = np.load(Fp_u_cold_Til_granite)
     elif mat_id == id_Til_water:
         u_cold_array = np.load(Fp_u_cold_Til_water)
+    else:
+        raise ValueError("Invalid mat_id: ", mat_id)
         
     return u_cold_array
 
@@ -790,21 +792,3 @@ def plot_eos_T_vs_rho_fixed_P(mat_id, P_array=np.logspace(6, 11, 4),
 # 
 # plot_eos_T_vs_rho_fixed_P(mat_id, P_array, T_min, T_max)
 # =============================================================================
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

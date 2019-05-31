@@ -47,6 +47,44 @@ def check_end(string, end):
 
     return string
     
+def format_array_string(A1_x, format):
+    """ Return a print-ready string of a 1D array's contents in a given format.
+
+        Args:
+            A1_x ([])
+                An array of values that can be printed with the given format.
+
+            format (str)
+                A printing format, e.g. "%d", "%.5g".
+
+        Returns:
+            string (str)
+                The formatted string.
+    """
+    string  = ""
+
+    # Append each element
+    for x in A1_x:
+        string += "%s, " % (format % x)
+
+    # Add brackets and remove the trailing comma
+    return "[%s]" % string[:-2]
+    
+def add_whitespace(string, space):
+    """ Return a string for aligned printing with adjusted spaces to account for
+        the length of the input.
+
+        e.g.
+            >>> asdf = 123
+            >>> qwerty = 456
+            >>> print("%s = %d \n""%s = %d" %
+                      (add_whitespace("asdf", 12), asdf,
+                       add_whitespace("qwerty", 12), qwerty))
+            asdf         = 123
+            qwerty       = 456
+    """
+    return "%s" % string + " " * (space - len("%s" % string))
+    
 @jit(nopython=True)
 def moi(A1_r, A1_rho):
     """ Computes moment of inertia for a planet with spherical symmetry.
@@ -71,6 +109,7 @@ def moi(A1_r, A1_rho):
 # Output
 Di_hdf5_planet_label  = {
     "num_layer"     : "Number of Layers",
+    "mat_layer"     : "Layer Materials",
     "mat_id_layer"  : "Layer Material IDs",
     "T_rho_type"    : "Layer T-rho Type",
     "T_rho_args"    : "Layer T-rho Args",
@@ -78,6 +117,7 @@ Di_hdf5_planet_label  = {
     "M_layer"       : "Mass in each Layer",
     "M"             : "Total Mass",
     "R"             : "Total Radius",
+    "idx_layer"     : "Outer Index of each Layer",
     "P_s"           : "Surface Pressure",
     "T_s"           : "Surface Temperature",
     "rho_s"         : "Surface Density",
@@ -256,11 +296,6 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
     A1_rho[0]   = rho_s
     A1_u[0]     = u_s
     
-    # i=0###
-    # print("mat_id=%d" % mat_id)
-    # print("i=%d, m_enc=%.3g, P=%.3g, T=%.3g, rho=%.3g, u=%.3g, mat_id=%d"
-    #       % (i, A1_m_enc[i], A1_P[i], A1_T[i], A1_rho[i], A1_u[i], mat_id))
-    
     # Integrate inwards
     for i in range(1, A1_r.shape[0]):
         A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr
@@ -269,15 +304,6 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
                                      A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array)
         A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args)
         A1_u[i]     = weos._u_cold_tab(A1_rho[i], mat_id, u_cold_array) + C_V*A1_T[i]
-        
-        # print(dr)###
-        # print(A1_r[i - 1])###
-        # print(4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr)
-        # if i < 100 or i % 100 == 0:
-        #     print("i=%d, m_enc=%.3g, P=%.3g, T=%.3g, rho=%.3g, u=%.3g, mat_id=%d"
-        #           % (i, A1_m_enc[i], A1_P[i], A1_T[i], A1_rho[i], A1_u[i], mat_id))
-        # if i > 100:
-        #     exit()###
         
         if A1_m_enc[i] < 0:
             return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
@@ -1708,9 +1734,9 @@ class Planet():
             num_layer (int)
                 The number of planetary layers.
 
-            A1_mat_id_layer ([str])
-                The names of the materials in each layer, from the central layer
-                outwards.
+            A1_mat_layer ([str])
+                The name of the material in each layer, from the central layer
+                outwards. See Di_mat_id in weos.py.
 
             A1_T_rho_type ([str])
                 The type of temperature-density relation in each layer, from the
@@ -1755,13 +1781,17 @@ class Planet():
                 The maximum number of iteration attempts.
                 
         Attrs (in addition to the args):
+            A1_mat_id_layer ([int])
+                The ID of the material in each layer, from the central layer
+                outwards.
+        
             A1_r ([float])
                 The profile radii, in increasing order.
                 
             ...
     """    
     def __init__(
-        self, name, Fp_planet=None, num_layer=1, A1_mat_id_layer=None,
+        self, name, Fp_planet=None, num_layer=1, A1_mat_layer=None,
         A1_T_rho_type=None, A1_T_rho_args=None, A1_R_layer=None, 
         A1_M_layer=None, M=None, P_s=None, T_s=None, rho_s=None, I_MR2=None, 
         M_max=None, R_max=None, rho_min=None, num_prof=10000, num_attempt=40, 
@@ -1770,7 +1800,7 @@ class Planet():
         self.name               = name
         self.Fp_planet          = Fp_planet
         self.num_layer          = num_layer
-        self.A1_mat_id_layer    = A1_mat_id_layer
+        self.A1_mat_layer       = A1_mat_layer
         self.A1_T_rho_type      = A1_T_rho_type
         self.A1_T_rho_args      = A1_T_rho_args
         self.A1_R_layer         = A1_R_layer
@@ -1787,6 +1817,7 @@ class Planet():
         self.num_attempt        = num_attempt
         self.num_attempt_2      = num_attempt_2
         
+        # Defaults
         if self.Fp_planet is None:
             self.Fp_planet  = "data/%s.hdf5" % self.name
         if self.A1_R_layer is None:
@@ -1800,6 +1831,11 @@ class Planet():
             self.A1_R_layer = np.array(self.A1_R_layer, dtype="float")
         if self.A1_T_rho_args is not None:
             self.A1_T_rho_args = np.array(self.A1_T_rho_args, dtype="float")
+        
+        # Material IDs from labels 
+        if self.A1_mat_layer is not None:
+            self.A1_mat_id_layer    = [weos.Di_mat_id[mat] 
+                                       for mat in self.A1_mat_layer]
         
         # Two of P, T, rho must be provided at the surface to calculate the 
         # third. If all three are provided then rho is overwritten.
@@ -1852,21 +1888,45 @@ class Planet():
             self.A1_u       = self.A1_u[::-1]
             self.A1_mat_id  = self.A1_mat_id[::-1]
         
+        # Index of the outer edge of each layer
+        self.A1_idx_layer   = np.append(
+            np.where(np.diff(self.A1_mat_id) != 0)[0], self.num_prof - 1)
+            
         # Boundary radii
-        # Find where the material ID changes
-        A1_idx_layer    = np.where(np.diff(self.A1_mat_id) != 0)[0]
-        A1_idx_layer    = np.append(A1_idx_layer, self.num_prof - 1)
-        self.A1_R_layer = self.A1_r[A1_idx_layer]
+        self.A1_R_layer = self.A1_r[self.A1_idx_layer]
         self.R          = self.A1_R_layer[-1]
         
         # Layer masses
-        self.A1_M_layer = self.A1_m_enc[A1_idx_layer]
+        self.A1_M_layer = self.A1_m_enc[self.A1_idx_layer]
         if self.num_layer > 1:
             self.A1_M_layer[1:] -= self.A1_M_layer[:-1]
         self.M  = np.sum(self.A1_M_layer)
         
         # Moment of inertia
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
+        
+    def print_info(self):
+        """ Print the Planet objects's main properties. """
+        space   = 12
+        print("Planet \"%s\": " % self.name)
+        print("    %s = %.5g " % (add_whitespace("M", space), self.M))
+        print("    %s = %.5g " % (add_whitespace("R", space), self.R))
+        print("    %s = %s " % (add_whitespace("mat", space), 
+              format_array_string(self.A1_mat_layer, "%s")))
+        print("    %s = %s " % (add_whitespace("mat_id", space), 
+              format_array_string(self.A1_mat_id_layer, "%d")))
+        print("    %s = %s " % (add_whitespace("R_layer", space), 
+              format_array_string(self.A1_R_layer / R_earth, "%.5g")))
+        print("    %s = %s " % (add_whitespace("M_layer", space), 
+              format_array_string(self.A1_M_layer / M_earth, "%.5g")))
+        print("    %s = %s " % (add_whitespace("M_frac_layer", space), 
+              format_array_string(self.A1_M_layer / self.M, "%.5g")))
+        print("    %s = %s " % (add_whitespace("idx_layer", space), 
+              format_array_string(self.A1_idx_layer, "%d")))
+        print("    %s = %.5g " % (add_whitespace("P_s", space), self.P_s))
+        print("    %s = %.5g " % (add_whitespace("T_s", space), self.T_s))
+        print("    %s = %.5g " % (add_whitespace("rho_s", space), self.rho_s))
+        print("    %s = %.5g " % (add_whitespace("I_MR2", space), self.I_MR2))
     
     def save_planet(self):
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
@@ -1880,6 +1940,7 @@ class Planet():
 
             # Attributes
             grp.attrs[Di_hdf5_planet_label["num_layer"]]    = self.num_layer
+            grp.attrs[Di_hdf5_planet_label["mat_layer"]]    = self.A1_mat_layer
             grp.attrs[Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
             grp.attrs[Di_hdf5_planet_label["T_rho_type"]]   = self.A1_T_rho_type
             grp.attrs[Di_hdf5_planet_label["T_rho_args"]]   = self.A1_T_rho_args
@@ -1887,6 +1948,7 @@ class Planet():
             grp.attrs[Di_hdf5_planet_label["M_layer"]]      = self.A1_M_layer
             grp.attrs[Di_hdf5_planet_label["M"]]            = self.M
             grp.attrs[Di_hdf5_planet_label["R"]]            = self.R
+            grp.attrs[Di_hdf5_planet_label["idx_layer"]]    = self.A1_idx_layer
             grp.attrs[Di_hdf5_planet_label["P_s"]]          = self.P_s
             grp.attrs[Di_hdf5_planet_label["T_s"]]          = self.T_s
             grp.attrs[Di_hdf5_planet_label["rho_s"]]        = self.rho_s
@@ -1900,7 +1962,7 @@ class Planet():
                 Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
             grp.create_dataset(
                 Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
-            grp.create_dataset(                
+            grp.create_dataset(
                 Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
             grp.create_dataset(
                 Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
@@ -1969,6 +2031,7 @@ class Planet():
             )
 
         self.update_attributes()
+        self.print_info()
     
     def gen_prof_L1_fix_M_given_R(self):
         # Check for necessary input
@@ -2002,6 +2065,7 @@ class Planet():
             )
 
         self.update_attributes()
+        self.print_info()
     
     def gen_prof_L1_given_R_M(self):
         # Check for necessary input
@@ -2025,6 +2089,7 @@ class Planet():
             )
 
         self.update_attributes()
+        self.print_info()
     
     # ========
     # 2 Layers
@@ -2075,6 +2140,7 @@ class Planet():
         print("Done!")
 
         self.update_attributes()
+        self.print_info()
             
     def gen_prof_L2_fix_M_given_R1_R(self):
         # Check for necessary input
@@ -2115,6 +2181,7 @@ class Planet():
         print("Done!")
 
         self.update_attributes()
+        self.print_info()
 
     def gen_prof_L2_fix_R_given_M_R1(self):
         # Check for necessary input
@@ -2164,6 +2231,7 @@ class Planet():
             )
 
         self.update_attributes()
+        self.print_info()
 
     def gen_prof_L2_given_R_M_R1(self):
         # Check for necessary input
@@ -2192,6 +2260,7 @@ class Planet():
             )
 
         self.update_attributes()
+        self.print_info()
         
     # ========
     # 3 Layers
@@ -2252,6 +2321,7 @@ class Planet():
         print("Done!")
 
         self.update_attributes()
+        self.print_info()
         
     def gen_prof_L3_fix_R2_given_R_M_R1(self):
         # Check for necessary input
@@ -2309,6 +2379,7 @@ class Planet():
         print("Done!")
 
         self.update_attributes()
+        self.print_info()
     
     def gen_prof_L3_fix_R1_given_R_M_R2(self):
         # Check for necessary input
@@ -2366,6 +2437,7 @@ class Planet():
         print("Done!")
         
         self.update_attributes()
+        self.print_info()
     
     def gen_prof_L3_fix_M_given_R_R1_R2(self):
         # Check for necessary input
@@ -2414,6 +2486,7 @@ class Planet():
         print("Done!")
         
         self.update_attributes()
+        self.print_info()
     
     def gen_prof_L3_fix_R_given_M_R1_R2(self):
         # Check for necessary input
@@ -2473,6 +2546,7 @@ class Planet():
         print("Done!")
         
         self.update_attributes()
+        self.print_info()
     
     def gen_prof_L3_given_R_M_R1_R2(self):
         # Check for necessary input
@@ -2507,8 +2581,9 @@ class Planet():
             )
             
         self.update_attributes()
+        self.print_info()
     
-    def gen_prof_L3_given_prof_L2(self, mat_id=None, T_rho_type=None, 
+    def gen_prof_L3_given_prof_L2(self, mat=None, T_rho_type=None, 
                                   T_rho_args=None, rho_min=None):
         """ Add a third layer (atmosphere) on top of existing 2 layer profiles.
         
@@ -2533,8 +2608,10 @@ class Planet():
         assert(self.A1_T_rho_type[1] is not None)
         
         self.num_layer   = 3
-        if mat_id is not None:
-            self.A1_mat_id_layer = np.append(self.A1_mat_id_layer, mat_id)
+        if mat is not None:
+            self.A1_mat_layer       = np.append(self.A1_mat_layer, mat)
+            self.A1_mat_id_layer    = [weos.Di_mat_id[mat] 
+                                       for mat in self.A1_mat_layer]
         if T_rho_type is not None:
             self.A1_T_rho_type = np.append(self.A1_T_rho_type, T_rho_type)
         if T_rho_args is not None:
@@ -2603,6 +2680,7 @@ class Planet():
         self.A1_mat_id  = np.append(self.A1_mat_id, A1_mat_id[1:])
 
         self.update_attributes()
+        self.print_info()
 
 def load_planet(name, Fp_planet):
     """ Return a new Planet object loaded from a file.
@@ -2622,18 +2700,21 @@ def load_planet(name, Fp_planet):
     sys.stdout.flush()
     
     with h5py.File(Fp_planet, "r") as f:
-        (p.num_layer, p.A1_mat_id_layer, p.A1_T_rho_type, p.A1_T_rho_args, 
-         p.A1_R_layer, p.A1_M_layer, p.M, p.R, p.P_s, p.T_s, p.rho_s, p.A1_r, 
-         p.A1_m_enc, p.A1_rho, p.A1_T, p.A1_P, p.A1_u, p.A1_mat_id
+        (p.num_layer, p.A1_mat_layer, p.A1_mat_id_layer, p.A1_T_rho_type, 
+         p.A1_T_rho_args, p.A1_R_layer, p.A1_M_layer, p.M, p.R, p.A1_idx_layer, 
+         p.P_s, p.T_s, p.rho_s, p.A1_r, p.A1_m_enc, p.A1_rho, p.A1_T, p.A1_P, 
+         p.A1_u, p.A1_mat_id
          ) = multi_get_planet_data(
-            f, ["num_layer", "mat_id_layer", "T_rho_type", "T_rho_args", 
-                "R_layer", "M_layer", "M", "R", "P_s", "T_s", "rho_s", "r", 
-                "m_enc", "rho", "T", "P", "u", "mat_id"]
+            f, ["num_layer", "mat_layer", "mat_id_layer", "T_rho_type", 
+                "T_rho_args", "R_layer", "M_layer", "M", "R", "idx_layer", 
+                "P_s", "T_s", "rho_s", "r", "m_enc", "rho", "T", "P", "u", 
+                "mat_id"]
             )
             
     print("Done")
     
     p.update_attributes()
+    p.print_info()
     
     return p
 

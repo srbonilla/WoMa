@@ -51,7 +51,6 @@ To Do etc. (Jacob thoughts in progress)
 + Make into a PyPI package
 + Zero axes in example plots and non-symbol labels
 + Tidy line lengths for where I've messed things up
-+ Print output variables like boundaries when done
 + Add all output variables to the hdf5 file
 + Change the iterations to be for some tolerance not a number of iterations
 + Move the add-L3 function out of the class, like the others
@@ -62,3 +61,4 @@ To Do etc. (Jacob thoughts in progress)
     and how, so that someone can copy them and understand.
 + Make the examples faster to run. Maybe start close to the right answer and 
     do fewer iterations.
++ Update the examples to use `A1_mat_layer` not `A1_mat_id_layer` as inputs
