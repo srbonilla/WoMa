@@ -12,7 +12,6 @@ Created on Tue Apr  2 13:11:10 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
-import weos
 import swift_io
 import h5py
 

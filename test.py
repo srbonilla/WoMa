@@ -12,7 +12,6 @@ Created on Wed May 29 13:07:49 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
-import weos
 
 R_earth = 6371000
 M_earth = 5.972E24
@@ -56,7 +55,6 @@ def plot_spherical_profile(planet):
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 1,
     A1_mat_layer    = ['Til_granite'],
     A1_T_rho_type   = [1],
     A1_T_rho_args   = [[None, 0.]],
@@ -77,7 +75,6 @@ plot_spherical_profile(prof_pE)
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 1,
     A1_mat_layer    = ['Til_granite'],
     A1_T_rho_type   = [1],
     A1_T_rho_args   = [[None, 0.]],
@@ -97,7 +94,6 @@ plot_spherical_profile(prof_pE)
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 2,
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
@@ -116,7 +112,6 @@ plot_spherical_profile(prof_pE)
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 2,
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
@@ -136,7 +131,6 @@ plot_spherical_profile(prof_pE)
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 2,
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
@@ -155,7 +149,6 @@ plot_spherical_profile(prof_pE)
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 2,
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
@@ -186,7 +179,6 @@ plot_spherical_profile(prof_pE)
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    num_layer       = 3,
     A1_mat_layer    = ['Til_iron', 'Til_granite', 'Til_water'],
     A1_T_rho_type   = [1, 1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],

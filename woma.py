@@ -1854,17 +1854,17 @@ class Planet():
         
         # Help info ###todo
         if not True:
-            if num_layer == 1:
+            if self.num_layer == 1:
                 print("For a 1 layer planet, please specify:")
                 print("pressure, temperature and density at the surface of the planet,")
                 print("material, relation between temperature and density with any desired aditional parameters,")
                 print("for layer 1 of the planet.")
-            elif num_layer == 2:
+            elif self.num_layer == 2:
                 print("For a 2 layer planet, please specify:")
                 print("pressure, temperature and density at the surface of the planet,")
                 print("materials, relations between temperature and density with any desired aditional parameters,")
                 print("for layer 1 and mantle of the planet.")
-            elif num_layer == 3:
+            elif self.num_layer == 3:
                 print("For a 3 layer planet, please specify:")
                 print("pressure, temperature and density at the surface of the planet,")
                 print("materials, relations between temperature and density with any desired aditional parameters,")
@@ -1905,28 +1905,36 @@ class Planet():
         # Moment of inertia
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
         
+        # Update P_s, T_s and rho_s for the case create L3 profile from L2 profile
+        self.P_s = self.A1_P[-1]
+        self.T_s = self.A1_T[-1]
+        self.rho_s = self.A1_rho[-1]
+        
     def print_info(self):
         """ Print the Planet objects's main properties. """
         space   = 12
         print("Planet \"%s\": " % self.name)
-        print("    %s = %.5g " % (add_whitespace("M", space), self.M))
-        print("    %s = %.5g " % (add_whitespace("R", space), self.R))
+        print("    %s = %.5g Kg / %.5g M_earth" % 
+              (add_whitespace("M", space), self.M, self.M/M_earth))
+        print("    %s = %.5g m / %.5g R_earth" %
+              (add_whitespace("R", space), self.R, self.R/R_earth))
         print("    %s = %s " % (add_whitespace("mat", space), 
               format_array_string(self.A1_mat_layer, "%s")))
         print("    %s = %s " % (add_whitespace("mat_id", space), 
               format_array_string(self.A1_mat_id_layer, "%d")))
-        print("    %s = %s " % (add_whitespace("R_layer", space), 
+        print("    %s = %s R_earth" % (add_whitespace("R_layer", space), 
               format_array_string(self.A1_R_layer / R_earth, "%.5g")))
-        print("    %s = %s " % (add_whitespace("M_layer", space), 
+        print("    %s = %s M_earth" % (add_whitespace("M_layer", space), 
               format_array_string(self.A1_M_layer / M_earth, "%.5g")))
-        print("    %s = %s " % (add_whitespace("M_frac_layer", space), 
+        print("    %s = %s M_total" % (add_whitespace("M_frac_layer", space), 
               format_array_string(self.A1_M_layer / self.M, "%.5g")))
         print("    %s = %s " % (add_whitespace("idx_layer", space), 
               format_array_string(self.A1_idx_layer, "%d")))
-        print("    %s = %.5g " % (add_whitespace("P_s", space), self.P_s))
-        print("    %s = %.5g " % (add_whitespace("T_s", space), self.T_s))
-        print("    %s = %.5g " % (add_whitespace("rho_s", space), self.rho_s))
-        print("    %s = %.5g " % (add_whitespace("I_MR2", space), self.I_MR2))
+        print("    %s = %.5g Pa" % (add_whitespace("P_s", space), self.P_s))
+        print("    %s = %.5g K" % (add_whitespace("T_s", space), self.T_s))
+        print("    %s = %.5g Kg/m^3" % (add_whitespace("rho_s", space), self.rho_s))
+        print("    %s = %.5g Kg*m^2 / %.5g M_earth*R_earth^2" %
+              (add_whitespace("I_MR2", space), self.I_MR2, self.I_MR2/M_earth/R_earth/R_earth))
     
     def save_planet(self):
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
