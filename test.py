@@ -12,6 +12,7 @@ Created on Wed May 29 13:07:49 2019
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
+import weos
 
 R_earth = 6371000
 M_earth = 5.972E24
@@ -131,12 +132,12 @@ plot_spherical_profile(prof_pE)
 
 prof_pE = woma.Planet(
     name            = "prof_pE",
-    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    A1_mat_layer    = ['Til_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
     A1_R_layer      = [0.40*R_earth, R_earth],
-    P_s             = 0,
-    T_s             = 300,
+    P_s             = 1e5,
+    T_s             = 300
     )
 
 prof_pE.M_max = 2*M_earth
