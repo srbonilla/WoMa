@@ -61,13 +61,149 @@ id_SESAME_water     = Di_mat_id["SESAME_water"]
 id_SS08_water       = Di_mat_id["SS08_water"]
 
 # Data files
+
+# u cold curves
 Fp_u_cold_Til_iron      = "data/u_cold_array_Til_iron.npy"
 Fp_u_cold_Til_granite   = "data/u_cold_array_Til_granite.npy"
 Fp_u_cold_Til_water     = "data/u_cold_array_Til_water.npy"
 
+# SESAME tables
+Fp_SESAME_iron_2140_table = "data/SESAME_iron_2140.txt"
+Fp_SESAME_basalt_table = "data/SESAME_basalt_7530.txt"
+Fp_SESAME_water_table = "data/SESAME_water_7154.txt"
+#Fp_SS08_water_table = "data/SS08_water"
+
+#SESAME_iron_2140 = 
+
+
+# =============================================================================
+# def load_SESAME_table(Fp_table):
+#        """ Load and set the table file data.
+# 
+#            # header (five lines)
+#            num_rho  num_T
+#            A1_rho
+#            A1_T
+#            A2_u[0, 0]              A2_P[0, 0]      A2_c[0, 0]      A2_s[0, 0]
+#            A2_u[1, 0]              ...
+#            ...                     ...
+#            A2_u[num_rho, 0]        ...
+#            A2_u[0, 1]              ...
+#            ...                     ...
+#            A2_u[num_rho, 1]        ...
+#            ...                     ...
+#            A2_u[num_rho, num_u]    ...
+# 
+#            Sets:
+#                num_rho, num_T (int)
+#                    Number of densities and temperatures for the arrays.
+# 
+#                rho_min, rho_max (float)
+#                    Penultimate minimin and maximum values of the temperature
+#                    array (K).
+# 
+#                T_min, T_max (float)
+#                    Penultimate minimin and maximum values of the density array
+#                    (kg m^-3).
+# 
+#                A1_rho, A1_T ([float])
+#                    1D arrays of density (kg m^-3) and temperature (K).
+# 
+#                A2_u, A2_P, A2_c, A2_s ([[float]])
+#                    2D arrays of sp. int. energy (J kg^-1), pressure (Pa),
+#                    sound speed (m s^-1), and sp. entropy (J kg^-1 K^-1).
+# 
+#                A1_log_rho, A1_log_T ([float])
+#                    1D arrays of natural logs of density (kg m^-3) and
+#                    temperature (K).
+# 
+#                A2_log_u, A2_log_P, A2_log_c, A2_log_s ([[float]])
+#                    2D arrays of natural logs of sp. int. energy (J kg^-1),
+#                    pressure (Pa), sound speed (m s^-1), and sp. entropy
+#                    (J kg^-1 K^-1).
+#        """
+#        # Load
+#        with open(self.Fp_table) as f:
+#            for i in range(5):
+#                f.readline()
+#            num_rho, num_T  = np.array(f.readline().split(), dtype=int)
+#            A2_u    = np.empty((num_rho, num_T))
+#            A2_P    = np.empty((num_rho, num_T))
+#            A2_c    = np.empty((num_rho, num_T))
+#            A2_s    = np.empty((num_rho, num_T))
+# 
+#            A1_rho  = np.array(f.readline().split(), dtype=float)
+#            A1_T    = np.array(f.readline().split(), dtype=float)
+# 
+#            for i_T in range(num_T):
+#                for i_rho in range(num_rho):
+#                    A2_u[i_rho, i_T], A2_P[i_rho, i_T], A2_c[i_rho, i_T], \
+#                        A2_s[i_rho, i_T]    = np.array(f.readline().split(),
+#                                                       dtype=float)
+# 
+#         return [num_rho, num_
+#         self.num_rho    = num_rho
+#         self.num_T      = num_T
+#         self.A1_rho     = A1_rho
+#         self.A1_T       = A1_T
+#         self.A2_u       = A2_u
+#            self.A2_P       = A2_P
+#            self.A2_c       = A2_c
+#            self.A2_s       = A2_s
+#            self.A1_log_rho = np.log(A1_rho)
+#            self.A1_log_T   = np.log(A1_T)
+#            self.A2_log_u   = np.log(A2_u)
+#            self.A2_log_P   = np.log(A2_P)
+#            self.A2_log_c   = np.log(A2_c)
+#            self.A2_log_s   = np.log(A2_s)
+#            self.rho_min    = A1_rho[1]
+#            self.rho_max    = A1_rho[-2]
+#            self.T_min      = A1_T[1]
+#            self.T_max      = A1_T[-2]
+# =============================================================================
+
 ###############################################################################
 ############################### Functions #####################################
 ###############################################################################
+@jit(nopython=True)
+def _P_EoS_SESAME(u, rho, mat_id):
+    """ Computes pressure for SESAME EoS.
+    
+        Args:
+            u (double)
+                Internal energy (SI).
+                
+            rho (double) 
+                Density (SI).
+            
+            mat_id (int)
+                Material id.
+                
+        Returns:
+            P (double)
+                Pressure (SI).
+    """
+    # Material constants for ideal gas EoS
+    # mat_id, gamma
+    HHe = np.array([id_idg_HHe, 1.4])
+    N2  = np.array([id_idg_N2, 1.4])
+    CO2 = np.array([id_idg_CO2, 1.29])
+    
+    if (mat_id == id_idg_HHe):
+        material = HHe
+    elif (mat_id == id_idg_N2):
+        material = N2
+    elif (mat_id == id_idg_CO2):
+        material = CO2
+    else:
+        print("Material not implemented")
+        return None
+        
+    gamma    = material[1]
+
+    P = (gamma - 1)*u*rho
+        
+    return P
 
 @jit(nopython=True)
 def _P_EoS_Till(u, rho, mat_id):
@@ -525,7 +661,7 @@ def _find_rho(P_s, mat_id, T_rho_id, T_rho_args, rho0, rho1, u_cold_array):
                 Value of the density which satisfies P(u(rho), rho) = 0 
                 (SI).
     """
-
+    
     C_V       = _C_V(mat_id)
     tolerance = 1E-5
     
@@ -775,7 +911,43 @@ def plot_eos_T_vs_rho_fixed_P(mat_id, P_array=np.logspace(6, 11, 4),
     
     return 0
 
-
+@jit(nopython=True)
+def _find_u(rho, mat_id, T, u_cold_array):
+    
+    if mat_id in [id_SESAME_iron, id_SESAME_basalt, id_SESAME_water, id_SS08_water]:
+        
+        return 0
+    
+    elif mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
+        
+        return _C_V(mat_id)*T
+    
+    elif mat_id in [id_Til_iron, id_Til_granite, id_Til_water]:
+        
+        C_V = _C_V(mat_id)
+        
+        return _u_cold_tab(rho, mat_id, u_cold_array) + C_V*T
+        
+        
+        
+        
+        
+# =============================================================================
+# id_idg_HHe          = Di_mat_id["idg_HHe"]
+# id_idg_N2           = Di_mat_id["idg_N2"]
+# id_idg_CO2          = Di_mat_id["idg_CO2"]
+# id_Til_iron         = Di_mat_id["Til_iron"]
+# id_Til_granite      = Di_mat_id["Til_granite"]
+# id_Til_water        = Di_mat_id["Til_water"]
+# id_HM80_HHe         = Di_mat_id["HM80_HHe"]
+# id_HM80_ice         = Di_mat_id["HM80_ice"]
+# id_HM80_rock        = Di_mat_id["HM80_rock"]
+# id_SESAME_iron      = Di_mat_id["SESAME_iron"]
+# id_SESAME_basalt    = Di_mat_id["SESAME_basalt"]
+# id_SESAME_water     = Di_mat_id["SESAME_water"]
+# id_SS08_water       = Di_mat_id["SS08_water"]
+# =============================================================================
+    
 # =============================================================================
 # mat_id = 101
 # T_array = np.linspace(1, 3000, 4)

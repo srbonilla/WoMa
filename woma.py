@@ -281,9 +281,9 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
     A1_u        = np.zeros(A1_r.shape)
     A1_mat_id   = np.ones(A1_r.shape) * mat_id
     
-    C_V = weos._C_V(mat_id)
+    #C_V = weos._C_V(mat_id)
     
-    u_s = weos.u_cold(rho_s, mat_id, 10000) + C_V*T_s
+    u_s = weos._find_u(rho_s, mat_id, T_s, u_cold_array)
     if T_rho_type == 1:
         T_rho_args[0] = T_s*rho_s**(-T_rho_args[1])
     
@@ -303,7 +303,8 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         A1_rho[i]   = weos._find_rho(A1_P[i], mat_id, T_rho_type, T_rho_args,
                                      A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array)
         A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args)
-        A1_u[i]     = weos._u_cold_tab(A1_rho[i], mat_id, u_cold_array) + C_V*A1_T[i]
+        A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
+        #A1_u[i]     = weos._u_cold_tab(A1_rho[i], mat_id, u_cold_array) + C_V*A1_T[i]
         
         if A1_m_enc[i] < 0:
             return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
@@ -536,10 +537,11 @@ def L2_integrate(
     A1_u        = np.zeros(A1_r.shape)
     A1_mat_id   = np.zeros(A1_r.shape)
     
-    C_V_L1  = weos._C_V(mat_id_L1)
-    C_V_L2  = weos._C_V(mat_id_L2)
+    #C_V_L1  = weos._C_V(mat_id_L1)
+    #C_V_L2  = weos._C_V(mat_id_L2)
     
-    u_s = weos.u_cold(rho_s, mat_id_L2, 10000) + C_V_L2*T_s
+    u_s = weos._find_u(rho_s, mat_id_L2, T_s, u_cold_array_L2)
+    #u_s = weos.u_cold(rho_s, mat_id_L2, 10000) + C_V_L2*T_s
     if T_rho_type_L2 == 1:
         T_rho_args_L2[0] = T_s*rho_s**(-T_rho_args_L2[1])
     
@@ -560,7 +562,8 @@ def L2_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
                                    A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L2)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L2, T_rho_args_L2)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
+            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L2, A1_T[i], u_cold_array_L2)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
             A1_mat_id[i] = mat_id_L2
             
             if A1_m_enc[i] < 0: 
@@ -578,7 +581,8 @@ def L2_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                                    A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L1)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
+            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
             A1_mat_id[i] = mat_id_L1            
         # Layer 1  
         elif A1_r[i] <= R1:            
@@ -587,7 +591,8 @@ def L2_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                                    A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L1)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
+            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
             A1_mat_id[i] = mat_id_L1
             
             if A1_m_enc[i] < 0: 
@@ -993,11 +998,12 @@ def L3_integrate(
     A1_u        = np.zeros(A1_r.shape)
     A1_mat_id   = np.zeros(A1_r.shape)
     
-    C_V_L1  = weos._C_V(mat_id_L1)
-    C_V_L2  = weos._C_V(mat_id_L2)
-    C_V_L3  = weos._C_V(mat_id_L3)
+    #C_V_L1  = weos._C_V(mat_id_L1)
+    #C_V_L2  = weos._C_V(mat_id_L2)
+    #C_V_L3  = weos._C_V(mat_id_L3)
     
-    u_s = weos.u_cold(rho_s, mat_id_L3, 10000) + C_V_L3*T_s
+    u_s = weos._find_u(rho_s, mat_id_L3, T_s, u_cold_array_L3)
+    #u_s = weos.u_cold(rho_s, mat_id_L3, 10000) + C_V_L3*T_s
     if T_rho_type_L3 == 1:
         T_rho_args_L3[0] = T_s*rho_s**(-T_rho_args_L3[1])        
     
@@ -1018,7 +1024,8 @@ def L3_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L3, T_rho_type_L3, T_rho_args_L3,
                                    A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L3)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L3, T_rho_args_L3)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L3, u_cold_array_L3) + C_V_L3*A1_T[i]
+            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L3, A1_T[i], u_cold_array_L3)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L3, u_cold_array_L3) + C_V_L3*A1_T[i]
             A1_mat_id[i] = mat_id_L3
             
             if A1_m_enc[i] < 0: 
@@ -1036,7 +1043,8 @@ def L3_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
                                    A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L2)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L2, T_rho_args_L2)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
+            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L2, A1_T[i], u_cold_array_L2)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
             A1_mat_id[i] = mat_id_L2            
         # Layer 2
         elif A1_r[i] > R1:            
@@ -1045,7 +1053,8 @@ def L3_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
                                    A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L2)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L2, T_rho_args_L2)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
+            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L2, A1_T[i], u_cold_array_L2)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
             A1_mat_id[i] = mat_id_L2
             
             if A1_m_enc[i] < 0: 
@@ -1064,7 +1073,8 @@ def L3_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                                    A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L1)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
+            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
             A1_mat_id[i] = mat_id_L1            
         # Layer 1  
         elif A1_r[i] <= R1:
@@ -1074,7 +1084,8 @@ def L3_integrate(
             A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                                    A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L1)
             A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
+            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
+            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
             A1_mat_id[i] = mat_id_L1
             
             if A1_m_enc[i] < 0: 
@@ -2763,7 +2774,7 @@ class Planet():
         dr              = self.A1_r[1]
         mat_id_L3       = self.A1_mat_id_layer[2]        
         u_cold_array_L3 = weos.load_u_cold_array(mat_id_L3)
-        C_V_L3          = weos._C_V(mat_id_L3)
+        #C_V_L3          = weos._C_V(mat_id_L3)
         
         # Reverse profile arrays to be ordered by increasing radius
         if self.A1_r[-1] < self.A1_r[0]:
@@ -2800,7 +2811,8 @@ class Planet():
                                  0.9*A1_rho[-1], A1_rho[-1], u_cold_array_L3)
             A1_rho.append(rho)
             A1_T.append(weos.T_rho(rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2]))
-            A1_u.append(weos._u_cold_tab(rho, mat_id_L3, u_cold_array_L3) + C_V_L3*A1_T[-1])
+            A1_u.append(weos._find_u(rho, mat_id_L3, A1_T[-1], u_cold_array_L3))
+            #A1_u.append(weos._u_cold_tab(rho, mat_id_L3, u_cold_array_L3) + C_V_L3*A1_T[-1])
             A1_mat_id.append(mat_id_L3)   
 
             step += 1
@@ -3555,13 +3567,15 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
     x = particles.x
     y = particles.y
     
-    C_V_L1 = weos._C_V(mat_id_L1)
+    #C_V_L1 = weos._C_V(mat_id_L1)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
-        u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
-        u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
+        T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
+        u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
+        #u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
+        #u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
         P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
     
     #print("Internal energy u computed\n")
@@ -4027,19 +4041,23 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     x = particles.x
     y = particles.y
     
-    C_V_L1 = weos._C_V(mat_id_L1)
-    C_V_L2 = weos._C_V(mat_id_L2)
+    #C_V_L1 = weos._C_V(mat_id_L1)
+    #C_V_L2 = weos._C_V(mat_id_L2)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
         if rho[k] > rho_i:
-            u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
-            u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
+            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
+            u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
+            #u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
+            #u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
         else:
-            u[k] = weos._u_cold_tab(rho[k], mat_id_L2, u_cold_array_L2)
-            u[k] = u[k] + C_V_L2*weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
+            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
+            u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
+            #u[k] = weos._u_cold_tab(rho[k], mat_id_L2, u_cold_array_L2)
+            #u[k] = u[k] + C_V_L2*weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
     
     #print("Internal energy u computed\n")
@@ -4575,26 +4593,32 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
     x = particles.x
     y = particles.y
     
-    C_V_L1   = weos._C_V(mat_id_L1)
-    C_V_L2 = weos._C_V(mat_id_L2)
-    C_V_L3    = weos._C_V(mat_id_L3)
+    #C_V_L1   = weos._C_V(mat_id_L1)
+    #C_V_L2   = weos._C_V(mat_id_L2)
+    #C_V_L3   = weos._C_V(mat_id_L3)
     
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
         if rho[k] > rho_cm:
-            u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
-            u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
+            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
+            u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
+            #u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
+            #u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
             
         elif rho[k] > rho_ma:
-            u[k] = weos._u_cold_tab(rho[k], mat_id_L2, u_cold_array_L2)
-            u[k] = u[k] + C_V_L2*weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
+            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
+            u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
+            #u[k] = weos._u_cold_tab(rho[k], mat_id_L2, u_cold_array_L2)
+            #u[k] = u[k] + C_V_L2*weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
             
         else:
-            u[k] = weos._u_cold_tab(rho[k], mat_id_L3, u_cold_array_L3)
-            u[k] = u[k] + C_V_L3*weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3)
+            T = weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3)
+            u[k] = weos._find_u(rho[k], mat_id_L3, T, u_cold_array_L3)
+            #u[k] = weos._u_cold_tab(rho[k], mat_id_L3, u_cold_array_L3)
+            #u[k] = u[k] + C_V_L3*weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L3)
     
     #print("Internal energy u computed\n")
