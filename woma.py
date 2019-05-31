@@ -3425,8 +3425,8 @@ def _generate_M(indices, m_enc):
     return M
 
 def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
-                           mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                           u_cold_array_L1, N_neig=48, num_attempt=10):
+                       mat_id_L1, T_rho_type_L1, T_rho_args_L1,
+                       u_cold_array_L1, N_neig=48, num_attempt=10):
     
     """ Particle placement for a 1 layer spining profile.
     
@@ -3528,7 +3528,7 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
     f = Z/R
     zP = particles.z*f
     
-    mP = particles.m_enc*f 
+    mP = particles.m*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -3565,7 +3565,7 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
     A1_mat_id = np.ones((mP.shape[0],))*mat_id_L1
     
     ############
-    mP = particles.m_enc*f 
+    mP = particles.m*f 
     unique_R = np.unique(R)
     
     x_reshaped  = x.reshape((-1,1))
@@ -3957,7 +3957,7 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             vz ([float]):
                 Velocity in z of each particle (SI).
                 
-            m_enc ([float]):
+            m ([float]):
                 Mass of every particle (SI).
                 
             h ([float]):
@@ -4000,7 +4000,7 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     f = Z/R
     zP = particles.z*f
     
-    mP = particles.m_enc*f 
+    mP = particles.m*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -4506,7 +4506,7 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
             vz ([float]):
                 Velocity in z of each particle (SI).
                 
-            m_enc ([float]):
+            m ([float]):
                 Mass of every particle (SI).
                 
             h ([float]):
@@ -4548,7 +4548,7 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
     f = Z/R
     zP = particles.z*f
     
-    mP = particles.m_enc*f 
+    mP = particles.m*f 
     
     # Compute velocities (T_w in hours)
     vx = np.zeros(mP.shape[0])
@@ -4724,8 +4724,8 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
 class SpinPlanet():
     
     def __init__(
-    self, name, planet=None, Fp_planet=None, Tw=None, num_layer=None, 
-    A1_mat_id_layer=None, A1_R_layer=None,
+    self, name=None, planet=None, Fp_planet=None, Tw=None,
+    A1_mat_layer=None, A1_R_layer=None,
     A1_T_rho_type=None, A1_T_rho_args=None, A1_r=None, A1_P=None, A1_T=None,
     A1_rho=None, num_prof=1000, num_attempt=15, R_e=None, R_p=None
     ):
@@ -4737,9 +4737,12 @@ class SpinPlanet():
         self.R_e                = R_e
         self.R_p                = R_p
         self.Tw                 = Tw
+        self.P_R1               = None
+        self.P_R2               = None
         
         if planet is not None:
             self.num_layer       = planet.num_layer
+            self.A1_mat_layer    = planet.A1_mat_layer
             self.A1_R_layer      = planet.A1_R_layer
             self.A1_mat_id_layer = planet.A1_mat_id_layer
             self.A1_T_rho_type   = planet.A1_T_rho_type
@@ -4750,9 +4753,8 @@ class SpinPlanet():
             self.A1_rho          = planet.A1_rho
             
         else:
-            self.num_layer       = num_layer
             self.A1_R_layer      = A1_R_layer
-            self.A1_mat_id_layer = A1_mat_id_layer
+            self.A1_mat_layer    = A1_mat_layer
             self.A1_T_rho_type   = A1_T_rho_type
             self.A1_T_rho_args   = A1_T_rho_args
             self.A1_r            = A1_r
@@ -4760,9 +4762,19 @@ class SpinPlanet():
             self.A1_T            = A1_T
             self.A1_rho          = A1_rho
             
+            # Derived or default attributes
+            if self.A1_mat_layer is not None:
+                self.num_layer          = len(self.A1_mat_layer)
+                self.A1_mat_id_layer    = [weos.Di_mat_id[mat] 
+                                           for mat in self.A1_mat_layer]
+            
         assert(self.num_layer in [1, 2, 3])
         
     def spin(self):
+        # Check for necessary input
+        assert(self.R_e is not None)
+        assert(self.R_p is not None)
+        assert(self.Tw is not None)
         
         P_c   = np.max(self.A1_P)
         P_s   = np.min(self.A1_P)
@@ -4773,6 +4785,9 @@ class SpinPlanet():
         z_array     = np.linspace(0, self.R_p, self.num_prof)
         
         if self.num_layer == 1:
+            # Check for necessary input
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
             
             u_cold_array = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
         
@@ -4792,10 +4807,17 @@ class SpinPlanet():
             self.A1_rho_pole    = profile_p[-1]
             
         elif self.num_layer == 2:
+            # Check for necessary input
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type[1] is not None)
             
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
             P_boundary = 0.5*(a + b)
+            
+            self.P_R1 = P_boundary
             
             u_cold_array_L1   = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
             u_cold_array_L2   = weos.load_u_cold_array(self.A1_mat_id_layer[1]) 
@@ -4818,14 +4840,25 @@ class SpinPlanet():
             
             
         elif self.num_layer == 3:
+            # Check for necessary input
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type[1] is not None)
+            assert(self.A1_mat_id_layer[2] is not None)
+            assert(self.A1_T_rho_type[2] is not None)
             
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
             P_boundary_cm = 0.5*(a + b)
             
+            self.P_R1 = P_boundary_cm
+            
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
             P_boundary_ma = 0.5*(a + b)
+            
+            self.P_R2 = P_boundary_ma
         
             u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
             u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
@@ -4845,406 +4878,156 @@ class SpinPlanet():
             
             self.A1_r_equator     = r_array
             self.A1_r_pole        = z_array
-            self.A1_rho_equator = profile_e[-1]
-            self.A1_rho_pole    = profile_p[-1]
+            self.A1_rho_equator   = profile_e[-1]
+            self.A1_rho_pole      = profile_p[-1]
             
-        
-
-class _spin():
+class GenSpheroid():
     
-    N_steps_spin = 1000
-    num_attempt   = 40
-    
-    P_s   = np.nan
-    T_s   = np.nan
-    rho_s = np.nan
-    
-    P_center   = np.nan
-    T_center   = np.nan
-    rho_center = np.nan
-    
-    Re = np.nan
-    Rp = np.nan
-    Tw = np.nan
-    
-    A1_equator     = np.nan
-    A1_pole        = np.nan
-    A1_rho_equator = np.nan
-    A1_rho_pole    = np.nan
-    
-    def __init__(self):
-        return None
-    
-class _1l_spin(_spin):
-    
-    def __init__(self, planet):
+    def __init__(
+    self, name=None, spin_planet=None, Fp_planet=None, Tw=None,
+    A1_mat_layer=None, A1_T_rho_args=None, A1_T_rho_type=None, 
+    A1_r_equator=None, A1_rho_equator=None, 
+    A1_r_pole=None, A1_rho_pole=None, P_R1=None, P_R2=None,
+    N_particles = None, N_neig=48, num_attempt=10,
+    A1_r=None, A1_rho=None, A1_P=None
+    ):
+        self.name               = name
+        self.Fp_planet          = Fp_planet
+        self.N_particles        = N_particles
+        self.num_attempt        = num_attempt
         
-        self.num_layer        = 1
-        self.A1_mat_id_layer[0]     = planet.mat_id_L1
-        self.A1_T_rho_type[0]   = planet.T_rho_type_L1
-        self.A1_T_rho_args[0] = planet.T_rho_args_L1
-        
-        self.P_s   = planet.P_s
-        self.T_s   = planet.T_s
-        self.rho_s = planet.rho_s
-        
-        self.P_center    = planet.A1_P[-1]
-        self.T_center    = planet.A1_T[-1]
-        self.rho_center  = planet.A1_rho[-1]
-        
-        self.A1_r   = planet.A1_r
-        self.A1_rho = planet.A1_rho
-        self.A1_P   = planet.A1_P
-        
-    def solve(self, Tw, Re, Rp):
-        
-        r_array     = np.linspace(0, Re, self.N_steps_spin)
-        z_array     = np.linspace(0, Rp, self.N_steps_spin) 
-        
-        u_cold_array = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
-        
-        profile_e, profile_p = \
-            spin1layer(self.num_attempt, r_array, z_array,
-                       self.A1_r, self.A1_rho, Tw,
-                       self.P_center, self.P_s,
-                       self.rho_center, self.rho_s,
-                       self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                       u_cold_array)
+        if spin_planet is not None:
+            self.num_layer       = spin_planet.num_layer
+            self.A1_mat_layer    = spin_planet.A1_mat_layer
+            self.A1_mat_id_layer = spin_planet.A1_mat_id_layer
+            self.A1_T_rho_type   = spin_planet.A1_T_rho_type
+            self.A1_T_rho_args   = spin_planet.A1_T_rho_args
+            self.A1_r_equator    = spin_planet.A1_r_equator
+            self.A1_rho_equator  = spin_planet.A1_rho_equator
+            self.A1_r_pole       = spin_planet.A1_r_pole
+            self.A1_rho_pole     = spin_planet.A1_rho_pole
+            self.Tw              = spin_planet.Tw
+            self.P_R1            = spin_planet.P_R1
+            self.P_R2            = spin_planet.P_R2
+            self.A1_r            = spin_planet.A1_r
+            self.A1_rho          = spin_planet.A1_rho
+            self.A1_P            = spin_planet.A1_P
             
-        print("\nDone!")
-        
-        self.Tw = Tw
-        self.Re = Re
-        self.Rp = Rp
-        
-        self.A1_equator     = r_array
-        self.A1_pole        = z_array
-        self.A1_rho_equator = profile_e[-1]
-        self.A1_rho_pole    = profile_p[-1]
-        
-class _2l_spin(_spin):
-    
-    def __init__(self, planet):
-        
-        self.num_layer          = 2
-        self.A1_mat_id_layer[0]       = planet.mat_id_L1
-        self.A1_T_rho_type[0]     = planet.T_rho_type_L1
-        self.A1_T_rho_args[0]   = planet.T_rho_args_L1
-        self.A1_mat_id_layer[1]     = planet.mat_id_L2
-        self.A1_T_rho_type[1]   = planet.T_rho_type_L2
-        self.A1_T_rho_args[1] = planet.T_rho_args_L2
-        
-        self.P_s   = planet.P_s
-        self.T_s   = planet.T_s
-        self.rho_s = planet.rho_s
-        
-        self.P_center    = planet.A1_P[-1]
-        self.T_center    = planet.A1_T[-1]
-        self.rho_center  = planet.A1_rho[-1]
-        
-        k               = np.sum(planet.A1_mat_id == planet.mat_id_L1)
-        self.P_boundary = planet.A1_P[planet.num_prof - k] + \
-                          planet.A1_P[planet.num_prof - k - 1]
-        self.P_boundary = self.P_boundary/2.
-        
-        self.A1_r   = planet.A1_r
-        self.A1_rho = planet.A1_rho
-        self.A1_P   = planet.A1_P
-        
-    def solve(self, Tw, Re, Rp):
-        
-        r_array     = np.linspace(0, Re, self.N_steps_spin)
-        z_array     = np.linspace(0, Rp, self.N_steps_spin)
-        
-        u_cold_array_L1   = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
-        u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1]) 
-        
-        profile_e, profile_p = \
-            spin2layer(self.num_attempt, r_array, z_array,
-                       self.A1_r, self.A1_rho, Tw,
-                       self.P_center, self.P_boundary, self.P_s,
-                       self.rho_center, self.rho_s,
-                       self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                       self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                       u_cold_array_L1, u_cold_array_L2)
+        else:
+            self.A1_mat_layer    = A1_mat_layer
+            self.A1_T_rho_type   = A1_T_rho_type
+            self.A1_T_rho_args   = A1_T_rho_args
+            self.A1_r_equator    = A1_r_equator
+            self.A1_rho_equator  = A1_rho_equator
+            self.A1_r_pole       = A1_r_pole
+            self.A1_rho_pole     = A1_rho_pole
+            self.Tw              = Tw
+            self.P_R1            = P_R1
+            self.P_R2            = P_R2
+            self.A1_r            = A1_r
+            self.A1_rho          = A1_rho
+            self.A1_P            = A1_P
             
-        print("\nDone!")
+            # Derived or default attributes
+            if self.A1_mat_layer is not None:
+                self.num_layer          = len(self.A1_mat_layer)
+                self.A1_mat_id_layer    = [weos.Di_mat_id[mat] 
+                                           for mat in self.A1_mat_layer]
             
-        self.Tw = Tw
-        self.Re = Re
-        self.Rp = Rp
+        assert(self.num_layer in [1, 2, 3])
+        assert(self.N_particles is not None)
         
-        self.A1_equator     = r_array
-        self.A1_pole        = z_array
-        self.A1_rho_equator = profile_e[-1]
-        self.A1_rho_pole    = profile_p[-1]
-        
-class _3l_spin(_spin):
-    
-    def __init__(self, planet):
-        
-        self.num_layer          = 3
-        self.A1_mat_id_layer[0]       = planet.mat_id_L1
-        self.A1_T_rho_type[0]     = planet.T_rho_type_L1
-        self.A1_T_rho_args[0]   = planet.T_rho_args_L1
-        self.A1_mat_id_layer[1]     = planet.mat_id_L2
-        self.A1_T_rho_type[1]   = planet.T_rho_type_L2
-        self.A1_T_rho_args[1] = planet.T_rho_args_L2
-        self.A1_mat_id_layer[2]        = planet.mat_id_L3
-        self.A1_T_rho_type[2]      = planet.T_rho_type_L3
-        self.A1_T_rho_args[2]    = planet.T_rho_args_L3
-        
-        self.P_s   = planet.P_s
-        self.T_s   = planet.T_s
-        self.rho_s = planet.rho_s
-        
-        k                  = np.sum(planet.A1_mat_id == planet.mat_id_L1)
-        self.P_boundary_cm = planet.A1_P[planet.num_prof - k] + \
-                             planet.A1_P[planet.num_prof - k - 1]
-        self.P_boundary_cm = self.P_boundary_cm/2.
-        
-        k                  = np.sum(planet.A1_mat_id == planet.mat_id_L3)
-        self.P_boundary_ma = (planet.A1_P[k] + planet.A1_P[k - 1]) * 0.5
-        
-        self.P_center    = planet.A1_P[-1]
-        self.T_center    = planet.A1_T[-1]
-        self.rho_center  = planet.A1_rho[-1]
-        
-        self.A1_r   = planet.A1_r
-        self.A1_rho = planet.A1_rho
-        self.A1_P   = planet.A1_P
-        
-    def solve(self, Tw, Re, Rp):
-        
-        r_array     = np.linspace(0, Re, self.N_steps_spin)
-        z_array     = np.linspace(0, Rp, self.N_steps_spin)
-        
-        u_cold_array_L1   = weos.load_u_cold_array(self.A1_mat_id_layer[0]) 
-        u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
-        u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2]) 
-        
-        profile_e, profile_p = \
-            spin3layer(self.num_attempt, r_array, z_array,
-                       self.A1_r, self.A1_rho, Tw,
-                       self.P_center, self.P_boundary_cm, self.P_boundary_ma, self.P_s,
-                       self.rho_center, self.rho_s,
-                       self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                       self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                       self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
-                       u_cold_array_L1, u_cold_array_L2, u_cold_array_L3)
+        if self.num_layer == 1:
             
-        print("\nDone!")
+            u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
             
-        self.Tw = Tw
-        self.Re = Re
-        self.Rp = Rp
-        
-        self.A1_equator     = r_array
-        self.A1_pole        = z_array
-        self.A1_rho_equator = profile_e[-1]
-        self.A1_rho_pole    = profile_p[-1]
-    
-def Spin(planet):
-        
-    _print_banner()
-    
-    if planet.num_layer not in [1, 2, 3]:
-        
-        print(f"Can't build a planet with {planet.num_layer} layers!")
-        return None
-        
-    if planet.num_layer == 1:
-        
-        spin_planet = _1l_spin(planet)
-        return spin_planet
-            
-    elif planet.num_layer == 2:
-        
-        spin_planet = _2l_spin(planet)
-        return spin_planet
-        
-    elif planet.num_layer == 3:
-        
-        spin_planet = _3l_spin(planet)
-        return spin_planet
-
-class _1l_genspheroid():
-    
-    def __init__(self, spin_planet, N_particles, N_neig=48, num_attempt=10):
-        
-        self.num_layer    = 1
-        self.num_attempt  = num_attempt
-        
-        self.A1_equator     = spin_planet.A1_equator
-        self.A1_rho_equator = spin_planet.A1_rho_equator
-        self.A1_pole        = spin_planet.A1_pole
-        self.A1_rho_pole    = spin_planet.A1_rho_pole
-        self.Tw             = spin_planet.Tw
-        
-        self.A1_mat_id_layer[0]     = spin_planet.mat_id_L1
-        self.A1_T_rho_type[0]   = spin_planet.T_rho_type_L1
-        self.A1_T_rho_args[0] = spin_planet.T_rho_args_L1
-        
-        u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
-        
-        x, y, z, vx, vy, vz, m_enc, h, rho, P, u, mat_id, picle_id = \
-            picle_placement_L1(self.A1_equator, self.A1_rho_equator,
-                                   self.A1_pole, self.A1_rho_pole, self.Tw, N_particles,
+            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            picle_placement_L1(self.A1_r_equator, self.A1_rho_equator,
+                                   self.A1_r_pole, self.A1_rho_pole, self.Tw, self.N_particles,
                                    self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
                                    u_cold_array_L1, N_neig, num_attempt)
             
-        self.A1_x   = x
-        self.A1_y   = y
-        self.A1_z   = z
-        self.A1_vx  = vx
-        self.A1_vy  = vy
-        self.A1_vz  = vz
-        self.A1_m_enc   = m_enc
-        self.A1_h   = h
-        self.A1_rho = rho
-        self.A1_P   = P
-        self.A1_u   = u
-        self.A1_mat_id   = mat_id
-        self.A1_picle_id = picle_id
-        self.N_particles = x.shape[0]
-        
-class _2l_genspheroid():
-    
-    def __init__(self, spin_planet, N_particles, N_neig=48, num_attempt=10):
-        
-        self.num_layer    = 2
-        
-        
-        self.A1_equator     = spin_planet.A1_equator
-        self.A1_rho_equator = spin_planet.A1_rho_equator
-        self.A1_pole        = spin_planet.A1_pole
-        self.A1_rho_pole    = spin_planet.A1_rho_pole
-        self.Tw             = spin_planet.Tw
-        
-        self.A1_mat_id_layer[0]       = spin_planet.mat_id_L1
-        self.A1_T_rho_type[0]     = spin_planet.T_rho_type_L1
-        self.A1_T_rho_args[0]   = spin_planet.T_rho_args_L1
-        self.A1_mat_id_layer[1]     = spin_planet.mat_id_L2
-        self.A1_T_rho_type[1]   = spin_planet.T_rho_type_L2
-        self.A1_T_rho_args[1] = spin_planet.T_rho_args_L2
-        
-        self.P_boundary   = spin_planet.P_boundary
-        rho_P_model       = interp1d(spin_planet.A1_P, spin_planet.A1_rho)
-        self.rho_boundary = rho_P_model(self.P_boundary)
-        
-        u_cold_array_L1   = weos.load_u_cold_array(self.A1_mat_id_layer[0])
-        u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
-        
-        x, y, z, vx, vy, vz, m_enc, h, rho, P, u, mat_id, picle_id = \
-            picle_placement_L2(self.A1_equator, self.A1_rho_equator,
-                                   self.A1_pole, self.A1_rho_pole,
-                                   self.Tw, N_particles, self.rho_boundary,
-                                   self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                                   self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                                   u_cold_array_L1, u_cold_array_L2,
-                                   N_neig, num_attempt)
+            self.A1_picle_x      = x
+            self.A1_picle_y      = y
+            self.A1_picle_z      = z
+            self.A1_picle_vx     = vx
+            self.A1_picle_vy     = vy
+            self.A1_picle_vz     = vz
+            self.A1_picle_m      = m
+            self.A1_picle_h      = h
+            self.A1_picle_rho    = rho
+            self.A1_picle_P      = P
+            self.A1_picle_u      = u
+            self.A1_picle_mat_id = mat_id
+            self.A1_picle_id     = picle_id
+            self.N_particles     = x.shape[0]
             
-        self.A1_x   = x
-        self.A1_y   = y
-        self.A1_z   = z
-        self.A1_vx  = vx
-        self.A1_vy  = vy
-        self.A1_vz  = vz
-        self.A1_m_enc   = m_enc
-        self.A1_h   = h
-        self.A1_rho = rho
-        self.A1_P   = P
-        self.A1_u   = u
-        self.A1_mat_id   = mat_id
-        self.A1_picle_id = picle_id
-        self.N_particles = x.shape[0]
-    
-class _3l_genspheroid():
-    
-    def __init__(self, spin_planet, N_particles, N_neig=48, num_attempt=10):
-        
-        self.num_layer    = 3
-        
-        self.A1_equator     = spin_planet.A1_equator
-        self.A1_rho_equator = spin_planet.A1_rho_equator
-        self.A1_pole        = spin_planet.A1_pole
-        self.A1_rho_pole    = spin_planet.A1_rho_pole
-        self.Tw             = spin_planet.Tw
-        
-        self.A1_mat_id_layer[0]       = spin_planet.mat_id_L1
-        self.A1_T_rho_type[0]     = spin_planet.T_rho_type_L1
-        self.A1_T_rho_args[0]   = spin_planet.T_rho_args_L1
-        self.A1_mat_id_layer[1]     = spin_planet.mat_id_L2
-        self.A1_T_rho_type[1]   = spin_planet.T_rho_type_L2
-        self.A1_T_rho_args[1] = spin_planet.T_rho_args_L2
-        self.A1_mat_id_layer[2]        = spin_planet.mat_id_L3
-        self.A1_T_rho_type[2]      = spin_planet.T_rho_type_L3
-        self.A1_T_rho_args[2]    = spin_planet.T_rho_args_L3
-        
-        self.P_boundary_cm    = spin_planet.P_boundary_cm
-        self.P_boundary_ma    = spin_planet.P_boundary_ma
-        rho_P_model           = interp1d(spin_planet.A1_P, spin_planet.A1_rho)
-        self.rho_boundary_cm  = rho_P_model(self.P_boundary_cm)
-        self.rho_boundary_ma  = rho_P_model(self.P_boundary_ma)
-        
-        u_cold_array_L1   = weos.load_u_cold_array(self.A1_mat_id_layer[0])
-        u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
-        u_cold_array_L3    = eos.load_u_cold_array(self.A1_mat_id_layer[2])
-        
-        x, y, z, vx, vy, vz, m_enc, h, rho, P, u, mat_id, picle_id = \
-            picle_placement_L3(self.A1_equator, self.A1_rho_equator,
-                                   self.A1_pole, self.A1_rho_pole,
-                                   self.Tw, N_particles, self.rho_boundary_cm, self.rho_boundary_ma,
-                                   self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                                   self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                                   self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
-                                   u_cold_array_L1, u_cold_array_L2, u_cold_array_L3,
-                                   N_neig, num_attempt)
+        elif self.num_layer == 2:
             
-        self.A1_x   = x
-        self.A1_y   = y
-        self.A1_z   = z
-        self.A1_vx  = vx
-        self.A1_vy  = vy
-        self.A1_vz  = vz
-        self.A1_m_enc   = m
-        self.A1_h   = h
-        self.A1_rho = rho
-        self.A1_P   = P
-        self.A1_u   = u
-        self.A1_mat_id   = mat_id
-        self.A1_picle_id = picle_id
-        self.N_particles = x.shape[0]
-
-def GenSpheroid(spin_planet, N_particles, N_neig=48, num_attempt=10):
-    
-    _print_banner()
-    
-    sp = spin_planet
-    
-    if sp.num_layer not in [1, 2, 3]:
-        
-        print(f"Can't build a planet with {sp.num_layer} layers!")
-        return None
-        
-    if sp.num_layer == 1:
-        
-        spheroid = _1l_genspheroid(sp, N_particles, N_neig, num_attempt)
-        return spheroid
+            rho_P_model       = interp1d(self.A1_P, self.A1_rho)
+            self.rho_R1       = rho_P_model(self.P_R1)
             
-    elif sp.num_layer == 2:
+            u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
+            u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
+            
+            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+                picle_placement_L2(self.A1_r_equator, self.A1_rho_equator,
+                                       self.A1_r_pole, self.A1_rho_pole,
+                                       self.Tw, self.N_particles, self.rho_R1,
+                                       self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
+                                       self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+                                       u_cold_array_L1, u_cold_array_L2,
+                                       N_neig, num_attempt)
+                
+            self.A1_picle_x      = x
+            self.A1_picle_y      = y
+            self.A1_picle_z      = z
+            self.A1_picle_vx     = vx
+            self.A1_picle_vy     = vy
+            self.A1_picle_vz     = vz
+            self.A1_picle_m      = m
+            self.A1_picle_h      = h
+            self.A1_picle_rho    = rho
+            self.A1_picle_P      = P
+            self.A1_picle_u      = u
+            self.A1_picle_mat_id = mat_id
+            self.A1_picle_id     = picle_id
+            self.N_particles     = x.shape[0]
+            
+        elif self.num_layer == 3:
+            
+            rho_P_model  = interp1d(self.A1_P, self.A1_rho)
+            self.rho_R1  = rho_P_model(self.P_R1)
+            self.rho_R2  = rho_P_model(self.P_R2)
+            
+            u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
+            u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
+            u_cold_array_L3 = weos.load_u_cold_array(self.A1_mat_id_layer[2])
+            
+            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+                picle_placement_L3(self.A1_r_equator, self.A1_rho_equator,
+                                       self.A1_r_pole, self.A1_rho_pole,
+                                       self.Tw, self.N_particles, self.rho_R1, self.rho_R2,
+                                       self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
+                                       self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+                                       self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
+                                       u_cold_array_L1, u_cold_array_L2, u_cold_array_L3,
+                                       N_neig, num_attempt)
+                
+            self.A1_picle_x      = x
+            self.A1_picle_y      = y
+            self.A1_picle_z      = z
+            self.A1_picle_vx     = vx
+            self.A1_picle_vy     = vy
+            self.A1_picle_vz     = vz
+            self.A1_picle_m      = m
+            self.A1_picle_h      = h
+            self.A1_picle_rho    = rho
+            self.A1_picle_P      = P
+            self.A1_picle_u      = u
+            self.A1_picle_mat_id = mat_id
+            self.A1_picle_id     = picle_id
+            self.N_particles     = x.shape[0]
         
-        spheroid = _2l_genspheroid(sp, N_particles, N_neig, num_attempt)
-        return spheroid
-        
-    elif sp.num_layer == 3:
-        
-        spheroid = _3l_genspheroid(sp, N_particles, N_neig, num_attempt)
-        return spheroid
-
-###############################################################################
-####################### Misc ##################################################
-###############################################################################
-
 # Set up equation of state data
 set_up()
