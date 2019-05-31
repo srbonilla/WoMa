@@ -9,14 +9,6 @@ Created on Wed May 29 13:07:49 2019
 ###############################################################################
 ####################### Libraries and constants ###############################
 ###############################################################################
-import sys
-import os
-
-# Go to the WoMa directory
-path = '/home/sergio/Documents/WoMa/'
-os.chdir(path)
-sys.path.append(path)
-
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
