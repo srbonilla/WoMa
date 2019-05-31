@@ -1925,7 +1925,7 @@ class Planet():
         """ Print the Planet objects's main properties. """
         space   = 12
         print("Planet \"%s\": " % self.name)
-        print("    %s = %.5g Kg / %.5g M_earth" % 
+        print("    %s = %.5g kg / %.5g M_earth" % 
               (add_whitespace("M", space), self.M, self.M/M_earth))
         print("    %s = %.5g m / %.5g R_earth" %
               (add_whitespace("R", space), self.R, self.R/R_earth))
@@ -1943,8 +1943,8 @@ class Planet():
               format_array_string(self.A1_idx_layer, "%d")))
         print("    %s = %.5g Pa" % (add_whitespace("P_s", space), self.P_s))
         print("    %s = %.5g K" % (add_whitespace("T_s", space), self.T_s))
-        print("    %s = %.5g Kg/m^3" % (add_whitespace("rho_s", space), self.rho_s))
-        print("    %s = %.5g Kg*m^2 / %.5g M_earth*R_earth^2" %
+        print("    %s = %.5g kg/m^3" % (add_whitespace("rho_s", space), self.rho_s))
+        print("    %s = %.5g kg*m^2 / %.5g M_earth*R_earth^2" %
               (add_whitespace("I_MR2", space), self.I_MR2, self.I_MR2/M_earth/R_earth/R_earth))
     
     def save_planet(self):

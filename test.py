@@ -162,7 +162,7 @@ prof_pE = woma.Planet(
 
 prof_pE.gen_prof_L2_fix_R1_given_R_M()
 
-mat_atm = 'idg_N2'
+mat_atm = 'SESAME_water'
 T_rho_type_atm = 1
 T_rho_args_atm = [None, 0]
 
@@ -170,7 +170,7 @@ prof_pE.gen_prof_L3_given_prof_L2(
     mat_atm,
     T_rho_type_atm,
     T_rho_args_atm,
-    rho_min=1e-6
+    rho_min=1e-3
     )
 
 plot_spherical_profile(prof_pE)
