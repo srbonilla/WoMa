@@ -137,7 +137,7 @@ def find_index_and_interp(x, A1_x):
 
    return np.array([idx, intp])
 
-# SESAME (Temporary messy stuff!)
+# SESAME
 def load_table_SESAME(Fp_table):
     """ Load and return the table file data.
 
@@ -160,29 +160,29 @@ def load_table_SESAME(Fp_table):
                 The table file path.
         
         Returns:
-            num_rho, num_T (int)
-                Number of densities and temperatures for the arrays.
+            # num_rho, num_T (int)
+            #     Number of densities and temperatures for the arrays.
 
-            rho_min, rho_max (float)
-                Penultimate minimin and maximum values of the temperature
-                array (K).
+            # rho_min, rho_max (float)
+            #     Penultimate minimin and maximum values of the temperature
+            #     array (K).
 
-            T_min, T_max (float)
-                Penultimate minimin and maximum values of the density array
-                (kg m^-3).
+            # T_min, T_max (float)
+            #     Penultimate minimin and maximum values of the density array
+            #     (kg m^-3).
 
-            A1_rho, A1_T ([float])
-                1D arrays of density (kg m^-3) and temperature (K).
+            # A1_rho, A1_T ([float])
+            #     1D arrays of density (kg m^-3) and temperature (K).
 
-            A2_u, A2_P, A2_c, A2_s ([[float]])
+            A2_u, A2_P, # A2_c, A2_s ([[float]])
                 2D arrays of sp. int. energy (J kg^-1), pressure (Pa),
-                sound speed (m s^-1), and sp. entropy (J kg^-1 K^-1).
+                # sound speed (m s^-1), and sp. entropy (J kg^-1 K^-1).
 
             A1_log_rho, A1_log_T ([float])
                 1D arrays of natural logs of density (kg m^-3) and
                 temperature (K).
 
-            A2_log_u, A2_log_P, A2_log_c, A2_log_s ([[float]])
+            A2_log_u, # A2_log_P, A2_log_c, A2_log_s ([[float]])
                 2D arrays of natural logs of sp. int. energy (J kg^-1),
                 pressure (Pa), sound speed (m s^-1), and sp. entropy
                 (J kg^-1 K^-1).
@@ -207,37 +207,33 @@ def load_table_SESAME(Fp_table):
                     A2_s[i_rho, i_T]    = np.array(f.readline().split(),
                                                    dtype=float)
 
-    return (
-        num_rho, num_T, A1_rho[1], A1_rho[-2], A1_T[1], A1_T[-2], A1_rho, A1_T, 
-        A2_u, A2_P, A2_c, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_u), 
-        np.log(A2_P), np.log(A2_c), np.log(A2_s)
-        )
+    return A2_u, A2_P, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
 
 # Load tables in global variables
-# SESAME iron 2140
-(num_rho_SESAME_iron, num_T_SESAME_iron, rho_min_SESAME_iron, 
- rho_max_SESAME_iron, T_min_SESAME_iron, T_max_SESAME_iron, A1_rho_SESAME_iron, 
- A1_T_SESAME_iron, A2_u_SESAME_iron, A2_P_SESAME_iron, A2_c_SESAME_iron, 
- A2_s_SESAME_iron, A1_log_rho_SESAME_iron, A1_log_T_SESAME_iron, 
- A2_log_u_SESAME_iron, A2_log_P_SESAME_iron, A2_log_c_SESAME_iron, 
- A2_log_s_SESAME_iron
+(A2_u_SESAME_iron, A2_P_SESAME_iron, A1_log_rho_SESAME_iron, 
+ A1_log_T_SESAME_iron, A2_log_u_SESAME_iron
  )  = load_table_SESAME(Fp_SESAME_iron)
-# SESAME basalt 7530
-(num_rho_SESAME_basalt, num_T_SESAME_basalt, rho_min_SESAME_basalt, 
- rho_max_SESAME_basalt, T_min_SESAME_basalt, T_max_SESAME_basalt, A1_rho_SESAME_basalt, 
- A1_T_SESAME_basalt, A2_u_SESAME_basalt, A2_P_SESAME_basalt, A2_c_SESAME_basalt, 
- A2_s_SESAME_basalt, A1_log_rho_SESAME_basalt, A1_log_T_SESAME_basalt, 
- A2_log_u_SESAME_basalt, A2_log_P_SESAME_basalt, A2_log_c_SESAME_basalt, 
- A2_log_s_SESAME_basalt
+(A2_u_SESAME_basalt, A2_P_SESAME_basalt, A1_log_rho_SESAME_basalt, 
+ A1_log_T_SESAME_basalt, A2_log_u_SESAME_basalt
  )  = load_table_SESAME(Fp_SESAME_basalt)
-# SESAME water 7154
-(num_rho_SESAME_water, num_T_SESAME_water, rho_min_SESAME_water, 
- rho_max_SESAME_water, T_min_SESAME_water, T_max_SESAME_water, A1_rho_SESAME_water, 
- A1_T_SESAME_water, A2_u_SESAME_water, A2_P_SESAME_water, A2_c_SESAME_water, 
- A2_s_SESAME_water, A1_log_rho_SESAME_water, A1_log_T_SESAME_water, 
- A2_log_u_SESAME_water, A2_log_P_SESAME_water, A2_log_c_SESAME_water, 
- A2_log_s_SESAME_water
+(A2_u_SESAME_water, A2_P_SESAME_water, A1_log_rho_SESAME_water, 
+ A1_log_T_SESAME_water, A2_log_u_SESAME_water
  )  = load_table_SESAME(Fp_SESAME_water)
+(A2_u_SS08_water, A2_P_SS08_water, A1_log_rho_SS08_water, A1_log_T_SS08_water, 
+ A2_log_u_SS08_water
+ )  = load_table_SESAME(Fp_SS08_water)
+(A2_u_SESAME_H2, A2_P_SESAME_H2, A1_log_rho_SESAME_H2, A1_log_T_SESAME_H2, 
+ A2_log_u_SESAME_H2
+ )  = load_table_SESAME(Fp_SESAME_H2)
+(A2_u_SESAME_N2, A2_P_SESAME_N2, A1_log_rho_SESAME_N2, A1_log_T_SESAME_N2, 
+ A2_log_u_SESAME_N2
+ )  = load_table_SESAME(Fp_SESAME_N2)
+(A2_u_SESAME_steam, A2_P_SESAME_steam, A1_log_rho_SESAME_steam, 
+ A1_log_T_SESAME_steam, A2_log_u_SESAME_steam
+ )  = load_table_SESAME(Fp_SESAME_steam)
+(A2_u_SESAME_CO2, A2_P_SESAME_CO2, A1_log_rho_SESAME_CO2, A1_log_T_SESAME_CO2, 
+ A2_log_u_SESAME_CO2
+ )  = load_table_SESAME(Fp_SESAME_CO2)
 
 ###############################################################################
 ############################### Functions #####################################
@@ -274,42 +270,41 @@ def _P_EoS_SESAME(u, rho, mat_id):
             P (double)
                 Pressure (SI).
     """
-    # Choose the arrays from the global variables ### (Temporary messy stuff!)
+    # Choose the arrays from the global variables
     if (mat_id == id_SESAME_iron):
-        (num_rho, num_T, rho_min, rho_max, T_min, T_max, A1_rho, A1_T, A2_u, 
-         A2_P, A2_c, A2_s, A1_log_rho, A1_log_T, A2_log_u, A2_log_P, A2_log_c, 
-         A2_log_s) = (
-            num_rho_SESAME_iron, num_T_SESAME_iron, rho_min_SESAME_iron, 
-            rho_max_SESAME_iron, T_min_SESAME_iron, T_max_SESAME_iron, A1_rho_SESAME_iron, 
-            A1_T_SESAME_iron, A2_u_SESAME_iron, A2_P_SESAME_iron, A2_c_SESAME_iron, 
-            A2_s_SESAME_iron, A1_log_rho_SESAME_iron, A1_log_T_SESAME_iron, 
-            A2_log_u_SESAME_iron, A2_log_P_SESAME_iron, A2_log_c_SESAME_iron, 
-            A2_log_s_SESAME_iron
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_iron, A1_log_rho_SESAME_iron, A2_log_u_SESAME_iron
             )
     elif (mat_id == id_SESAME_basalt):
-        (num_rho, num_T, rho_min, rho_max, T_min, T_max, A1_rho, A1_T, A2_u, 
-         A2_P, A2_c, A2_s, A1_log_rho, A1_log_T, A2_log_u, A2_log_P, A2_log_c, 
-         A2_log_s) = (
-            num_rho_SESAME_basalt, num_T_SESAME_basalt, rho_min_SESAME_basalt, 
-            rho_max_SESAME_basalt, T_min_SESAME_basalt, T_max_SESAME_basalt, A1_rho_SESAME_basalt, 
-            A1_T_SESAME_basalt, A2_u_SESAME_basalt, A2_P_SESAME_basalt, A2_c_SESAME_basalt, 
-            A2_s_SESAME_basalt, A1_log_rho_SESAME_basalt, A1_log_T_SESAME_basalt, 
-            A2_log_u_SESAME_basalt, A2_log_P_SESAME_basalt, A2_log_c_SESAME_basalt, 
-            A2_log_s_SESAME_basalt
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_basalt, A1_log_rho_SESAME_basalt, A2_log_u_SESAME_basalt
             )
     elif (mat_id == id_SESAME_water):
-        (num_rho, num_T, rho_min, rho_max, T_min, T_max, A1_rho, A1_T, A2_u, 
-         A2_P, A2_c, A2_s, A1_log_rho, A1_log_T, A2_log_u, A2_log_P, A2_log_c, 
-         A2_log_s) = (
-            num_rho_SESAME_water, num_T_SESAME_water, rho_min_SESAME_water, 
-            rho_max_SESAME_water, T_min_SESAME_water, T_max_SESAME_water, A1_rho_SESAME_water, 
-            A1_T_SESAME_water, A2_u_SESAME_water, A2_P_SESAME_water, A2_c_SESAME_water, 
-            A2_s_SESAME_water, A1_log_rho_SESAME_water, A1_log_T_SESAME_water, 
-            A2_log_u_SESAME_water, A2_log_P_SESAME_water, A2_log_c_SESAME_water, 
-            A2_log_s_SESAME_water
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_water, A1_log_rho_SESAME_water, A2_log_u_SESAME_water
             )
-    #else:
-    #    raise ValueError("No material with id: ", mat_id)
+    elif (mat_id == id_SS08_water):
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SS08_water, A1_log_rho_SS08_water, A2_log_u_SS08_water
+            )
+    elif (mat_id == id_SESAME_H2):
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_H2, A1_log_rho_SESAME_H2, A2_log_u_SESAME_H2
+            )
+    elif (mat_id == id_SESAME_N2):
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_N2, A1_log_rho_SESAME_N2, A2_log_u_SESAME_N2
+            )
+    elif (mat_id == id_SESAME_steam):
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_steam, A1_log_rho_SESAME_steam, A2_log_u_SESAME_steam
+            )
+    elif (mat_id == id_SESAME_CO2):
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_CO2, A1_log_rho_SESAME_CO2, A2_log_u_SESAME_CO2
+            )
+    else:
+       raise ValueError("No material with id: ", mat_id)
     
     # Ignore the first elements of rho = 0, T = 0
     A2_P        = A2_P[1:, 1:]
@@ -1060,45 +1055,47 @@ def plot_eos_T_vs_rho_fixed_P(mat_id, P_array=np.logspace(6, 11, 4),
 def _find_u(rho, mat_id, T, u_cold_array):
     mat_type    = mat_id // type_factor
     if (mat_type == type_SESAME):
-        # Choose the arrays from the global variables ### (Temporary messy stuff!)
+        # Choose the arrays from the global variables
         if (mat_id == id_SESAME_iron):
-            (num_rho, num_T, rho_min, rho_max, T_min, T_max, A1_rho, A1_T, A2_u, 
-             A2_P, A2_c, A2_s, A1_log_rho, A1_log_T, A2_log_u, A2_log_P, A2_log_c, 
-             A2_log_s) = (
-                num_rho_SESAME_iron, num_T_SESAME_iron, rho_min_SESAME_iron, 
-                rho_max_SESAME_iron, T_min_SESAME_iron, T_max_SESAME_iron, A1_rho_SESAME_iron, 
-                A1_T_SESAME_iron, A2_u_SESAME_iron, A2_P_SESAME_iron, A2_c_SESAME_iron, 
-                A2_s_SESAME_iron, A1_log_rho_SESAME_iron, A1_log_T_SESAME_iron, 
-                A2_log_u_SESAME_iron, A2_log_P_SESAME_iron, A2_log_c_SESAME_iron, 
-                A2_log_s_SESAME_iron
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SESAME_iron, A1_log_rho_SESAME_iron, A1_log_T_SESAME_iron
                 )
         elif (mat_id == id_SESAME_basalt):
-            (num_rho, num_T, rho_min, rho_max, T_min, T_max, A1_rho, A1_T, A2_u, 
-             A2_P, A2_c, A2_s, A1_log_rho, A1_log_T, A2_log_u, A2_log_P, A2_log_c, 
-             A2_log_s) = (
-                num_rho_SESAME_basalt, num_T_SESAME_basalt, rho_min_SESAME_basalt, 
-                rho_max_SESAME_basalt, T_min_SESAME_basalt, T_max_SESAME_basalt, A1_rho_SESAME_basalt, 
-                A1_T_SESAME_basalt, A2_u_SESAME_basalt, A2_P_SESAME_basalt, A2_c_SESAME_basalt, 
-                A2_s_SESAME_basalt, A1_log_rho_SESAME_basalt, A1_log_T_SESAME_basalt, 
-                A2_log_u_SESAME_basalt, A2_log_P_SESAME_basalt, A2_log_c_SESAME_basalt, 
-                A2_log_s_SESAME_basalt
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SESAME_basalt, A1_log_rho_SESAME_basalt, 
+                A1_log_T_SESAME_basalt
                 )
         elif (mat_id == id_SESAME_water):
-            (num_rho, num_T, rho_min, rho_max, T_min, T_max, A1_rho, A1_T, A2_u, 
-             A2_P, A2_c, A2_s, A1_log_rho, A1_log_T, A2_log_u, A2_log_P, A2_log_c, 
-             A2_log_s) = (
-                num_rho_SESAME_water, num_T_SESAME_water, rho_min_SESAME_water, 
-                rho_max_SESAME_water, T_min_SESAME_water, T_max_SESAME_water, A1_rho_SESAME_water, 
-                A1_T_SESAME_water, A2_u_SESAME_water, A2_P_SESAME_water, A2_c_SESAME_water, 
-                A2_s_SESAME_water, A1_log_rho_SESAME_water, A1_log_T_SESAME_water, 
-                A2_log_u_SESAME_water, A2_log_P_SESAME_water, A2_log_c_SESAME_water, 
-                A2_log_s_SESAME_water
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SESAME_water, A1_log_rho_SESAME_water, 
+                A1_log_T_SESAME_water
                 )
-        #else:
-        #    raise ValueError("No material with id: ", mat_id)
+        elif (mat_id == id_SS08_water):
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SS08_water, A1_log_rho_SS08_water, A1_log_T_SS08_water
+                )
+        elif (mat_id == id_SESAME_H2):
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SESAME_H2, A1_log_rho_SESAME_H2, A1_log_T_SESAME_H2
+                )
+        elif (mat_id == id_SESAME_N2):
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SESAME_N2, A1_log_rho_SESAME_N2, A1_log_T_SESAME_N2
+                )
+        elif (mat_id == id_SESAME_steam):
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SESAME_steam, A1_log_rho_SESAME_steam, 
+                A1_log_T_SESAME_steam
+                )
+        elif (mat_id == id_SESAME_CO2):
+            A2_u, A1_log_rho, A1_log_T = (
+                A2_u_SESAME_CO2, A1_log_rho_SESAME_CO2, A1_log_T_SESAME_CO2
+                )
+        else:
+           raise ValueError("No material with id: ", mat_id)
         
         # Ignore the first elements of rho = 0, T = 0
-        A2_u        = A2_u[1:, 1:]
+        A2_u    = A2_u[1:, 1:]
     
         # Convert to log
         log_rho = np.log(rho)
@@ -1126,7 +1123,6 @@ def _find_u(rho, mat_id, T, u_cold_array):
     
         # If more than two table values are non-positive then return zero
         num_non_pos = np.sum(np.array([u_1, u_2, u_3, u_4]) < 0)
-        #num_non_pos = np.sum([int(P_i <= 0) for P_i in [P_1, P_2, P_3, P_4]])
         if num_non_pos > 2:
             return 0.
     
@@ -1136,7 +1132,6 @@ def _find_u(rho, mat_id, T, u_cold_array):
             if intp_rho < 0 or intp_T < 0:
                 return 0.
             else:
-                #P_tiny  = np.amin(A2_P[A2_P > 0]) * 1e-3
                 u_tiny  = np.amin(np.abs(A2_u)) * 1e-3
                 if u_1 <= 0:
                     u_1 = u_tiny
