@@ -873,7 +873,7 @@ def L2_find_R1(
         return R1_min
     
     elif A1_m_enc_2[-1] > 0:
-        print("Excess of mass for a planet made of core material")
+        print("Excess of mass for a planet made of layer 1 material")
         print("Try decreasing the mass or increasing the radius")
         return R1_max
          
@@ -1299,7 +1299,7 @@ def L3_find_radius(
         )
         
     if A1_m_enc[-1] == 0:
-        print("Ran out of mass for a 2 layer planet with core and mantle.")
+        print("Ran out of mass for a 2 layer planet.")
         print("Try increase the mass or reduce R1")
         return R_min
         
@@ -1418,7 +1418,7 @@ def L3_find_R2(
         )
         
     if A1_m_enc[-1] == 0:
-        print("A planet made of core and mantle materials excess mass.")  
+        print("A planet made of layer 1 and mantle materials excess mass.")  
         print("Try decreasing the mass, decreasing R1 or increasing R")
         return R2_min
         
@@ -1431,7 +1431,7 @@ def L3_find_R2(
         )
         
     if A1_m_enc[-1] > 0:
-        print("A planet made of core and atm. materials lacks mass.")
+        print("A planet made of layer 1 and atm. materials lacks mass.")
         print("Try increasing the mass, increasing R1 or decreasing R.") 
         
         return R2_max
@@ -1540,7 +1540,7 @@ def L3_find_R1(
         )
         
     if A1_m_enc[-1] > 0:
-        print("A planet made of core and atm. materials excess mass.")
+        print("A planet made of layer 1 and atm. materials excess mass.")
         print("Try decreasing the mass, increasing R2 or increasing R")
         return R1_min
     
@@ -1664,7 +1664,7 @@ def L3_find_R1_R2(
         u_cold_array_L3
         )
     
-    r_max, A1_m_enc, A1_P, A1_T, rho_max, A1_u, A1_mat_id = L2_integrate(
+    r_max, A1_m_enc, A1_P, A1_T, rho_23x, A1_u, A1_mat_id = L2_integrate(
         num_prof, R, M, P_s, T_s, rho_s_L2, R1_I_max, mat_id_L1, T_rho_type_L1, 
         T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2, u_cold_array_L1, 
         u_cold_array_L2
@@ -1677,7 +1677,7 @@ def L3_find_R1_R2(
         )
         
     moi_min = moi(r_min, rho_min)
-    moi_max = moi(r_max, rho_max)
+    moi_max = moi(r_max, rho_23x)
     
     R1_min = R1_I_max
     R1_max = R1_I_min
@@ -4101,9 +4101,9 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             diff = (rho_sph - rho)/rho
             mP_next = (1 - diff)*mP
             # do not change values of inter-boundary layers
-            mP_next[R == unique_R_L1[-1]]   = mP[R == unique_R_L1[-1]]   # outer core layer
-            mP_next[R == unique_R_L2[0]]  = mP[R == unique_R_L2[0]]  # inner mantle layer
-            mP_next[R == unique_R_L2[-1]] = mP[R == unique_R_L2[-1]] # outer mantle layer
+            mP_next[R == unique_R_L1[-1]]   = mP[R == unique_R_L1[-1]]  # outer layer 1
+            mP_next[R == unique_R_L2[0]]    = mP[R == unique_R_L2[0]]   # inner layer 2
+            mP_next[R == unique_R_L2[-1]]   = mP[R == unique_R_L2[-1]]  # outer layer 2
             
             mP = mP_next
         
@@ -4127,11 +4127,11 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                 mP_next_i = (1 - diff_i)*mP[i*N_mem:(i + 1)*N_mem]
                 # do not change values of inter-boundary layers
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L1[-1]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L1[-1]]   # outer core layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L1[-1]]  # outer layer 1
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[0]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[0]]  # inner mantle layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[0]]   # inner layer 2
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[-1]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[-1]] # outer mantle layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[-1]]  # outer layer 2
             
                 mP[i*N_mem:(i + 1)*N_mem] = mP_next_i
                 
@@ -4145,11 +4145,11 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             mP_next_k = (1 - diff_k)*mP[k*N_mem:]
             # do not change values of inter-boundary layers
             mP_next_k[R[k*N_mem:] == unique_R_L1[-1]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L1[-1]]   # outer core layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L1[-1]]    # outer layer 1
             mP_next_k[R[k*N_mem:] == unique_R_L2[0]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[0]]  # inner mantle layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[0]]     # inner layer 2
             mP_next_k[R[k*N_mem:] == unique_R_L2[-1]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[-1]] # outer mantle layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[-1]]    # outer layer 2
             
             mP[k*N_mem:] = mP_next_k    
     
@@ -4179,7 +4179,7 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
 ############################## 3 layers #######################################
     
 @jit(nopython=True)
-def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
+def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
              mat_id_L1, T_rho_type_L1, T_rho_args_L1, u_cold_array_L1,
              mat_id_L2, T_rho_type_L2, T_rho_args_L2, u_cold_array_L2,
              mat_id_L3, T_rho_type_L3, T_rho_args_L3, u_cold_array_L3):
@@ -4203,10 +4203,10 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
             P_c (float):
                 Pressure at the center of the planet (SI).
                 
-            P_cm (float):
+            P_12 (float):
                 Pressure at the boundary between layers 1 and 2 of the planet (SI).
                 
-            P_ma (float):
+            P_23 (float):
                 Pressure at the boundary between layers 2 and 3 of the planet (SI).
                 
             P_s (float):
@@ -4281,11 +4281,11 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
         gradP = -rho_e[i]*gradV
         P_e[i + 1] = P_e[i] + gradP
             
-        if P_e[i + 1] >= P_s and P_e[i + 1] >= P_cm:
+        if P_e[i + 1] >= P_s and P_e[i + 1] >= P_12:
             rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                                      rho_s - 10, rho_e[i], u_cold_array_L1) 
             
-        elif P_e[i + 1] >= P_s and P_e[i + 1] >= P_ma:
+        elif P_e[i + 1] >= P_s and P_e[i + 1] >= P_23:
             rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
                                      rho_s - 10, rho_e[i], u_cold_array_L2) 
             
@@ -4302,11 +4302,11 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
         gradP = -rho_p[i]*gradV
         P_p[i + 1] = P_p[i] + gradP
         
-        if P_p[i + 1] >= P_s and P_p[i + 1] >= P_cm:
+        if P_p[i + 1] >= P_s and P_p[i + 1] >= P_12:
             rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                                      rho_s - 10, rho_p[i], u_cold_array_L1)
             
-        elif P_p[i + 1] >= P_s and P_p[i + 1] >= P_ma:
+        elif P_p[i + 1] >= P_s and P_p[i + 1] >= P_23:
             rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
                                      rho_s - 10, rho_p[i], u_cold_array_L2)
             
@@ -4321,7 +4321,7 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
     return rho_e, rho_p
 
 def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
-               P_c, P_cm, P_ma, P_s, rho_c, rho_s,
+               P_c, P_12, P_23, P_s, rho_c, rho_s,
                mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                mat_id_L2, T_rho_type_L2, T_rho_args_L2,
                mat_id_L3, T_rho_type_L3, T_rho_args_L3,
@@ -4351,10 +4351,10 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
             P_c (float):
                 Pressure at the center of the planet (SI).
                 
-            P_cm (float):
+            P_12 (float):
                 Pressure at the boundary between layers 1 and 2 of the planet (SI).
                 
-            P_ma (float):
+            P_23 (float):
                 Pressure at the boundary between layers 2 and 3 of the planet (SI).
                 
             P_s (float):
@@ -4427,7 +4427,7 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
     
     for i in tqdm(range(num_attempt), desc="Solving spining profile"):
         V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
-        rho_e, rho_p = _fillrho3(r_array, V_e, z_array, V_p, P_c, P_cm, P_ma, P_s, rho_c, rho_s,
+        rho_e, rho_p = _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
                                 mat_id_L1, T_rho_type_L1, T_rho_args_L1, u_cold_array_L1,
                                 mat_id_L2, T_rho_type_L2, T_rho_args_L2, u_cold_array_L2,
                                 mat_id_L3, T_rho_type_L3, T_rho_args_L3, u_cold_array_L3)
@@ -4436,7 +4436,7 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
     
     return profile_e, profile_p
 
-def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
+def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
                            mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                            mat_id_L2, T_rho_type_L2, T_rho_args_L2,
                            mat_id_L3, T_rho_type_L3, T_rho_args_L3,
@@ -4464,10 +4464,10 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
             N (int):
                 Number of particles.
                 
-            rho_cm (float):
+            rho_12 (float):
                 Density at the boundary between layers 1 and 2 (SI).
                 
-            rho_ma (float):
+            rho_23 (float):
                 Density at the boundary between layers 2 and 3 (SI).
                 
             mat_id_L1 (int):
@@ -4600,14 +4600,14 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
-        if rho[k] > rho_cm:
+        if rho[k] > rho_12:
             T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
             #u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
             #u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
             
-        elif rho[k] > rho_ma:
+        elif rho[k] > rho_23:
             T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
             u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
             #u[k] = weos._u_cold_tab(rho[k], mat_id_L2, u_cold_array_L2)
@@ -4628,9 +4628,9 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
     h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
     
     A1_id = np.arange(mP.shape[0])
-    A1_mat_id = (rho > rho_cm)*mat_id_L1                       \
-                + np.logical_and(rho <= rho_cm, rho > rho_ma)*mat_id_L2 \
-                + (rho < rho_ma)*mat_id_L3
+    A1_mat_id = (rho > rho_12)*mat_id_L1                       \
+                + np.logical_and(rho <= rho_12, rho > rho_23)*mat_id_L2 \
+                + (rho < rho_23)*mat_id_L3
     
     ############
     unique_R_L1   = np.unique(R[A1_mat_id == mat_id_L1])
@@ -4664,11 +4664,11 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
             diff = (rho_sph - rho)/rho
             mP_next = (1 - diff)*mP
             # do not change values of inter-boundary layers
-            mP_next[R == unique_R_L1[-1]]   = mP[R == unique_R_L1[-1]]   # outer core layer
-            mP_next[R == unique_R_L2[0]]  = mP[R == unique_R_L2[0]]  # inner mantle layer
-            mP_next[R == unique_R_L2[-1]] = mP[R == unique_R_L2[-1]] # outer mantle layer
-            mP_next[R == unique_R_L3[0]]  = mP[R == unique_R_L3[0]]        # inner atm layer
-            mP_next[R == unique_R_L3[-1]] = mP[R == unique_R_L3[-1]]       # outer atm layer
+            mP_next[R == unique_R_L1[-1]]   = mP[R == unique_R_L1[-1]]  # outer layer 1
+            mP_next[R == unique_R_L2[0]]  = mP[R == unique_R_L2[0]]     # inner layer 2
+            mP_next[R == unique_R_L2[-1]] = mP[R == unique_R_L2[-1]]    # outer layer 2
+            mP_next[R == unique_R_L3[0]]  = mP[R == unique_R_L3[0]]     # inner layer 3
+            mP_next[R == unique_R_L3[-1]] = mP[R == unique_R_L3[-1]]    # outer layer 3
             
             mP = mP_next
         
@@ -4692,15 +4692,15 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
                 mP_next_i = (1 - diff_i)*mP[i*N_mem:(i + 1)*N_mem]
                 # do not change values of inter-boundary layers
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L1[-1]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L1[-1]]   # outer core layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L1[-1]]  # outer layer 1
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[0]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[0]]  # inner mantle layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[0]]   # inner layer 2
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[-1]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[-1]] # outer mantle layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L2[-1]]  # outer layer 2
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L3[0]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L3[0]]  # inner atm layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L3[0]]   # inner layer 3
                 mP_next_i[R[i*N_mem:(i + 1)*N_mem] == unique_R_L3[-1]] = \
-                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L3[-1]] # outer atm layer
+                    mP[i*N_mem:(i + 1)*N_mem][R[i*N_mem:(i + 1)*N_mem] == unique_R_L3[-1]]  # outer layer 3
             
                 mP[i*N_mem:(i + 1)*N_mem] = mP_next_i
                 
@@ -4714,15 +4714,15 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_cm, rho_ma,
             mP_next_k = (1 - diff_k)*mP[k*N_mem:]
             # do not change values of inter-boundary layers
             mP_next_k[R[k*N_mem:] == unique_R_L1[-1]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L1[-1]]   # outer core layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L1[-1]]    # outer layer 1
             mP_next_k[R[k*N_mem:] == unique_R_L2[0]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[0]]  # inner mantle layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[0]]     # inner layer 2
             mP_next_k[R[k*N_mem:] == unique_R_L2[-1]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[-1]] # outer mantle layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L2[-1]]    # outer layer 2
             mP_next_k[R[k*N_mem:] == unique_R_L3[0]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L3[0]]  # inner mantle layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L3[0]]     # inner layer 3
             mP_next_k[R[k*N_mem:] == unique_R_L3[-1]] = \
-                mP[k*N_mem:][R[k*N_mem:] == unique_R_L3[-1]] # outer mantle layer
+                mP[k*N_mem:][R[k*N_mem:] == unique_R_L3[-1]]    # outer layer 3
             
             mP[k*N_mem:] = mP_next_k    
     
@@ -4882,9 +4882,9 @@ class SpinPlanet():
             
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
-            P_boundary_cm = 0.5*(a + b)
+            P_boundary_12 = 0.5*(a + b)
             
-            self.P_R1 = P_boundary_cm
+            self.P_R1 = P_boundary_12
             
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
@@ -4899,7 +4899,7 @@ class SpinPlanet():
             profile_e, profile_p = \
                 spin3layer(self.num_attempt, r_array, z_array,
                            self.A1_r, self.A1_rho, self.Tw,
-                           P_c, P_boundary_cm, P_boundary_ma, P_s,
+                           P_c, P_boundary_12, P_boundary_ma, P_s,
                            rho_c, rho_s,
                            self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
                            self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
