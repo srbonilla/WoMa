@@ -6,9 +6,9 @@ Created on Mon Apr  1 11:18:01 2019
 @author: Sergio Ruiz-Bonilla
 """
 
-###############################################################################
-####################### Libraries and constants ###############################
-###############################################################################
+# ============================================================================ #
+# ===================== Libraries and constants ============================== #
+# ============================================================================ #
 
 import numpy as np
 from numba import jit
@@ -174,9 +174,9 @@ def multi_get_planet_data(f, A1_param):
 
     return A1_data
     
-###############################################################################
-####################### Spherical profile functions ###########################
-###############################################################################
+# ============================================================================ #
+# ===================== Spherical profile functions ========================== #
+# ============================================================================ #
 
 def set_up():
     """ Create tabulated values of cold internal energy if they don't exist, 
@@ -211,7 +211,7 @@ def set_up():
         del u_cold_array
         print("Done")
       
-############################## 1 layer ########################################
+# ===================== 1 layer ============================================== #
 
 @jit(nopython=True)
 def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type, 
@@ -281,8 +281,6 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
     A1_u        = np.zeros(A1_r.shape)
     A1_mat_id   = np.ones(A1_r.shape) * mat_id
     
-    #C_V = weos._C_V(mat_id)
-    
     u_s = weos._find_u(rho_s, mat_id, T_s, u_cold_array)
     if T_rho_type == 1:
         T_rho_args[0] = T_s*rho_s**(-T_rho_args[1])
@@ -298,13 +296,12 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
     
     # Integrate inwards
     for i in range(1, A1_r.shape[0]):
-        A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr
+        A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*A1_rho[i - 1]*dr
         A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
         A1_rho[i]   = weos._find_rho(A1_P[i], mat_id, T_rho_type, T_rho_args,
                                      A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array)
         A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args)
         A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
-        #A1_u[i]     = weos._u_cold_tab(A1_rho[i], mat_id, u_cold_array) + C_V*A1_T[i]
         
         if A1_m_enc[i] < 0:
             return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
@@ -349,7 +346,7 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() (SI).
                 
-        Returns:            
+        Returns:
             M_max (float):
                 Mass of the planet (SI).            
     """    
@@ -361,11 +358,11 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
         u_cold_array
         )
         
-    if A1_m_enc[-1] < 0:   
+    if A1_m_enc[-1] < 0: 
         print("M_max is too low, ran out of mass in first iteration")
     
     # Iterate the mass     
-    while np.abs(M_min - M_max) > 1e-8*M_min:            
+    while np.abs(M_min - M_max) > 1e-8*M_min:
         M_try = (M_min + M_max) * 0.5
         
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
@@ -417,7 +414,7 @@ def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() (SI).
                 
-        Returns:            
+        Returns:
             M_max (float):
                 Mass of the planet (SI).            
     """    
@@ -429,12 +426,12 @@ def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         u_cold_array
         )
         
-    if A1_m_enc[-1] != 0:   
+    if A1_m_enc[-1] != 0: 
         print("R_max is too low, did not ran out of mass in first iteration")
         return 0.
             
     # Iterate the radius
-    for i in tqdm(range(num_attempt), desc="Finding R given M"):        
+    for i in tqdm(range(num_attempt), desc="Finding R given M"):
         R_try = (R_min + R_max) * 0.5
         
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
@@ -449,7 +446,7 @@ def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         
     return R_min
      
-############################## 2 layers #######################################
+# ===================== 2 layers ============================================= #
     
 @jit(nopython=True)
 def L2_integrate(
@@ -537,11 +534,7 @@ def L2_integrate(
     A1_u        = np.zeros(A1_r.shape)
     A1_mat_id   = np.zeros(A1_r.shape)
     
-    #C_V_L1  = weos._C_V(mat_id_L1)
-    #C_V_L2  = weos._C_V(mat_id_L2)
-    
     u_s = weos._find_u(rho_s, mat_id_L2, T_s, u_cold_array_L2)
-    #u_s = weos.u_cold(rho_s, mat_id_L2, 10000) + C_V_L2*T_s
     if T_rho_type_L2 == 1:
         T_rho_args_L2[0] = T_s*rho_s**(-T_rho_args_L2[1])
     
@@ -554,49 +547,45 @@ def L2_integrate(
     A1_u[0]         = u_s
     A1_mat_id[0]    = mat_id_L2 
     
-    for i in range(1, A1_r.shape[0]):   ###todo: tidy this         
+    for i in range(1, A1_r.shape[0]):
         # Layer 2
-        if A1_r[i] > R1:            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                   A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L2)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L2, T_rho_args_L2)
-            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L2, A1_T[i], u_cold_array_L2)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
-            A1_mat_id[i] = mat_id_L2
-            
-            if A1_m_enc[i] < 0: 
-                return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id        
+        if A1_r[i] > R1:
+            rho             = A1_rho[i - 1]
+            mat_id          = mat_id_L2
+            T_rho_type      = T_rho_type_L2
+            T_rho_args      = T_rho_args_L2
+            rho0            = rho
+            u_cold_array    = u_cold_array_L2       
         # Layer 1, 2 boundary
-        elif A1_r[i] <= R1 and A1_r[i - 1] > R1:            
-            rho_L2 = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
-                                                     mat_id_L1, u_cold_array_L1)
-            
+        elif A1_r[i] <= R1 and A1_r[i - 1] > R1:
+            rho = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1, 
+                                           u_cold_array_L1)            
             if T_rho_type_L1 == 1:
-                T_rho_args_L1[0] = A1_T[i - 1]*rho_L2**(-T_rho_args_L1[1])
-            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_L2*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_L2/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                   A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L1)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
-            A1_mat_id[i] = mat_id_L1            
+                T_rho_args_L1[0] = A1_T[i - 1] * rho**(-T_rho_args_L1[1])           
+            mat_id          = mat_id_L1
+            T_rho_type      = T_rho_type_L1
+            T_rho_args      = T_rho_args_L1
+            rho0            = A1_rho[i - 1]
+            u_cold_array    = u_cold_array_L1          
         # Layer 1  
-        elif A1_r[i] <= R1:            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                   A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L1)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
-            A1_mat_id[i] = mat_id_L1
-            
-            if A1_m_enc[i] < 0: 
-                return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
+        elif A1_r[i] <= R1:
+            rho             = A1_rho[i - 1]
+            mat_id          = mat_id_L1
+            T_rho_type      = T_rho_type_L1
+            T_rho_args      = T_rho_args_L1
+            rho0            = A1_rho[i - 1]
+            u_cold_array    = u_cold_array_L1      
+        
+        A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*rho*dr
+        A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
+        A1_rho[i]   = weos._find_rho(A1_P[i], mat_id, T_rho_type, 
+                                     T_rho_args, rho0, 1.1*rho, u_cold_array)
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args)
+        A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
+        A1_mat_id[i] = mat_id
+        
+        if A1_m_enc[i] < 0:
+            break
         
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
@@ -657,7 +646,7 @@ def L2_find_mass(
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() for the mantle (SI).
                 
-        Returns:            
+        Returns:
             M_max ([float]):
                 Mass of the planet (SI).            
     """
@@ -669,8 +658,8 @@ def L2_find_mass(
         u_cold_array_L2
         )
     
-    if A1_m_enc[-1] > 0.:        
-        while np.abs(M_min - M_max) > 1e-10*M_min:            
+    if A1_m_enc[-1] > 0.:
+        while np.abs(M_min - M_max) > 1e-10*M_min:
             M_try = (M_min + M_max) * 0.5
             
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -747,7 +736,7 @@ def L2_find_radius(
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() for the mantle (SI).
                 
-        Returns:            
+        Returns:
             M_max ([float]):
                 Mass of the planet (SI).            
     """
@@ -775,7 +764,7 @@ def L2_find_radius(
         print("Try increase M or reduce R1.")
         return -1
     
-    if A1_m_enc_1[-1] == 0.:        
+    if A1_m_enc_1[-1] == 0.:
         for i in tqdm(range(num_attempt), desc="Finding R given M, R1"):
             R_try = (R_min + R_max) * 0.5
             
@@ -846,7 +835,7 @@ def L2_find_R1(
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() for the mantle (SI).
                 
-        Returns:            
+        Returns:
             R1_min ([float]):
                 Boundary of the planet (SI).            
     """    
@@ -893,7 +882,7 @@ def L2_find_R1(
         
     return R1_min
 
-############################## 3 layers #######################################
+# ===================== 3 layers ============================================= #
     
 @jit(nopython=True)
 def L3_integrate(
@@ -968,7 +957,7 @@ def L3_integrate(
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() for the atmosphere (SI).
                 
-        Returns:            
+        Returns:
             A1_r ([float]):
                 Array of radii (SI).
                 
@@ -998,12 +987,7 @@ def L3_integrate(
     A1_u        = np.zeros(A1_r.shape)
     A1_mat_id   = np.zeros(A1_r.shape)
     
-    #C_V_L1  = weos._C_V(mat_id_L1)
-    #C_V_L2  = weos._C_V(mat_id_L2)
-    #C_V_L3  = weos._C_V(mat_id_L3)
-    
     u_s = weos._find_u(rho_s, mat_id_L3, T_s, u_cold_array_L3)
-    #u_s = weos.u_cold(rho_s, mat_id_L3, 10000) + C_V_L3*T_s
     if T_rho_type_L3 == 1:
         T_rho_args_L3[0] = T_s*rho_s**(-T_rho_args_L3[1])        
     
@@ -1016,80 +1000,64 @@ def L3_integrate(
     A1_u[0]         = u_s
     A1_mat_id[0]    = mat_id_L3
     
-    for i in range(1, A1_r.shape[0]):   ###tidy this            
+    for i in range(1, A1_r.shape[0]):
         # Layer 3
-        if A1_r[i] > R2:            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L3, T_rho_type_L3, T_rho_args_L3,
-                                   A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L3)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L3, T_rho_args_L3)
-            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L3, A1_T[i], u_cold_array_L3)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L3, u_cold_array_L3) + C_V_L3*A1_T[i]
-            A1_mat_id[i] = mat_id_L3
-            
-            if A1_m_enc[i] < 0: 
-                return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id         
+        if A1_r[i] > R2:
+            rho             = A1_rho[i - 1]
+            mat_id          = mat_id_L3
+            T_rho_type      = T_rho_type_L3
+            T_rho_args      = T_rho_args_L3
+            rho0            = rho
+            u_cold_array    = u_cold_array_L3        
         # Layer 2, 3 boundary
-        elif A1_r[i] <= R2 and A1_r[i - 1] > R2:            
-            rho_L2 = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
-                                                     mat_id_L2, u_cold_array_L2)
-            
+        elif A1_r[i] <= R2 and A1_r[i - 1] > R2:
+            rho = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L2, 
+                                           u_cold_array_L2)            
             if T_rho_type_L2 == 1:
-                T_rho_args_L2[0] = A1_T[i - 1]*rho_L2**(-T_rho_args_L2[1])
-            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_L2*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_L2/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                   A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L2)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L2, T_rho_args_L2)
-            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L2, A1_T[i], u_cold_array_L2)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
-            A1_mat_id[i] = mat_id_L2            
+                T_rho_args_L2[0] = A1_T[i - 1] * rho**(-T_rho_args_L2[1])           
+            mat_id          = mat_id_L2
+            T_rho_type      = T_rho_type_L2
+            T_rho_args      = T_rho_args_L2
+            rho0            = A1_rho[i - 1]
+            u_cold_array    = u_cold_array_L2    
         # Layer 2
-        elif A1_r[i] > R1:            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                   A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L2)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L2, T_rho_args_L2)
-            A1_u[i]   = weos._find_u(A1_rho[i], mat_id_L2, A1_T[i], u_cold_array_L2)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L2, u_cold_array_L2) + C_V_L2*A1_T[i]
-            A1_mat_id[i] = mat_id_L2
-            
-            if A1_m_enc[i] < 0: 
-                return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id        
+        elif A1_r[i] > R1:
+            rho             = A1_rho[i - 1]
+            mat_id          = mat_id_L2
+            T_rho_type      = T_rho_type_L2
+            T_rho_args      = T_rho_args_L2
+            rho0            = rho
+            u_cold_array    = u_cold_array_L2       
         # Layer 1, 2 boundary
         elif A1_r[i] <= R1 and A1_r[i - 1] > R1:
-            
-            rho_L2 = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1],
-                                                     mat_id_L1, u_cold_array_L1)
-            
+            rho = weos._find_rho_fixed_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1, 
+                                           u_cold_array_L1)            
             if T_rho_type_L1 == 1:
-                T_rho_args_L1[0] = A1_T[i - 1]*rho_L2**(-T_rho_args_L1[1])
-            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*rho_L2*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho_L2/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                   A1_rho[i - 1], 1.1*rho_L2, u_cold_array_L1)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
-            A1_mat_id[i] = mat_id_L1            
+                T_rho_args_L1[0] = A1_T[i - 1] * rho**(-T_rho_args_L1[1])           
+            mat_id          = mat_id_L1
+            T_rho_type      = T_rho_type_L1
+            T_rho_args      = T_rho_args_L1
+            rho0            = A1_rho[i - 1]
+            u_cold_array    = u_cold_array_L1          
         # Layer 1  
         elif A1_r[i] <= R1:
-            
-            A1_m_enc[i]   = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]*A1_r[i - 1]*A1_rho[i - 1]*dr
-            A1_P[i]   = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
-            A1_rho[i] = weos._find_rho(A1_P[i], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                   A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array_L1)
-            A1_T[i]   = weos.T_rho(A1_rho[i], T_rho_type_L1, T_rho_args_L1)
-            A1_u[i]     = weos._find_u(A1_rho[i], mat_id_L1, A1_T[i], u_cold_array_L1)
-            #A1_u[i]   = weos._u_cold_tab(A1_rho[i], mat_id_L1, u_cold_array_L1) + C_V_L1*A1_T[i]
-            A1_mat_id[i] = mat_id_L1
-            
-            if A1_m_enc[i] < 0: 
-                return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
+            rho             = A1_rho[i - 1]
+            mat_id          = mat_id_L1
+            T_rho_type      = T_rho_type_L1
+            T_rho_args      = T_rho_args_L1
+            rho0            = A1_rho[i - 1]
+            u_cold_array    = u_cold_array_L1      
+        
+        A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*rho*dr
+        A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
+        A1_rho[i]   = weos._find_rho(A1_P[i], mat_id, T_rho_type, 
+                                     T_rho_args, rho0, 1.1*rho, u_cold_array)
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args)
+        A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
+        A1_mat_id[i] = mat_id
+        
+        if A1_m_enc[i] < 0:
+            break
         
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
@@ -1182,8 +1150,8 @@ def L3_find_mass(
             u_cold_array_L1, u_cold_array_L2, u_cold_array_L3
             )
     
-    if A1_m_enc[-1] > 0.:        
-        while np.abs(M_min - M_max) > 1e-10*M_min:            
+    if A1_m_enc[-1] > 0.:
+        while np.abs(M_min - M_max) > 1e-10*M_min:
             M_try = (M_min + M_max) * 0.5
             
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
@@ -1315,7 +1283,7 @@ def L3_find_radius(
         print("Try reduce the mass or increase R_max")
         return R_max
         
-    for i in tqdm(range(num_attempt), desc="Finding R given M, R1, R2"):            
+    for i in tqdm(range(num_attempt), desc="Finding R given M, R1, R2"):
             R_try = (R_min + R_max) * 0.5
             
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
@@ -1404,7 +1372,7 @@ def L3_find_R2(
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() for the atmosphere (SI).
                 
-        Returns:            
+        Returns:
             R2_max ([float]):
                 Boundary between layers 2 and 3 of the planet (SI).            
     """
@@ -1526,7 +1494,7 @@ def L3_find_R1(
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() for the atmosphere (SI).
                 
-        Returns:            
+        Returns:
             R2_max ([float]):
                 Boundary between layers 2 and 3 of the planet (SI).            
     """
@@ -1645,7 +1613,7 @@ def L3_find_R1_R2(
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() for the atmosphere (SI).
                 
-        Returns:            
+        Returns:
             R1, R2 ([float]):
                 Boundaries between layers 1 and 2 and between layers 2 and 3 of 
                 the planet (SI).            
@@ -1682,9 +1650,9 @@ def L3_find_R1_R2(
     R1_min = R1_I_max
     R1_max = R1_I_min
     
-    if MoI > moi_min and  MoI < moi_max:        
+    if MoI > moi_min and  MoI < moi_max:
         for i in tqdm(range(num_attempt), 
-                      desc="Finding R1, R2 given R, M, I_MR2"):            
+                      desc="Finding R1, R2 given R, M, I_MR2"):
             R1_try = (R1_min + R1_max) * 0.5
             
             R2_try = L3_find_R2(
@@ -1728,9 +1696,9 @@ def L3_find_R1_R2(
         
     return R1_try, R2_try
 
-###############################################################################
-####################### Spherical profile class ###############################
-###############################################################################
+# ============================================================================ #
+# ===================== Spherical profile class ============================== #
+# ============================================================================ #
 
 class Planet():
     """ Planet class ...
@@ -2774,7 +2742,6 @@ class Planet():
         dr              = self.A1_r[1]
         mat_id_L3       = self.A1_mat_id_layer[2]        
         u_cold_array_L3 = weos.load_u_cold_array(mat_id_L3)
-        #C_V_L3          = weos._C_V(mat_id_L3)
         
         # Reverse profile arrays to be ordered by increasing radius
         if self.A1_r[-1] < self.A1_r[0]:
@@ -2812,7 +2779,6 @@ class Planet():
             A1_rho.append(rho)
             A1_T.append(weos.T_rho(rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2]))
             A1_u.append(weos._find_u(rho, mat_id_L3, A1_T[-1], u_cold_array_L3))
-            #A1_u.append(weos._u_cold_tab(rho, mat_id_L3, u_cold_array_L3) + C_V_L3*A1_T[-1])
             A1_mat_id.append(mat_id_L3)   
 
             step += 1
@@ -2868,9 +2834,9 @@ def load_planet(name, Fp_planet):
     
     return p
 
-###############################################################################
-####################### Spining profile functions #############################
-###############################################################################
+# ============================================================================ #
+# ===================== Spining profile functions ============================ #
+# ============================================================================ #
 
 @jit(nopython=True)
 def _analytic_solution_r(r, R, Z, x):
@@ -3154,7 +3120,7 @@ def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     
     return -1
     
-############################## 1 layer ########################################
+# ===================== 1 layer ============================================== #
     
 @jit(nopython=False)
 def _fillV(r_array, rho_e, z_array, rho_p, Tw):
@@ -3567,26 +3533,21 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
     x = particles.x
     y = particles.y
     
-    #C_V_L1 = weos._C_V(mat_id_L1)
-    
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
         T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
         u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
-        #u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
-        #u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
         P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
     
     #print("Internal energy u computed\n")
-    ## Smoothing lengths, crudely estimated from the densities
+    # Smoothing lengths, crudely estimated from the densities
     w_edge  = 2     # r/h at which the kernel goes to zero
     h       = np.cbrt(N_neig * mP / (4/3*np.pi * rho)) / w_edge 
     
     A1_id     = np.arange(mP.shape[0])
     A1_mat_id = np.ones((mP.shape[0],))*mat_id_L1
     
-    ############
     mP = particles.m*f 
     unique_R = np.unique(R)
     
@@ -3682,7 +3643,7 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
 
-############################## 2 layers #######################################
+# ===================== 2 layers ============================================= #
     
 @jit(nopython=True)
 def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
@@ -4041,28 +4002,21 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     x = particles.x
     y = particles.y
     
-    #C_V_L1 = weos._C_V(mat_id_L1)
-    #C_V_L2 = weos._C_V(mat_id_L2)
-    
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
         if rho[k] > rho_i:
             T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
-            #u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
-            #u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
         else:
             T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
             u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
-            #u[k] = weos._u_cold_tab(rho[k], mat_id_L2, u_cold_array_L2)
-            #u[k] = u[k] + C_V_L2*weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
     
     #print("Internal energy u computed\n")
     
-    ## Smoothing lengths, crudely estimated from the densities
+    # Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
     h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
@@ -4070,7 +4024,6 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     A1_id = np.arange(mP.shape[0])
     A1_mat_id = (rho > rho_i)*mat_id_L1 + (rho <= rho_i)*mat_id_L2
     
-    ############
     unique_R_L1   = np.unique(R[A1_mat_id == mat_id_L1])
     unique_R_L2 = np.unique(R[A1_mat_id == mat_id_L2])
     
@@ -4176,7 +4129,7 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id
 
-############################## 3 layers #######################################
+# ===================== 3 layers ============================================= #
     
 @jit(nopython=True)
 def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
@@ -4593,36 +4546,25 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
     x = particles.x
     y = particles.y
     
-    #C_V_L1   = weos._C_V(mat_id_L1)
-    #C_V_L2   = weos._C_V(mat_id_L2)
-    #C_V_L3   = weos._C_V(mat_id_L3)
-    
     P = np.zeros((mP.shape[0],))
     
     for k in range(mP.shape[0]):
         if rho[k] > rho_12:
             T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
-            #u[k] = weos._u_cold_tab(rho[k], mat_id_L1, u_cold_array_L1)
-            #u[k] = u[k] + C_V_L1*weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
             
         elif rho[k] > rho_23:
             T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
             u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
-            #u[k] = weos._u_cold_tab(rho[k], mat_id_L2, u_cold_array_L2)
-            #u[k] = u[k] + C_V_L2*weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
             
         else:
             T = weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3)
             u[k] = weos._find_u(rho[k], mat_id_L3, T, u_cold_array_L3)
-            #u[k] = weos._u_cold_tab(rho[k], mat_id_L3, u_cold_array_L3)
-            #u[k] = u[k] + C_V_L3*weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L3)
     
-    #print("Internal energy u computed\n")
-    ## Smoothing lengths, crudely estimated from the densities
+    # Smoothing lengths, crudely estimated from the densities
     num_ngb = N_neig    # Desired number of neighbours
     w_edge  = 2     # r/h at which the kernel goes to zero
     h    = np.cbrt(num_ngb * mP / (4/3*np.pi * rho)) / w_edge
@@ -4632,7 +4574,6 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
                 + np.logical_and(rho <= rho_12, rho > rho_23)*mat_id_L2 \
                 + (rho < rho_23)*mat_id_L3
     
-    ############
     unique_R_L1   = np.unique(R[A1_mat_id == mat_id_L1])
     unique_R_L2 = np.unique(R[A1_mat_id == mat_id_L2])
     unique_R_L3    = np.unique(R[A1_mat_id == mat_id_L3])
@@ -4750,9 +4691,9 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
     
     return x, y, zP, vx, vy, vz, mP, h, rho, P, u, A1_mat_id, A1_id 
 
-###############################################################################
-####################### Spining profile classes ###############################
-###############################################################################
+# ============================================================================ #
+# ===================== Spining profile classes ============================== #
+# ============================================================================ #
 class SpinPlanet():
     
     def __init__(

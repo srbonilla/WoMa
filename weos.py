@@ -5,9 +5,9 @@ Created on Mon Apr  1 10:38:18 2019
 
 @author: Sergio Ruiz-Bonilla
 """
-###############################################################################
-####################### Libraries and constants ###############################
-###############################################################################
+# ============================================================================ #
+# ===================== Libraries and constants ============================== #
+# ============================================================================ #
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -235,9 +235,9 @@ def load_table_SESAME(Fp_table):
  A2_log_u_SESAME_CO2
  )  = load_table_SESAME(Fp_SESAME_CO2)
 
-###############################################################################
-############################### Functions #####################################
-###############################################################################
+# ============================================================================ #
+# ===================== Functions ============================================ #
+# ============================================================================ #
 @jit(nopython=True)
 def function(x, y):
     idx = np.searchsorted(y, x) - 1
@@ -536,7 +536,7 @@ def P_EoS(u, rho, mat_id):
 def _rho_0_material(mat_id):
     """ Returns rho0 for a given material id. u_{cold}(rho0) = 0
     
-        Args:          
+        Args:
             mat_id (int)
                 Material id.
                 
@@ -562,7 +562,7 @@ def _rho_0_material(mat_id):
 def _C_V(mat_id):
     """ Returns specific heat capacity for a given material id (SI)
     
-        Args:          
+        Args:
             mat_id (int)
                 Material id.
                 
@@ -594,7 +594,7 @@ def _C_V(mat_id):
 def u_cold(rho, mat_id, N):
     """ Computes internal energy cold.
     
-        Args:          
+        Args:
             rho (float) 
                 Density (SI).
             
@@ -611,7 +611,7 @@ def u_cold(rho, mat_id, N):
     mat_type    = mat_id // type_factor
     if (mat_type in [type_idg, type_SESAME]):
         return 0.
-    elif (mat_type == type_Til):        
+    elif (mat_type == type_Til):
         rho0 = _rho_0_material(mat_id)
         drho = (rho - rho0)/N
         x = rho0
@@ -641,7 +641,7 @@ def T_rho(rho, T_rho_id, T_rho_args):
             Temperature (SI)
             
     """
-    if (T_rho_id == 1):  # T = K*rho**alpha, T_rho_args = [K, alpha]
+    if (T_rho_id == 1):# T = K*rho**alpha, T_rho_args = [K, alpha]
         
         K = T_rho_args[0]
         alpha = T_rho_args[1]
@@ -657,7 +657,7 @@ def P_rho(rho, mat_id, T_rho_id, T_rho_args):
         internal energy = internal energy cold + C_V*Temperature 
         (which depends on rho and the relation between temperature and density).
         
-        Args:          
+        Args:
             rho (float) 
                 Density (SI).
             
@@ -735,7 +735,7 @@ def _u_cold_tab(rho, mat_id, u_cold_array):
     mat_id = int(mat_id)    ###why?
     
     mat_type    = mat_id // type_factor
-    if (mat_type in [type_idg, type_SESAME]):        
+    if (mat_type in [type_idg, type_SESAME]):
         return 0.
         
     elif (mat_type == type_Til):
@@ -760,7 +760,7 @@ def _u_cold_tab(rho, mat_id, u_cold_array):
     
         return interpolation
     
-    else:        
+    else:
         raise ValueError("Invalid mat_id: ", mat_id)
 
 @jit(nopython=True)
@@ -1158,7 +1158,7 @@ def _find_u(rho, mat_id, T, u_cold_array):
     elif (mat_type == type_idg): 
         u = _C_V(mat_id)*T
     
-    elif (mat_type == type_Til):      
+    elif (mat_type == type_Til):
         C_V = _C_V(mat_id)
         
         u = _u_cold_tab(rho, mat_id, u_cold_array) + C_V*T
