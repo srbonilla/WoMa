@@ -13,9 +13,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
 
-G       = 6.67408E-11;
-R_earth = 6371000;
-M_earth = 5.972E24;  
+G       = 6.67408E-11
+R_earth = 6371000
+M_earth = 5.972E24
 R_gas   = 8.3145     # Gas constant (J K^-1 mol^-1)
 
 # Material IDs, same as SWIFT ( = type_id * type_factor + unit_id)
@@ -44,8 +44,18 @@ Di_mat_id   = {
     "SESAME_basalt" : Di_mat_type["SESAME"]*type_factor + 1,    # 7530
     "SESAME_water"  : Di_mat_type["SESAME"]*type_factor + 2,    # 7154
     "SS08_water"    : Di_mat_type["SESAME"]*type_factor + 3,    # Senft & Stewart (2008)
+    "SESAME_H2"     : Di_mat_type["SESAME"]*type_factor + 4,    # 5251
+    "SESAME_N2"     : Di_mat_type["SESAME"]*type_factor + 5,    # 5000
+    "SESAME_steam"  : Di_mat_type["SESAME"]*type_factor + 6,    # 7152
+    "SESAME_CO2"    : Di_mat_type["SESAME"]*type_factor + 7,    # 5212
     }
 # Separate variables because numba can't handle dictionaries
+# Types
+type_idg    = Di_mat_type["idg"]
+type_Til    = Di_mat_type["Til"]
+type_HM80   = Di_mat_type["HM80"]
+type_SESAME = Di_mat_type["SESAME"]
+# IDs
 id_idg_HHe          = Di_mat_id["idg_HHe"]
 id_idg_N2           = Di_mat_id["idg_N2"]
 id_idg_CO2          = Di_mat_id["idg_CO2"]
@@ -59,19 +69,26 @@ id_SESAME_iron      = Di_mat_id["SESAME_iron"]
 id_SESAME_basalt    = Di_mat_id["SESAME_basalt"]
 id_SESAME_water     = Di_mat_id["SESAME_water"]
 id_SS08_water       = Di_mat_id["SS08_water"]
+id_SESAME_H2        = Di_mat_id["SESAME_H2"]
+id_SESAME_N2        = Di_mat_id["SESAME_N2"]
+id_SESAME_steam     = Di_mat_id["SESAME_steam"]
+id_SESAME_CO2       = Di_mat_id["SESAME_CO2"]
 
-# Data files
-
-# u cold curves
-Fp_u_cold_Til_iron      = "data/u_cold_array_Til_iron.npy"
-Fp_u_cold_Til_granite   = "data/u_cold_array_Til_granite.npy"
-Fp_u_cold_Til_water     = "data/u_cold_array_Til_water.npy"
-
+# Local data files
+dir_data    = "data/"
+# Cold curves
+Fp_u_cold_Til_iron      = dir_data + "u_cold_array_Til_iron.npy"
+Fp_u_cold_Til_granite   = dir_data + "u_cold_array_Til_granite.npy"
+Fp_u_cold_Til_water     = dir_data + "u_cold_array_Til_water.npy"
 # SESAME tables
-Fp_SESAME_iron_2140_table = "data/SESAME_iron_2140.txt"
-Fp_SESAME_basalt_7530_table = "data/SESAME_basalt_7530.txt"
-Fp_SESAME_water_7154_table = "data/SESAME_water_7154.txt"
-#Fp_SS08_water_table = "data/SS08_water"
+Fp_SESAME_iron      = dir_data + "SESAME_iron_2140.txt"
+Fp_SESAME_basalt    = dir_data + "SESAME_basalt_7530.txt"
+Fp_SESAME_water     = dir_data + "SESAME_water_7154.txt"
+Fp_SS08_water       = dir_data + "SS08_water.txt"
+Fp_SESAME_H2        = dir_data + "SESAME_H2_5251.txt"
+Fp_SESAME_N2        = dir_data + "SESAME_N2_5000.txt"
+Fp_SESAME_steam     = dir_data + "SESAME_steam_7152.txt"
+Fp_SESAME_CO2       = dir_data + "SESAME_CO2_5121.txt"
 
 # Misc utilities (move to separate file...) / this function is also in woma.py
 def check_end(string, end):
@@ -204,7 +221,7 @@ def load_table_SESAME(Fp_table):
  A2_s_SESAME_iron, A1_log_rho_SESAME_iron, A1_log_T_SESAME_iron, 
  A2_log_u_SESAME_iron, A2_log_P_SESAME_iron, A2_log_c_SESAME_iron, 
  A2_log_s_SESAME_iron
- )  = load_table_SESAME(Fp_SESAME_iron_2140_table)
+ )  = load_table_SESAME(Fp_SESAME_iron)
 # SESAME basalt 7530
 (num_rho_SESAME_basalt, num_T_SESAME_basalt, rho_min_SESAME_basalt, 
  rho_max_SESAME_basalt, T_min_SESAME_basalt, T_max_SESAME_basalt, A1_rho_SESAME_basalt, 
@@ -212,7 +229,7 @@ def load_table_SESAME(Fp_table):
  A2_s_SESAME_basalt, A1_log_rho_SESAME_basalt, A1_log_T_SESAME_basalt, 
  A2_log_u_SESAME_basalt, A2_log_P_SESAME_basalt, A2_log_c_SESAME_basalt, 
  A2_log_s_SESAME_basalt
- )  = load_table_SESAME(Fp_SESAME_basalt_7530_table)
+ )  = load_table_SESAME(Fp_SESAME_basalt)
 # SESAME water 7154
 (num_rho_SESAME_water, num_T_SESAME_water, rho_min_SESAME_water, 
  rho_max_SESAME_water, T_min_SESAME_water, T_max_SESAME_water, A1_rho_SESAME_water, 
@@ -220,7 +237,7 @@ def load_table_SESAME(Fp_table):
  A2_s_SESAME_water, A1_log_rho_SESAME_water, A1_log_T_SESAME_water, 
  A2_log_u_SESAME_water, A2_log_P_SESAME_water, A2_log_c_SESAME_water, 
  A2_log_s_SESAME_water
- )  = load_table_SESAME(Fp_SESAME_water_7154_table)
+ )  = load_table_SESAME(Fp_SESAME_water)
 
 ###############################################################################
 ############################### Functions #####################################
@@ -238,7 +255,6 @@ def function(x, y):
     intp    = (x - y[idx]) / (y[idx + 1] - y[idx])
    
     return idx
-
 
 @jit(nopython=True)
 def _P_EoS_SESAME(u, rho, mat_id):
@@ -361,7 +377,6 @@ def _P_EoS_SESAME(u, rho, mat_id):
     # Convert back from log
     return np.exp(P)
 
-
 @jit(nopython=True)
 def _P_EoS_Till(u, rho, mat_id):
     """ Computes pressure for Tillotson EoS.
@@ -393,7 +408,7 @@ def _P_EoS_Till(u, rho, mat_id):
     elif (mat_id == id_Til_water):
         material = water
     else:
-        print("Material not implemented")
+        raise ValueError("Invalid mat_id: ", mat_id)
         return -1.
         
     rho0     = material[1]
@@ -484,7 +499,7 @@ def _P_EoS_idg(u, rho, mat_id):
     elif (mat_id == id_idg_CO2):
         material = CO2
     else:
-        print("Material not implemented")
+        raise ValueError("Invalid mat_id: ", mat_id)
         return -1.
         
     gamma    = material[1]
@@ -511,22 +526,15 @@ def P_EoS(u, rho, mat_id):
             P (double)
                 Pressure (SI).
     """
-    if (mat_id == id_idg_HHe):
+    mat_type    = mat_id // type_factor
+    if (mat_type == type_idg):
         return _P_EoS_idg(u, rho, mat_id)
-    elif (mat_id == id_idg_N2):
-        return _P_EoS_idg(u, rho, mat_id)
-    elif (mat_id == id_idg_CO2):
-        return _P_EoS_idg(u, rho, mat_id)
-    elif (mat_id == id_Til_iron):
+    elif (mat_type == type_Til):
         return _P_EoS_Till(u, rho, mat_id)
-    elif (mat_id == id_Til_granite):
-        return _P_EoS_Till(u, rho, mat_id)
-    elif (mat_id == id_Til_water):
-        return _P_EoS_Till(u, rho, mat_id)
-    elif (mat_id in [id_SESAME_iron, id_SESAME_basalt, id_SESAME_water]):
+    elif (mat_type == type_SESAME):
         return _P_EoS_SESAME(u, rho, mat_id)
     else:
-        print("Material not implemented")
+        raise ValueError("Invalid mat_id: ", mat_id)
         return -1.
 
 @jit(nopython=True)
@@ -542,7 +550,8 @@ def _rho_0_material(mat_id):
                 Density (SI).
     
     """
-    if (mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]):
+    mat_type    = mat_id // type_factor
+    if (mat_type in [type_idg, type_SESAME]):
         return 0.
     elif (mat_id == id_Til_iron):
         return 7800.
@@ -550,22 +559,8 @@ def _rho_0_material(mat_id):
         return 2680.
     elif (mat_id == id_Til_water):
         return 998.
-    elif (mat_id == id_HM80_HHe):
-        return 0.
-    elif (mat_id == id_HM80_ice):
-        return 0.
-    elif (mat_id == id_HM80_rock):
-        return 0.
-    elif (mat_id == id_SESAME_iron):
-        return 0.
-    elif (mat_id == id_SESAME_basalt):
-        return 0.
-    elif (mat_id == id_SESAME_water):
-        return 0.
-    elif (mat_id == id_SS08_water):
-        return 0.
     else:
-        print("Material not implemented")
+        raise ValueError("Invalid mat_id: ", mat_id)
         return -1.
     
 @jit(nopython=True)
@@ -581,6 +576,7 @@ def _C_V(mat_id):
                 Specific heat capacity (SI).
     
     """
+    mat_type    = mat_id // type_factor
     if mat_id == id_idg_HHe:
         return 9093.98
     elif mat_id == id_idg_N2:
@@ -593,23 +589,11 @@ def _C_V(mat_id):
         return 790.
     elif (mat_id == id_Til_water):
         return 4186.
-    elif (mat_id == id_HM80_HHe):
-        return 0.
-    elif (mat_id == id_HM80_ice):
-        return 0.
-    elif (mat_id == id_HM80_rock):
-        return 0.
-    elif (mat_id == id_SESAME_iron):
-        return 0.
-    elif (mat_id == id_SESAME_basalt):
-        return 0.
-    elif (mat_id == id_SESAME_water):
-        return 0.
-    elif (mat_id == id_SS08_water):
+    elif (mat_type == type_SESAME):
         return 0.
     else:
-        print("Material not implemented")
-        return 0.
+        raise ValueError("Invalid mat_id: ", mat_id)
+        return -1.
     
 @jit(nopython=True)
 def u_cold(rho, mat_id, N):
@@ -629,11 +613,10 @@ def u_cold(rho, mat_id, N):
             u_cold (float)
                 Cold internal energy (SI).
     """
-    if mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
-        return 0
-    
-    elif mat_id in [id_Til_iron, id_Til_granite, id_Til_water]:
-        
+    mat_type    = mat_id // type_factor
+    if (mat_type in [type_idg, type_SESAME]):
+        return 0.
+    elif (mat_type == type_Til):        
         rho0 = _rho_0_material(mat_id)
         drho = (rho - rho0)/N
         x = rho0
@@ -754,14 +737,13 @@ def _u_cold_tab(rho, mat_id, u_cold_array):
             interpolation (float):
                 cold internal energy (SI).
     """
-    mat_id = int(mat_id)
+    mat_id = int(mat_id)    ###why?
     
-    if mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
-        
+    mat_type    = mat_id // type_factor
+    if (mat_type in [type_idg, type_SESAME]):        
         return 0.
-    
-    elif mat_id in [id_Til_iron, id_Til_granite, id_Til_water]:
         
+    elif (mat_type == type_Til):
         N_row = u_cold_array.shape[0]
         rho_min = 100
         rho_max = 100000
@@ -783,9 +765,8 @@ def _u_cold_tab(rho, mat_id, u_cold_array):
     
         return interpolation
     
-    else:
-        
-        print("Material not implemented")
+    else:        
+        raise ValueError("Invalid mat_id: ", mat_id)
 
 @jit(nopython=True)
 def _find_rho(P_s, mat_id, T_rho_id, T_rho_args, rho0, rho1, u_cold_array):
@@ -910,8 +891,6 @@ def _find_rho(P_s, mat_id, T_rho_id, T_rho_args, rho0, rho1, u_cold_array):
         #print("P0: %.2f P1 %.2f P_s %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P_s/1e9,2)))
         return rho2
 
-    #return rho2;
-
 def load_u_cold_array(mat_id):
     """ Load precomputed values of cold internal energy for a given material.
     
@@ -920,9 +899,8 @@ def load_u_cold_array(mat_id):
                 Precomputed values of cold internal energy
                 with function _create_u_cold_array() (SI).
     """
-    if mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
-        return np.array([0.])
-    elif mat_id in [id_SESAME_iron, id_SESAME_basalt, id_SESAME_water]:
+    mat_type    = mat_id // type_factor
+    if (mat_type in [type_idg, type_SESAME]):
         return np.array([0.])
     elif mat_id == id_Til_iron:
         u_cold_array = np.load(Fp_u_cold_Til_iron)
@@ -1034,20 +1012,6 @@ def find_P_fixed_T_rho(T, rho, mat_id):
     
     return -1
 
-# =============================================================================
-# gamma = 7/5
-# 
-# n_H2_n_He   = 2 / (1/0.75 - 1)
-# m_mol_HHe   = (2*n_H2_n_He + 4) / (n_H2_n_He + 1)
-# 
-# m_mol_N2 = 28
-# cgs_to_SI_m = 0.001
-# 
-# m_mol = m_mol_HHe
-# 
-# R_gas / (m_mol * cgs_to_SI_m * (gamma - 1))
-# =============================================================================
-
 def plot_eos_P_vs_rho_fixed_T(mat_id, T_array=np.linspace(0, 1000, 4), rho_min=1, rho_max=10000):
     
     rho_array = np.linspace(rho_min, rho_max, 100)
@@ -1094,8 +1058,8 @@ def plot_eos_T_vs_rho_fixed_P(mat_id, P_array=np.logspace(6, 11, 4),
 
 @jit(nopython=True)
 def _find_u(rho, mat_id, T, u_cold_array):
-    
-    if mat_id in [id_SESAME_iron, id_SESAME_basalt, id_SESAME_water]:        
+    mat_type    = mat_id // type_factor
+    if (mat_type == type_SESAME):
         # Choose the arrays from the global variables ### (Temporary messy stuff!)
         if (mat_id == id_SESAME_iron):
             (num_rho, num_T, rho_min, rho_max, T_min, T_max, A1_rho, A1_T, A2_u, 
@@ -1196,49 +1160,12 @@ def _find_u(rho, mat_id, T, u_cold_array):
         # Convert back from log
         u = np.exp(u)
 
-    elif mat_id in [id_idg_HHe, id_idg_N2, id_idg_CO2]:
-        
+    elif (mat_type == type_idg): 
         u = _C_V(mat_id)*T
     
-    elif mat_id in [id_Til_iron, id_Til_granite, id_Til_water]:
-        
+    elif (mat_type == type_Til):      
         C_V = _C_V(mat_id)
         
         u = _u_cold_tab(rho, mat_id, u_cold_array) + C_V*T
         
     return u
-        
-        
-        
-# =============================================================================
-# id_idg_HHe          = Di_mat_id["idg_HHe"]
-# id_idg_N2           = Di_mat_id["idg_N2"]
-# id_idg_CO2          = Di_mat_id["idg_CO2"]
-# id_Til_iron         = Di_mat_id["Til_iron"]
-# id_Til_granite      = Di_mat_id["Til_granite"]
-# id_Til_water        = Di_mat_id["Til_water"]
-# id_HM80_HHe         = Di_mat_id["HM80_HHe"]
-# id_HM80_ice         = Di_mat_id["HM80_ice"]
-# id_HM80_rock        = Di_mat_id["HM80_rock"]
-# id_SESAME_iron      = Di_mat_id["SESAME_iron"]
-# id_SESAME_basalt    = Di_mat_id["SESAME_basalt"]
-# id_SESAME_water     = Di_mat_id["SESAME_water"]
-# id_SS08_water       = Di_mat_id["SS08_water"]
-# =============================================================================
-    
-# =============================================================================
-# mat_id = 101
-# T_array = np.linspace(1, 3000, 4)
-# rho_min = 1
-# rho_max = 3000
-# 
-# plot_eos_P_vs_rho_fixed_T(mat_id, T_array, rho_min, rho_max)
-# 
-# 
-# mat_id = 1
-# P_array = np.logspace(4, 5, 6)
-# T_min = 200
-# T_max = 300
-# 
-# plot_eos_T_vs_rho_fixed_P(mat_id, P_array, T_min, T_max)
-# =============================================================================
