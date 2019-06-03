@@ -88,7 +88,7 @@ Fp_SS08_water       = dir_data + "SS08_water.txt"
 Fp_SESAME_H2        = dir_data + "SESAME_H2_5251.txt"
 Fp_SESAME_N2        = dir_data + "SESAME_N2_5000.txt"
 Fp_SESAME_steam     = dir_data + "SESAME_steam_7152.txt"
-Fp_SESAME_CO2       = dir_data + "SESAME_CO2_5121.txt"
+Fp_SESAME_CO2       = dir_data + "SESAME_CO2_5212.txt"
 
 # Misc utilities (move to separate file...) / this function is also in woma.py
 def check_end(string, end):
@@ -304,7 +304,7 @@ def _P_EoS_SESAME(u, rho, mat_id):
             A2_P_SESAME_CO2, A1_log_rho_SESAME_CO2, A2_log_u_SESAME_CO2
             )
     else:
-       raise ValueError("No material with id: ", mat_id)
+       raise ValueError("Invalid material ID")
     
     # Ignore the first elements of rho = 0, T = 0
     A2_P        = A2_P[1:, 1:]
@@ -403,7 +403,7 @@ def _P_EoS_Till(u, rho, mat_id):
     elif (mat_id == id_Til_water):
         material = water
     else:
-        raise ValueError("Invalid mat_id: ", mat_id)
+        raise ValueError("Invalid material ID")
         return -1.
         
     rho0     = material[1]
@@ -494,7 +494,7 @@ def _P_EoS_idg(u, rho, mat_id):
     elif (mat_id == id_idg_CO2):
         material = CO2
     else:
-        raise ValueError("Invalid mat_id: ", mat_id)
+        raise ValueError("Invalid material ID")
         return -1.
         
     gamma    = material[1]
@@ -529,7 +529,7 @@ def P_EoS(u, rho, mat_id):
     elif (mat_type == type_SESAME):
         return _P_EoS_SESAME(u, rho, mat_id)
     else:
-        raise ValueError("Invalid mat_id: ", mat_id)
+        raise ValueError("Invalid material ID")
         return -1.
 
 @jit(nopython=True)
@@ -555,7 +555,7 @@ def _rho_0_material(mat_id):
     elif (mat_id == id_Til_water):
         return 998.
     else:
-        raise ValueError("Invalid mat_id: ", mat_id)
+        raise ValueError("Invalid material ID")
         return -1.
     
 @jit(nopython=True)
@@ -587,7 +587,7 @@ def _C_V(mat_id):
     elif (mat_type == type_SESAME):
         return 0.
     else:
-        raise ValueError("Invalid mat_id: ", mat_id)
+        raise ValueError("Invalid material ID")
         return -1.
     
 @jit(nopython=True)
@@ -695,7 +695,6 @@ def _create_u_cold_array(mat_id):
         Returns:
             u_cold_array ([float])
     """
-
     N_row = 10000
     u_cold_array = np.zeros((N_row,))
     rho_min = 100
@@ -705,7 +704,6 @@ def _create_u_cold_array(mat_id):
     rho = rho_min
     drho = (rho_max - rho_min)/(N_row - 1)
     
-    rho = rho_min
     for i in range(N_row):
         u_cold_array[i] = u_cold(rho, mat_id, N_u_cold)
         rho = rho + drho
@@ -761,7 +759,7 @@ def _u_cold_tab(rho, mat_id, u_cold_array):
         return interpolation
     
     else:
-        raise ValueError("Invalid mat_id: ", mat_id)
+        raise ValueError("Invalid material ID")
 
 @jit(nopython=True)
 def _find_rho(P_s, mat_id, T_rho_id, T_rho_args, rho0, rho1, u_cold_array):
@@ -800,6 +798,7 @@ def _find_rho(P_s, mat_id, T_rho_id, T_rho_args, rho0, rho1, u_cold_array):
     #C_V       = _C_V(mat_id)
     tolerance = 1E-5
     
+    ###
     T0 = T_rho(rho0, T_rho_id, T_rho_args)
     u0 = _find_u(rho0, mat_id, T0, u_cold_array)
     #u0   = _u_cold_tab(rho0, mat_id, u_cold_array) + C_V*T_rho(rho0, T_rho_id, T_rho_args)
@@ -904,7 +903,7 @@ def load_u_cold_array(mat_id):
     elif mat_id == id_Til_water:
         u_cold_array = np.load(Fp_u_cold_Til_water)
     else:
-        raise ValueError("Invalid mat_id: ", mat_id)
+        raise ValueError("Invalid material ID")
         
     return u_cold_array
 
@@ -1092,7 +1091,7 @@ def _find_u(rho, mat_id, T, u_cold_array):
                 A2_u_SESAME_CO2, A1_log_rho_SESAME_CO2, A1_log_T_SESAME_CO2
                 )
         else:
-           raise ValueError("No material with id: ", mat_id)
+           raise ValueError("Invalid material ID")
         
         # Ignore the first elements of rho = 0, T = 0
         A2_u    = A2_u[1:, 1:]
