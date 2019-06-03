@@ -1,9 +1,9 @@
 """ WoMa Examples
 """
 
-###############################################################################
-####################### Libraries and constants ###############################
-###############################################################################
+# ============================================================================ #
+# ===================== Libraries and constants ============================== #
+# ============================================================================ #
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -13,7 +13,7 @@ import weos
 R_earth = 6371000
 M_earth = 5.972E24
 
-###############################################################################
+# ============================================================================ #
 
 def plot_planet_profiles(planet):
     fig, ax = plt.subplots(2, 2, figsize=(9, 9))
@@ -41,13 +41,12 @@ def plot_planet_profiles(planet):
     
     plt.tight_layout()
 
-###############################################################################
+# ============================================================================ #
 
 def test_gen_prof_L1_fix_R_given_M():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 1,
-        A1_mat_id_layer = [weos.id_Til_granite],
+        A1_mat_layer    = ["Til_granite"],
         A1_T_rho_type   = [1],
         A1_T_rho_args   = [[None, 0.]],
         A1_R_layer      = [0.988 * R_earth],
@@ -65,8 +64,7 @@ def test_gen_prof_L1_fix_R_given_M():
 def test_gen_prof_L1_fix_M_given_R():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 1,
-        A1_mat_id_layer = [weos.id_Til_granite],
+        A1_mat_layer    = ["Til_granite"],
         A1_T_rho_type   = [1],
         A1_T_rho_args   = [[None, 0.]],
         A1_R_layer      = [R_earth],
@@ -83,8 +81,7 @@ def test_gen_prof_L1_fix_M_given_R():
 def test_gen_prof_L2_fix_R1_given_R_M():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 2,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+        A1_mat_layer    = ["Til_iron", "Til_granite"],
         A1_T_rho_type   = [1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [None, R_earth],
@@ -100,8 +97,7 @@ def test_gen_prof_L2_fix_R1_given_R_M():
 def test_gen_prof_L2_fix_R_given_M_R1():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 2,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+        A1_mat_layer    = ["Til_iron", "Til_granite"],
         A1_T_rho_type   = [1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [0.40*R_earth, R_earth],
@@ -118,8 +114,7 @@ def test_gen_prof_L2_fix_R_given_M_R1():
 def test_gen_prof_L2_fix_M_given_R1_R():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 2,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+        A1_mat_layer    = ["Til_iron", "Til_granite"],
         A1_T_rho_type   = [1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [0.40*R_earth, R_earth],
@@ -135,8 +130,7 @@ def test_gen_prof_L2_fix_M_given_R1_R():
 def test_gen_prof_L3_given_prof_L2():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 2,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite],
+        A1_mat_layer    = ["Til_iron", "Til_granite"],
         A1_T_rho_type   = [1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [None, R_earth],
@@ -148,7 +142,7 @@ def test_gen_prof_L3_given_prof_L2():
 
     planet.gen_prof_L2_fix_R1_given_R_M()
 
-    mat_id_atm = weos.id_idg_N2
+    mat_id_atm = "idg_N2"
     T_rho_type_atm = 1
     T_rho_args_atm = [None, 0]
 
@@ -164,8 +158,7 @@ def test_gen_prof_L3_given_prof_L2():
 def test_gen_prof_L3_fix_R1_R2_given_R_M_I():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 3,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
         A1_T_rho_type   = [1, 1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [None, None, R_earth],
@@ -184,8 +177,7 @@ def test_gen_prof_L3_fix_R1_R2_given_R_M_I():
 def test_gen_prof_L3_fix_R2_given_R_M_R1():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 3,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
         A1_T_rho_type   = [1, 1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.55*R_earth, None, R_earth],
@@ -201,8 +193,7 @@ def test_gen_prof_L3_fix_R2_given_R_M_R1():
 def test_gen_prof_L3_fix_R1_given_R_M_R2():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 3,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
         A1_T_rho_type   = [1, 1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [None, 0.9*R_earth, R_earth],
@@ -218,8 +209,7 @@ def test_gen_prof_L3_fix_R1_given_R_M_R2():
 def test_gen_prof_L3_fix_M_given_R_R1_R2():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 3,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
         A1_T_rho_type   = [1, 1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.5*R_earth, 0.9*R_earth, R_earth],
@@ -235,8 +225,7 @@ def test_gen_prof_L3_fix_M_given_R_R1_R2():
 def test_gen_prof_L3_fix_R_given_M_R1_R2():
     planet = woma.Planet(
         name            = "planet",
-        num_layer       = 3,
-        A1_mat_id_layer = [weos.id_Til_iron, weos.id_Til_granite, weos.id_Til_water],
+        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
         A1_T_rho_type   = [1, 1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.5*R_earth, 0.9*R_earth, None],
@@ -250,9 +239,9 @@ def test_gen_prof_L3_fix_R_given_M_R1_R2():
 
     plot_planet_profiles(planet)
 
-###############################################################################
+# ============================================================================ #
 
-if __name__ == "__main__":
+if __name__ == "__main__":    
     # Run some standard tests
     test_gen_prof_L1_fix_R_given_M()
     test_gen_prof_L2_fix_R1_given_R_M()
