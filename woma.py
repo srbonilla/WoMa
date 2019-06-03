@@ -488,13 +488,13 @@ def L2_integrate(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.                
+                Extra arguments to determine the relation in layer 2.                
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -502,7 +502,7 @@ def L2_integrate(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
         Returns:
             A1_r ([float]):
@@ -630,13 +630,13 @@ def L2_find_mass(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -644,7 +644,7 @@ def L2_find_mass(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
         Returns:
             M_max ([float]):
@@ -720,13 +720,13 @@ def L2_find_radius(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -734,7 +734,7 @@ def L2_find_radius(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
         Returns:
             M_max ([float]):
@@ -819,13 +819,13 @@ def L2_find_R1(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -833,7 +833,7 @@ def L2_find_R1(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
         Returns:
             R1_min ([float]):
@@ -857,7 +857,7 @@ def L2_find_R1(
         )
         
     if A1_m_enc_1[-1] == 0:
-        print("Ran out of mass for a planet made of mantle material")
+        print("Ran out of mass for a planet made of layer 2 material")
         print("Try increasing the mass or decreasing the radius")
         return R1_min
     
@@ -928,22 +928,22 @@ def L3_integrate(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between A1_T and A1_rho to be used at the atmosphere.
+                Relation between A1_T and A1_rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -951,11 +951,11 @@ def L3_integrate(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             A1_r ([float]):
@@ -1106,22 +1106,22 @@ def L3_find_mass(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between A1_T and A1_rho to be used at the atmosphere.
+                Relation between A1_T and A1_rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -1129,11 +1129,11 @@ def L3_find_mass(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             
@@ -1217,22 +1217,22 @@ def L3_find_radius(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between A1_T and A1_rho to be used at the atmosphere.
+                Relation between A1_T and A1_rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -1240,11 +1240,11 @@ def L3_find_radius(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             
@@ -1343,22 +1343,22 @@ def L3_find_R2(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between A1_T and A1_rho to be used at the atmosphere.
+                Relation between A1_T and A1_rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                              
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -1366,11 +1366,11 @@ def L3_find_R2(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             R2_max ([float]):
@@ -1386,7 +1386,7 @@ def L3_find_R2(
         )
         
     if A1_m_enc[-1] == 0:
-        print("A planet made of layer 1 and mantle materials excess mass.")  
+        print("A planet made of layer 1 and layer 2 materials excess mass.")  
         print("Try decreasing the mass, decreasing R1 or increasing R")
         return R2_min
         
@@ -1399,7 +1399,7 @@ def L3_find_R2(
         )
         
     if A1_m_enc[-1] > 0:
-        print("A planet made of layer 1 and atm. materials lacks mass.")
+        print("A planet made of layer 1 and layer 3 materials lacks mass.")
         print("Try increasing the mass, increasing R1 or decreasing R.") 
         
         return R2_max
@@ -1465,22 +1465,22 @@ def L3_find_R1(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between A1_T and A1_rho to be used at the atmosphere.
+                Relation between A1_T and A1_rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                              
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -1488,11 +1488,11 @@ def L3_find_R1(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             R2_max ([float]):
@@ -1508,7 +1508,7 @@ def L3_find_R1(
         )
         
     if A1_m_enc[-1] > 0:
-        print("A planet made of layer 1 and atm. materials excess mass.")
+        print("A planet made of layer 1 and layer 3 materials excess mass.")
         print("Try decreasing the mass, increasing R2 or increasing R")
         return R1_min
     
@@ -1519,7 +1519,7 @@ def L3_find_R1(
         )
         
     if A1_m_enc[-1] == 0:
-        print("A planet made of mantle and atm. materials lacks mass.")  
+        print("A planet made of layer 2 and layer 3 materials lacks mass.")  
         print("Try increasing the mass, increasing R2 or decreasing R")
         return R1_max
     
@@ -1584,22 +1584,22 @@ def L3_find_R1_R2(
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between A1_T and A1_rho to be used at the mantle.
+                Relation between A1_T and A1_rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between A1_T and A1_rho to be used at the atmosphere.
+                Relation between A1_T and A1_rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -1607,11 +1607,11 @@ def L3_find_R1_R2(
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             R1, R2 ([float]):
@@ -1842,12 +1842,12 @@ class Planet():
                 print("For a 2 layer planet, please specify:")
                 print("pressure, temperature and density at the surface of the planet,")
                 print("materials, relations between temperature and density with any desired aditional parameters,")
-                print("for layer 1 and mantle of the planet.")
+                print("for layer 1 and layer 2 of the planet.")
             elif self.num_layer == 3:
                 print("For a 3 layer planet, please specify:")
                 print("pressure, temperature and density at the surface of the planet,")
                 print("materials, relations between temperature and density with any desired aditional parameters,")
-                print("for layer 1, mantle and atmosphere of the planet.")
+                print("for layer 1, layer 2, and layer 3 of the planet.")
                         
     # ========
     # General
@@ -3695,17 +3695,17 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
                 with function _create_u_cold_array() for layer 1 (SI).
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between T and rho to be used at the mantle.
+                Relation between T and rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
         Returns:
             
@@ -3814,13 +3814,13 @@ def spin2layer(num_attempt, r_array, z_array, radii, densities, Tw,
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between T and rho to be used at the mantle.
+                Relation between T and rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -3828,7 +3828,7 @@ def spin2layer(num_attempt, r_array, z_array, radii, densities, Tw,
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
         Returns:
             
@@ -3901,13 +3901,13 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between T and rho to be used at the mantle.
+                Relation between T and rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -3915,7 +3915,7 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             N_neig (int):
                 Number of neighbors in the SPH simulation.
@@ -4185,30 +4185,30 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
                 with function _create_u_cold_array() for layer 1 (SI).
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between T and rho to be used at the mantle.
+                Relation between T and rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between T and rho to be used at the atmosphere.
+                Relation between T and rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             
@@ -4329,22 +4329,22 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between T and rho to be used at the mantle.
+                Relation between T and rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between T and rho to be used at the atmosphere.
+                Relation between T and rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -4352,11 +4352,11 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
         Returns:
             
@@ -4433,22 +4433,22 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
                 Extra arguments to determine the relation in layer 1.
                 
             mat_id_L2 (int):
-                Material id for the mantle.
+                Material id for layer 2.
                 
             T_rho_type_L2 (int)
-                Relation between T and rho to be used at the mantle.
+                Relation between T and rho to be used in layer 2.
                 
             T_rho_args_L2 (list):
-                Extra arguments to determine the relation at the mantle.
+                Extra arguments to determine the relation in layer 2.
                 
             mat_id_L3 (int):
-                Material id for the atmosphere.
+                Material id for layer 3.
                 
             T_rho_type_L3 (int)
-                Relation between T and rho to be used at the atmosphere.
+                Relation between T and rho to be used in layer 3.
                 
             T_rho_args_L3 (list):
-                Extra arguments to determine the relation at the atmosphere.
+                Extra arguments to determine the relation in layer 3.
                 
             u_cold_array_L1 ([float]):
                 Precomputed values of cold internal energy
@@ -4456,11 +4456,11 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
                 
             u_cold_array_L2 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the mantle (SI).
+                with function _create_u_cold_array() for layer 2 (SI).
                 
             u_cold_array_L3 ([float]):
                 Precomputed values of cold internal energy
-                with function _create_u_cold_array() for the atmosphere (SI).
+                with function _create_u_cold_array() for layer 3 (SI).
                 
             N_neig (int):
                 Number of neighbors in the SPH simulation.
