@@ -21,6 +21,9 @@ import os
 import sys
 import h5py
 
+import warnings
+warnings.filterwarnings("ignore")
+
 # Go to the WoMa directory
 dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir)
@@ -1742,13 +1745,17 @@ class Planet():
                 The reduced moment of inertia. (SI)
             
             M_max (float)
-                ...
+                The maximum mass allowed.
             
-            R_max (float)
-                ...
+            R_min, R_max (float)
+                The minimum and maximum radii to try.
                 
             rho_min (float)
                 The minimum density for the outer edge of the profile.
+            
+            M_frac_tol (float)
+                The tolerance for finding the appropriate mass, as a fraction 
+                of the total mass. Default: 0.01.
                 
             num_prof (int)
                 The number of profile integration steps.
@@ -1772,8 +1779,9 @@ class Planet():
     def __init__(
         self, name, Fp_planet=None, A1_mat_layer=None, A1_T_rho_type=None, 
         A1_T_rho_args=None, A1_R_layer=None, A1_M_layer=None, M=None, P_s=None, 
-        T_s=None, rho_s=None, I_MR2=None, M_max=None, R_max=None, rho_min=None, 
-        num_prof=10000, num_attempt=40, num_attempt_2=40
+        T_s=None, rho_s=None, I_MR2=None, M_max=None, R_min=None, R_max=None, 
+        rho_min=None, M_frac_tol=0.01, num_prof=10000, num_attempt=40, 
+        num_attempt_2=40
         ):
         self.name               = name
         self.Fp_planet          = Fp_planet
@@ -1788,8 +1796,10 @@ class Planet():
         self.rho_s              = rho_s
         self.I_MR2              = I_MR2
         self.M_max              = M_max
+        self.R_min              = R_min
         self.R_max              = R_max
         self.rho_min            = rho_min
+        self.M_frac_tol         = M_frac_tol
         self.num_prof           = num_prof
         self.num_attempt        = num_attempt
         self.num_attempt_2      = num_attempt_2
@@ -2220,12 +2230,19 @@ class Planet():
         self.update_attributes()
         self.print_info()
         
-    def gen_prof_L2_fix_R1_R_given_M1_M2(self, M1=None, M2=None):
+    def gen_prof_L2_fix_R1_R_given_M1_M2(self, M1=None, M2=None, R_min=None,
+                                         R_max=None, M_frac_tol=None):
         # Check for necessary input
         if M1 is not None:
             self.A1_M_layer[0]  = M1
         if M2 is not None:
             self.A1_M_layer[1]  = M2
+        if R_min is not None:
+            self.R_min  = R_min
+        if R_max is not None:
+            self.R_max  = R_max
+        if M_frac_tol is not None:
+            self.M_frac_tol = M_frac_tol
         assert(self.num_layer == 2)
         assert(self.A1_M_layer[0] is not None)
         assert(self.A1_M_layer[1] is not None)
@@ -2241,14 +2258,13 @@ class Planet():
         u_cold_array_L1 = weos.load_u_cold_array(self.A1_mat_id_layer[0])
         u_cold_array_L2 = weos.load_u_cold_array(self.A1_mat_id_layer[1])
         
-        ###WIP make inputs/attrs
-        R_min   = 0.95 * R_earth
-        R_max   = 0.98 * R_earth
-        M_tol   = 0.01 * self.M
+        # Update R_min and R_max without changing the attributes
+        R_min   = self.R_min
+        R_max   = self.R_max
         
         ###Tidy this! Replace with other function, verb=0.
         # Check the maximum radius yields a too small layer 1 mass
-        print("R_max = %.5g m = %.5g R_E " % (R_min, R_min / R_earth))
+        print("R_max = %.5g m = %.5g R_E " % (R_max, R_max / R_earth))
         self.A1_R_layer[0] = L2_find_R1(
             self.num_prof, R_max, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
@@ -2308,7 +2324,7 @@ class Planet():
         # Iterate to obtain desired layer masses
         iter    = 0
         M1      = 0
-        while M_tol < abs(M1 - self.A1_M_layer[0]):
+        while self.M_frac_tol < abs(M1 - self.A1_M_layer[0]) / self.M:
             R_try = (R_min + R_max) * 0.5
             print("iter %d: R = %.5g m = %.5g R_E" 
                   % (iter, R_try, R_try / R_earth))
