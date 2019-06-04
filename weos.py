@@ -13,6 +13,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
 
+import warnings
+warnings.filterwarnings("ignore")
+
 G       = 6.67408E-11
 R_earth = 6371000
 M_earth = 5.972E24
