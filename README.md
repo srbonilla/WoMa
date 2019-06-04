@@ -44,21 +44,17 @@ Notation etc.
 
 To Do etc. (Jacob thoughts in progress)
 ---------------------------------------
-+ Tidy EoS parameter arrays etc.
-+ Import SEAGen as a normal module instead of copying the file
-+ Add documentation to examples and basic instructions to readme
-+ Allow fixing the mass ratios of each layer instead of e.g. outer radius 
-+ Make into a PyPI package
-+ Zero axes in example plots and non-symbol labels
-+ Tidy line lengths for where I've messed things up
-+ Add all output variables to the hdf5 file
++ Separate into more files e.g. profiles and spinning, utilities (with file doc strings!)
 + Change the iterations to be for some tolerance not a number of iterations
 + Move the add-L3 function out of the class, like the others
++ Add documentation to examples and basic instructions to readme
++ Make into a PyPI package
++ Tidy line lengths for where I've messed things up
++ Add all output variables to the hdf5 file
 + Automatically choose how to gen profiles depending on which inputs are given
 + See `###` and `...` notes throughout the code
-+ Check that MoI is the reduced MoI everywhere
++ Check that MoI is the reduced MoI everywhere (or change name)
 + Add doc strings and prints to the examples, explain what they're trying to do
     and how, so that someone can copy them and understand.
 + Make the examples faster to run. Maybe start close to the right answer and 
     do fewer iterations.
-+ Update the examples to use `A1_mat_layer` not `A1_mat_id_layer` as inputs

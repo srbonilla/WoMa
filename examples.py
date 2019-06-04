@@ -177,11 +177,11 @@ def test_gen_prof_L3_fix_R1_R2_given_R_M_I():
 def test_gen_prof_L3_fix_R2_given_R_M_R1():
     planet = woma.Planet(
         name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
+        A1_mat_layer    = ["Til_iron", "Til_granite", "SESAME_steam"],
         A1_T_rho_type   = [1, 1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.55*R_earth, None, R_earth],
-        P_s             = 0,
+        P_s             = 1e2,
         T_s             = 300,
         M               = M_earth
         )
