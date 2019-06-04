@@ -177,39 +177,6 @@ def multi_get_planet_data(f, A1_param):
 # ============================================================================ #
 # ===================== Spherical profile functions ========================== #
 # ============================================================================ #
-
-def set_up():
-    """ Create tabulated values of cold internal energy if they don't exist, 
-        and save the results in the data/ folder.    
-    """
-    # Make the directory if it doesn't already exist
-    if not os.path.isdir("data"):
-        os.mkdir("data")
-    
-    # Make the files if they don't already exist    
-    if not os.path.isfile(weos.Fp_u_cold_Til_iron):
-        print('Creating u cold curve for material Til_iron... ', end='')
-        sys.stdout.flush()
-        u_cold_array = weos._create_u_cold_array(weos.id_Til_iron)
-        np.save(weos.Fp_u_cold_Til_iron, u_cold_array)
-        del u_cold_array
-        print("Done")
-    
-    if not os.path.isfile(weos.Fp_u_cold_Til_granite):
-        print('Creating u cold curve for material Til_granite... ', end='')
-        sys.stdout.flush()
-        u_cold_array = weos._create_u_cold_array(weos.id_Til_granite)
-        np.save(weos.Fp_u_cold_Til_granite, u_cold_array)
-        del u_cold_array
-        print("Done")
-    
-    if not os.path.isfile(weos.Fp_u_cold_Til_water):
-        print('Creating u cold curve for material Til_water... ', end='')
-        sys.stdout.flush()
-        u_cold_array = weos._create_u_cold_array(weos.id_Til_water)
-        np.save(weos.Fp_u_cold_Til_water, u_cold_array)
-        del u_cold_array
-        print("Done")
       
 # ===================== 1 layer ============================================== #
 
@@ -1912,8 +1879,8 @@ class Planet():
         print("    %s = %.5g Pa" % (add_whitespace("P_s", space), self.P_s))
         print("    %s = %.5g K" % (add_whitespace("T_s", space), self.T_s))
         print("    %s = %.5g kg/m^3" % (add_whitespace("rho_s", space), self.rho_s))
-        print("    %s = %.5g kg*m^2 / %.5g M_earth*R_earth^2" %
-              (add_whitespace("I_MR2", space), self.I_MR2, self.I_MR2/M_earth/R_earth/R_earth))
+        print("    %s = %.5g M_tot*R_tot^2" %
+              (add_whitespace("I_MR2", space), self.I_MR2/self.M/self.R/self.R))
     
     def save_planet(self):
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
@@ -5002,5 +4969,4 @@ class GenSpheroid():
             self.A1_picle_id     = picle_id
             self.N_particles     = x.shape[0]
         
-# Set up equation of state data
-set_up()
+

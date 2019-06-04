@@ -12,11 +12,18 @@ Created on Mon Apr  1 10:38:18 2019
 import numpy as np
 import matplotlib.pyplot as plt
 from numba import jit
+import os
+import sys
 
 G       = 6.67408E-11
 R_earth = 6371000
 M_earth = 5.972E24
 R_gas   = 8.3145     # Gas constant (J K^-1 mol^-1)
+
+# Go to the WoMa directory
+dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir)
+sys.path.append(dir)
 
 # Material IDs, same as SWIFT ( = type_id * type_factor + unit_id)
 type_factor = 100
@@ -209,49 +216,9 @@ def load_table_SESAME(Fp_table):
 
     return A2_u, A2_P, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
 
-# Load tables in global variables
-(A2_u_SESAME_iron, A2_P_SESAME_iron, A1_log_rho_SESAME_iron, 
- A1_log_T_SESAME_iron, A2_log_u_SESAME_iron
- )  = load_table_SESAME(Fp_SESAME_iron)
-(A2_u_SESAME_basalt, A2_P_SESAME_basalt, A1_log_rho_SESAME_basalt, 
- A1_log_T_SESAME_basalt, A2_log_u_SESAME_basalt
- )  = load_table_SESAME(Fp_SESAME_basalt)
-(A2_u_SESAME_water, A2_P_SESAME_water, A1_log_rho_SESAME_water, 
- A1_log_T_SESAME_water, A2_log_u_SESAME_water
- )  = load_table_SESAME(Fp_SESAME_water)
-(A2_u_SS08_water, A2_P_SS08_water, A1_log_rho_SS08_water, A1_log_T_SS08_water, 
- A2_log_u_SS08_water
- )  = load_table_SESAME(Fp_SS08_water)
-(A2_u_SESAME_H2, A2_P_SESAME_H2, A1_log_rho_SESAME_H2, A1_log_T_SESAME_H2, 
- A2_log_u_SESAME_H2
- )  = load_table_SESAME(Fp_SESAME_H2)
-(A2_u_SESAME_N2, A2_P_SESAME_N2, A1_log_rho_SESAME_N2, A1_log_T_SESAME_N2, 
- A2_log_u_SESAME_N2
- )  = load_table_SESAME(Fp_SESAME_N2)
-(A2_u_SESAME_steam, A2_P_SESAME_steam, A1_log_rho_SESAME_steam, 
- A1_log_T_SESAME_steam, A2_log_u_SESAME_steam
- )  = load_table_SESAME(Fp_SESAME_steam)
-(A2_u_SESAME_CO2, A2_P_SESAME_CO2, A1_log_rho_SESAME_CO2, A1_log_T_SESAME_CO2, 
- A2_log_u_SESAME_CO2
- )  = load_table_SESAME(Fp_SESAME_CO2)
-
 # ============================================================================ #
 # ===================== Functions ============================================ #
 # ============================================================================ #
-@jit(nopython=True)
-def function(x, y):
-    idx = np.searchsorted(y, x) - 1
-
-    # Return error values if outside the array
-    if idx == -1:
-        idx = 0
-    elif idx >= len(y) - 1:
-        idx = len(y) - 2
-
-    intp    = (x - y[idx]) / (y[idx + 1] - y[idx])
-   
-    return idx
-
 @jit(nopython=True)
 def _P_EoS_SESAME(u, rho, mat_id):
     """ Computes pressure for the SESAME EoS.
@@ -305,6 +272,7 @@ def _P_EoS_SESAME(u, rho, mat_id):
             )
     else:
        raise ValueError("Invalid material ID")
+       return -1.
     
     # Ignore the first elements of rho = 0, T = 0
     A2_P        = A2_P[1:, 1:]
@@ -1163,3 +1131,118 @@ def _find_u(rho, mat_id, T, u_cold_array):
         u = _u_cold_tab(rho, mat_id, u_cold_array) + C_V*T
         
     return u
+
+
+def set_up():
+    """ Create tabulated values of cold internal energy if they don't exist, 
+        and save the results in the data/ folder.    
+    """
+    # Make the directory if it doesn't already exist
+    if not os.path.isdir("data"):
+        os.mkdir("data")
+    
+    # Make the files if they don't already exist  
+    
+    # Internal energy cold curves for Tillotson mateials
+    if not os.path.isfile(Fp_u_cold_Til_iron):
+        print('Creating u cold curve for material Til_iron... ', end='')
+        sys.stdout.flush()
+        u_cold_array = _create_u_cold_array(id_Til_iron)
+        np.save(Fp_u_cold_Til_iron, u_cold_array)
+        del u_cold_array
+        print("Done")
+    
+    if not os.path.isfile(Fp_u_cold_Til_granite):
+        print('Creating u cold curve for material Til_granite... ', end='')
+        sys.stdout.flush()
+        u_cold_array = _create_u_cold_array(id_Til_granite)
+        np.save(Fp_u_cold_Til_granite, u_cold_array)
+        del u_cold_array
+        print("Done")
+    
+    if not os.path.isfile(Fp_u_cold_Til_water):
+        print('Creating u cold curve for material Til_water... ', end='')
+        sys.stdout.flush()
+        u_cold_array = _create_u_cold_array(id_Til_water)
+        np.save(Fp_u_cold_Til_water, u_cold_array)
+        del u_cold_array
+        print("Done")
+        
+    # SESAME tables
+    if not os.path.isfile(Fp_SESAME_iron):
+        print('Downloading SESAME iron table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+    if not os.path.isfile(Fp_SESAME_basalt):
+        print('Downloading SESAME basalt table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+    if not os.path.isfile(Fp_SESAME_water):
+        print('Downloading SESAME water table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+    if not os.path.isfile(Fp_SS08_water):
+        print('Downloading SESAME-SS08 water table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+    if not os.path.isfile(Fp_SESAME_H2):
+        print('Downloading SESAME H2 table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+    if not os.path.isfile(Fp_SESAME_N2):
+        print('Downloading SESAME N2 table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+    if not os.path.isfile(Fp_SESAME_steam):
+        print('Downloading SESAME steam table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+    if not os.path.isfile(Fp_SESAME_CO2):
+        print('Downloading SESAME CO2 table... ', end='')
+        sys.stdout.flush()
+        # Do stuff
+        print("Done")
+        
+        
+# Set up equation of state data
+set_up()
+        
+# Load tables in global variables
+(A2_u_SESAME_iron, A2_P_SESAME_iron, A1_log_rho_SESAME_iron, 
+ A1_log_T_SESAME_iron, A2_log_u_SESAME_iron
+ )  = load_table_SESAME(Fp_SESAME_iron)
+(A2_u_SESAME_basalt, A2_P_SESAME_basalt, A1_log_rho_SESAME_basalt, 
+ A1_log_T_SESAME_basalt, A2_log_u_SESAME_basalt
+ )  = load_table_SESAME(Fp_SESAME_basalt)
+(A2_u_SESAME_water, A2_P_SESAME_water, A1_log_rho_SESAME_water, 
+ A1_log_T_SESAME_water, A2_log_u_SESAME_water
+ )  = load_table_SESAME(Fp_SESAME_water)
+(A2_u_SS08_water, A2_P_SS08_water, A1_log_rho_SS08_water, A1_log_T_SS08_water, 
+ A2_log_u_SS08_water
+ )  = load_table_SESAME(Fp_SS08_water)
+(A2_u_SESAME_H2, A2_P_SESAME_H2, A1_log_rho_SESAME_H2, A1_log_T_SESAME_H2, 
+ A2_log_u_SESAME_H2
+ )  = load_table_SESAME(Fp_SESAME_H2)
+(A2_u_SESAME_N2, A2_P_SESAME_N2, A1_log_rho_SESAME_N2, A1_log_T_SESAME_N2, 
+ A2_log_u_SESAME_N2
+ )  = load_table_SESAME(Fp_SESAME_N2)
+(A2_u_SESAME_steam, A2_P_SESAME_steam, A1_log_rho_SESAME_steam, 
+ A1_log_T_SESAME_steam, A2_log_u_SESAME_steam
+ )  = load_table_SESAME(Fp_SESAME_steam)
+(A2_u_SESAME_CO2, A2_P_SESAME_CO2, A1_log_rho_SESAME_CO2, A1_log_T_SESAME_CO2, 
+ A2_log_u_SESAME_CO2
+ )  = load_table_SESAME(Fp_SESAME_CO2)
