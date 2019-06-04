@@ -52,7 +52,7 @@ def test_gen_prof_L1_fix_R_given_M():
         A1_R_layer      = [0.988 * R_earth],
         M               = 0.8*M_earth,
         P_s             = 0,
-        T_s             = 300,
+        T_s             = 300
         )
 
     planet.R_max = R_earth
