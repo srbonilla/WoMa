@@ -2271,7 +2271,7 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
-            u_cold_array_L2, self.num_attempt
+            u_cold_array_L2, int(self.num_attempt / 2)
             )        
         self.M = L2_find_mass(
             self.num_prof, R_max, 2 * M_tot, self.P_s, self.T_s, self.rho_s, 
@@ -2301,7 +2301,7 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
-            u_cold_array_L2, self.num_attempt
+            u_cold_array_L2, int(self.num_attempt / 2)
             )        
         self.M = L2_find_mass(
             self.num_prof, R_min, 2 * M_tot, self.P_s, self.T_s, self.rho_s, 
@@ -2787,7 +2787,7 @@ class Planet():
         self.A1_T_rho_args[2] = np.array(self.A1_T_rho_args[2])
 
         # Integrate outwards until the minimum density (or zero pressure)
-        step = 1            
+        step = 1
         while A1_rho[-1] > self.rho_min and A1_P[-1] > 0:
             A1_r.append(A1_r[-1] + dr)
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
@@ -2797,7 +2797,7 @@ class Planet():
             A1_rho.append(rho)
             A1_T.append(weos.T_rho(rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2]))
             A1_u.append(weos._find_u(rho, mat_id_L3, A1_T[-1], u_cold_array_L3))
-            A1_mat_id.append(mat_id_L3)   
+            A1_mat_id.append(mat_id_L3)
 
             step += 1
             if step >= self.num_prof:
@@ -2896,7 +2896,7 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
-            u_cold_array_L2, self.num_attempt
+            u_cold_array_L2, int(self.num_attempt / 2)
             )        
         self.M = L2_find_mass(
             self.num_prof, R_max, 2 * M_tot, self.P_s, self.T_s, self.rho_s, 
@@ -2918,7 +2918,7 @@ class Planet():
               % (M1, M1 / M_earth, M1 / M_tot))
         assert M1 < self.A1_M_layer[0], \
             "R_max must be big enough to yield a too low M1"
-               
+        
         # Check the minimum radius yields a too large layer 1 mass
         print("R_min  = %.5g m  = %.5g R_E " % (R_min, R_min / R_earth))
         self.A1_R_layer[0] = L2_find_R1(
@@ -2926,7 +2926,7 @@ class Planet():
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0], 
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1, 
-            u_cold_array_L2, self.num_attempt
+            u_cold_array_L2, int(self.num_attempt / 2)
             )        
         self.M = L2_find_mass(
             self.num_prof, R_min, 2 * M_tot, self.P_s, self.T_s, self.rho_s, 
@@ -2989,6 +2989,8 @@ class Planet():
                 R_min = R_try
             
             iter    += 1
+
+        self.update_attributes()
 
         # Add the third layer
         self.gen_prof_L3_given_prof_L2(
