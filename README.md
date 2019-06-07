@@ -46,6 +46,8 @@ To Do etc. (Jacob thoughts in progress)
 ---------------------------------------
 + Separate into more files e.g. profiles and spinning, utilities (with file doc strings!)
 + Change the iterations to be for some tolerance not a number of iterations
++ Check for other things like mat_id or T_rho_type that should have named 
+    variables instead of numbers e.g. `mat_id == id_Til_iron`, not `== 101`
 + Move the add-L3 function out of the class, like the others
 + Add documentation to examples and basic instructions to readme
 + Make into a PyPI package
@@ -58,3 +60,10 @@ To Do etc. (Jacob thoughts in progress)
     and how, so that someone can copy them and understand.
 + Make the examples faster to run. Maybe start close to the right answer and 
     do fewer iterations.
++ Change T_rho_type options to string not int for input (and internal too?)
++ Improve T_rho_args user input. e.g. only alpha, no K, then set internally
++ Replace `(SI)` with the actual units
++ Improve function names e.g. u_rho_T() rather than find_u(), and more intuitive 
+    argument orders e.g. P(rho, u) and u(rho, T) with extra options like mat_id 
+    after, rather than P(u, rho) or u(rho, mat_id, T), just to make it easier 
+    to read and write additions.
