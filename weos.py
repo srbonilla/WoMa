@@ -222,6 +222,33 @@ def load_table_SESAME(Fp_table):
 
     return A2_u, A2_P, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
 
+# Load SESAME tables as global variables
+(A2_u_SESAME_iron, A2_P_SESAME_iron, A2_s_SESAME_iron, A1_log_rho_SESAME_iron,
+ A1_log_T_SESAME_iron, A2_log_u_SESAME_iron
+ )  = load_table_SESAME(Fp_SESAME_iron)
+(A2_u_SESAME_basalt, A2_P_SESAME_basalt, A2_s_SESAME_basalt,
+ A1_log_rho_SESAME_basalt, A1_log_T_SESAME_basalt, A2_log_u_SESAME_basalt
+ )  = load_table_SESAME(Fp_SESAME_basalt)
+(A2_u_SESAME_water, A2_P_SESAME_water, A2_s_SESAME_water,
+ A1_log_rho_SESAME_water, A1_log_T_SESAME_water, A2_log_u_SESAME_water
+ )  = load_table_SESAME(Fp_SESAME_water)
+(A2_u_SS08_water, A2_P_SS08_water, A2_s_SS08_water, A1_log_rho_SS08_water,
+ A1_log_T_SS08_water, A2_log_u_SS08_water
+ )  = load_table_SESAME(Fp_SS08_water)
+(A2_u_SESAME_H2, A2_P_SESAME_H2, A2_s_SESAME_H2, A1_log_rho_SESAME_H2,
+ A1_log_T_SESAME_H2, A2_log_u_SESAME_H2
+ )  = load_table_SESAME(Fp_SESAME_H2)
+(A2_u_SESAME_N2, A2_P_SESAME_N2, A2_s_SESAME_N2, A1_log_rho_SESAME_N2,
+ A1_log_T_SESAME_N2, A2_log_u_SESAME_N2
+ )  = load_table_SESAME(Fp_SESAME_N2)
+(A2_u_SESAME_steam, A2_P_SESAME_steam, A2_s_SESAME_steam,
+ A1_log_rho_SESAME_steam, A1_log_T_SESAME_steam, A2_log_u_SESAME_steam
+ )  = load_table_SESAME(Fp_SESAME_steam)
+(A2_u_SESAME_CO2, A2_P_SESAME_CO2, A2_s_SESAME_CO2, A1_log_rho_SESAME_CO2,
+ A1_log_T_SESAME_CO2, A2_log_u_SESAME_CO2
+ )  = load_table_SESAME(Fp_SESAME_CO2)
+
+
 # ============================================================================ #
 # ===================== Functions ============================================ #
 # ============================================================================ #
@@ -1494,29 +1521,3 @@ def set_up():
         print("Done")
 
 set_up()
-
-# Load SESAME tables as global variables
-(A2_u_SESAME_iron, A2_P_SESAME_iron, A2_s_SESAME_iron, A1_log_rho_SESAME_iron,
- A1_log_T_SESAME_iron, A2_log_u_SESAME_iron
- )  = load_table_SESAME(Fp_SESAME_iron)
-(A2_u_SESAME_basalt, A2_P_SESAME_basalt, A2_s_SESAME_basalt,
- A1_log_rho_SESAME_basalt, A1_log_T_SESAME_basalt, A2_log_u_SESAME_basalt
- )  = load_table_SESAME(Fp_SESAME_basalt)
-(A2_u_SESAME_water, A2_P_SESAME_water, A2_s_SESAME_water,
- A1_log_rho_SESAME_water, A1_log_T_SESAME_water, A2_log_u_SESAME_water
- )  = load_table_SESAME(Fp_SESAME_water)
-(A2_u_SS08_water, A2_P_SS08_water, A2_s_SS08_water, A1_log_rho_SS08_water,
- A1_log_T_SS08_water, A2_log_u_SS08_water
- )  = load_table_SESAME(Fp_SS08_water)
-(A2_u_SESAME_H2, A2_P_SESAME_H2, A2_s_SESAME_H2, A1_log_rho_SESAME_H2,
- A1_log_T_SESAME_H2, A2_log_u_SESAME_H2
- )  = load_table_SESAME(Fp_SESAME_H2)
-(A2_u_SESAME_N2, A2_P_SESAME_N2, A2_s_SESAME_N2, A1_log_rho_SESAME_N2,
- A1_log_T_SESAME_N2, A2_log_u_SESAME_N2
- )  = load_table_SESAME(Fp_SESAME_N2)
-(A2_u_SESAME_steam, A2_P_SESAME_steam, A2_s_SESAME_steam,
- A1_log_rho_SESAME_steam, A1_log_T_SESAME_steam, A2_log_u_SESAME_steam
- )  = load_table_SESAME(Fp_SESAME_steam)
-(A2_u_SESAME_CO2, A2_P_SESAME_CO2, A2_s_SESAME_CO2, A1_log_rho_SESAME_CO2,
- A1_log_T_SESAME_CO2, A2_log_u_SESAME_CO2
- )  = load_table_SESAME(Fp_SESAME_CO2)

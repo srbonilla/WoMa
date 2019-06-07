@@ -246,6 +246,5 @@ if __name__ == "__main__":
     test_gen_prof_L1_fix_R_given_M()
     test_gen_prof_L2_fix_R1_given_R_M()
     test_gen_prof_L3_given_prof_L2()
-    test_gen_prof_L3_fix_R2_given_R_M_R1()
     
     plt.show()
