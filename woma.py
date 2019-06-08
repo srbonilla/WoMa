@@ -1748,14 +1748,19 @@ class Planet():
             A1_r ([float])
                 The profile radii, in increasing order.
 
+            P_0, P_1, ..., T_0, ..., rho_0, ... (float)
+                The pressure, temperature, and density at each layer boundary, 
+                from the centre (_0) up to the surface.
+
             ...
     """
     def __init__(
         self, name, Fp_planet=None, A1_mat_layer=None, A1_T_rho_type=None,
-        A1_T_rho_args=None, A1_R_layer=None, A1_M_layer=None, M=None, P_s=None,
-        T_s=None, rho_s=None, I_MR2=None, M_max=None, R_min=None, R_max=None,
-        rho_min=None, M_frac_tol=0.01, num_prof=10000, num_attempt=40,
-        num_attempt_2=40
+        A1_T_rho_args=None, A1_R_layer=None, A1_M_layer=None, M=None, 
+        P_0=None, T_0=None, rho_0=None, P_1=None, T_1=None, rho_1=None, 
+        P_2=None, T_2=None, rho_2=None, P_s=None, T_s=None, rho_s=None, 
+        I_MR2=None, M_max=None, R_min=None, R_max=None, rho_min=None, 
+        M_frac_tol=0.01, num_prof=10000, num_attempt=40, num_attempt_2=40
         ):
         self.name               = name
         self.Fp_planet          = Fp_planet
@@ -1765,6 +1770,15 @@ class Planet():
         self.A1_R_layer         = A1_R_layer
         self.A1_M_layer         = A1_M_layer
         self.M                  = M
+        self.P_0                = P_0
+        self.T_0                = T_0
+        self.rho_0              = rho_0
+        self.P_1                = P_1
+        self.T_1                = T_1
+        self.rho_1              = rho_1
+        self.P_2                = P_2
+        self.T_2                = T_2
+        self.rho_2              = rho_2
         self.P_s                = P_s
         self.T_s                = T_s
         self.rho_s              = rho_s
@@ -1868,18 +1882,29 @@ class Planet():
         # Moment of inertia
         self.I_MR2  = moi(self.A1_r, self.A1_rho)
 
-        # Update P_s, T_s and rho_s for the case create L3 profile from L2 profile
-        self.P_s = self.A1_P[-1]
-        self.T_s = self.A1_T[-1]
-        self.rho_s = self.A1_rho[-1]
+        # P, T, and rho at the centre and the outer boundary of each layer
+        self.P_0    = self.A1_P[0]
+        self.T_0    = self.A1_T[0]
+        self.rho_0  = self.A1_rho[0]
+        if self.num_layer > 1:
+            self.P_0    = self.A1_P[self.A1_idx_layer[0]]
+            self.T_0    = self.A1_T[self.A1_idx_layer[0]]
+            self.rho_0  = self.A1_rho[self.A1_idx_layer[0]]
+        if self.num_layer > 2:
+            self.P_1    = self.A1_P[self.A1_idx_layer[1]]
+            self.T_1    = self.A1_T[self.A1_idx_layer[1]]
+            self.rho_1  = self.A1_rho[self.A1_idx_layer[1]]
+        self.P_s    = self.A1_P[-1]
+        self.T_s    = self.A1_T[-1]
+        self.rho_s  = self.A1_rho[-1]
 
     def print_info(self):
         """ Print the Planet objects's main properties. """
         space   = 12
         print("Planet \"%s\": " % self.name)
-        print("    %s = %.5g kg / %.5g M_earth" %
+        print("    %s = %.5g kg = %.5g M_earth" %
               (add_whitespace("M", space), self.M, self.M/M_earth))
-        print("    %s = %.5g m / %.5g R_earth" %
+        print("    %s = %.5g m = %.5g R_earth" %
               (add_whitespace("R", space), self.R, self.R/R_earth))
         print("    %s = %s " % (add_whitespace("mat", space),
               format_array_string(self.A1_mat_layer, "%s")))
@@ -1893,6 +1918,17 @@ class Planet():
               format_array_string(self.A1_M_layer / self.M, "%.5g")))
         print("    %s = %s " % (add_whitespace("idx_layer", space),
               format_array_string(self.A1_idx_layer, "%d")))
+        print("    %s = %.5g Pa" % (add_whitespace("P_0", space), self.P_0))
+        print("    %s = %.5g K" % (add_whitespace("T_0", space), self.T_0))
+        print("    %s = %.5g kg/m^3" % (add_whitespace("rho_0", space), self.rho_0))
+        if self.num_layer > 1:
+            print("    %s = %.5g Pa" % (add_whitespace("P_1", space), self.P_1))
+            print("    %s = %.5g K" % (add_whitespace("T_1", space), self.T_1))
+            print("    %s = %.5g kg/m^3" % (add_whitespace("rho_1", space), self.rho_1))
+        if self.num_layer > 2:
+            print("    %s = %.5g Pa" % (add_whitespace("P_2", space), self.P_2))
+            print("    %s = %.5g K" % (add_whitespace("T_2", space), self.T_2))
+            print("    %s = %.5g kg/m^3" % (add_whitespace("rho_2", space), self.rho_2))
         print("    %s = %.5g Pa" % (add_whitespace("P_s", space), self.P_s))
         print("    %s = %.5g K" % (add_whitespace("T_s", space), self.T_s))
         print("    %s = %.5g kg/m^3" % (add_whitespace("rho_s", space), self.rho_s))
