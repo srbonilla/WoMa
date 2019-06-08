@@ -50,26 +50,47 @@ def check_end(string, end):
 
     return string
 
-def format_array_string(A1_x, format):
-    """ Return a print-ready string of a 1D array's contents in a given format.
+def format_array_string(array, format):
+    """ Return a print-ready string of an array's contents in a given format.
 
         Args:
-            A1_x ([])
+            array ([])
                 An array of values that can be printed with the given format.
 
             format (str)
                 A printing format, e.g. "%d", "%.5g".
+                
+                Custom options:
+                    "string":   Include quotation marks around each string.
+                    "dorf":     Int or float if decimal places are needed.
 
         Returns:
             string (str)
                 The formatted string.
     """
-    string  = ""
+    string  = ""    
 
     # Append each element
-    for x in A1_x:
-        string += "%s, " % (format % x)
-
+    # 1D
+    if len(np.shape(array)) == 1:
+        for x in array:
+            if x is None:
+                string += "None, "
+            else:
+                # Custom formats
+                if format == "string":
+                    string += "\"%s\", " % x
+                elif format == "dorf":
+                    string += "{0}, ".format(
+                        str(round(x, 1) if x % 1 else int(x)))
+                # Standard formats
+                else:
+                    string += "%s, " % (format % x)
+    # Recursive for higher dimensions
+    else:
+        for arr in array:
+            string += "%s, " % format_array_string(arr, format)
+            
     # Add brackets and remove the trailing comma
     return "[%s]" % string[:-2]
 
@@ -1715,6 +1736,10 @@ class Planet():
                 The pressure, temperature, and density at the surface. Only two
                 of the three must be provided (Pa, K, kg m^-3).
 
+            P_0, P_1, ..., T_0, ..., rho_0, ... (float)
+                The pressure, temperature, and density at each layer boundary, 
+                from the centre (_0) up to the surface.
+
             I_MR2 (float)
                 The reduced moment of inertia. (SI)
 
@@ -1738,26 +1763,26 @@ class Planet():
                 The maximum number of iteration attempts.
 
         Attrs (in addition to the args):
+            num_layer (int)
+                The number of planetary layers.
+                
             A1_mat_id_layer ([int])
                 The ID of the material in each layer, from the central layer
                 outwards.
 
-            num_layer (int)
-                The number of planetary layers.
+            A1_idx_layer ([int])
+                The profile index of each boundary, from the central layer 
+                outwards.
 
             A1_r ([float])
                 The profile radii, in increasing order.
-
-            P_0, P_1, ..., T_0, ..., rho_0, ... (float)
-                The pressure, temperature, and density at each layer boundary, 
-                from the centre (_0) up to the surface.
 
             ...
     """
     def __init__(
         self, name, Fp_planet=None, A1_mat_layer=None, A1_T_rho_type=None,
-        A1_T_rho_args=None, A1_R_layer=None, A1_M_layer=None, M=None, 
-        P_0=None, T_0=None, rho_0=None, P_1=None, T_1=None, rho_1=None, 
+        A1_T_rho_args=None, A1_R_layer=None, A1_M_layer=None, A1_idx_layer=None,
+        M=None, P_0=None, T_0=None, rho_0=None, P_1=None, T_1=None, rho_1=None, 
         P_2=None, T_2=None, rho_2=None, P_s=None, T_s=None, rho_s=None, 
         I_MR2=None, M_max=None, R_min=None, R_max=None, rho_min=None, 
         M_frac_tol=0.01, num_prof=10000, num_attempt=40, num_attempt_2=40
@@ -1769,6 +1794,7 @@ class Planet():
         self.A1_T_rho_args      = A1_T_rho_args
         self.A1_R_layer         = A1_R_layer
         self.A1_M_layer         = A1_M_layer
+        self.A1_idx_layer       = A1_idx_layer
         self.M                  = M
         self.P_0                = P_0
         self.T_0                = T_0
@@ -1935,7 +1961,7 @@ class Planet():
         print("    %s = %.5g M_tot*R_tot^2" %
               (add_whitespace("I_MR2", space), self.I_MR2/self.M/self.R/self.R))
 
-    def print_info_debug(self):
+    def print_debug(self):
         """ Print the Planet objects's main properties in a less pretty way than
             print_info() but that won't complain with e.g. attributes that are
             None, for debugging.
@@ -1963,6 +1989,55 @@ class Planet():
             print("    %s = " % add_whitespace("I_MR2", space), self.I_MR2)
         except AttributeError:
             pass
+
+    def print_declaration(self):
+        """ Print the Planet objects formatted as a declaration. """
+        space   = 15                
+        print("%s = Planet(" % self.name)
+        print("    %s = \"%s\"," % 
+              (add_whitespace("name", space), self.name))
+        print("    %s = \"%s\"," % 
+              (add_whitespace("Fp_planet", space), self.Fp_planet))
+        print("    %s = %s," % 
+              (add_whitespace("A1_mat_layer", space), 
+               format_array_string(self.A1_mat_layer, "string")))
+        print("    %s = %s," % 
+              (add_whitespace("A1_T_rho_type", space), 
+               format_array_string(self.A1_T_rho_type, "%d")))
+        print("    %s = %s," % 
+              (add_whitespace("A1_T_rho_args", space), 
+               format_array_string(self.A1_T_rho_args, "dorf")))
+        print("    %s = np.array(%s) * R_earth," % 
+              (add_whitespace("A1_R_layer", space),
+              format_array_string(self.A1_R_layer / R_earth, "%.5g")))
+        print("    %s = %s," % 
+              (add_whitespace("A1_idx_layer", space),
+              format_array_string(self.A1_idx_layer, "%d")))
+        print("    %s = np.array(%s) * M_earth," % 
+              (add_whitespace("A1_M_layer", space),
+              format_array_string(self.A1_M_layer / M_earth, "%.5g")))
+        print("    %s = %.5g * M_earth," % 
+              (add_whitespace("M", space), self.M / M_earth))
+        print("    %s = %.5g," % (add_whitespace("P_0", space), self.P_0))
+        print("    %s = %.5g," % (add_whitespace("T_0", space), self.T_0))
+        print("    %s = %.5g," % (add_whitespace("rho_0", space), self.rho_0))
+        if self.num_layer > 1:
+            print("    %s = %.5g," % (add_whitespace("P_1", space), self.P_1))
+            print("    %s = %.5g," % (add_whitespace("T_1", space), self.T_1))
+            print("    %s = %.5g," % 
+                  (add_whitespace("rho_1", space), self.rho_1))
+        if self.num_layer > 2:
+            print("    %s = %.5g," % (add_whitespace("P_2", space), self.P_2))
+            print("    %s = %.5g," % (add_whitespace("T_2", space), self.T_2))
+            print("    %s = %.5g," % 
+                  (add_whitespace("rho_2", space), self.rho_2))
+        print("    %s = %.5g," % (add_whitespace("P_s", space), self.P_s))
+        print("    %s = %.5g," % (add_whitespace("T_s", space), self.T_s))
+        print("    %s = %.5g," % (add_whitespace("rho_s", space), self.rho_s))
+        print("    %s = %.5g," %
+              (add_whitespace("I_MR2", space), 
+               self.I_MR2 / (self.M * self.R**2)))
+        print("    )")        
 
     def save_planet(self):
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
