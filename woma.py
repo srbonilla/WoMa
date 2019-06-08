@@ -59,7 +59,7 @@ def format_array_string(array, format):
 
             format (str)
                 A printing format, e.g. "%d", "%.5g".
-                
+
                 Custom options:
                     "string":   Include quotation marks around each string.
                     "dorf":     Int or float if decimal places are needed.
@@ -68,7 +68,7 @@ def format_array_string(array, format):
             string (str)
                 The formatted string.
     """
-    string  = ""    
+    string  = ""
 
     # Append each element
     # 1D
@@ -90,7 +90,7 @@ def format_array_string(array, format):
     else:
         for arr in array:
             string += "%s, " % format_array_string(arr, format)
-            
+
     # Add brackets and remove the trailing comma
     return "[%s]" % string[:-2]
 
@@ -290,9 +290,12 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
     for i in range(1, A1_r.shape[0]):
         A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*A1_rho[i - 1]*dr
         A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
-        A1_rho[i]   = weos._find_rho(A1_P[i], mat_id, T_rho_type, T_rho_args,
-                                     A1_rho[i - 1], 1.1*A1_rho[i - 1], u_cold_array)
-        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
+        A1_rho[i]   = weos._find_rho(
+            A1_P[i], mat_id, T_rho_type, T_rho_args, A1_rho[i - 1],
+            1.1*A1_rho[i - 1], u_cold_array, A1_T[i - 1], A1_rho[i - 1]
+            )
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id,
+                                 A1_T[i - 1], A1_rho[i - 1], A1_P[i])
         A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
 
         if A1_m_enc[i] < 0:
@@ -528,7 +531,7 @@ def L2_integrate(
 
     u_s = weos._find_u(rho_s, mat_id_L2, T_s, u_cold_array_L2)
     # Set the T-rho relation
-    T_rho_args_L2   = weos.set_T_rho_args(T_s, rho_s, T_rho_type_L2, 
+    T_rho_args_L2   = weos.set_T_rho_args(T_s, rho_s, T_rho_type_L2,
                                           T_rho_args_L2, mat_id_L2)
 
     dr = A1_r[0] - A1_r[1]
@@ -572,9 +575,12 @@ def L2_integrate(
 
         A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*rho*dr
         A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
-        A1_rho[i]   = weos._find_rho(A1_P[i], mat_id, T_rho_type,
-                                     T_rho_args, rho0, 1.1*rho, u_cold_array)
-        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
+        A1_rho[i]   = weos._find_rho(
+            A1_P[i], mat_id, T_rho_type, T_rho_args, rho0, 1.1*rho,
+            u_cold_array, A1_T[i - 1], A1_rho[i - 1]
+            )
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id,
+                                 A1_T[i - 1], A1_rho[i - 1], A1_P[i])
         A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
         A1_mat_id[i] = mat_id
 
@@ -1044,9 +1050,12 @@ def L3_integrate(
 
         A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*rho*dr
         A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
-        A1_rho[i]   = weos._find_rho(A1_P[i], mat_id, T_rho_type,
-                                     T_rho_args, rho0, 1.1*rho, u_cold_array)
-        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
+        A1_rho[i]   = weos._find_rho(
+            A1_P[i], mat_id, T_rho_type, T_rho_args, rho0, 1.1*rho,
+            u_cold_array, A1_T[i - 1], A1_rho[i - 1]
+            )
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id,
+                                 A1_T[i - 1], A1_rho[i - 1], A1_P[i])
         A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
         A1_mat_id[i] = mat_id
 
@@ -1715,11 +1724,13 @@ class Planet():
                 type_rho_pow = 1:   T = K * rho^alpha, K is set internally using
                                     each layer's outer temperature.
                                     Set alpha = 0 for isothermal.
-                type_adb = 2:       Adiabatic, constant s_adb is set internally.
+                type_adb = 2:       Adiabatic, constant s_adb is set internally,
+                                    if applicable.
 
-            A1_T_rho_args ([?])
-                type_rho_pow:   [[K, alpha], ...] (only alpha is required input)
-                type_adb:       [[s_adb], ...] (no required input)
+            A1_T_rho_args ([float])
+                type_rho_pow:   [[K, alpha], ...] Only alpha is required input.
+                type_adb:       [[s_adb], ...] or [[T, P, rho, rho_old], ...]
+                                No required input.
 
             A1_R_layer ([float])
                 The outer radii of each layer, from the central layer outwards
@@ -1737,7 +1748,7 @@ class Planet():
                 of the three must be provided (Pa, K, kg m^-3).
 
             P_0, P_1, ..., T_0, ..., rho_0, ... (float)
-                The pressure, temperature, and density at each layer boundary, 
+                The pressure, temperature, and density at each layer boundary,
                 from the centre (_0) up to the surface.
 
             I_MR2 (float)
@@ -1765,13 +1776,13 @@ class Planet():
         Attrs (in addition to the args):
             num_layer (int)
                 The number of planetary layers.
-                
+
             A1_mat_id_layer ([int])
                 The ID of the material in each layer, from the central layer
                 outwards.
 
             A1_idx_layer ([int])
-                The profile index of each boundary, from the central layer 
+                The profile index of each boundary, from the central layer
                 outwards.
 
             A1_r ([float])
@@ -1782,9 +1793,9 @@ class Planet():
     def __init__(
         self, name, Fp_planet=None, A1_mat_layer=None, A1_T_rho_type=None,
         A1_T_rho_args=None, A1_R_layer=None, A1_M_layer=None, A1_idx_layer=None,
-        M=None, P_0=None, T_0=None, rho_0=None, P_1=None, T_1=None, rho_1=None, 
-        P_2=None, T_2=None, rho_2=None, P_s=None, T_s=None, rho_s=None, 
-        I_MR2=None, M_max=None, R_min=None, R_max=None, rho_min=None, 
+        M=None, P_0=None, T_0=None, rho_0=None, P_1=None, T_1=None, rho_1=None,
+        P_2=None, T_2=None, rho_2=None, P_s=None, T_s=None, rho_s=None,
+        I_MR2=None, M_max=None, R_min=None, R_max=None, rho_min=None,
         M_frac_tol=0.01, num_prof=10000, num_attempt=40, num_attempt_2=40
         ):
         self.name               = name
@@ -1992,31 +2003,31 @@ class Planet():
 
     def print_declaration(self):
         """ Print the Planet objects formatted as a declaration. """
-        space   = 15                
+        space   = 15
         print("%s = Planet(" % self.name)
-        print("    %s = \"%s\"," % 
+        print("    %s = \"%s\"," %
               (add_whitespace("name", space), self.name))
-        print("    %s = \"%s\"," % 
+        print("    %s = \"%s\"," %
               (add_whitespace("Fp_planet", space), self.Fp_planet))
-        print("    %s = %s," % 
-              (add_whitespace("A1_mat_layer", space), 
+        print("    %s = %s," %
+              (add_whitespace("A1_mat_layer", space),
                format_array_string(self.A1_mat_layer, "string")))
-        print("    %s = %s," % 
-              (add_whitespace("A1_T_rho_type", space), 
+        print("    %s = %s," %
+              (add_whitespace("A1_T_rho_type", space),
                format_array_string(self.A1_T_rho_type, "%d")))
-        print("    %s = %s," % 
-              (add_whitespace("A1_T_rho_args", space), 
+        print("    %s = %s," %
+              (add_whitespace("A1_T_rho_args", space),
                format_array_string(self.A1_T_rho_args, "dorf")))
-        print("    %s = np.array(%s) * R_earth," % 
+        print("    %s = np.array(%s) * R_earth," %
               (add_whitespace("A1_R_layer", space),
               format_array_string(self.A1_R_layer / R_earth, "%.5g")))
-        print("    %s = %s," % 
+        print("    %s = %s," %
               (add_whitespace("A1_idx_layer", space),
               format_array_string(self.A1_idx_layer, "%d")))
-        print("    %s = np.array(%s) * M_earth," % 
+        print("    %s = np.array(%s) * M_earth," %
               (add_whitespace("A1_M_layer", space),
               format_array_string(self.A1_M_layer / M_earth, "%.5g")))
-        print("    %s = %.5g * M_earth," % 
+        print("    %s = %.5g * M_earth," %
               (add_whitespace("M", space), self.M / M_earth))
         print("    %s = %.5g," % (add_whitespace("P_0", space), self.P_0))
         print("    %s = %.5g," % (add_whitespace("T_0", space), self.T_0))
@@ -2024,20 +2035,20 @@ class Planet():
         if self.num_layer > 1:
             print("    %s = %.5g," % (add_whitespace("P_1", space), self.P_1))
             print("    %s = %.5g," % (add_whitespace("T_1", space), self.T_1))
-            print("    %s = %.5g," % 
+            print("    %s = %.5g," %
                   (add_whitespace("rho_1", space), self.rho_1))
         if self.num_layer > 2:
             print("    %s = %.5g," % (add_whitespace("P_2", space), self.P_2))
             print("    %s = %.5g," % (add_whitespace("T_2", space), self.T_2))
-            print("    %s = %.5g," % 
+            print("    %s = %.5g," %
                   (add_whitespace("rho_2", space), self.rho_2))
         print("    %s = %.5g," % (add_whitespace("P_s", space), self.P_s))
         print("    %s = %.5g," % (add_whitespace("T_s", space), self.T_s))
         print("    %s = %.5g," % (add_whitespace("rho_s", space), self.rho_s))
         print("    %s = %.5g," %
-              (add_whitespace("I_MR2", space), 
+              (add_whitespace("I_MR2", space),
                self.I_MR2 / (self.M * self.R**2)))
-        print("    )")        
+        print("    )")
 
     def save_planet(self):
         Fp_planet = check_end(self.Fp_planet, ".hdf5")
@@ -2910,10 +2921,15 @@ class Planet():
             A1_r.append(A1_r[-1] + dr)
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
             A1_P.append(A1_P[-1] - G*A1_m_enc[-1]*A1_rho[-1]/(A1_r[-1]**2)*dr)
-            rho = weos._find_rho(A1_P[-1], mat_id_L3, self.A1_T_rho_type[2], self.A1_T_rho_args[2],
-                                 0.9*A1_rho[-1], A1_rho[-1], u_cold_array_L3)
+            rho = weos._find_rho(
+                A1_P[-1], mat_id_L3, self.A1_T_rho_type[2],
+                self.A1_T_rho_args[2], 0.9*A1_rho[-1], A1_rho[-1],
+                u_cold_array_L3, A1_T[i - 1], A1_rho[i - 1]
+                )
             A1_rho.append(rho)
-            A1_T.append(weos.T_rho(rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2], mat_id_L3))
+            A1_T.append(weos.T_rho(
+                rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2], mat_id_L3,
+                A1_T[i - 1], A1_rho[i - 1], A1_P[i]))
             A1_u.append(weos._find_u(rho, mat_id_L3, A1_T[-1], u_cold_array_L3))
             A1_mat_id.append(mat_id_L3)
 
@@ -3576,8 +3592,10 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
         P_e[i + 1] = P_e[i] + gradP
 
         if P_e[i + 1] >= P_s:
-            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                         rho_s - 10, rho_e[i], u_cold_array_L1)
+            rho_e[i + 1] = weos._find_rho(
+                P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
+                rho_e[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                )
         else:
             rho_e[i + 1] = 0.
             break
@@ -3588,8 +3606,10 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
         P_p[i + 1] = P_p[i] + gradP
 
         if P_p[i + 1] >= P_s:
-            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                     rho_s - 10, rho_p[i], u_cold_array_L1)
+            rho_p[i + 1] = weos._find_rho(
+                P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
+                rho_p[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                )
         else:
             rho_p[i + 1] = 0.
             break
@@ -3856,7 +3876,8 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
     P = np.zeros((mP.shape[0],))
 
     for k in range(mP.shape[0]):
-        T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
+        T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1,
+                       0, 0, 0)###WIP T_prv, rho_prv, P
         u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
         P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
 
@@ -4052,12 +4073,16 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
         P_e[i + 1] = P_e[i] + gradP
 
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_i:
-            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                     rho_s - 10, rho_e[i], u_cold_array_L1)
+            rho_e[i + 1] = weos._find_rho(
+                P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
+                rho_e[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         elif P_e[i + 1] >= P_s and P_e[i + 1] < P_i:
-            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                     rho_s - 10, rho_e[i], u_cold_array_L2)
+            rho_e[i + 1] = weos._find_rho(
+                P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
+                rho_e[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         else:
             rho_e[i + 1] = 0.
@@ -4069,12 +4094,16 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
         P_p[i + 1] = P_p[i] + gradP
 
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_i:
-            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                     rho_s - 10, rho_p[i], u_cold_array_L1)
+            rho_p[i + 1] = weos._find_rho(
+                P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
+                rho_p[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         elif P_p[i + 1] >= P_s and P_p[i + 1] < P_i:
-            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                     rho_s - 10, rho_p[i], u_cold_array_L2)
+            rho_p[i + 1] = weos._find_rho(
+                P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
+                rho_p[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         else:
             rho_p[i + 1] = 0.
@@ -4326,11 +4355,13 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
 
     for k in range(mP.shape[0]):
         if rho[k] > rho_i:
-            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
+            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1,
+                           0, 0, 0)###WIP T_prv, rho_prv, P
             u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
         else:
-            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2)
+            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2,
+                           0, 0, 0)###WIP T_prv, rho_prv, P
             u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
 
@@ -4555,16 +4586,22 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
         P_e[i + 1] = P_e[i] + gradP
 
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_12:
-            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                     rho_s - 10, rho_e[i], u_cold_array_L1)
+            rho_e[i + 1] = weos._find_rho(
+                P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
+                rho_e[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         elif P_e[i + 1] >= P_s and P_e[i + 1] >= P_23:
-            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                     rho_s - 10, rho_e[i], u_cold_array_L2)
+            rho_e[i + 1] = weos._find_rho(
+                P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
+                rho_e[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         elif P_e[i + 1] >= P_s:
-            rho_e[i + 1] = weos._find_rho(P_e[i + 1], mat_id_L3, T_rho_type_L3, T_rho_args_L3,
-                                     rho_s - 10, rho_e[i], u_cold_array_L3)
+            rho_e[i + 1] = weos._find_rho(
+                P_e[i + 1], mat_id_L3, T_rho_type_L3, T_rho_args_L3, rho_s - 10,
+                rho_e[i], u_cold_array_L3, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         else:
             rho_e[i + 1] = 0.
@@ -4576,16 +4613,22 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
         P_p[i + 1] = P_p[i] + gradP
 
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_12:
-            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                     rho_s - 10, rho_p[i], u_cold_array_L1)
+            rho_p[i + 1] = weos._find_rho(
+                P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
+                rho_p[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         elif P_p[i + 1] >= P_s and P_p[i + 1] >= P_23:
-            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-                                     rho_s - 10, rho_p[i], u_cold_array_L2)
+            rho_p[i + 1] = weos._find_rho(
+                P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
+                rho_p[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         elif P_p[i + 1] >= P_s:
-            rho_p[i + 1] = weos._find_rho(P_p[i + 1], mat_id_L3, T_rho_type_L3, T_rho_args_L3,
-                                     rho_s - 10, rho_p[i], u_cold_array_L3)
+            rho_p[i + 1] = weos._find_rho(
+                P_p[i + 1], mat_id_L3, T_rho_type_L3, T_rho_args_L3, rho_s - 10,
+                rho_p[i], u_cold_array_L3, 0, 0 ### WIP T_prv, rho_prv
+                )
 
         else:
             rho_p[i + 1] = 0.
@@ -4870,17 +4913,20 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
 
     for k in range(mP.shape[0]):
         if rho[k] > rho_12:
-            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
+            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1,
+                           0, 0, 0)###WIP T_prv, rho_prv, P
             u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
 
         elif rho[k] > rho_23:
-            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2)
+            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2,
+                           0, 0, 0)###WIP T_prv, rho_prv, P
             u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
 
         else:
-            T = weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3, mat_id_L3)
+            T = weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3, mat_id_L3,
+                           0, 0, 0)###WIP T_prv, rho_prv, P
             u[k] = weos._find_u(rho[k], mat_id_L3, T, u_cold_array_L3)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L3)
 

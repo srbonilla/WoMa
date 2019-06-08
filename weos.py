@@ -928,7 +928,7 @@ def u_cold(rho, mat_id, N):
     return u_cold
 
 @jit(nopython=True)
-def T_rho(rho, T_rho_type, T_rho_args, mat_id):
+def T_rho(rho, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P):
     """ Computes temperature given density (T = f(rho)).
 
         Args:
@@ -944,6 +944,10 @@ def T_rho(rho, T_rho_type, T_rho_args, mat_id):
             mat_id (int)]
                 The material ID.
 
+            T_prv, rho_prv, P (float)
+                The previous temperature (K), density (kg m^-3), and the
+                pressure (Pa). Required for the ideal gas adiabatic option.
+
         Returns:
             Temperature (SI)
     """
@@ -958,46 +962,18 @@ def T_rho(rho, T_rho_type, T_rho_args, mat_id):
     # Adiabatic, T_rho_args = [s_adb]
     elif T_rho_type == type_adb:
         s_adb   = T_rho_args[0]
-        if (mat_type == type_SESAME):
+        if mat_type == type_idg:
+            # du = T ds + P dV
+            #    = T ds - (P/rho^2) drho
+            du  = -P * rho**-2 * (rho - rho_prv)
+            return T_prv + du / _C_V(mat_id)
+        elif mat_type == type_SESAME:
             return T_rho_s_SESAME(rho, s_adb, mat_id)
-        elif (mat_type == type_idg):
-            raise ValueError("Entropy not implemented for this material type")
-        elif (mat_type == type_Til):
+        elif mat_type == type_Til:
             raise ValueError("Entropy not implemented for this material type")
 
     else:
         raise ValueError("T_rho_type not implemented")
-
-@jit(nopython=True)
-def P_rho(rho, mat_id, T_rho_type, T_rho_args):
-    """ Computes pressure using Tillotson EoS, and
-        internal energy = internal energy cold + C_V*Temperature
-        (which depends on rho and the relation between temperature and density).
-
-        Args:
-            rho (float)
-                Density (SI).
-
-            mat_id ([float])
-                Material id.
-
-            T_rho_type (int)
-                Relation between T and rho to be used.
-
-            T_rho_args (list):
-                Extra arguments to determine the relation
-
-        Returns:
-            P (float):
-                Pressure (SI).
-    """
-
-    N = 10000
-    C_V = _C_V(mat_id)
-    u = u_cold(rho, mat_id, N) + C_V*T_rho(rho, T_rho_type, T_rho_args, mat_id)
-    P = P_EoS(u, rho, mat_id)
-
-    return P
 
 @jit(nopython=True)
 def _create_u_cold_array(mat_id):
@@ -1079,12 +1055,13 @@ def _u_cold_tab(rho, mat_id, u_cold_array):
         raise ValueError("Invalid material ID")
 
 @jit(nopython=True)
-def _find_rho(P_s, mat_id, T_rho_type, T_rho_args, rho0, rho1, u_cold_array):
+def _find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1, u_cold_array,
+              T_prv, rho_prv):
     """ Root finder of the density for EoS using
         tabulated values of cold internal energy
 
         Args:
-            P_s (float):
+            P (float):
                 Pressure (SI).
 
             mat_id (int):
@@ -1114,36 +1091,36 @@ def _find_rho(P_s, mat_id, T_rho_type, T_rho_args, rho0, rho1, u_cold_array):
     #C_V       = _C_V(mat_id)
     tolerance = 1E-5
 
-    T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id)
+    T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
     u0 = _find_u(rho0, mat_id, T0, u_cold_array)
     P0 = P_EoS(u0, rho0, mat_id)
-    T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id)
+    T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
     u1 = _find_u(rho1, mat_id, T1, u_cold_array)
     P1 = P_EoS(u1, rho1, mat_id)
     rho2 = (rho0 + rho1)/2.
-    T2   = T_rho(rho2, T_rho_type, T_rho_args, mat_id)
+    T2   = T_rho(rho2, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
     u2   = _find_u(rho2, mat_id, T2, u_cold_array)
     P2   = P_EoS(u2, rho2, mat_id)
 
     rho_aux = rho0 + 1e-6
-    T_aux = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
+    T_aux = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
     u_aux   = _find_u(rho_aux, mat_id, T_aux, u_cold_array)
     P_aux   = P_EoS(u_aux, rho_aux, mat_id)
 
-    if ((P0 < P_s and P_s < P1) or (P0 > P_s and P_s > P1)):
+    if ((P0 < P and P < P1) or (P0 > P and P > P1)):
         while np.abs(rho1 - rho0) > tolerance:
-            T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id)
+            T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
             u0 = _find_u(rho0, mat_id, T0, u_cold_array)
             P0 = P_EoS(u0, rho0, mat_id)
-            T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id)
+            T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
             u1 = _find_u(rho1, mat_id, T1, u_cold_array)
             P1 = P_EoS(u1, rho1, mat_id)
-            T2 = T_rho(rho2, T_rho_type, T_rho_args, mat_id)
+            T2 = T_rho(rho2, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
             u2 = _find_u(rho2, mat_id, T2, u_cold_array)
             P2 = P_EoS(u2, rho2, mat_id)
 
-            f0 = P_s - P0
-            f2 = P_s - P2
+            f0 = P - P0
+            f2 = P - P2
 
             if f0*f2 > 0:
                 rho0 = rho2
@@ -1154,21 +1131,21 @@ def _find_rho(P_s, mat_id, T_rho_type, T_rho_args, rho0, rho1, u_cold_array):
 
         return rho2
 
-    elif (P0 == P_s and P_aux == P_s and P1 != P_s):
+    elif (P0 == P and P_aux == P and P1 != P):
         while np.abs(rho1 - rho0) > tolerance:
             rho2 = (rho0 + rho1)/2.
-            T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id)
+            T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
             u0 = _find_u(rho0, mat_id, T0, u_cold_array)
             P0 = P_EoS(u0, rho0, mat_id)
-            T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id)
+            T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
             u1 = _find_u(rho1, mat_id, T1, u_cold_array)
             P1 = P_EoS(u1, rho1, mat_id)
             rho2 = (rho0 + rho1)/2.
-            T2 = T_rho(rho2, T_rho_type, T_rho_args, mat_id)
+            T2 = T_rho(rho2, T_rho_type, T_rho_args, mat_id, T_prv, rho_prv, P)
             u2 = _find_u(rho2, mat_id, T2, u_cold_array)
             P2 = P_EoS(u2, rho2, mat_id)
 
-            if P2 == P_s:
+            if P2 == P:
                 rho0 = rho2
             else:
                 rho1 = rho2
@@ -1177,17 +1154,17 @@ def _find_rho(P_s, mat_id, T_rho_type, T_rho_args, rho0, rho1, u_cold_array):
 
         return rho2
 
-    elif P_s < P0 and P0 < P1:
+    elif P < P0 and P0 < P1:
         #print("Exception 1\n")
-        #print("P0: %.2f P1 %.2f P_s %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P_s/1e9,2)))
+        #print("P0: %.2f P1 %.2f P %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P/1e9,2)))
         return rho0
-    elif P_s > P1 and P0 < P1:
+    elif P > P1 and P0 < P1:
         #print("Exception 2\n")
-        #print("P0: %.2f P1 %.2f P_s %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P_s/1e9,2)))
+        #print("P0: %.2f P1 %.2f P %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P/1e9,2)))
         return rho1
     else:
         #print("Exception 3\n")
-        #print("P0: %.2f P1 %.2f P_s %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P_s/1e9,2)))
+        #print("P0: %.2f P1 %.2f P %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P/1e9,2)))
         return rho2
 
 def load_u_cold_array(mat_id):
@@ -1238,8 +1215,9 @@ def find_rho_fixed_P_T(P, T, mat_id):
     rho_max     = 1e5
     u_cold_array = load_u_cold_array(mat_id)
 
-    return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, u_cold_array)
-
+    return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, u_cold_array,
+                     0, 0)
+### Why do ^^^ and vvv both exist?
 @jit(nopython=True)
 def _find_rho_fixed_P_T(P, T, mat_id, u_cold_array):
     """ Root finder of the density for EoS using
@@ -1270,7 +1248,8 @@ def _find_rho_fixed_P_T(P, T, mat_id, u_cold_array):
     rho_min     = 1e-9
     rho_max     = 1e15
 
-    return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, u_cold_array)
+    return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, u_cold_array,
+                     0, 0)
 
 def find_P_fixed_T_rho(T, rho, mat_id):
     """ Finder of the pressure for EoS using
@@ -1421,13 +1400,16 @@ def set_T_rho_args(T, rho, T_rho_type, T_rho_args, mat_id):
             T_rho_args ([float])
                 T-rho parameters (for a single layer). See woma.Planet.
     """
+    mat_type    = mat_id // type_factor
+
     # T = K*rho**alpha, T_rho_args = [K, alpha]
     if T_rho_type == type_rho_pow:
         T_rho_args[0]   = T * rho**(-T_rho_args[1])
 
     # Adiabatic, T_rho_args = [s_adb]
     elif T_rho_type == type_adb:
-        T_rho_args[0]   = s_rho_T(rho, T, mat_id)
+        if mat_type == type_SESAME:
+            T_rho_args[0]   = s_rho_T(rho, T, mat_id)
 
     else:
         raise ValueError("T-rho relation not implemented")
