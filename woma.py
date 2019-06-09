@@ -1937,69 +1937,56 @@ class Planet():
 
     def print_info(self):
         """ Print the Planet objects's main properties. """
+        # Print and catch if any variables are None
+        def print_try(string, variables):
+            try:
+                print(string % variables)
+            except TypeError:
+                print("    %s = None" % variables[0])
+        
         space   = 12
-        print("Planet \"%s\": " % self.name)
-        print("    %s = %.5g kg = %.5g M_earth" %
-              (add_whitespace("M", space), self.M, self.M/M_earth))
-        print("    %s = %.5g m = %.5g R_earth" %
-              (add_whitespace("R", space), self.R, self.R/R_earth))
-        print("    %s = %s " % (add_whitespace("mat", space),
-              format_array_string(self.A1_mat_layer, "%s")))
-        print("    %s = %s " % (add_whitespace("mat_id", space),
-              format_array_string(self.A1_mat_id_layer, "%d")))
-        print("    %s = %s R_earth" % (add_whitespace("R_layer", space),
-              format_array_string(self.A1_R_layer / R_earth, "%.5g")))
-        print("    %s = %s M_earth" % (add_whitespace("M_layer", space),
-              format_array_string(self.A1_M_layer / M_earth, "%.5g")))
-        print("    %s = %s M_total" % (add_whitespace("M_frac_layer", space),
-              format_array_string(self.A1_M_layer / self.M, "%.5g")))
-        print("    %s = %s " % (add_whitespace("idx_layer", space),
-              format_array_string(self.A1_idx_layer, "%d")))
-        print("    %s = %.5g Pa" % (add_whitespace("P_0", space), self.P_0))
-        print("    %s = %.5g K" % (add_whitespace("T_0", space), self.T_0))
-        print("    %s = %.5g kg/m^3" % (add_whitespace("rho_0", space), self.rho_0))
-        if self.num_layer > 1:
-            print("    %s = %.5g Pa" % (add_whitespace("P_1", space), self.P_1))
-            print("    %s = %.5g K" % (add_whitespace("T_1", space), self.T_1))
-            print("    %s = %.5g kg/m^3" % (add_whitespace("rho_1", space), self.rho_1))
+        print_try("Planet \"%s\": ", self.name)
+        print_try("    %s = %.5g kg = %.5g M_earth",
+                  (add_whitespace("M", space), self.M, self.M/M_earth))
+        print_try("    %s = %.5g m = %.5g R_earth",
+                  (add_whitespace("R", space), self.R, self.R/R_earth))
+        print_try("    %s = %s ", (add_whitespace("mat", space),
+                  format_array_string(self.A1_mat_layer, "%s")))
+        print_try("    %s = %s ", (add_whitespace("mat_id", space),
+                  format_array_string(self.A1_mat_id_layer, "%d")))
+        print_try("    %s = %s R_earth", (add_whitespace("R_layer", space),
+                  format_array_string(self.A1_R_layer / R_earth, "%.5g")))
+        print_try("    %s = %s M_earth", (add_whitespace("M_layer", space),
+                  format_array_string(self.A1_M_layer / M_earth, "%.5g")))
+        print_try("    %s = %s M_total", (add_whitespace("M_frac_layer", space),
+                  format_array_string(self.A1_M_layer / self.M, "%.5g")))
+        print_try("    %s = %s ", (add_whitespace("idx_layer", space),
+                  format_array_string(self.A1_idx_layer, "%d")))
+        print_try("    %s = %.5g Pa", (add_whitespace("P_s", space), self.P_s))
+        print_try("    %s = %.5g K", (add_whitespace("T_s", space), self.T_s))
+        print_try("    %s = %.5g kg/m^3", 
+                  (add_whitespace("rho_s", space), self.rho_s))
         if self.num_layer > 2:
-            print("    %s = %.5g Pa" % (add_whitespace("P_2", space), self.P_2))
-            print("    %s = %.5g K" % (add_whitespace("T_2", space), self.T_2))
-            print("    %s = %.5g kg/m^3" % (add_whitespace("rho_2", space), self.rho_2))
-        print("    %s = %.5g Pa" % (add_whitespace("P_s", space), self.P_s))
-        print("    %s = %.5g K" % (add_whitespace("T_s", space), self.T_s))
-        print("    %s = %.5g kg/m^3" % (add_whitespace("rho_s", space), self.rho_s))
-        print("    %s = %.5g M_tot*R_tot^2" %
-              (add_whitespace("I_MR2", space), self.I_MR2/self.M/self.R/self.R))
-
-    def print_debug(self):
-        """ Print the Planet objects's main properties in a less pretty way than
-            print_info() but that won't complain with e.g. attributes that are
-            None, for debugging.
-        """
-        space   = 12
-        print("Planet \"", self.name, "\":")
-        print("    %s = " % add_whitespace("M", space), self.M)
-        print("    %s = " % add_whitespace("R", space), self.R)
-        print("    %s = " % add_whitespace("mat", space), self.A1_mat_layer)
-        print("    %s = " % add_whitespace("mat_id", space),
-              self.A1_mat_id_layer)
-        print("    %s = " % add_whitespace("R_layer", space), self.A1_R_layer)
-        print("    %s = " % add_whitespace("M_layer", space), self.A1_M_layer)
-        print("    %s = " % add_whitespace("M_frac_layer", space),
-              self.A1_M_layer)
-        try:
-            print("    %s = " % add_whitespace("idx_layer", space),
-                  self.A1_idx_layer)
-        except AttributeError:
-            pass
-        print("    %s = " % add_whitespace("P_s", space), self.P_s)
-        print("    %s = " % add_whitespace("T_s", space), self.T_s)
-        print("    %s = " % add_whitespace("rho_s", space), self.rho_s)
-        try:
-            print("    %s = " % add_whitespace("I_MR2", space), self.I_MR2)
-        except AttributeError:
-            pass
+            print_try("    %s = %.5g Pa",
+                      (add_whitespace("P_2", space), self.P_2))
+            print_try("    %s = %.5g K", 
+                      (add_whitespace("T_2", space), self.T_2))
+            print_try("    %s = %.5g kg/m^3", 
+                      (add_whitespace("rho_2", space), self.rho_2))
+        if self.num_layer > 1:
+            print_try("    %s = %.5g Pa", 
+                      (add_whitespace("P_1", space), self.P_1))
+            print_try("    %s = %.5g K", 
+                      (add_whitespace("T_1", space), self.T_1))
+            print_try("    %s = %.5g kg/m^3", 
+                      (add_whitespace("rho_1", space), self.rho_1))
+        print_try("    %s = %.5g Pa", (add_whitespace("P_0", space), self.P_0))
+        print_try("    %s = %.5g K", (add_whitespace("T_0", space), self.T_0))
+        print_try("    %s = %.5g kg/m^3", 
+                  (add_whitespace("rho_0", space), self.rho_0))
+        print_try("    %s = %.5g M_tot*R_tot^2",
+                  (add_whitespace("I_MR2", space), 
+                   self.I_MR2/self.M/self.R/self.R))
 
     def print_declaration(self):
         """ Print the Planet objects formatted as a declaration. """
@@ -2029,22 +2016,22 @@ class Planet():
               format_array_string(self.A1_M_layer / M_earth, "%.5g")))
         print("    %s = %.5g * M_earth," %
               (add_whitespace("M", space), self.M / M_earth))
-        print("    %s = %.5g," % (add_whitespace("P_0", space), self.P_0))
-        print("    %s = %.5g," % (add_whitespace("T_0", space), self.T_0))
-        print("    %s = %.5g," % (add_whitespace("rho_0", space), self.rho_0))
-        if self.num_layer > 1:
-            print("    %s = %.5g," % (add_whitespace("P_1", space), self.P_1))
-            print("    %s = %.5g," % (add_whitespace("T_1", space), self.T_1))
-            print("    %s = %.5g," %
-                  (add_whitespace("rho_1", space), self.rho_1))
+        print("    %s = %.5g," % (add_whitespace("P_s", space), self.P_s))
+        print("    %s = %.5g," % (add_whitespace("T_s", space), self.T_s))
+        print("    %s = %.5g," % (add_whitespace("rho_s", space), self.rho_s))
         if self.num_layer > 2:
             print("    %s = %.5g," % (add_whitespace("P_2", space), self.P_2))
             print("    %s = %.5g," % (add_whitespace("T_2", space), self.T_2))
             print("    %s = %.5g," %
                   (add_whitespace("rho_2", space), self.rho_2))
-        print("    %s = %.5g," % (add_whitespace("P_s", space), self.P_s))
-        print("    %s = %.5g," % (add_whitespace("T_s", space), self.T_s))
-        print("    %s = %.5g," % (add_whitespace("rho_s", space), self.rho_s))
+        if self.num_layer > 1:
+            print("    %s = %.5g," % (add_whitespace("P_1", space), self.P_1))
+            print("    %s = %.5g," % (add_whitespace("T_1", space), self.T_1))
+            print("    %s = %.5g," %
+                  (add_whitespace("rho_1", space), self.rho_1))
+        print("    %s = %.5g," % (add_whitespace("P_0", space), self.P_0))
+        print("    %s = %.5g," % (add_whitespace("T_0", space), self.T_0))
+        print("    %s = %.5g," % (add_whitespace("rho_0", space), self.rho_0))
         print("    %s = %.5g," %
               (add_whitespace("I_MR2", space),
                self.I_MR2 / (self.M * self.R**2)))
@@ -2912,7 +2899,7 @@ class Planet():
         # Set the T-rho relation
         self.A1_T_rho_args[2]   = weos.set_T_rho_args(
             A1_T[0], A1_rho[0], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
-            mat_id
+            mat_id_L3
             )
 
         # Integrate outwards until the minimum density (or zero pressure)
@@ -2924,12 +2911,13 @@ class Planet():
             rho = weos._find_rho(
                 A1_P[-1], mat_id_L3, self.A1_T_rho_type[2],
                 self.A1_T_rho_args[2], 0.9*A1_rho[-1], A1_rho[-1],
-                u_cold_array_L3, A1_T[i - 1], A1_rho[i - 1]
+                u_cold_array_L3, A1_T[-1], A1_rho[-1]
                 )
             A1_rho.append(rho)
             A1_T.append(weos.T_rho(
                 rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2], mat_id_L3,
-                A1_T[i - 1], A1_rho[i - 1], A1_P[i]))
+                A1_T[-1], A1_rho[-2], A1_P[-1])
+                )
             A1_u.append(weos._find_u(rho, mat_id_L3, A1_T[-1], u_cold_array_L3))
             A1_mat_id.append(mat_id_L3)
 
