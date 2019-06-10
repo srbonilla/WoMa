@@ -292,10 +292,9 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
         A1_rho[i]   = weos._find_rho(
             A1_P[i], mat_id, T_rho_type, T_rho_args, A1_rho[i - 1],
-            1.1*A1_rho[i - 1], u_cold_array, A1_T[i - 1], A1_rho[i - 1]
+            1.1*A1_rho[i - 1], u_cold_array
             )
-        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id,
-                                 A1_T[i - 1], A1_rho[i - 1], A1_P[i])
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
         A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
 
         if A1_m_enc[i] < 0:
@@ -577,10 +576,9 @@ def L2_integrate(
         A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
         A1_rho[i]   = weos._find_rho(
             A1_P[i], mat_id, T_rho_type, T_rho_args, rho0, 1.1*rho,
-            u_cold_array, A1_T[i - 1], A1_rho[i - 1]
+            u_cold_array
             )
-        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id,
-                                 A1_T[i - 1], A1_rho[i - 1], A1_P[i])
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
         A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
         A1_mat_id[i] = mat_id
 
@@ -1052,10 +1050,9 @@ def L3_integrate(
         A1_P[i]     = A1_P[i - 1] + G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
         A1_rho[i]   = weos._find_rho(
             A1_P[i], mat_id, T_rho_type, T_rho_args, rho0, 1.1*rho,
-            u_cold_array, A1_T[i - 1], A1_rho[i - 1]
+            u_cold_array
             )
-        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id,
-                                 A1_T[i - 1], A1_rho[i - 1], A1_P[i])
+        A1_T[i]     = weos.T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
         A1_u[i]     = weos._find_u(A1_rho[i], mat_id, A1_T[i], u_cold_array)
         A1_mat_id[i] = mat_id
 
@@ -2911,13 +2908,11 @@ class Planet():
             rho = weos._find_rho(
                 A1_P[-1], mat_id_L3, self.A1_T_rho_type[2],
                 self.A1_T_rho_args[2], 0.9*A1_rho[-1], A1_rho[-1],
-                u_cold_array_L3, A1_T[-1], A1_rho[-1]
+                u_cold_array_L3
                 )
             A1_rho.append(rho)
-            A1_T.append(weos.T_rho(
-                rho, self.A1_T_rho_type[2], self.A1_T_rho_args[2], mat_id_L3,
-                A1_T[-1], A1_rho[-2], A1_P[-1])
-                )
+            A1_T.append(weos.T_rho(rho, self.A1_T_rho_type[2], 
+                                   self.A1_T_rho_args[2], mat_id_L3))
             A1_u.append(weos._find_u(rho, mat_id_L3, A1_T[-1], u_cold_array_L3))
             A1_mat_id.append(mat_id_L3)
 
@@ -3582,7 +3577,7 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
         if P_e[i + 1] >= P_s:
             rho_e[i + 1] = weos._find_rho(
                 P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_e[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                rho_e[i], u_cold_array_L1
                 )
         else:
             rho_e[i + 1] = 0.
@@ -3596,7 +3591,7 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
         if P_p[i + 1] >= P_s:
             rho_p[i + 1] = weos._find_rho(
                 P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_p[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                rho_p[i], u_cold_array_L1
                 )
         else:
             rho_p[i + 1] = 0.
@@ -3864,8 +3859,7 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
     P = np.zeros((mP.shape[0],))
 
     for k in range(mP.shape[0]):
-        T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1,
-                       0, 0, 0)###WIP T_prv, rho_prv, P
+        T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
         u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
         P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
 
@@ -4063,13 +4057,13 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_i:
             rho_e[i + 1] = weos._find_rho(
                 P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_e[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                rho_e[i], u_cold_array_L1
                 )
 
         elif P_e[i + 1] >= P_s and P_e[i + 1] < P_i:
             rho_e[i + 1] = weos._find_rho(
                 P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
-                rho_e[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                rho_e[i], u_cold_array_L2
                 )
 
         else:
@@ -4084,13 +4078,13 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_i:
             rho_p[i + 1] = weos._find_rho(
                 P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_p[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                rho_p[i], u_cold_array_L1
                 )
 
         elif P_p[i + 1] >= P_s and P_p[i + 1] < P_i:
             rho_p[i + 1] = weos._find_rho(
                 P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
-                rho_p[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                rho_p[i], u_cold_array_L2
                 )
 
         else:
@@ -4343,13 +4337,11 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
 
     for k in range(mP.shape[0]):
         if rho[k] > rho_i:
-            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1,
-                           0, 0, 0)###WIP T_prv, rho_prv, P
+            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
             u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
         else:
-            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2,
-                           0, 0, 0)###WIP T_prv, rho_prv, P
+            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2)
             u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
 
@@ -4576,19 +4568,19 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_12:
             rho_e[i + 1] = weos._find_rho(
                 P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_e[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                rho_e[i], u_cold_array_L1
                 )
 
         elif P_e[i + 1] >= P_s and P_e[i + 1] >= P_23:
             rho_e[i + 1] = weos._find_rho(
                 P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
-                rho_e[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                rho_e[i], u_cold_array_L2
                 )
 
         elif P_e[i + 1] >= P_s:
             rho_e[i + 1] = weos._find_rho(
                 P_e[i + 1], mat_id_L3, T_rho_type_L3, T_rho_args_L3, rho_s - 10,
-                rho_e[i], u_cold_array_L3, 0, 0 ### WIP T_prv, rho_prv
+                rho_e[i], u_cold_array_L3
                 )
 
         else:
@@ -4603,19 +4595,19 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_12:
             rho_p[i + 1] = weos._find_rho(
                 P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_p[i], u_cold_array_L1, 0, 0 ### WIP T_prv, rho_prv
+                rho_p[i], u_cold_array_L1
                 )
 
         elif P_p[i + 1] >= P_s and P_p[i + 1] >= P_23:
             rho_p[i + 1] = weos._find_rho(
                 P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
-                rho_p[i], u_cold_array_L2, 0, 0 ### WIP T_prv, rho_prv
+                rho_p[i], u_cold_array_L2
                 )
 
         elif P_p[i + 1] >= P_s:
             rho_p[i + 1] = weos._find_rho(
                 P_p[i + 1], mat_id_L3, T_rho_type_L3, T_rho_args_L3, rho_s - 10,
-                rho_p[i], u_cold_array_L3, 0, 0 ### WIP T_prv, rho_prv
+                rho_p[i], u_cold_array_L3
                 )
 
         else:
@@ -4901,20 +4893,17 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
 
     for k in range(mP.shape[0]):
         if rho[k] > rho_12:
-            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1,
-                           0, 0, 0)###WIP T_prv, rho_prv, P
+            T = weos.T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
             u[k] = weos._find_u(rho[k], mat_id_L1, T, u_cold_array_L1)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L1)
 
         elif rho[k] > rho_23:
-            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2,
-                           0, 0, 0)###WIP T_prv, rho_prv, P
+            T = weos.T_rho(rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2)
             u[k] = weos._find_u(rho[k], mat_id_L2, T, u_cold_array_L2)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L2)
 
         else:
-            T = weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3, mat_id_L3,
-                           0, 0, 0)###WIP T_prv, rho_prv, P
+            T = weos.T_rho(rho[k], T_rho_type_L3, T_rho_args_L3, mat_id_L3)
             u[k] = weos._find_u(rho[k], mat_id_L3, T, u_cold_array_L3)
             P[k] = weos.P_EoS(u[k], rho[k], mat_id_L3)
 
