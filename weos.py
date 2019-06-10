@@ -6,7 +6,7 @@ Created on Mon Apr  1 10:38:18 2019
 @author: Sergio Ruiz-Bonilla
 """
 # ============================================================================ #
-# ===================== Libraries and constants ============================== #
+#                       Libraries and constants                                #
 # ============================================================================ #
 
 import numpy as np
@@ -250,7 +250,7 @@ def load_table_SESAME(Fp_table):
 
 
 # ============================================================================ #
-# ===================== Functions ============================================ #
+#                       Functions                                              #
 # ============================================================================ #
 
 @jit(nopython=True)
@@ -599,7 +599,7 @@ def s_rho_T_SESAME(rho, T, mat_id):
     # s(rho, T)
     s   = ((1 - intp_rho) * ((1 - intp_T) * s_1 + intp_T * s_2)
            + intp_rho * ((1 - intp_T) * s_3 + intp_T * s_4))
-
+    
     return s
 
 @jit(nopython=True)
@@ -677,9 +677,13 @@ def T_rho_s_SESAME(rho, s, mat_id):
                                  + intp_s_1 * A1_log_T[idx_s_1 + 1])
                + intp_rho * ((1 - intp_s_2) * A1_log_T[idx_s_2]
                              + intp_s_2 * A1_log_T[idx_s_2 + 1]))
-
+    
     # Convert back from log
-    return np.exp(log_T)
+    T   = np.exp(log_T)
+    if T < 0:
+        T   = 0
+
+    return T
 
 @jit(nopython=True)
 def _P_u_rho_Till(u, rho, mat_id):
@@ -1359,7 +1363,7 @@ def s_rho_T(rho, T, mat_id):
     """
     mat_type    = mat_id // type_factor
     if (mat_type == type_SESAME):
-        return s_rho_T_SESAME(T, rho, mat_id)
+        return s_rho_T_SESAME(rho, T, mat_id)
     elif (mat_type == type_idg):
         raise ValueError("Entropy not implemented for this material")
     elif (mat_type == type_Til):
