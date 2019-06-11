@@ -2893,7 +2893,7 @@ class Planet():
         A1_rho      = [weos._find_rho_fixed_P_T(A1_P[0], A1_T[0], mat_id_L3,
                                                 u_cold_array_L3)]
 
-        # Set the T-rho relation
+        # Set any T-rho relation variables
         self.A1_T_rho_args[2]   = weos.set_T_rho_args(
             A1_T[0], A1_rho[0], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
             mat_id_L3
@@ -2905,6 +2905,11 @@ class Planet():
             A1_r.append(A1_r[-1] + dr)
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
             A1_P.append(A1_P[-1] - G*A1_m_enc[-1]*A1_rho[-1]/(A1_r[-1]**2)*dr)
+            # Update T-rho relation variables 
+            if (self.A1_T_rho_type[2] == weos.type_adb and
+                mat_id_L3 == weos.id_HM80_HHe):
+                # T_rho_args = [rho_prv, T_prv]
+                self.A1_T_rho_args[2]   = [A1_rho[-1], A1_T[-1]]
             rho = weos._find_rho(
                 A1_P[-1], mat_id_L3, self.A1_T_rho_type[2],
                 self.A1_T_rho_args[2], 0.9*A1_rho[-1], A1_rho[-1],

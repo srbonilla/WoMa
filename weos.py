@@ -90,10 +90,14 @@ type_adb        = 2
 
 # Local data files
 dir_data    = "data/"
-# Cold curves
+# Tillotson cold curves
 Fp_u_cold_Til_iron      = dir_data + "u_cold_array_Til_iron.npy"
 Fp_u_cold_Til_granite   = dir_data + "u_cold_array_Til_granite.npy"
 Fp_u_cold_Til_water     = dir_data + "u_cold_array_Til_water.npy"
+# HM80 tables
+Fp_HM80_HHe         = dir_data + "HM80_HHe.txt"
+Fp_HM80_ice         = dir_data + "HM80_ice.txt"
+Fp_HM80_rock        = dir_data + "HM80_rock.txt"
 # SESAME tables
 Fp_SESAME_iron      = dir_data + "SESAME_iron_2140.txt"
 Fp_SESAME_basalt    = dir_data + "SESAME_basalt_7530.txt"
@@ -150,6 +154,66 @@ def find_index_and_interp(x, A1_x):
    intp    = (x - A1_x[idx]) / (A1_x[idx + 1] - A1_x[idx])
 
    return np.array([idx, intp])
+   
+# HM80
+def load_table_HM80(Fp_table):
+    """ Load and return the table file data.
+
+        # header (four lines)
+        log_rho_min  log_rho_max  num_rho  log_u_min  log_u_max  num_u
+        P_0_0   P_0_1   ...     P_0_num_u           # Array of pressures
+        P_1_0   ...     ...     P_1_num_u
+        ...     ...     ...     ...
+        P_num_rho_0     ...     P_num_rho_num_u
+        T_0_0   T_0_1   ...     T_0_num_u           # Array of temperatures
+        T_1_0   ...     ...     T_1_num_u
+        ...     ...     ...     ...
+        T_num_rho_0     ...     T_num_rho_num_u
+
+        Returns:
+            ###update
+            A2_log_P, A2_log_T ([[float]])
+                2D arrays of natural logarithms of pressure (Pa) and
+                temperature (K).
+    """
+    # Parameters
+    log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u  = (
+        np.genfromtxt(Fp_table, skip_header=4, max_rows=1))
+    
+    # Tables
+    A2_data = np.loadtxt(Fp_table, skiprows=5)
+
+    num_rho = int(num_rho)
+    num_u   = int(num_u)
+    A2_P    = A2_data[:num_rho]
+    A2_T    = A2_data[num_rho:]
+
+    assert A2_P.shape == (num_rho, num_u)
+    assert A2_T.shape == (num_rho, num_u)
+    
+    log_rho_step    = (log_rho_max - log_rho_min) / (num_rho - 1)
+    log_u_step      = (log_u_max - log_u_min) / (num_u - 1)
+
+    return (log_rho_min, log_rho_max, num_rho, log_rho_step, log_u_min, 
+            log_u_max, num_u, log_u_step, np.log(A2_P), np.log(A2_T))
+
+# Assume H2-He mass fraction x = 0.75 = 2*n_H2 / (2*n_H2 + 4*n_He) --> ratio:
+n_H2_n_He   = 2 / (1/0.75 - 1)
+m_mol_HHe   = (2*n_H2_n_He + 4) / (n_H2_n_He + 1)
+
+# HM80 data as global variables
+(log_rho_min_HM80_HHe, log_rho_max_HM80_HHe, num_rho_HM80_HHe, 
+ log_rho_step_HM80_HHe, log_u_min_HM80_HHe, log_u_max_HM80_HHe, num_u_HM80_HHe, 
+ log_u_step_HM80_HHe, A2_log_P_HM80_HHe, A2_log_T_HM80_HHe
+ )  = load_table_HM80(Fp_HM80_HHe)
+(log_rho_min_HM80_ice, log_rho_max_HM80_ice, num_rho_HM80_ice, 
+ log_rho_step_HM80_ice, log_u_min_HM80_ice, log_u_max_HM80_ice, num_u_HM80_ice, 
+ log_u_step_HM80_ice, A2_log_P_HM80_ice, A2_log_T_HM80_ice
+ )  = load_table_HM80(Fp_HM80_ice)
+(log_rho_min_HM80_rock, log_rho_max_HM80_rock, num_rho_HM80_rock, 
+ log_rho_step_HM80_rock, log_u_min_HM80_rock, log_u_max_HM80_rock, num_u_HM80_rock, 
+ log_u_step_HM80_rock, A2_log_P_HM80_rock, A2_log_T_HM80_rock
+ )  = load_table_HM80(Fp_HM80_rock)
 
 # SESAME
 def load_table_SESAME(Fp_table):
@@ -252,7 +316,221 @@ def load_table_SESAME(Fp_table):
 # ============================================================================ #
 #                       Functions                                              #
 # ============================================================================ #
+# ========
+# Ideal Gas
+# ========
+@jit(nopython=True)
+def idg_gamma(mat_id):
+    """ Return the adiabatic index gamma for an ideal gas. """
+    if mat_id == id_idg_HHe:
+        return 1.4
+    elif mat_id == id_idg_N2:
+        return 1.4
+    elif mat_id == id_idg_CO2:
+        return 1.29
+    else:
+        raise ValueError("Invalid material ID")
 
+@jit(nopython=True)
+def _P_u_rho_idg(u, rho, mat_id):
+    """ Computes pressure for the ideal gas EoS.
+
+        Args:
+            u (double)
+                Specific internal energy (SI).
+
+            rho (double)
+                Density (SI).
+
+            mat_id (int)
+                Material id.
+
+        Returns:
+            P (double)
+                Pressure (SI).
+    """
+    # Adiabatic constant
+    gamma    = idg_gamma(mat_id)
+
+    P = (gamma - 1)*u*rho
+
+    return P
+    
+# ========
+# Hubbard and MacFarlane (1980)
+# ========
+@jit(nopython=True)
+def P_rho_u_HM80(rho, u, mat_id):
+    """ Return the HM80 equation of state pressure as a function of density and 
+        sp. int. energy.
+
+        Args:
+            rho (float)
+                Density (kg m^-3).
+
+            u (float)
+                Specific internal energy (J kg^-1).
+
+            mat_id (int)
+                Material id.
+
+        Returns:
+            P (float)
+                Pressure (Pa).
+    """
+    # Choose the arrays from the global variables
+    if (mat_id == id_HM80_HHe):
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step,  
+         A2_log_P)  = (
+            log_rho_min_HM80_HHe, num_rho_HM80_HHe, log_rho_step_HM80_HHe, 
+            log_u_min_HM80_HHe, num_u_HM80_HHe, log_u_step_HM80_HHe,
+            A2_log_P_HM80_HHe
+            )
+    elif (mat_id == id_HM80_ice):
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, 
+         A2_log_P)  = (
+            log_rho_min_HM80_ice, num_rho_HM80_ice, log_rho_step_HM80_ice, 
+            log_u_min_HM80_ice, num_u_HM80_ice, log_u_step_HM80_ice,
+            A2_log_P_HM80_ice
+            )
+    elif (mat_id == id_HM80_rock):
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, 
+         A2_log_P)  = (
+            log_rho_min_HM80_rock, num_rho_HM80_rock, log_rho_step_HM80_rock, 
+            log_u_min_HM80_rock, num_u_HM80_rock, log_u_step_HM80_rock,
+            A2_log_P_HM80_rock
+            )
+    else:
+       raise ValueError("Invalid material ID")
+
+    # Convert to log
+    log_rho = np.log(rho)
+    log_u   = np.log(u)
+
+    # 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u).
+    # If rho and/or u are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    idx_rho = int(np.floor((log_rho - log_rho_min) / log_rho_step))
+    idx_u   = int(np.floor((log_u - log_u_min) / log_u_step))
+
+    # Check if outside the table
+    if idx_rho == -1:
+        idx_rho = 0
+    elif idx_rho >= num_rho - 1:
+        idx_rho = num_rho - 2
+    if idx_u == -1:
+        idx_u   = 0
+    elif idx_u >= num_u - 1:
+        idx_u   = num_u - 2
+
+    intp_rho    = (log_rho - log_rho_min - idx_rho*log_rho_step) / log_rho_step
+    intp_u      = (log_u - log_u_min - idx_u*log_u_step) / log_u_step
+
+    log_P_1 = A2_log_P[idx_rho, idx_u]
+    log_P_2 = A2_log_P[idx_rho, idx_u + 1]
+    log_P_3 = A2_log_P[idx_rho + 1, idx_u]
+    log_P_4 = A2_log_P[idx_rho + 1, idx_u + 1]
+
+    # log_P(rho, u)
+    log_P   = ((1 - intp_rho) * ((1 - intp_u) * log_P_1 + intp_u * log_P_2)
+               + intp_rho * ((1 - intp_u) * log_P_3 + intp_u * log_P_4))
+
+    # Convert back from log
+    return np.exp(log_P)
+
+@jit(nopython=True)
+def C_V_rho_T_HM80_HHe(rho, T):
+    """ Return the HM80 hydrogen-helium sp. heat capacity as a function of 
+        density and temperature.
+
+        Args:
+            rho (float)
+                Density (kg m^-3).
+
+            T (float)
+                Temperature (K).
+
+        Returns:
+            C_V (float)
+                Specific heat capacity (J kg^-1 K^-1).
+    """
+    # Convert to cgs for HM80's units
+    rho_cgs = rho * 1e-3
+
+    A1_c    = [2.3638, -4.9842e-5, 1.1788e-8, -3.8101e-4, 2.6182, 0.45053]
+
+    C_V = (A1_c[0] + A1_c[1]*T + A1_c[2]*T**2 + A1_c[3]*T*rho_cgs 
+           + A1_c[4]*rho_cgs + A1_c[5]*rho_cgs**2) * R_gas*1e7 / m_mol_HHe
+
+    # Convert back to SI
+    return C_V * 1e-4
+
+@jit(nopython=True)
+def u_rho_T_HM80(rho, T, mat_id):
+    """ Return the HM80 equation of state sp. int. energy as a function of 
+        density and temperature.
+
+        Args:
+            rho (float)
+                Density (kg m^-3).
+
+            T (float)
+                Temperature (K)
+
+            mat_id (int)
+                Material id.
+
+        Returns:
+            u (float)
+                Specific internal energy (J kg^-1).
+    """
+    if mat_id == id_HM80_HHe:
+        # No cold curve
+        u_cold  = 0
+        
+        C_V     = C_V_rho_T_HM80_HHe(rho, T)
+    else:
+        raise ValueError("Non-HHe HM80 materials not fully implemented yet")
+
+    return u_cold + C_V * T
+
+@jit(nopython=True)
+def T_rho_HM80_HHe(rho, rho_prv, T_prv):
+    """ Return the HM80 equation of state temperature as a function of density
+        for the hydrogen-helium atmosphere.
+
+        Args:
+            rho (float)
+                Density (kg m^-3).
+                
+            rho_prv, T_prv (float)
+                The previous density (kg m^-3) and temperature (K).
+
+        Returns:
+            T (float)
+                Temperature (K).
+    """
+    # Convert to cgs and x,y for HM80's units
+    x       = np.log(rho * 1e-3 / 5)
+    x_prv   = np.log(rho_prv * 1e-3 / 5)
+    y_prv   = np.log(T_prv)
+    
+    # HM80 parameters
+    A1_b    = [0.328471, 0.0286529, -0.00139609, -0.0231158, 0.0579055,
+               0.0454488]
+
+    def dy_dx(x, y):
+        return (A1_b[0] + A1_b[1]*y + A1_b[2]*y**2 + A1_b[3]*x*y + A1_b[4]*x
+                + A1_b[5]*x**2)
+        
+    y   = y_prv + dy_dx(x_prv, y_prv) * (x - x_prv)
+
+    return np.exp(y)
+
+# ========
+# SESAME
+# ========
 @jit(nopython=True)
 def _P_u_rho_SESAME(u, rho, mat_id):
     """ Computes pressure for the SESAME EoS.
@@ -775,43 +1053,9 @@ def _P_u_rho_Till(u, rho, mat_id):
 
     return P
 
-@jit(nopython=True)
-def idg_gamma(mat_id):
-    """ Return the adiabatic index gamma for an ideal gas. """
-    if mat_id == id_idg_HHe:
-        return 1.4
-    elif mat_id == id_idg_N2:
-        return 1.4
-    elif mat_id == id_idg_CO2:
-        return 1.29
-    else:
-        raise ValueError("Invalid material ID")
-
-@jit(nopython=True)
-def _P_u_rho_idg(u, rho, mat_id):
-    """ Computes pressure for the ideal gas EoS.
-
-        Args:
-            u (double)
-                Specific internal energy (SI).
-
-            rho (double)
-                Density (SI).
-
-            mat_id (int)
-                Material id.
-
-        Returns:
-            P (double)
-                Pressure (SI).
-    """
-    # Adiabatic constant
-    gamma    = idg_gamma(mat_id)
-
-    P = (gamma - 1)*u*rho
-
-    return P
-
+# ========
+# General
+# ========
 @jit(nopython=True)
 def P_EoS(u, rho, mat_id):
     """ Computes pressure for a given material.
@@ -835,6 +1079,8 @@ def P_EoS(u, rho, mat_id):
         return _P_u_rho_idg(u, rho, mat_id)
     elif (mat_type == type_Til):
         return _P_u_rho_Till(u, rho, mat_id)
+    elif (mat_type == type_HM80):
+        return P_rho_u_HM80(rho, u, mat_id)
     elif (mat_type == type_SESAME):
         return _P_u_rho_SESAME(u, rho, mat_id)
     else:
@@ -885,13 +1131,13 @@ def _C_V(mat_id):
         return 742.36
     elif mat_id == id_idg_CO2:
         return 661.38
-    elif (mat_id == id_Til_iron):
+    elif mat_id == id_Til_iron:
         return 449.
-    elif (mat_id == id_Til_granite):
+    elif mat_id == id_Til_granite:
         return 790.
-    elif (mat_id == id_Til_water):
+    elif mat_id == id_Til_water:
         return 4186.
-    elif (mat_type == type_SESAME):
+    elif mat_type == type_SESAME:
         return 0.
     else:
         raise ValueError("Invalid material ID")
@@ -915,7 +1161,7 @@ def u_cold(rho, mat_id, N):
                 Cold Specific internal energy (SI).
     """
     mat_type    = mat_id // type_factor
-    if (mat_type in [type_idg, type_SESAME]):
+    if (mat_type in [type_idg, type_HM80, type_SESAME]):
         return 0.
     elif (mat_type == type_Til):
         rho0 = _rho_0_material(mat_id)
@@ -957,12 +1203,14 @@ def T_rho(rho, T_rho_type, T_rho_args, mat_id):
         alpha   = T_rho_args[1]
         return K * rho**alpha
 
-    # Adiabatic, T_rho_args = [s_adb] or [T rho^(1-gamma)]
+    # Adiabatic, T_rho_args = [s_adb], [rho_prv, T_prv], or [T rho^(1-gamma)]
     elif T_rho_type == type_adb:
         if mat_type == type_idg:
             # T rho^(1-gamma) = constant
             gamma   = idg_gamma(mat_id)
             return T_rho_args[0] * rho**(gamma - 1)
+        elif mat_id == id_HM80_HHe:
+            return T_rho_HM80_HHe(rho, T_rho_args[0], T_rho_args[1])
         elif mat_type == type_SESAME:
             return T_rho_s_SESAME(rho, T_rho_args[0], mat_id)
         elif mat_type == type_Til:
@@ -1083,22 +1331,20 @@ def _find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1, u_cold_array):
                 Value of the density which satisfies P(u(rho), rho) = 0
                 (SI).
     """
-    #C_V       = _C_V(mat_id)
     tolerance = 1E-5
 
-    T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id)
-    u0 = _find_u(rho0, mat_id, T0, u_cold_array)
-    P0 = P_EoS(u0, rho0, mat_id)
-    T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id)
-    u1 = _find_u(rho1, mat_id, T1, u_cold_array)
-    P1 = P_EoS(u1, rho1, mat_id)
-    rho2 = (rho0 + rho1)/2.
-    T2   = T_rho(rho2, T_rho_type, T_rho_args, mat_id)
-    u2   = _find_u(rho2, mat_id, T2, u_cold_array)
-    P2   = P_EoS(u2, rho2, mat_id)
-
+    T0      = T_rho(rho0, T_rho_type, T_rho_args, mat_id)
+    u0      = _find_u(rho0, mat_id, T0, u_cold_array)
+    P0      = P_EoS(u0, rho0, mat_id)
+    T1      = T_rho(rho1, T_rho_type, T_rho_args, mat_id)
+    u1      = _find_u(rho1, mat_id, T1, u_cold_array)
+    P1      = P_EoS(u1, rho1, mat_id)
+    rho2    = (rho0 + rho1)/2.
+    T2      = T_rho(rho2, T_rho_type, T_rho_args, mat_id)
+    u2      = _find_u(rho2, mat_id, T2, u_cold_array)
+    P2      = P_EoS(u2, rho2, mat_id)    
     rho_aux = rho0 + 1e-6
-    T_aux = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
+    T_aux   = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
     u_aux   = _find_u(rho_aux, mat_id, T_aux, u_cold_array)
     P_aux   = P_EoS(u_aux, rho_aux, mat_id)
 
@@ -1150,16 +1396,10 @@ def _find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1, u_cold_array):
         return rho2
 
     elif P < P0 and P0 < P1:
-        #print("Exception 1\n")
-        #print("P0: %.2f P1 %.2f P %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P/1e9,2)))
         return rho0
     elif P > P1 and P0 < P1:
-        #print("Exception 2\n")
-        #print("P0: %.2f P1 %.2f P %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P/1e9,2)))
         return rho1
     else:
-        #print("Exception 3\n")
-        #print("P0: %.2f P1 %.2f P %.2f" %(round(P0/1e9,2), round(P1/1e9,2), round(P/1e9,2)))
         return rho2
 
 def load_u_cold_array(mat_id):
@@ -1171,7 +1411,7 @@ def load_u_cold_array(mat_id):
                 with function _create_u_cold_array() (SI).
     """
     mat_type    = mat_id // type_factor
-    if (mat_type in [type_idg, type_SESAME]):
+    if mat_type in [type_idg, type_HM80, type_SESAME]:
         return np.array([0.])
     elif mat_id == id_Til_iron:
         u_cold_array = np.load(Fp_u_cold_Til_iron)
@@ -1206,7 +1446,7 @@ def find_rho_fixed_P_T(P, T, mat_id):
     P = float(P)
     T = float(T)
 
-    rho_min     = 1e-3
+    rho_min     = 1e-1
     rho_max     = 1e5
     u_cold_array = load_u_cold_array(mat_id)
 
@@ -1239,8 +1479,8 @@ def _find_rho_fixed_P_T(P, T, mat_id, u_cold_array):
     P = float(P)
     T = float(T)
 
-    rho_min     = 1e-9
-    rho_max     = 1e15
+    rho_min     = 1e-1
+    rho_max     = 1e5
 
     return _find_rho(P, mat_id, 1, [T, 0.], rho_min, rho_max, u_cold_array)
 
@@ -1330,16 +1570,19 @@ def plot_eos_T_vs_rho_fixed_P(mat_id, P_array=np.logspace(6, 11, 4),
 @jit(nopython=True)
 def _find_u(rho, mat_id, T, u_cold_array):
     mat_type    = mat_id // type_factor
-    if (mat_type == type_SESAME):
-        u   = u_rho_T_SESAME(rho, T, mat_id)
-
-    elif (mat_type == type_idg):
+    if (mat_type == type_idg):
         u = _C_V(mat_id)*T
 
     elif (mat_type == type_Til):
         C_V = _C_V(mat_id)
 
         u = _u_cold_tab(rho, mat_id, u_cold_array) + C_V*T
+        
+    elif (mat_type == type_HM80):
+        u   = u_rho_T_HM80(rho, T, mat_id)
+        
+    elif (mat_type == type_SESAME):
+        u   = u_rho_T_SESAME(rho, T, mat_id)
 
     return u
 
@@ -1367,6 +1610,8 @@ def s_rho_T(rho, T, mat_id):
     elif (mat_type == type_idg):
         raise ValueError("Entropy not implemented for this material")
     elif (mat_type == type_Til):
+        raise ValueError("Entropy not implemented for this material")
+    elif (mat_type == type_HM80):
         raise ValueError("Entropy not implemented for this material")
 
 @jit(nopython=True)
@@ -1399,11 +1644,16 @@ def set_T_rho_args(T, rho, T_rho_type, T_rho_args, mat_id):
     if T_rho_type == type_rho_pow:
         T_rho_args[0]   = T * rho**(-T_rho_args[1])
 
-    # Adiabatic, T_rho_args = [s_adb] or [T rho^(1-gamma)]
+    # Adiabatic, T_rho_args = [s_adb,], [A2_x_y_adb_HM80_HHe], or 
+    # [T rho^(1-gamma),]
     elif T_rho_type == type_adb:
         if mat_type == type_idg:
             gamma   = idg_gamma(mat_id)
             T_rho_args[0]   = T * rho**(1 - gamma)
+            
+        elif mat_id == id_HM80_HHe:
+            pass
+            
         elif mat_type == type_SESAME:
             T_rho_args[0]   = s_rho_T(rho, T, mat_id)
 
