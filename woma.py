@@ -1921,13 +1921,13 @@ class Planet():
         self.T_0    = self.A1_T[0]
         self.rho_0  = self.A1_rho[0]
         if self.num_layer > 1:
-            self.P_0    = self.A1_P[self.A1_idx_layer[0]]
-            self.T_0    = self.A1_T[self.A1_idx_layer[0]]
-            self.rho_0  = self.A1_rho[self.A1_idx_layer[0]]
+            self.P_1    = self.A1_P[self.A1_idx_layer[0]]
+            self.T_1    = self.A1_T[self.A1_idx_layer[0]]
+            self.rho_1  = self.A1_rho[self.A1_idx_layer[0]]
         if self.num_layer > 2:
-            self.P_1    = self.A1_P[self.A1_idx_layer[1]]
-            self.T_1    = self.A1_T[self.A1_idx_layer[1]]
-            self.rho_1  = self.A1_rho[self.A1_idx_layer[1]]
+            self.P_2    = self.A1_P[self.A1_idx_layer[1]]
+            self.T_2    = self.A1_T[self.A1_idx_layer[1]]
+            self.rho_2  = self.A1_rho[self.A1_idx_layer[1]]
         self.P_s    = self.A1_P[-1]
         self.T_s    = self.A1_T[-1]
         self.rho_s  = self.A1_rho[-1]
@@ -1948,7 +1948,7 @@ class Planet():
         print_try("    %s = %.5g m = %.5g R_earth",
                   (add_whitespace("R", space), self.R, self.R/R_earth))
         print_try("    %s = %s ", (add_whitespace("mat", space),
-                  format_array_string(self.A1_mat_layer, "%s")))
+                  format_array_string(self.A1_mat_layer, "string")))
         print_try("    %s = %s ", (add_whitespace("mat_id", space),
                   format_array_string(self.A1_mat_id_layer, "%d")))
         print_try("    %s = %s R_earth", (add_whitespace("R_layer", space),
@@ -2926,14 +2926,15 @@ class Planet():
                 print("Layer 3 goes out too far!")
                 break
 
-        # Apppend the new layer to the profiles
-        self.A1_r       = np.append(self.A1_r, A1_r[1:])
-        self.A1_m_enc   = np.append(self.A1_m_enc, A1_m_enc[1:])
-        self.A1_P       = np.append(self.A1_P, A1_P[1:])
-        self.A1_T       = np.append(self.A1_T, A1_T[1:])
-        self.A1_rho     = np.append(self.A1_rho, A1_rho[1:])
-        self.A1_u       = np.append(self.A1_u, A1_u[1:])
-        self.A1_mat_id  = np.append(self.A1_mat_id, A1_mat_id[1:])
+        # Apppend the new layer to the profiles, removing the final too-low 
+        # density or non-positive pressure step
+        self.A1_r       = np.append(self.A1_r, A1_r[1:-1])
+        self.A1_m_enc   = np.append(self.A1_m_enc, A1_m_enc[1:-1])
+        self.A1_P       = np.append(self.A1_P, A1_P[1:-1])
+        self.A1_T       = np.append(self.A1_T, A1_T[1:-1])
+        self.A1_rho     = np.append(self.A1_rho, A1_rho[1:-1])
+        self.A1_u       = np.append(self.A1_u, A1_u[1:-1])
+        self.A1_mat_id  = np.append(self.A1_mat_id, A1_mat_id[1:-1])
 
         self.update_attributes()
         self.print_info()
