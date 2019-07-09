@@ -124,14 +124,14 @@ plot_spin_profile(l1_test_sp)
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l1_test_sp,
-    N_particles = 1e5)
+    N_particles = 1e7)
 
 positions = np.array([particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z]).T
 velocities = np.array([particles.A1_picle_vx, particles.A1_picle_vy, particles.A1_picle_vz]).T
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '1layer_10e5.hdf5'
+filename = '1layer_10e7.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, positions, velocities,
                              particles.A1_picle_m, particles.A1_picle_h,
@@ -159,7 +159,7 @@ l2_test = woma.Planet(
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
-plot_spherical_profile(l2_test)
+#plot_spherical_profile(l2_test)
 
 l2_test_sp = woma.SpinPlanet(
     name         = 'sp_planet',
@@ -171,19 +171,19 @@ l2_test_sp = woma.SpinPlanet(
 
 l2_test_sp.spin()
 
-plot_spin_profile(l2_test_sp)
+#plot_spin_profile(l2_test_sp)
 
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l2_test_sp,
-    N_particles = 1e5)
+    N_particles = 1e7)
 
 positions = np.array([particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z]).T
 velocities = np.array([particles.A1_picle_vx, particles.A1_picle_vy, particles.A1_picle_vz]).T
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '2layer_10e5.hdf5'
+filename = '2layer_10e7.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, positions, velocities,
                              particles.A1_picle_m, particles.A1_picle_h,
@@ -451,4 +451,117 @@ ax[0].legend(title='Iteration', markerscale=3)
 ax[1].legend(title='Iteration', markerscale=3)
 
 plt.tight_layout()
+plt.show()
+
+# Particle placement overdensities plot
+l1_test = woma.Planet(
+    name            = "prof_pE",
+    A1_mat_layer    = ['Til_granite'],
+    A1_T_rho_type   = [1],
+    A1_T_rho_args   = [[None, 0.]],
+    A1_R_layer      = [R_earth],
+    M               = 0.8*M_earth,
+    P_s             = 0,
+    T_s             = 300
+    )
+
+l1_test.M_max = M_earth
+
+l1_test.gen_prof_L1_fix_M_given_R()
+
+l1_test_sp = woma.SpinPlanet(
+    name         = 'sp_planet',
+    planet       = l1_test,
+    Tw           = 3,
+    R_e          = 1.3*R_earth,
+    R_p          = 1.1*R_earth
+    )
+
+l1_test_sp.spin()
+
+particles_l1 = woma.GenSpheroid(
+    name        = 'picles_spin',
+    spin_planet = l1_test_sp,
+    N_particles = 1e5)
+
+x_reshaped  = particles_l1.A1_picle_x.reshape((-1,1))
+y_reshaped  = particles_l1.A1_picle_y.reshape((-1,1))
+zP_reshaped = particles_l1.A1_picle_z.reshape((-1,1))
+
+X = np.hstack((x_reshaped, y_reshaped, zP_reshaped))
+
+del x_reshaped, y_reshaped, zP_reshaped
+
+nbrs = NearestNeighbors(n_neighbors=48, algorithm='kd_tree', metric='euclidean', leaf_size=15)
+nbrs.fit(X)
+
+distances, indices = nbrs.kneighbors(X)
+M = woma._generate_M(indices, particles_l1.A1_picle_m)
+rho_sph = woma.SPH_density(M, distances, particles_l1.A1_picle_h)
+
+diff_l1 = (rho_sph - particles_l1.A1_picle_rho)/particles_l1.A1_picle_rho
+
+l2_test = woma.Planet(
+    name            = "prof_pE",
+    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [None, R_earth],
+    M               = M_earth,
+    P_s             = 0,
+    T_s             = 300
+    )
+
+l2_test.gen_prof_L2_fix_R1_given_R_M()
+
+l2_test_sp = woma.SpinPlanet(
+    name         = 'sp_planet',
+    planet       = l2_test,
+    Tw           = 2.6,
+    R_e          = 1.45*R_earth,
+    R_p          = 1.1*R_earth
+    )
+
+l2_test_sp.spin()
+
+particles_l2 = woma.GenSpheroid(
+    name        = 'picles_spin',
+    spin_planet = l2_test_sp,
+    N_particles = 1e5)
+
+x_reshaped  = particles_l2.A1_picle_x.reshape((-1,1))
+y_reshaped  = particles_l2.A1_picle_y.reshape((-1,1))
+zP_reshaped = particles_l2.A1_picle_z.reshape((-1,1))
+
+X = np.hstack((x_reshaped, y_reshaped, zP_reshaped))
+
+del x_reshaped, y_reshaped, zP_reshaped
+
+nbrs = NearestNeighbors(n_neighbors=48, algorithm='kd_tree', metric='euclidean', leaf_size=15)
+nbrs.fit(X)
+
+distances, indices = nbrs.kneighbors(X)
+M = woma._generate_M(indices, particles_l2.A1_picle_m)
+rho_sph = woma.SPH_density(M, distances, particles_l2.A1_picle_h)
+
+diff_l2 = (rho_sph - particles_l2.A1_picle_rho)/particles_l2.A1_picle_rho
+
+
+plt.rcParams.update({'font.size': 20})
+fig, ax = plt.subplots(2, 1, figsize=(9,12), sharex=True)
+ax[0].scatter(particles_l1.A1_picle_z/R_earth, diff_l1, s = 0.5, alpha=0.5)
+#ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[0].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+ax[1].scatter(particles_l2.A1_picle_z/R_earth, diff_l2, s = 0.5, alpha=0.5)
+ax[1].set_xlabel(r"$z$ [$R_{earth}$]")
+ax[1].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+plt.tight_layout()
+plt.show()
+plt.savefig('Fig4' + ".pdf", dpi=400)
+
+plt.figure()
+plt.hist(particles_l2.A1_picle_m, bins=1000)
+plt.xlabel(r"m [Kg]")
+plt.ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+plt.yscale('log')
 plt.show()
