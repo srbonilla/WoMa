@@ -199,7 +199,6 @@ np.save('rho_p', l2_test_sp.A1_rho_pole)
 # Squash and compute SPH density#############################
 import seagen
 import numpy as np
-from sklearn.neighbors import NearestNeighbors
 from scipy.interpolate import interp1d
 
 N = 100000
@@ -454,6 +453,7 @@ plt.tight_layout()
 plt.show()
 
 # Particle placement overdensities plot
+from sklearn.neighbors import NearestNeighbors
 l1_test = woma.Planet(
     name            = "prof_pE",
     A1_mat_layer    = ['Til_granite'],
@@ -547,17 +547,17 @@ rho_sph = woma.SPH_density(M, distances, particles_l2.A1_picle_h)
 diff_l2 = (rho_sph - particles_l2.A1_picle_rho)/particles_l2.A1_picle_rho
 
 
-plt.rcParams.update({'font.size': 20})
-fig, ax = plt.subplots(2, 1, figsize=(9,12), sharex=True)
+plt.rcParams.update({'font.size': 15})
+fig, ax = plt.subplots(1, 2, figsize=(12,6), sharey=True)
 ax[0].scatter(particles_l1.A1_picle_z/R_earth, diff_l1, s = 0.5, alpha=0.5)
-#ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+ax[0].set_xlabel(r"$z$ [$R_{earth}$]")
 ax[0].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
 ax[1].scatter(particles_l2.A1_picle_z/R_earth, diff_l2, s = 0.5, alpha=0.5)
 ax[1].set_xlabel(r"$z$ [$R_{earth}$]")
-ax[1].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+#ax[1].set_ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
 plt.tight_layout()
 plt.show()
-plt.savefig('Fig4' + ".pdf", dpi=400)
+plt.savefig('Fig4_2' + ".pdf", dpi=400)
 
 plt.figure()
 plt.hist(particles_l2.A1_picle_m, bins=1000)
@@ -565,3 +565,40 @@ plt.xlabel(r"m [Kg]")
 plt.ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
 plt.yscale('log')
 plt.show()
+
+
+
+##########################################
+# synestia
+
+earth = woma.Planet(
+    name            = "earth",
+    A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [None, R_earth],
+    M               = M_earth,
+    P_s             = 0,
+    T_s             = 300
+    )
+
+earth.gen_prof_L2_fix_R1_given_R_M()
+
+plot_spherical_profile(earth)
+
+sp_earth = woma.SpinPlanet(
+    name         = 'sp_earth',
+    planet       = earth,
+    Tw           = 2.6,
+    R_e          = 1.45*R_earth,
+    R_p          = 1.1*R_earth
+    )
+
+sp_earth.spin()
+
+plot_spin_profile(sp_earth)
+
+particles = woma.GenSpheroid(
+    name        = 'picles_spin',
+    spin_planet = sp_earth,
+    N_particles = 1e7)
