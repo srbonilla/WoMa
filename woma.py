@@ -2125,7 +2125,7 @@ class Planet():
         print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L1_find_mass(
-            self.num_prof, self.R, 2*self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
             self.A1_T_rho_args[0], u_cold_array
             )
@@ -2322,7 +2322,7 @@ class Planet():
         print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L2_find_mass(
-            self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
             self.A1_T_rho_type[1], self.A1_T_rho_args[1], u_cold_array_L1,
@@ -2546,7 +2546,7 @@ class Planet():
         print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L3_find_mass(
-            self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
@@ -2604,7 +2604,7 @@ class Planet():
         print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L3_find_mass(
-            self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
@@ -2662,7 +2662,7 @@ class Planet():
         print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L3_find_mass(
-            self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
@@ -2771,7 +2771,7 @@ class Planet():
         print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L3_find_mass(
-            self.num_prof, self.R, 2 * self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
             self.A1_T_rho_type[0], self.A1_T_rho_args[0],
             self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
