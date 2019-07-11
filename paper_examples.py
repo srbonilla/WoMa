@@ -197,6 +197,7 @@ np.save('rho_e', l2_test_sp.A1_rho_equator)
 np.save('rho_p', l2_test_sp.A1_rho_pole)
 
 # Squash and compute SPH density#############################
+from sklearn.neighbors import NearestNeighbors
 import seagen
 import numpy as np
 from scipy.interpolate import interp1d
@@ -209,11 +210,16 @@ N = 100000
 #radii     = prof_pE.A1_r
 #densities = prof_pE.A1_rho
 
-radii     = l1_test.A1_r_equator
-densities = l1_test.A1_rho_equator
+radii     = l1_test_sp.A1_r_equator
+densities = l1_test_sp.A1_rho_equator
 
 rho_model = interp1d(radii, densities)
-f = 0.5
+#f = 0.5
+f = np.linspace(0.75, 0.7, particles.z.shape[0])
+
+Re = max(radii)
+radii = np.arange(0, Re, Re/1000000)
+densities = rho_model(radii)
 
 particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
 
@@ -250,11 +256,11 @@ plt.ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
 plt.show()
 
 ####################
-N = 100000
-r_array = l1_test.A1_r_equator
-z_array = l1_test.A1_r_pole
-rho_e = l1_test.A1_rho_equator
-rho_p = l1_test.A1_rho_pole
+N = 10000
+r_array = l1_test_sp.A1_r_equator
+z_array = l1_test_sp.A1_r_pole
+rho_e = l1_test_sp.A1_rho_equator
+rho_p = l1_test_sp.A1_rho_pole
 
 rho_e_model = interp1d(r_array, rho_e)
 rho_p_model_inv = interp1d(rho_p, z_array)
@@ -274,6 +280,8 @@ rho_layer = rho_e_model(R)
 Z = rho_p_model_inv(rho_layer)
 
 f = Z/R
+#f = 0.71146
+#f = 1
 zP = particles.z*f
 
 mP = particles.m*f
@@ -579,7 +587,7 @@ earth = woma.Planet(
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
     P_s             = 0,
-    T_s             = 300
+    T_s             = 1000
     )
 
 earth.gen_prof_L2_fix_R1_given_R_M()
