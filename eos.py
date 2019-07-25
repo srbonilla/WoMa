@@ -137,7 +137,7 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
     P2      = P_u_rho(u2, rho2, mat_id)    
     rho_aux = rho0 + 1e-6
     T_aux   = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
-    u_aux   = u_rho_T(rho_aux, mat_id, T_aux)
+    u_aux   = u_rho_T(rho_aux, T_aux, mat_id)
     P_aux   = P_u_rho(u_aux, rho_aux, mat_id)
 
     if ((P0 < P and P < P1) or (P0 > P and P > P1)):
@@ -146,7 +146,7 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
             u0 = u_rho_T(rho0, T0, mat_id)
             P0 = P_u_rho(u0, rho0, mat_id)
             T1 = T_rho(rho1, T_rho_type, T_rho_args, mat_id)
-            u1 = u_rho_T(rho1, T2, mat_id)
+            u1 = u_rho_T(rho1, T1, mat_id)
             P1 = P_u_rho(u1, rho1, mat_id)
             T2 = T_rho(rho2, T_rho_type, T_rho_args, mat_id)
             u2 = u_rho_T(rho2, T2, mat_id)
@@ -192,4 +192,36 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
     elif P > P1 and P0 < P1:
         return rho1
     else:
+        raise ValueError("Critical error in find rho")
         return rho2
+
+@njit
+def P_T_rho(T, rho, mat_id):
+    u = u_rho_T(rho, T, mat_id)
+    P = P_u_rho(u, rho, mat_id)
+    return P
+
+@njit
+def rho_P_T(P, T, mat_id):
+    mat_type    = mat_id // gv.type_factor
+    if mat_type == gv.type_idg:
+        assert T > 0
+        rho0 = 1e-10
+        rho1 = 1e5
+    elif mat_type == gv.type_Til:
+        rho0 = 1e-7
+        rho1 = 1e6
+    elif mat_type == gv.type_HM80:
+        assert T > 0
+        rho0 = 1e-1
+        rho1 = 1e6
+    elif mat_type == gv.type_SESAME:
+        assert T > 0
+        assert P > 0
+        
+        rho0 = 1e-3
+        rho1 = 1e6
+    else:
+        raise ValueError("Invalid material ID")
+    return find_rho(P, mat_id, 1, [float(T), 0.], rho0, rho1)
+    

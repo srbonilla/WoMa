@@ -137,7 +137,7 @@ def P_u_rho(u, rho, mat_id):
     return P
 
 @njit
-def C_V(mat_id):
+def Til_C_V(mat_id):
     """ Returns specific heat capacity for a given material id (SI)
 
         Args:
@@ -295,7 +295,7 @@ def u_rho_T(rho, T, mat_id):
     mat_type    = mat_id // gv.type_factor
 
     if (mat_type == gv.type_Til):
-        cv = C_V(mat_id)
+        cv = Til_C_V(mat_id)
 
         u = u_cold_tab(rho, mat_id) + cv*T
         

@@ -6,7 +6,6 @@ Created on Thu Jul 25 16:12:01 2019
 @author: sergio
 """
 
-import numpy as np
 from numba import njit
 import os
 import sys
@@ -55,7 +54,7 @@ def P_u_rho(u, rho, mat_id):
     return P
     
 @njit
-def C_V(mat_id):
+def idg_C_V(mat_id):
     """ Returns specific heat capacity for a given material id (SI)
 
         Args:
@@ -80,6 +79,6 @@ def C_V(mat_id):
 def u_rho_T(rho, T, mat_id):
     mat_type    = mat_id // gv.type_factor
     if (mat_type == gv.type_idg):
-        return C_V(mat_id)*T
+        return idg_C_V(mat_id)*T
     else:
         raise ValueError("Invalid material ID")
