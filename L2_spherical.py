@@ -14,7 +14,7 @@ import os
 import sys
 from T_rho import T_rho
 from T_rho import set_T_rho_args
-import glob_val as gv
+import glob_vars as gv
 import L1_spherical
 
 import warnings
@@ -147,7 +147,7 @@ def L2_integrate(
 
         A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*rho*dr
         A1_P[i]     = A1_P[i - 1] + gv.G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
-        A1_rho[i]   = eos._find_rho(
+        A1_rho[i]   = eos.find_rho(
             A1_P[i], mat_id, T_rho_type, T_rho_args, rho0, 1.1*rho,
             )
         A1_T[i]     = T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
@@ -400,7 +400,8 @@ def L2_find_R1(
     rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
 
     A1_r, A1_m_enc_2, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
-        num_prof, R, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_L1
+        num_prof, R, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_L1,
+        T_rho_args_L1
         )
 
     if A1_m_enc_1[-1] == 0:
