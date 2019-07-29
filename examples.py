@@ -7,8 +7,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import woma
-import weos
+import woma_v2 as woma
 
 R_earth = 6371000
 M_earth = 5.972E24
@@ -181,7 +180,7 @@ def test_gen_prof_L3_fix_R2_given_R_M_R1():
         A1_T_rho_type   = [1, 1, 1],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.55*R_earth, None, R_earth],
-        P_s             = 1e2,
+        P_s             = 1e5,
         T_s             = 300,
         M               = M_earth
         )
