@@ -8,15 +8,8 @@ Created on Thu Jul 25 08:48:59 2019
 
 import numpy as np
 from numba import njit
-import os
-import sys
 import glob_vars as gv
-
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir)
-
+import os
 
 def load_u_cold_array(mat_id):
     """ Load precomputed values of cold internal energy for a given material.

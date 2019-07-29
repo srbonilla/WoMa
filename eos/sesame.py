@@ -8,14 +8,7 @@ Created on Thu Jul 25 14:21:38 2019
 
 import numpy as np
 from numba import njit
-import os
-import sys
 import glob_vars as gv
-
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir)
 
 # Utilities
 def check_end(string, end):

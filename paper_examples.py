@@ -14,6 +14,7 @@ import matplotlib.pyplot as plt
 import woma
 import swift_io
 import h5py
+import utils_spin as us
 
 R_earth = 6371000
 M_earth = 5.972E24
@@ -74,9 +75,9 @@ def plot_spin_profile(spin_planet):
         radius = r_array_coarse[i]
         for j in range(rho_grid.shape[1]):
             z = z_array_coarse[j]
-            rho_grid[i,j] = woma.rho_rz(radius, z,
-                                        sp.A1_r_equator, sp.A1_rho_equator,
-                                        sp.A1_r_pole, sp.A1_rho_pole)
+            rho_grid[i,j] = us.rho_rz(radius, z,
+                                      sp.A1_r_equator, sp.A1_rho_equator,
+                                      sp.A1_r_pole, sp.A1_rho_pole)
     
     X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
     Z = rho_grid.T

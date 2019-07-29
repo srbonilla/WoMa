@@ -69,11 +69,11 @@ def _fillV(r_array, rho_e, z_array, rho_p, Tw):
 
         for j in range(V_e.shape[0]):
             V_e[j] += us._Vgr(r_array[j], R_array[i],
-                           Z_array[i], delta_rho)
+                              Z_array[i], delta_rho)
 
         for j in range(V_p.shape[0]):
             V_p[j] += us._Vgz(z_array[j], R_array[i],
-                           Z_array[i], delta_rho)
+                              Z_array[i], delta_rho)
 
     for i in range(V_e.shape[0]):
         V_e[i] += -(1/2)*(W*r_array[i])**2
@@ -82,7 +82,7 @@ def _fillV(r_array, rho_e, z_array, rho_p, Tw):
 
 @njit
 def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
-             mat_id_L1, T_rho_type_L1, T_rho_args_L1):
+              mat_id_L1, T_rho_type_L1, T_rho_args_L1):
     """ Compute densities of equatorial and polar profiles given the potential
         for a 1 layer planet.
 
@@ -160,7 +160,7 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
         P_p[i + 1] = P_p[i] + gradP
 
         if P_p[i + 1] >= P_s:
-            rho_p[i + 1] = eos._find_rho(
+            rho_p[i + 1] = eos.find_rho(
                 P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
                 rho_p[i]
                 )
@@ -172,8 +172,8 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
 
 def spin1layer(num_attempt, r_array, z_array, radii, densities, Tw,
                P_c, P_s, rho_c, rho_s,
-               mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-               u_cold_array_L1):
+               mat_id_L1, T_rho_type_L1, T_rho_args_L1
+               ):
     """ Compute spining profile of densities for a 1 layer planet.
 
         Args:
@@ -217,10 +217,6 @@ def spin1layer(num_attempt, r_array, z_array, radii, densities, Tw,
             T_rho_args_L1 (list):
                 Extra arguments to determine the relation in layer 1.
 
-            u_cold_array_L1 ([float]):
-                Precomputed values of cold internal energy
-                with function _create_u_cold_array() for layer 1 (SI).
-
         Returns:
 
             profile_e ([[float]]):
@@ -245,7 +241,7 @@ def spin1layer(num_attempt, r_array, z_array, radii, densities, Tw,
     for i in tqdm(range(num_attempt), desc="Solving spining profile"):
         V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
-                                mat_id_L1, T_rho_type_L1, T_rho_args_L1, u_cold_array_L1)
+                                 mat_id_L1, T_rho_type_L1, T_rho_args_L1)
         profile_e.append(rho_e)
         profile_p.append(rho_p)
 

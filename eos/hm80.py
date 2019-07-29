@@ -6,18 +6,9 @@ Created on Thu Jul 25 14:37:00 2019
 @author: sergio
 """
 
-
 import numpy as np
 from numba import njit
-import os
-import sys
 import glob_vars as gv
-
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir)
-
 
 def load_table_HM80(Fp_table):
     """ Load and return the table file data.

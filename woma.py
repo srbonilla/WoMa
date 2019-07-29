@@ -6,6 +6,15 @@ Created on Mon Jul 29 10:34:43 2019
 @author: sergio
 """
 import sys
+import os
+
+# Go to the WoMa directory
+dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir)
+sys.path.append(dir + '/eos')
+sys.path.append(dir + '/spherical_funcs')
+sys.path.append(dir + '/spin_funcs')
+
 import numpy as np
 import h5py
 import L1_spherical
@@ -20,6 +29,13 @@ import utils
 from T_rho import set_T_rho_args
 from T_rho import T_rho
 from scipy.interpolate import interp1d
+
+# Go to the WoMa directory
+dir = os.path.dirname(os.path.realpath(__file__))
+os.chdir(dir)
+sys.path.append(dir + '/eos')
+sys.path.append(dir + '/spherical_funcs')
+sys.path.append(dir + '/spin_funcs')
 
 # Output
 Di_hdf5_planet_label  = {
@@ -1535,11 +1551,12 @@ class SpinPlanet():
 
             profile_e, profile_p = \
                 L1_spin.spin1layer(self.num_attempt, r_array, z_array,
-                           self.A1_r, self.A1_rho, self.Tw,
-                           P_c, P_s,
-                           rho_c, rho_s,
-                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                           )
+                                   self.A1_r, self.A1_rho, self.Tw,
+                                   P_c, P_s, rho_c, rho_s,
+                                   self.A1_mat_id_layer[0],
+                                   self.A1_T_rho_type[0],
+                                   self.A1_T_rho_args[0]
+                                   )
 
             print("\nDone!")
 

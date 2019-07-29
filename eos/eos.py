@@ -7,21 +7,13 @@ Created on Thu Jul 25 16:22:03 2019
 """
 
 from numba import njit
-import os
-import sys
 import numpy as np
-
 import glob_vars as gv
 import tillotson
 import sesame
 import idg
 import hm80
 from T_rho import T_rho
-
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir)
 
 @njit
 def P_u_rho(u, rho, mat_id):
