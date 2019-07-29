@@ -7,14 +7,7 @@ Created on Thu Jul 25 16:12:01 2019
 """
 
 from numba import njit
-import os
-import sys
 import glob_vars as gv
-
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir)
 
 @njit
 def idg_gamma(mat_id):

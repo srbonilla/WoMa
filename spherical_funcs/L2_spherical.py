@@ -10,8 +10,6 @@ import numpy as np
 from numba import njit
 import eos
 from tqdm import tqdm
-import os
-import sys
 from T_rho import T_rho
 from T_rho import set_T_rho_args
 import glob_vars as gv
@@ -19,12 +17,6 @@ import L1_spherical
 
 import warnings
 warnings.filterwarnings("ignore")
-
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir)
-
 
 @njit
 def L2_integrate(

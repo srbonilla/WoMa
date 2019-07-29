@@ -6,7 +6,6 @@ Created on Thu Jul 25 08:54:38 2019
 @author: sergio
 """
 import os
-import sys
 
 G       = 6.67408E-11
 R_earth = 6371000
@@ -16,7 +15,6 @@ R_gas   = 8.3145     # Gas constant (J K^-1 mol^-1)
 # Go to the WoMa directory
 dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir)
-sys.path.append(dir)
 
 # Material IDs, same as SWIFT ( = type_id * type_factor + unit_id)
 type_factor = 100

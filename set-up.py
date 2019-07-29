@@ -7,8 +7,8 @@ Created on Thu Jul 25 13:59:33 2019
 """
 
 import os
-import sys
 import numpy as np
+import sys
 
 import glob_vars as gv
 import tillotson
@@ -16,7 +16,6 @@ import tillotson
 # Go to the WoMa directory
 dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir)
-sys.path.append(dir)
 
 # Set up equation of state data
 def set_up():
