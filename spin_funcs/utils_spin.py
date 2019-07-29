@@ -200,7 +200,7 @@ def _Vgz(z, R, Z, rho):
 def _el_eq(r, z, R, Z):
     return r*r/R/R + z*z/Z/Z
 
-#@njit
+@njit
 def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     """ Computes the density at any point r, z given a spining profile.
 

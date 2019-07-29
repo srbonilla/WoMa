@@ -30,13 +30,6 @@ from T_rho import set_T_rho_args
 from T_rho import T_rho
 from scipy.interpolate import interp1d
 
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir + '/eos')
-sys.path.append(dir + '/spherical_funcs')
-sys.path.append(dir + '/spin_funcs')
-
 # Output
 Di_hdf5_planet_label  = {
     "num_layer"     : "Number of Layers",

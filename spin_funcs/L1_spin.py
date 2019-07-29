@@ -147,8 +147,8 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
 
         if P_e[i + 1] >= P_s:
             rho_e[i + 1] = eos.find_rho(
-                P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_e[i]
+                P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1,
+                rho_s - 10, rho_e[i]
                 )
         else:
             rho_e[i + 1] = 0.
@@ -161,8 +161,8 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
 
         if P_p[i + 1] >= P_s:
             rho_p[i + 1] = eos.find_rho(
-                P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s - 10,
-                rho_p[i]
+                P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, 
+                rho_s - 10, rho_p[i]
                 )
         else:
             rho_p[i + 1] = 0.
