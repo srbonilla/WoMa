@@ -27,6 +27,7 @@ import L3_spin
 import glob_vars as gv
 import eos
 import utils
+import utils_spin as us
 from T_rho import set_T_rho_args
 from T_rho import T_rho
 from scipy.interpolate import interp1d
@@ -1493,6 +1494,7 @@ class SpinPlanet():
         self.Tw                 = Tw
         self.P_R1               = None
         self.P_R2               = None
+        self.M                  = None
 
         if planet is not None:
             self.num_layer       = planet.num_layer
@@ -1626,6 +1628,9 @@ class SpinPlanet():
             self.A1_r_pole        = z_array
             self.A1_rho_equator   = profile_e[-1]
             self.A1_rho_pole      = profile_p[-1]
+        
+        self.M = us.compute_spin_planet_M(self.A1_r_equator, self.A1_rho_equator,
+                                       self.A1_r_pole, self.A1_rho_pole)
 
 class GenSpheroid():
 

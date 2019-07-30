@@ -345,3 +345,24 @@ def _generate_M(indices, m_enc):
         M[i,:] = m_enc[indices[i]]
 
     return M
+
+@njit
+def V_spheroid(R, Z):
+    
+    return np.pi*4/3*R*R*Z
+
+@jit(nopython=False)
+def compute_spin_planet_M(r_array, rho_e, z_array, rho_p):
+    
+    rho_p_model_inv = interp1d(rho_p, z_array)
+    R_array = r_array
+    Z_array = rho_p_model_inv(rho_e)
+    
+    M = 0.
+    
+    for i in range(1, R_array.shape[0]):
+        dV = V_spheroid(R_array[i], Z_array[i]) -  \
+             V_spheroid(R_array[i - 1], Z_array[i - 1])
+        M += rho_e[i]*dV
+        
+    return M
