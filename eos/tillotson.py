@@ -59,9 +59,9 @@ def P_u_rho(u, rho, mat_id):
     
     # Material constants for Tillotson EoS
     # mat_id, rho0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
-    iron    = np.array([gv.id_Til_iron, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e9, 2.4e9, 8.67e9, 5, 5, 0, 0, 0])
-    granite = np.array([gv.id_Til_granite, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e10, 3.5e9, 1.8e10, 5, 5, 0, 0, 0])
-    water   = np.array([gv.id_Til_water, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e9, 4.19e8, 2.69e9, 10, 5, 0.925, 0, 0.875])
+    iron    = np.array([gv.id_Til_iron, 7800, 0.5, 1.5, 1.28e11, 1.05e11, 9.5e6, 2.4e6, 8.67e6, 5, 5, 0, 0, 0])
+    granite = np.array([gv.id_Til_granite, 2680, 0.5, 1.3, 1.8e10, 1.8e10, 1.6e7, 3.5e6, 1.8e7, 5, 5, 0, 0, 0])
+    water   = np.array([gv.id_Til_water, 998, 0.7, 0.15, 2.18e9, 1.325e10, 7.0e6, 4.19e5, 2.69e6, 10, 5, 0.925, 0, 0.875])
 
     if (mat_id == gv.id_Til_iron):
         material = iron
