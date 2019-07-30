@@ -14,6 +14,7 @@ os.chdir(dir)
 sys.path.append(dir + '/eos')
 sys.path.append(dir + '/spherical_funcs')
 sys.path.append(dir + '/spin_funcs')
+sys.path.append(dir + '/misc')
 
 import numpy as np
 import h5py

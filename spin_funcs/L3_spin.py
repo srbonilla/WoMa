@@ -15,6 +15,7 @@ from tqdm import tqdm
 import seagen
 from T_rho import T_rho
 from sklearn.neighbors import NearestNeighbors
+import L1_spin
 
 @njit
 def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
@@ -253,7 +254,7 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
     profile_p.append(rho_p)
 
     for i in tqdm(range(num_attempt), desc="Solving spining profile"):
-        V_e, V_p = us._fillV(r_array, rho_e, z_array, rho_p, Tw)
+        V_e, V_p = L1_spin._fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
                                 mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                                 mat_id_L2, T_rho_type_L2, T_rho_args_L2,
