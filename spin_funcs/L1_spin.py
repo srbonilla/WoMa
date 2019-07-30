@@ -9,14 +9,14 @@ Created on Mon Jul 29 11:13:54 2019
 import numpy as np
 import utils_spin as us
 from scipy.interpolate import interp1d
-from numba import njit
+from numba import njit, jit
 import eos
 from tqdm import tqdm
 import seagen
 from T_rho import T_rho
 from sklearn.neighbors import NearestNeighbors
 
-@njit
+@jit(nopython=False)
 def _fillV(r_array, rho_e, z_array, rho_p, Tw):
     """ Computes the potential at every point of the equatorial and polar profiles.
 

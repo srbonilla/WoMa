@@ -7,7 +7,7 @@ Created on Mon Jul 29 11:10:28 2019
 """
 
 import numpy as np
-from numba import njit
+from numba import njit, jit
 import glob_vars as gv
 from scipy.interpolate import interp1d
 
@@ -200,7 +200,7 @@ def _Vgz(z, R, Z, rho):
 def _el_eq(r, z, R, Z):
     return r*r/R/R + z*z/Z/Z
 
-@njit
+@jit(nopython=False)
 def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     """ Computes the density at any point r, z given a spining profile.
 
