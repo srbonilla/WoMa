@@ -13,10 +13,6 @@ import sys
 import glob_vars as gv
 import tillotson
 
-# Go to the WoMa directory
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-
 # Set up equation of state data
 def set_up():
     """ Create tabulated values of cold internal energy if they don't exist,
