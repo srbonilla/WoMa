@@ -60,14 +60,20 @@ def place_picles(n_picle_shell, m_shell, shell_config):
         theta = np.linspace(0, 2*np.pi, n_picle_shell[n_shell], endpoint=False)
         epsilon = np.random.uniform(0, 2*np.pi)
         theta = (theta + epsilon) % (2*np.pi)
-        r2 = 1/(R_i*R_i) + 1/((np.tan(theta)**2)*(Z_i**2))
-        r2 = 1/r2
-        r = np.abs(np.sqrt(r2))
-        z = np.abs(np.sqrt(Z_i*Z_i*(1 - r*r/R_i/R_i)))
-        z[np.isnan(z)] = 0
-        r[theta > np.pi] = -r[theta > np.pi]
-        z[np.logical_and(theta > np.pi/2, theta < 3*np.pi/2)] = \
-        -z[np.logical_and(theta > np.pi/2, theta < 3*np.pi/2)]
+        
+# =============================================================================
+#         r2 = 1/(R_i*R_i) + 1/((np.tan(theta)**2)*(Z_i**2))
+#         r2 = 1/r2
+#         r = np.abs(np.sqrt(r2))
+#         z = np.abs(np.sqrt(Z_i*Z_i*(1 - r*r/R_i/R_i)))
+#         z[np.isnan(z)] = 0
+#         r[theta > np.pi] = -r[theta > np.pi]
+#         z[np.logical_and(theta > np.pi/2, theta < 3*np.pi/2)] = \
+#         -z[np.logical_and(theta > np.pi/2, theta < 3*np.pi/2)]
+# =============================================================================
+        
+        r = R*np.sin(theta)
+        z = Z*np.cos(theta)
         
         r_list.append(r)
         z_list.append(z)
@@ -93,9 +99,9 @@ n_picle_shell = [100, 100, 100]
 m_shell = [10, 10, 10]
 shell_config = [[1, 1], [2, 1.5], [3, 2]]
 
-n_picle_shell = [10]
-m_shell = [10]
-shell_config = [[1, 1]]
+#n_picle_shell = [10]
+#m_shell = [10]
+#shell_config = [[1, 1]]
 
 r, z, R, Z, m = place_picles(n_picle_shell, m_shell, shell_config)
 plt.figure()
@@ -211,28 +217,25 @@ def upper_limit_Fr_Fz(Fr, Fz, limit=1):
     
     return Fr, Fz
 
-def perimeter_elipsoid(R, Z):
-    #assert(R >= Z)
-    e = np.sqrt(1 - Z*Z/R/R)
-    return 4*R*ellipe(e*e)
+
     
 # initial set-up
-n_picle_shell = [60]
-m_shell = [10]
-shell_config = [[1, 0.4]]
+n_picle_shell = [100]
+m_shell = [1]
+shell_config = [[1, 0.6]]
 
 n_picle_shell = [40, 60, 60]
 m_shell = 10*np.array([1, 1, 1])
 shell_config = [[1, 1], [2, 1.5], [3, 1.8]]
 
-n_picle_shell = [30, 50, 60, 60, 80]
-m_shell = 10*np.array([1, 1, 1, 1, 1])
-shell_config = [[1, 1], [1.5, 1.2], [2, 1.5], [2.5, 1.8], [3, 2]]
-shell_config = [[1.5, 1], [1.5, 1], [1.5, 1], [1.5, 1], [1.5, 1]]
+n_picle_shell = [60, 40, 100]
+m_shell = 10*np.array([1, 1, 1])
+shell_config = [[1, 1], [2, 1.9], [3, 2.8]]
+#shell_config = [[1.5, 1], [1.5, 1], [1.5, 1]]
 
-shell_config = np.array(shell_config)
-shell_config[:, 0] *= np.linspace(1, 3, 5)
-shell_config[:, 1] *= np.linspace(1, 3, 5)
+#shell_config = np.array(shell_config)
+#shell_config[:, 0] *= np.linspace(1, 3, 5)
+#shell_config[:, 1] *= np.linspace(1, 3, 5)
 
 r, z, R, Z, m = place_picles(n_picle_shell, m_shell, shell_config)
 
@@ -250,11 +253,11 @@ fig = plt.figure()
 ims = []
 for i in tqdm(range(4000)):
     Fr, Fz = compute_Fr_Fz_for_all(m, r, z, N_neig=20)
-    Fr, Fz = upper_limit_Fr_Fz(Fr, Fz, limit=1)
+    Fr, Fz = upper_limit_Fr_Fz(Fr, Fz, limit=0.1)
     #r, z, vr, vz = update_r_z_vr_vz(m, r, z, vr, vz, Fr, Fz, dt=0.1)
     r, z, vr, vz = update_r_z_vr_vz_inshell(m, r, z, vr, vz, Fr, Fz, R, Z, dt=0.01)
     # stop system every x frames to converg faster
-    if i % 5 == 0:
+    if i % 3 == 0:
         vr = np.zeros_like(vr)
         vz = np.zeros_like(vz)
     im = plt.scatter(r, z, animated=True, color = 'black')
@@ -346,7 +349,7 @@ def compute_n_picle_shell(n_picle_shell_0, m_shell):
     n_picle_shell = n_picle_shell.astype('int')
     return n_picle_shell
 
-n_picle_shell = compute_n_picle_shell(3, m_shell)
+n_picle_shell = compute_n_picle_shell(2, m_shell)
 
 r, z, R, Z, m = place_picles(n_picle_shell, m_shell, shell_config)
 
@@ -362,7 +365,7 @@ plt.show()
 # animation
 fig = plt.figure()
 ims = []
-for i in tqdm(range(1000)):
+for i in tqdm(range(3000)):
     
     Fr, Fz = compute_Fr_Fz_for_all(m, r, z, N_neig=20)
     Fr = 50*Fr
@@ -382,4 +385,107 @@ for i in tqdm(range(1000)):
 ani = animation.ArtistAnimation(fig, ims, interval=1, blit=True,
                                 repeat_delay=1000)
 #ani.save('antigravity_toy.gif')
+plt.show()
+
+###############################################################################
+# toy model 2
+def perimeter_elipsoid(R, Z):
+    #assert(R >= Z)
+    e = np.sqrt(1 - Z*Z/R/R)
+    return 4*R*ellipe(e*e)
+
+def get_dist_between_2_shells(theta, shell_config):
+    
+    assert len(shell_config) == 2
+    
+    R1, Z1 = shell_config[0]
+    R2, Z2 = shell_config[1]
+    
+    d1 = np.sin(theta)**2/R1/R1 + np.cos(theta)**2/Z1/Z1
+    d1 = 1/d1
+    d1 = np.sqrt(d1)
+    
+    d2 = np.sin(theta)**2/R2/R2 + np.cos(theta)**2/Z2/Z2
+    d2 = 1/d2
+    d2 = np.sqrt(d2)
+    
+    assert (d2 > d1).sum() == len(theta)
+    
+    return d2 - d1
+
+def get_density_between_2_shells(theta, m, shell_config):
+    
+    assert len(shell_config) == 2
+    assert len(m) == len(theta)
+    
+    d = get_dist_between_2_shells(theta, shell_config)
+    density = m/d
+    
+    return density
+
+def vol_spheroid(R, Z):
+    return 4*np.pi*R*R*Z/3
+
+
+    
+theta_d = np.linspace(0, 2*np.pi, num=100)
+shell_config_1 = [[1, 0.5], [1., 0.5]]
+shell_config_1 = np.array(shell_config_1)*np.array([[0.5, 0.5], [1.5, 1.5]])
+shell_config_1 = [[2455195, 1786932], [2928477, 2128634]]
+#shell_config_2 = [[1, 1], [2, 1.9]]
+d_1 = get_dist_between_2_shells(theta_d, shell_config_1)
+#d_2 = get_dist_between_2_shells(theta, shell_config_2)
+
+# =============================================================================
+# plt.figure()
+# plt.scatter(theta_d, d_1)
+# #plt.scatter(theta, 1/d_2)
+# #plt.scatter(theta, 0.25*(np.cos(2*theta) + 1)/2 + 1)
+# plt.xlabel(r"$\theta$")
+# plt.ylabel(r"$d$")
+# plt.show()
+# =============================================================================
+
+# =============================================================================
+# plt.figure()
+# plt.scatter(theta, d_1)
+# #plt.scatter(theta, d_2)
+# plt.show()
+# 
+# =============================================================================
+
+n_picle_shell = [200000]
+#m_shell = [1]
+#shell_config = [[1,0.5]]
+R_test = 2691421
+Z_test = 1957661
+shell_config = [[2691421, 1957661]]
+#rho_shell = m_shell[0]/perimeter_elipsoid(1, 0.5)
+rho_shell = 6644
+m_shell = [perimeter_elipsoid(R_test, Z_test)*rho_shell/4/np.pi]
+
+r, z, R, Z, m = place_picles(n_picle_shell, m_shell, shell_config)
+#plt.figure()
+#plt.scatter(r, z, s=1)
+#plt.show()
+
+theta_bins = np.linspace(0, 2*np.pi, 1000)
+theta = (np.arctan2(r, z) + 2*np.pi) % (2*np.pi)
+
+m_bins = np.zeros_like(theta_bins)
+for i in range(theta_bins.shape[0] - 1):
+    low = theta_bins[i]
+    high = theta_bins[i + 1]
+    
+    mask = np.logical_and(theta>low, theta<high)
+    m_bins[i] = m[mask].sum()
+    
+d_theta = theta_bins[1] - theta_bins[0]
+
+plt.figure()
+plt.scatter(theta_bins[:-1], m_bins[:-1], label='sum m/dtheta/rho0')
+plt.scatter(theta_d, d_1*rho_shell*d_theta, label='dist')
+plt.xlabel(r"$\theta$")
+plt.ylabel(r"$[m]$")
+plt.legend()
 plt.show()
