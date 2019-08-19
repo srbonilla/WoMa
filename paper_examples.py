@@ -160,7 +160,7 @@ l2_test = woma.Planet(
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
-#plot_spherical_profile(l2_test)
+plot_spherical_profile(l2_test)
 
 l2_test_sp = woma.SpinPlanet(
     name         = 'sp_planet',
@@ -172,7 +172,7 @@ l2_test_sp = woma.SpinPlanet(
 
 l2_test_sp.spin()
 
-#plot_spin_profile(l2_test_sp)
+plot_spin_profile(l2_test_sp)
 
 particles = woma.GenSpheroid(
     name        = 'picles_spin',

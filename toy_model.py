@@ -13,6 +13,7 @@ from numba import njit
 import matplotlib.animation as animation
 from tqdm import tqdm
 from scipy.special import ellipe
+import seagen
 
 # [[R1, Z1], ..., [RN, ZN]]
 shell_config = [[1, 1], [2, 1.5]]
@@ -459,10 +460,14 @@ n_picle_shell = [200000]
 #shell_config = [[1,0.5]]
 R_test = 2691421
 Z_test = 1957661
+R_test_low  = 2455195
+R_test_high = 2928477
+Z_test_low  = 1786932
+Z_test_high = 2128634
 shell_config = [[2691421, 1957661]]
 #rho_shell = m_shell[0]/perimeter_elipsoid(1, 0.5)
 rho_shell = 6644
-m_shell = [perimeter_elipsoid(R_test, Z_test)*rho_shell/4/np.pi]
+m_shell = [(vol_spheroid(R_test_high, Z_test_high) - vol_spheroid(R_test_low, Z_test_low))*rho_shell]
 
 r, z, R, Z, m = place_picles(n_picle_shell, m_shell, shell_config)
 #plt.figure()
@@ -489,3 +494,154 @@ plt.xlabel(r"$\theta$")
 plt.ylabel(r"$[m]$")
 plt.legend()
 plt.show()
+
+# toy model 3
+def V_theta(theta, d_theta, shell_config):
+    
+    R_l, Z_l = shell_config[0]
+    R_h, Z_h = shell_config[1]
+    
+    assert R_h >= R_l
+    assert Z_h >= Z_l
+    
+    rho_l = np.sin(theta)**2/R_l/R_l + np.cos(theta)**2/Z_l/Z_l
+    rho_l = np.sqrt(1/rho_l)
+    
+    rho_h = np.sin(theta)**2/R_h/R_h + np.cos(theta)**2/Z_h/Z_h
+    rho_h = np.sqrt(1/rho_h)
+    
+    V = 2*np.pi/3*(rho_h**3 - rho_l**3)*np.sin(theta)*d_theta
+    
+    return V
+
+N_picle = 100000
+R_shell = 2691421
+Z_shell = 1957661
+R_shell_low  = 2455195
+R_shell_high = 2928477
+Z_shell_low  = 1786932
+Z_shell_high = 2128634
+rho_shell = 6644
+
+#R_shell_low = np.mean([R_shell, R_shell_low])
+#Z_shell_low = np.mean([Z_shell, Z_shell_low])
+
+#R_shell_high = np.mean([R_shell, R_shell_high])
+#Z_shell_high = np.mean([Z_shell, Z_shell_high])
+
+shell_config = [[R_shell_low, Z_shell_low], [R_shell_high, Z_shell_high]]
+
+m_shell = vol_spheroid(R_shell_high, Z_shell_high) - vol_spheroid(R_shell_low, Z_shell_low)
+m_shell = m_shell*rho_shell
+particles = seagen.GenShell(N_picle, R_shell)
+
+zP = particles.A1_z*Z_shell/R_shell
+
+m_picle = m_shell/N_picle
+
+r_cyl = np.sqrt(particles.x**2 + particles.y**2)
+theta = -np.arctan2(zP, r_cyl) + np.pi/2
+theta = (theta + 2*np.pi) % (2*np.pi)
+
+d_shells = get_dist_between_2_shells(theta, shell_config)
+
+theta_bins = np.linspace(0, np.pi, 1000)
+d_theta = theta_bins[1] - theta_bins[0]
+
+m = np.ones(N_picle)*m_picle
+m_bins = np.zeros_like(theta_bins)
+for i in range(theta_bins.shape[0] - 1):
+    low = theta_bins[i]
+    high = theta_bins[i + 1]
+    
+    mask = np.logical_and(theta>=low, theta<high)
+    m_bins[i] = m[mask].sum()
+
+
+
+
+plt.figure()
+plt.scatter(theta, rho_shell*V_theta(theta, d_theta, shell_config))
+plt.scatter(theta_bins[:-1] + d_theta/2, m_bins[:-1])
+plt.show()
+
+
+
+plt.figure()
+plt.scatter(theta, rho_shell*V_theta(theta, d_theta, shell_config))
+plt.scatter(theta_bins[:-1] + d_theta/2, m_bins[:-1], alpha = 0.1)
+plt.show()
+
+
+########################################
+l1_test = woma.Planet(
+    name            = "prof_pE",
+    A1_mat_layer    = ['Til_granite'],
+    A1_T_rho_type   = [1],
+    A1_T_rho_args   = [[None, 0.]],
+    A1_R_layer      = [R_earth],
+    M               = 0.8*M_earth,
+    P_s             = 0,
+    T_s             = 300
+    )
+
+l1_test.M_max = M_earth
+
+l1_test.gen_prof_L1_fix_M_given_R()
+
+l1_test_sp = woma.SpinPlanet(
+    name         = 'sp_planet',
+    planet       = l1_test,
+    Tw           = 3,
+    R_e          = 1.3*R_earth,
+    R_p          = 1.1*R_earth
+    )
+
+l1_test_sp.spin()
+
+l2_test = woma.Planet(
+    name            = "prof_pE",
+    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [None, R_earth],
+    M               = M_earth,
+    P_s             = 0,
+    T_s             = 300
+    )
+
+l2_test.gen_prof_L2_fix_R1_given_R_M()
+
+l2_test_sp = woma.SpinPlanet(
+    name         = 'sp_planet',
+    planet       = l2_test,
+    Tw           = 2.6,
+    R_e          = 1.45*R_earth,
+    R_p          = 1.1*R_earth
+    )
+
+l2_test_sp.spin()
+
+from scipy.interpolate import interp1d
+R_earth = 6371000
+
+planet = l2_test_sp
+
+model_e = interp1d(planet.A1_rho_equator, planet.A1_r_equator)
+model_p = interp1d(planet.A1_rho_pole, planet.A1_r_pole)
+
+rho_min_1 = np.min(planet.A1_rho_equator[planet.A1_rho_equator > 0])
+rho_min_2 = np.min(planet.A1_rho_pole[planet.A1_rho_pole > 0])
+rho_min = np.max([rho_min_1, rho_min_2]) + 1
+rho_max = np.max([planet.A1_rho_equator, planet.A1_rho_pole]) - 1
+rho = np.linspace(rho_min, rho_max, 1000)
+R = model_e(rho)
+Z = model_p(rho)
+
+plt.figure()
+plt.scatter(R/R_earth, Z/R)
+plt.show()
+
+
+
+

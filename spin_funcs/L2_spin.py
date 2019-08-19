@@ -125,7 +125,7 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
                 )
 
         elif P_p[i + 1] >= P_s and P_p[i + 1] < P_i:
-            rho_p[i + 1] = eos._find_rho(
+            rho_p[i + 1] = eos.find_rho(
                 P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s - 10,
                 rho_p[i]
                 )
@@ -221,8 +221,8 @@ def spin2layer(num_attempt, r_array, z_array, radii, densities, Tw,
     for i in tqdm(range(num_attempt), desc="Solving spining profile"):
         V_e, V_p = L1_spin._fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
-                                mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                mat_id_L2, T_rho_type_L2, T_rho_args_L2)
+                                 mat_id_L1, T_rho_type_L1, T_rho_args_L1,
+                                 mat_id_L2, T_rho_type_L2, T_rho_args_L2)
         profile_e.append(rho_e)
         profile_p.append(rho_p)
 
