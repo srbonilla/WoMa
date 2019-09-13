@@ -495,7 +495,7 @@ plt.ylabel(r"$[m]$")
 plt.legend()
 plt.show()
 
-# toy model 3
+# toy model 3 #######################################################
 def V_theta(theta, d_theta, shell_config):
     
     R_l, Z_l = shell_config[0]
@@ -515,6 +515,8 @@ def V_theta(theta, d_theta, shell_config):
     return V
 
 N_picle = 100000
+
+# example that works fine
 R_shell = 2691421
 Z_shell = 1957661
 R_shell_low  = 2455195
@@ -523,11 +525,20 @@ Z_shell_low  = 1786932
 Z_shell_high = 2128634
 rho_shell = 6644
 
-#R_shell_low = np.mean([R_shell, R_shell_low])
-#Z_shell_low = np.mean([Z_shell, Z_shell_low])
+# example that works fine
+R_shell = 6948201
+Z_shell = 4923112
+R_shell_low  = 6674609
+R_shell_high = 7227899
+Z_shell_low  = 4743377
+Z_shell_high = 5104052
+rho_shell = 4049
 
-#R_shell_high = np.mean([R_shell, R_shell_high])
-#Z_shell_high = np.mean([Z_shell, Z_shell_high])
+R_shell_low = np.mean([R_shell, R_shell_low])
+Z_shell_low = np.mean([Z_shell, Z_shell_low])
+
+R_shell_high = np.mean([R_shell, R_shell_high])
+Z_shell_high = np.mean([Z_shell, Z_shell_high])
 
 shell_config = [[R_shell_low, Z_shell_low], [R_shell_high, Z_shell_high]]
 
@@ -561,19 +572,23 @@ for i in range(theta_bins.shape[0] - 1):
 
 
 plt.figure()
-plt.scatter(theta, rho_shell*V_theta(theta, d_theta, shell_config))
-plt.scatter(theta_bins[:-1] + d_theta/2, m_bins[:-1])
+plt.scatter(theta, rho_shell*V_theta(theta, d_theta, shell_config), label='theory', s=1)
+plt.scatter(theta_bins[:-1] + d_theta/2, m_bins[:-1], alpha = 0.5, label='picle placement', s=1)
+plt.xlabel(r"$\theta$")
+plt.ylabel(r"$m(\theta)$")
+plt.yscale('log')
+plt.legend()
 plt.show()
 
 
-
-plt.figure()
-plt.scatter(theta, rho_shell*V_theta(theta, d_theta, shell_config))
-plt.scatter(theta_bins[:-1] + d_theta/2, m_bins[:-1], alpha = 0.1)
-plt.show()
 
 
 ########################################
+import woma
+
+R_earth = 6371000
+M_earth = 5.972E24
+
 l1_test = woma.Planet(
     name            = "prof_pE",
     A1_mat_layer    = ['Til_granite'],
@@ -620,6 +635,14 @@ l2_test_sp = woma.SpinPlanet(
     R_p          = 1.1*R_earth
     )
 
+l2_test_sp = woma.SpinPlanet(
+    name         = 'sp_planet',
+    planet       = l2_test,
+    Tw           = 2*2.6,
+    R_e          = 1.1*R_earth,
+    R_p          = 1.01*R_earth
+    )
+
 l2_test_sp.spin()
 
 from scipy.interpolate import interp1d
@@ -640,8 +663,162 @@ Z = model_p(rho)
 
 plt.figure()
 plt.scatter(R/R_earth, Z/R)
+plt.xlabel(r"$R$ $[R_{earth}]$")
+plt.ylabel(r"$Z/R$")
 plt.show()
 
+######################################################
+# pseudo-simulation
+import woma
+import numpy as np
+import utils_spin as us
+from scipy.interpolate import interp1d
+import eos
+from tqdm import tqdm
+import seagen
+from T_rho import T_rho
+from sklearn.neighbors import NearestNeighbors
+import matplotlib.pyplot as plt
 
+R_earth = 6371000
+M_earth = 5.972E24
 
+l1_test = woma.Planet(
+    name            = "prof_pE",
+    A1_mat_layer    = ['Til_granite'],
+    A1_T_rho_type   = [1],
+    A1_T_rho_args   = [[None, 0.]],
+    A1_R_layer      = [R_earth],
+    M               = 0.8*M_earth,
+    P_s             = 0,
+    T_s             = 300
+    )
 
+l1_test.M_max = M_earth
+
+l1_test.gen_prof_L1_fix_M_given_R()
+
+l1_test_sp = woma.SpinPlanet(
+    name         = 'sp_planet',
+    planet       = l1_test,
+    Tw           = 3,
+    R_e          = 1.3*R_earth,
+    R_p          = 1.1*R_earth
+    )
+
+l1_test_sp.spin()
+
+#set-up
+r_array = l1_test_sp.A1_r_equator
+z_array = l1_test_sp.A1_r_pole
+rho_e = l1_test_sp.A1_rho_equator
+rho_p = l1_test_sp.A1_rho_pole
+Tw = l1_test_sp.Tw
+T_rho_type_L1 = l1_test_sp.A1_T_rho_type[0]
+T_rho_args_L1 = l1_test_sp.A1_T_rho_args[0]
+mat_id_L1     = l1_test_sp.A1_mat_id_layer[0]
+N_neig = 48
+N = 100000
+
+# function
+rho_e_model = interp1d(r_array, rho_e)
+rho_p_model_inv = interp1d(rho_p, z_array)
+
+Re = np.max(r_array[rho_e > 0])
+
+radii = np.arange(0, Re, Re/1000000)
+densities = rho_e_model(radii)
+
+particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
+
+particles_r = np.sqrt(particles.x**2 + particles.y**2 + particles.z**2)
+rho = rho_e_model(particles_r)
+
+R = particles.A1_r.copy()
+rho_layer = rho_e_model(R)
+Z = rho_p_model_inv(rho_layer)
+
+f = Z/R
+zP = particles.z*f
+
+#mP = particles.m*f
+mP = particles.m*np.mean(f)
+
+# Compute velocities (T_w in hours)
+vx = np.zeros(mP.shape[0])
+vy = np.zeros(mP.shape[0])
+vz = np.zeros(mP.shape[0])
+
+hour_to_s = 3600
+wz = 2*np.pi/Tw/hour_to_s
+
+vx = -particles.y*wz
+vy = particles.x*wz
+
+# internal energy
+u = np.zeros((mP.shape[0]))
+
+x = particles.x
+y = particles.y
+
+P = np.zeros((mP.shape[0],))
+
+for k in range(mP.shape[0]):
+    T = T_rho(rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
+    u[k] = eos.u_rho_T(rho[k], T, mat_id_L1)
+    P[k] = eos.P_u_rho(u[k], rho[k], mat_id_L1)
+
+#print("Internal energy u computed\n")
+# Smoothing lengths, crudely estimated from the densities
+w_edge  = 2     # r/h at which the kernel goes to zero
+h       = np.cbrt(N_neig * mP / (4/3*np.pi * rho)) / w_edge
+
+A1_id     = np.arange(mP.shape[0])
+A1_mat_id = np.ones((mP.shape[0],))*mat_id_L1
+
+unique_R = np.unique(R)
+
+x_reshaped  = x.reshape((-1,1))
+y_reshaped  = y.reshape((-1,1))
+zP_reshaped = zP.reshape((-1,1))
+
+X = np.hstack((x_reshaped, y_reshaped, zP_reshaped))
+
+del x_reshaped, y_reshaped, zP_reshaped
+
+nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
+nbrs.fit(X)
+
+N_mem = int(1e6)
+
+print("Finding neighbors of all particles...")
+distances, indices = nbrs.kneighbors(X)
+
+for _ in tqdm(range(1), desc="Tweaking mass of every particle"):
+
+    M = us._generate_M(indices, mP)
+
+    rho_sph = us.SPH_density(M, distances, h)
+
+    #diff = (rho_sph - rho)/rho
+    #mP_next = (1 - diff)*mP
+    #mP_next[R == unique_R[-1]] = mP[R == unique_R[-1]] # do not change mass of boundary layers
+
+    #mP = mP_next
+
+print("\nDone!")
+
+diff = (rho_sph - rho)/rho
+rc = np.sqrt(x**2 + y**2)
+
+plt.figure(figsize=(12, 12))
+plt.scatter(rc/R_earth, np.abs(zP)/R_earth, s = 40, alpha = 0.5, c = diff, 
+            marker='.', edgecolor='none', cmap = 'coolwarm')
+plt.xlabel(r"$r_c$ $[R_{earth}]$")
+plt.ylabel(r"$z$ $[R_{earth}]$")
+cbar = plt.colorbar()
+cbar.set_label(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
+plt.clim(-0.1,0.1)
+plt.axes().set_aspect('equal')
+
+plt.show()
