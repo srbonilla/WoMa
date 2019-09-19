@@ -107,7 +107,7 @@ T_rho_type_L1 = l1_test_sp.A1_T_rho_type[0]
 T_rho_args_L1 = l1_test_sp.A1_T_rho_args[0]
 mat_id_L1     = l1_test_sp.A1_mat_id_layer[0]
 N_neig = 48
-N = 100000
+N = 1000000
 
 # function
 rho_e_model = interp1d(r_array, rho_e)
@@ -166,7 +166,9 @@ for i in range(M_shell.shape[0] - 1):
         
         M_shell[i] = rho_shell[i]*V_theta(0, np.pi, [[R_l, Z_l], [R_h, Z_h]])
 
-M_shell[-1] = rho_shell[-1]*V_theta(0, np.pi, [[R_h, Z_h], [(R_min + R_0)/2, (Z_min + Z_0)/2]])
+#M_shell[-1] = rho_shell[-1]*V_theta(0, np.pi, [[R_h, Z_h], [(R_min + R_shell[-1])/2, (Z_min + Z_shell[-1])/2]])
+#M_shell[-1] = rho_shell[-1]*V_theta(0, np.pi, [[R_h, Z_h], [R_shell[-1], Z_shell[-1]]])
+M_shell[-1] = M - M_shell.sum()
 N_shell = np.round(M_shell/m_picle).astype(int)
 
 m_picle_shell = M_shell/N_shell
@@ -202,7 +204,7 @@ theta_elip = theta_bins[:-1] + delta_theta
 
 n_theta_elip = np.zeros_like(theta_bins)
 
-for i in range(N_shell.shape[0] - 1):
+for i in tqdm(range(N_shell.shape[0] - 1)):
     
     # first and last layers
     if i == 0:
@@ -227,23 +229,18 @@ for i in range(N_shell.shape[0] - 1):
 # =============================================================================
         
     else:
-        particles = seagen.GenShell(N_shell[i], R_shell[i])
+        
         theta_elip = theta_bins[:-1] + delta_theta
         n_theta_elip = np.zeros_like(theta_bins)
-        
-        R_l = R_shell[i - 1]
-        Z_l = Z_shell[i - 1]
-        
-        if i == N_shell.shape[0] - 1:
-            R_h = R_min
-            Z_h = Z_min 
-        else: 
-            R_h = R_shell[i + 1]
-            Z_h = Z_shell[i + 1]
+        particles = seagen.GenShell(N_shell[i], R_shell[i])
             
         R_0 = R_shell[i]
         Z_0 = Z_shell[i]
-        
+        R_l = R_shell[i - 1]
+        Z_l = Z_shell[i - 1]
+        R_h = R_shell[i + 1]
+        Z_h = Z_shell[i + 1]
+            
         R_l = (R_l + R_0)/2
         Z_l = (Z_l + Z_0)/2
         R_h = (R_h + R_0)/2
@@ -263,8 +260,8 @@ for i in range(N_shell.shape[0] - 1):
             
         n_theta_elip = n_theta_elip[:-1]/N_shell[i]
             
+        random_mask = np.random.binomial(1, 0.1, N_theta_sph_model) > 0
 # =============================================================================
-#         random_mask = np.random.binomial(1, 0.1, N_theta_sph_model) > 0
 #         plt.figure()
 #         plt.scatter(theta_sph[random_mask], n_theta_sph[random_mask],
 #                     alpha = 0.5, label='spherical', s=5)
@@ -308,6 +305,41 @@ for i in range(N_shell.shape[0] - 1):
         A1_R.append(R_shell[i]*np.ones(N_shell[i]))
         A1_Z.append(Z_shell[i]*np.ones(N_shell[i]))
         
+# last shell
+particles = seagen.GenShell(N_shell[-1], R_shell[-1])
+R_0 = R_shell[-1]
+Z_0 = Z_shell[-1]
+
+x = particles.A1_x
+y = particles.A1_y
+z = particles.A1_z
+
+r, theta, phi = cart_to_spher(x, y, z)
+
+theta = theta_elip_n_model(n_theta_sph_model(theta))
+
+x, y, z = spher_to_cart(r, theta, phi)
+alpha = np.sqrt(1/(x*x/R_0/R_0 + y*y/R_0/R_0 + z*z/Z_0/Z_0))
+x = alpha*x
+y = alpha*y
+z = alpha*z
+
+# =============================================================================
+#         plt.figure()
+#         plt.scatter(np.sqrt(x**2 + y**2), z, s=1)
+#         plt.scatter(np.sqrt(x1**2 + y1**2), z1, s=1)
+#         plt.show()
+# =============================================================================
+
+A1_x.append(x)
+A1_y.append(y)
+A1_z.append(z)
+
+A1_rho.append(rho_shell[i]*np.ones(N_shell[-1]))
+A1_m.append(m_picle_shell[i]*np.ones(N_shell[-1]))
+A1_R.append(R_shell[i]*np.ones(N_shell[-1]))
+A1_Z.append(Z_shell[i]*np.ones(N_shell[-1]))
+        
 A1_x = np.concatenate(A1_x)
 A1_y = np.concatenate(A1_y)
 A1_z = np.concatenate(A1_z)
@@ -316,7 +348,6 @@ A1_m = np.concatenate(A1_m)
 A1_R = np.concatenate(A1_R)
 A1_Z = np.concatenate(A1_Z)
         
-
         
 # Recompute final rho sph
 x_reshaped = A1_x.reshape((-1,1))
@@ -334,8 +365,8 @@ distances, indices = nbrs.kneighbors(X)
 
 w_edge = 2
 h = np.max(distances, axis=1)/w_edge
-M = us._generate_M(indices, A1_m)
-rho_sph_ps = us.SPH_density(M, distances, h)
+M_sph = us._generate_M(indices, A1_m)
+rho_sph_ps = us.SPH_density(M_sph, distances, h)
 
 delta_rho_ps = (rho_sph_ps - A1_rho)/A1_rho
         
@@ -348,7 +379,7 @@ plt.xlabel(r"$r_c$ $[R_{earth}]$")
 plt.ylabel(r"$z$ $[R_{earth}]$")
 cbar = plt.colorbar()
 cbar.set_label(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
-plt.clim(-0.1, 0.1)
+plt.clim(-0.05, 0.05)
 plt.axes().set_aspect('equal')
 plt.show()
         
