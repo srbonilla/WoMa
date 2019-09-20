@@ -100,7 +100,7 @@ rho_layer = rho_e_model(R)
 Z = rho_p_model_inv(rho_layer)
 
 f = Z/R
-m_sph = particles.m*f
+m_sph = particles.m
 
 # =============================================================================
 # # example that works fine
@@ -114,7 +114,7 @@ m_sph = particles.m*f
 # =============================================================================
 
 # example that doesn't works fine
-i = 2
+i = 10
 delta = 1
 R_shell = np.unique(R)[-i]
 Z_shell = np.unique(Z)[-i]

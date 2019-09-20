@@ -22,7 +22,14 @@ from numba import njit
 @njit
 def compute_F(delta_rho_sph_0, delta_rho_sph_j, dist_0_j, kappa=1):
     assert(len(delta_rho_sph_j) == len(dist_0_j))
-    return kappa*(delta_rho_sph_0 + delta_rho_sph_j)/dist_0_j/dist_0_j
+    if delta_rho_sph_0 <= 0.:
+        F = np.zeros_like(dist_0_j)
+        return F
+    F = kappa*(delta_rho_sph_0 + delta_rho_sph_j)/dist_0_j/dist_0_j
+    F[delta_rho_sph_0*delta_rho_sph_j <= 0] = 0.
+    F[delta_rho_sph_j <= 0] = 0.
+    
+    return F
 
 @njit
 def compute_dir(x0, y0, z0, xj, yj, zj):
@@ -87,13 +94,22 @@ def update_x_y_z_vx_vy_vz(x, y, z, vx, vy, vz, Fx, Fy, Fz, dt=0.01):
     assert(len(Fy) == N_picle)
     assert(len(Fz) == N_picle)
     
-    vx_new = vx + Fx*dt
-    vy_new = vy + Fy*dt
-    vz_new = vz + Fz*dt
+# =============================================================================
+#     vx_new = vx + Fx*dt
+#     vy_new = vy + Fy*dt
+#     vz_new = vz + Fz*dt
+#     
+#     x_new = x + vx*dt
+#     y_new = y + vy*dt
+#     z_new = z + vz*dt
+# =============================================================================
+    x_new = x + Fx*dt
+    y_new = y + Fy*dt
+    z_new = z + Fz*dt
     
-    x_new = x + vx*dt
-    y_new = y + vy*dt
-    z_new = z + vz*dt
+    vx_new = np.zeros_like(x)
+    vy_new = np.zeros_like(y)
+    vz_new = np.zeros_like(z)
     
     return x_new, y_new, z_new, vx_new, vy_new, vz_new
 
@@ -251,7 +267,7 @@ y_ps = y.copy()
 z_ps = z.copy()
 
 # simulation
-for i in tqdm(range(40)):
+for i in range(600):
     # Find neigbors and compute SPH density
     x_reshaped = x_ps.reshape((-1,1))
     y_reshaped = y_ps.reshape((-1,1))
@@ -272,9 +288,13 @@ for i in tqdm(range(40)):
     
     # Compute force
     delta_rho = (rho_sph - rho)/rho
+    print("Iteration: " + str(i) + "")
+    print("Sum abs delta rho sph: " + str(np.sum(np.abs(delta_rho[R != np.unique(R)[-1]]))))
     # set delta = 0 for boundaries
     delta_rho[R == np.max(R)] = 0.
-    Fx, Fy, Fz = compute_Fr_Fy_Fz_for_all(x_ps, y_ps, z_ps, delta_rho, distances, indices, kappa=1e13)
+    
+    # Compute forces
+    Fx, Fy, Fz = compute_Fr_Fy_Fz_for_all(x_ps, y_ps, z_ps, delta_rho, distances, indices, kappa=1e15)
     
     # Supress F in r, phi coordinates
     r_ps = np.sqrt(x_ps**2 + y_ps**2 + z_ps**2)
@@ -283,26 +303,38 @@ for i in tqdm(range(40)):
     
     Fr, Ftheta, Fphi = cart_to_spher_vector_transf(Fx, Fy, Fz, theta, phi)
     
-    Fr = 0.01*Fr
-    Fphi = 0.1*Fphi
+    Fr = 0.0001*Fr
+    Fphi = 0.0001*Fphi
     
     Fx, Fy, Fz = spher_to_cart_vector_transf(Fr, Ftheta, Fphi, theta, phi)
+    
+    #Fz = 0.0001*Fz
+    
+    # let move only last shells
+    Fx[R == np.unique(R)[-1]] = 0.
+    Fy[R == np.unique(R)[-1]] = 0.
+    Fz[R == np.unique(R)[-1]] = 0.
+    
+    #print(np.abs(delta_rho[R == np.unique(R)[-3]]).sum())
 
     # Update position
     x_ps, y_ps, z_ps, vx_ps, vy_ps, vz_ps = \
         update_x_y_z_vx_vy_vz_inshell(x_ps, y_ps, z_ps, vx_ps, vy_ps, vz_ps, Fx, Fy, Fz, R, Z, dt=1)
         
-    vx_ps[vx_ps > 500] = 500
-    vy_ps[vy_ps > 500] = 500
-    vz_ps[vz_ps > 500] = 500
-    vx_ps[vx_ps < -500] = -500
-    vy_ps[vy_ps < -500] = -500
-    vz_ps[vz_ps < -500] = -500
-    
-    if i % 100 == 0:
-        vx_ps = np.zeros_like(x)
-        vy_ps = np.zeros_like(y)
-        vz_ps = np.zeros_like(z)
+# =============================================================================
+#     limit = 1000
+#     vx_ps[vx_ps > limit] = limit
+#     vy_ps[vy_ps > limit] = limit
+#     vz_ps[vz_ps > limit] = limit
+#     vx_ps[vx_ps < -limit] = -limit
+#     vy_ps[vy_ps < -limit] = -limit
+#     vz_ps[vz_ps < -limit] = -limit
+#     
+#     if i % 500 == 0:
+#         vx_ps = np.zeros_like(x)
+#         vy_ps = np.zeros_like(y)
+#         vz_ps = np.zeros_like(z)
+# =============================================================================
 
 # Recompute final rho sph
 x_reshaped = x_ps.reshape((-1,1))
@@ -336,7 +368,7 @@ plt.xlabel(r"$r_c$ $[R_{earth}]$")
 plt.ylabel(r"$z$ $[R_{earth}]$")
 cbar = plt.colorbar()
 cbar.set_label(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
-plt.clim(-0.1,0.1)
+plt.clim(-0.1, 0.1)
 plt.axes().set_aspect('equal')
 plt.show()
 

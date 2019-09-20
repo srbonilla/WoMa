@@ -1630,7 +1630,7 @@ class SpinPlanet():
             self.A1_rho_pole      = profile_p[-1]
         
         self.M = us.compute_spin_planet_M(self.A1_r_equator, self.A1_rho_equator,
-                                       self.A1_r_pole, self.A1_rho_pole)
+                                          self.A1_r_pole, self.A1_rho_pole)
 
 class GenSpheroid():
 
@@ -1690,11 +1690,11 @@ class GenSpheroid():
 
         if self.num_layer == 1:
 
-            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            x, y, z, vx, vy, vz, m, rho, u, P, h, mat_id, picle_id = \
             L1_spin.picle_placement_L1(self.A1_r_equator, self.A1_rho_equator,
                                        self.A1_r_pole, self.A1_rho_pole, self.Tw, self.N_particles,
                                        self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                                       N_neig, num_attempt)
+                                       N_neig)
 
             self.A1_picle_x      = x
             self.A1_picle_y      = y
@@ -1703,10 +1703,10 @@ class GenSpheroid():
             self.A1_picle_vy     = vy
             self.A1_picle_vz     = vz
             self.A1_picle_m      = m
-            self.A1_picle_h      = h
             self.A1_picle_rho    = rho
-            self.A1_picle_P      = P
             self.A1_picle_u      = u
+            self.A1_picle_P      = P
+            self.A1_picle_h      = h
             self.A1_picle_mat_id = mat_id
             self.A1_picle_id     = picle_id
             self.N_particles     = x.shape[0]
@@ -1716,13 +1716,13 @@ class GenSpheroid():
             rho_P_model       = interp1d(self.A1_P, self.A1_rho)
             self.rho_R1       = rho_P_model(self.P_R1)
 
-            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            x, y, z, vx, vy, vz, m, rho, u, P, h, mat_id, picle_id = \
                 L2_spin.picle_placement_L2(self.A1_r_equator, self.A1_rho_equator,
                                            self.A1_r_pole, self.A1_rho_pole,
                                            self.Tw, self.N_particles, self.rho_R1,
                                            self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
                                            self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                                           N_neig, num_attempt)
+                                           N_neig)
 
             self.A1_picle_x      = x
             self.A1_picle_y      = y
@@ -1731,10 +1731,10 @@ class GenSpheroid():
             self.A1_picle_vy     = vy
             self.A1_picle_vz     = vz
             self.A1_picle_m      = m
-            self.A1_picle_h      = h
             self.A1_picle_rho    = rho
-            self.A1_picle_P      = P
             self.A1_picle_u      = u
+            self.A1_picle_P      = P
+            self.A1_picle_h      = h
             self.A1_picle_mat_id = mat_id
             self.A1_picle_id     = picle_id
             self.N_particles     = x.shape[0]
@@ -1745,14 +1745,14 @@ class GenSpheroid():
             self.rho_R1  = rho_P_model(self.P_R1)
             self.rho_R2  = rho_P_model(self.P_R2)
 
-            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            x, y, z, vx, vy, vz, m, rho, u, P, h, mat_id, picle_id = \
                 L3_spin.picle_placement_L3(self.A1_r_equator, self.A1_rho_equator,
                                            self.A1_r_pole, self.A1_rho_pole,
                                            self.Tw, self.N_particles, self.rho_R1, self.rho_R2,
                                            self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
                                            self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
                                            self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
-                                           N_neig, num_attempt)
+                                           N_neig)
 
             self.A1_picle_x      = x
             self.A1_picle_y      = y
@@ -1761,10 +1761,10 @@ class GenSpheroid():
             self.A1_picle_vy     = vy
             self.A1_picle_vz     = vz
             self.A1_picle_m      = m
-            self.A1_picle_h      = h
             self.A1_picle_rho    = rho
-            self.A1_picle_P      = P
             self.A1_picle_u      = u
+            self.A1_picle_P      = P
+            self.A1_picle_h      = h
             self.A1_picle_mat_id = mat_id
             self.A1_picle_id     = picle_id
             self.N_particles     = x.shape[0]

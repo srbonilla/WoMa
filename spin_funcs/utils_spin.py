@@ -10,7 +10,12 @@ import numpy as np
 from numba import njit, jit
 import glob_vars as gv
 from scipy.interpolate import interp1d
+import seagen
+import scipy.integrate as integrate
+from sklearn.neighbors import NearestNeighbors
+from tqdm import tqdm
 
+# Spining model functions
 @njit
 def _analytic_solution_r(r, R, Z, x):
     """ Indefinite integral, analytic solution of the optential
@@ -366,3 +371,374 @@ def compute_spin_planet_M(r_array, rho_e, z_array, rho_p):
         M += rho_e[i]*dV
         
     return M
+
+# Particle placement functions
+@njit
+def vol_spheroid(R, Z):
+    return 4*np.pi*R*R*Z/3
+
+@njit
+def integrand(theta, R_l, Z_l, R_h, Z_h):
+    
+    r_h = np.sin(theta)**2/R_h/R_h + np.cos(theta)**2/Z_h/Z_h
+    r_h = np.sqrt(1/r_h)
+    
+    r_l = np.sin(theta)**2/R_l/R_l + np.cos(theta)**2/Z_l/Z_l
+    r_l = np.sqrt(1/r_l)
+    
+    I = 2*np.pi*(r_h**3 - r_l**3)*np.sin(theta)/3
+    
+    return I
+    
+def V_theta(theta_0, theta_1, shell_config):
+    
+    R_l, Z_l = shell_config[0]
+    R_h, Z_h = shell_config[1]
+    
+    assert R_h >= R_l
+    assert Z_h >= Z_l
+    assert theta_1 > theta_0
+    
+    V = integrate.quad(integrand, theta_0, theta_1, args=(R_l, Z_l, R_h, Z_h))
+    
+    return V[0]
+
+@njit
+def cart_to_spher(x, y, z):
+    
+    r = np.sqrt(x**2 + y**2 + z**2)
+    theta = np.arccos(z/r)
+    phi = np.arctan2(y, x)
+    
+    return r, theta, phi
+
+@njit
+def spher_to_cart(r, theta, phi):
+    
+    x = r*np.sin(theta)*np.cos(phi)
+    y = r*np.sin(theta)*np.sin(phi)
+    z = r*np.cos(theta)
+    
+    return x, y ,z
+
+def _SPH_density(x, y, z, m, N_neig):
+    
+    x_reshaped = x.reshape((-1,1))
+    y_reshaped = y.reshape((-1,1))
+    z_reshaped = z.reshape((-1,1))
+    
+    X = np.hstack((x_reshaped, y_reshaped, z_reshaped))
+    
+    del x_reshaped, y_reshaped, z_reshaped
+    
+    nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
+    nbrs.fit(X)
+    
+    distances, indices = nbrs.kneighbors(X)
+    
+    w_edge = 2
+    h = np.max(distances, axis=1)/w_edge
+    M = _generate_M(indices, m)
+    rho_sph = SPH_density(M, distances, h)
+    
+    return rho_sph
+    
+# main function 
+def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
+    
+    """ Particle placement for a spining profile.
+
+        Args:
+
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+
+            rho_p ([float]):
+                Polar profile of densities (SI).
+
+            N (int):
+                Number of particles.
+                
+            Tw (float):
+                Period of the planet (hours).
+
+        Returns:
+
+            A1_x ([float]):
+                Position x of each particle (SI).
+
+            A1_y ([float]):
+                Position y of each particle (SI).
+
+            A1_z ([float]):
+                Position z of each particle (SI).
+
+            A1_vx ([float]):
+                Velocity in x of each particle (SI).
+
+            A1_vy ([float]):
+                Velocity in y of each particle (SI).
+
+            A1_vz ([float]):
+                Velocity in z of each particle (SI).
+
+            A1_m ([float]):
+                Mass of every particle (SI).
+                
+            A1_rho ([float]):
+                Density for every particle (SI).
+
+            A1_h ([float]):
+                Smoothing lenght for every particle (SI).
+
+            A1_R ([float]):
+                Semi-major axis of the elipsoid for every particle
+                
+            A1_Z ([float]):
+                Semi-minor axis of the elipsoid for every particle
+
+    """
+    
+    assert len(r_array) == len(rho_e)
+    assert len(z_array) == len(rho_p)
+    
+    # mass of the model planet
+    M = compute_spin_planet_M(r_array, rho_e, z_array, rho_p)
+    
+    # Equatorial radius
+    Re = np.max(r_array[rho_e > 0])
+    
+    # First model - spherical planet from equatorial profile
+    radii = np.arange(0, Re, Re/1000000)
+    rho_e_model = interp1d(r_array, rho_e)
+    densities = rho_e_model(radii)
+    particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
+    
+    # Compute R, Z, rho and mass for every shell
+    
+    rho_p_model_inv = interp1d(rho_p, z_array)
+    R = particles.A1_r.copy()
+    rho_shell = rho_e_model(R)
+    Z = rho_p_model_inv(rho_shell)
+    
+    R_shell = np.unique(R)
+    Z_shell = np.unique(Z)
+    rho_shell = np.unique(rho_shell)
+    rho_shell = -np.sort(-rho_shell)
+    N_shell_original = np.zeros_like(rho_shell, dtype='int')
+    M_shell = np.zeros_like(rho_shell)
+    
+    for i in range(N_shell_original.shape[0]):
+        N_shell_original[i] = int((R == R_shell[i]).sum())
+       
+    # Get picle mass of final configuration
+    alpha = M/particles.A1_m.sum()
+    m_picle = alpha*np.median(particles.A1_m)
+    
+    # Compute mass of every shell
+    for i in range(M_shell.shape[0] - 1):
+        if i == 0:
+            
+            M_shell[i] = N_shell_original[i]*m_picle
+            
+        else:
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+            M_shell[i] = rho_shell[i]*V_theta(0, np.pi, [[R_l, Z_l], [R_h, Z_h]])
+    
+    # Last shell
+    M_shell[-1] = M - M_shell.sum()
+    if M_shell[-1] < 0: M_shell[-1] = 0
+    
+    # Number of particles per shell
+    N_shell = np.round(M_shell/m_picle).astype(int)
+    
+    # Tweek mass picle per shell to match total mass
+    m_picle_shell = M_shell/N_shell
+    
+    # n of theta for spherical shell
+    N_theta_sph_model = 2000000
+    particles = seagen.GenShell(N_theta_sph_model, 1)
+    
+    x = particles.A1_x
+    y = particles.A1_y
+    z = particles.A1_z
+    r = np.sqrt(x**2 + y**2 + z**2)
+    
+    theta = np.arccos(z/r)
+    theta_sph = np.sort(theta)
+    
+    assert len(theta) == len(theta_sph)
+    
+    n_theta_sph = np.arange(1, N_theta_sph_model + 1)/N_theta_sph_model
+    
+    # Generate shells and make adjustments
+    A1_x = []
+    A1_y = []
+    A1_z = []
+    A1_rho = []
+    A1_m = []
+    A1_R = []
+    A1_Z = []
+    
+    theta_bins = np.linspace(0, np.pi, 10000)
+    delta_theta = (theta_bins[1] - theta_bins[0])/2
+    theta_elip = theta_bins[:-1] + delta_theta
+    
+    n_theta_elip = np.zeros_like(theta_bins)
+    
+    for i in tqdm(range(N_shell.shape[0] - 1), desc="Creating shells..."):
+        
+        # first layer
+        if i == 0:
+            particles = seagen.GenShell(N_shell[i], R_shell[i])
+            A1_x.append(particles.A1_x)
+            A1_y.append(particles.A1_y)
+            A1_z.append(particles.A1_z*Z_shell[i]/R_shell[i])
+            A1_rho.append(rho_shell[i]*np.ones(N_shell[i]))
+            A1_m.append(m_picle_shell[i]*np.ones(N_shell[i]))
+            A1_R.append(R_shell[i]*np.ones(N_shell[i]))
+            A1_Z.append(Z_shell[i]*np.ones(N_shell[i]))
+            
+        else:
+            
+            # Create analitical model for the shell
+            theta_elip = theta_bins[:-1] + delta_theta
+            n_theta_elip = np.zeros_like(theta_bins)
+            particles = seagen.GenShell(N_shell[i], R_shell[i])
+                
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+                
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+            shell_config = [[R_l, Z_l], [R_h, Z_h]]
+            
+            for j in range(theta_bins.shape[0] - 1):
+                low = theta_bins[j]
+                high = theta_bins[j + 1]
+                
+                # analitical solution particle number
+                n_theta_elip[j] = rho_shell[i]*V_theta(low, high, shell_config)/m_picle_shell[i]
+                
+            for j in range(1, n_theta_elip.shape[0]):
+                n_theta_elip[j] = n_theta_elip[j] + n_theta_elip[j - 1]
+                
+            n_theta_elip = n_theta_elip[:-1]/N_shell[i]
+                
+# =============================================================================
+#             random_mask = np.random.binomial(1, 0.1, N_theta_sph_model) > 0
+#             plt.figure()
+#             plt.scatter(theta_sph[random_mask], n_theta_sph[random_mask],
+#                         alpha = 0.5, label='spherical', s=5)
+#             plt.scatter(theta_elip, n_theta_elip, alpha = 0.5, label='eliptical - theory', s=5)
+#             plt.xlabel(r"$\theta$")
+#             plt.ylabel(r"cumulative $n(\theta) [\%]$")
+#             plt.legend()
+#             plt.show()
+# =============================================================================
+            
+            # Transfor theta acordingly
+            n_theta_sph_model = interp1d(theta_sph, n_theta_sph)
+            theta_elip_n_model = interp1d(n_theta_elip, theta_elip)
+            
+            x = particles.A1_x
+            y = particles.A1_y
+            z = particles.A1_z
+            
+            r, theta, phi = cart_to_spher(x, y, z)
+            
+            theta = theta_elip_n_model(n_theta_sph_model(theta))
+            
+            x, y, z = spher_to_cart(r, theta, phi)
+            
+            # Project on the spheroid without changing theta
+            alpha = np.sqrt(1/(x*x/R_0/R_0 + y*y/R_0/R_0 + z*z/Z_0/Z_0))
+            x = alpha*x
+            y = alpha*y
+            z = alpha*z
+            
+            # Save results
+            A1_x.append(x)
+            A1_y.append(y)
+            A1_z.append(z)
+    
+            A1_rho.append(rho_shell[i]*np.ones(N_shell[i]))
+            A1_m.append(m_picle_shell[i]*np.ones(N_shell[i]))
+            A1_R.append(R_shell[i]*np.ones(N_shell[i]))
+            A1_Z.append(Z_shell[i]*np.ones(N_shell[i]))
+            
+    # last shell: use model from previous shell
+    if N_shell[-1] > 0:
+        particles = seagen.GenShell(N_shell[-1], R_shell[-1])
+        R_0 = R_shell[-1]
+        Z_0 = Z_shell[-1]
+        
+        x = particles.A1_x
+        y = particles.A1_y
+        z = particles.A1_z
+        
+        r, theta, phi = cart_to_spher(x, y, z)
+        
+        theta = theta_elip_n_model(n_theta_sph_model(theta))
+        
+        x, y, z = spher_to_cart(r, theta, phi)
+        alpha = np.sqrt(1/(x*x/R_0/R_0 + y*y/R_0/R_0 + z*z/Z_0/Z_0))
+        x = alpha*x
+        y = alpha*y
+        z = alpha*z
+        
+        A1_x.append(x)
+        A1_y.append(y)
+        A1_z.append(z)
+        
+        A1_rho.append(rho_shell[i]*np.ones(N_shell[-1]))
+        A1_m.append(m_picle_shell[i]*np.ones(N_shell[-1]))
+        A1_R.append(R_shell[i]*np.ones(N_shell[-1]))
+        A1_Z.append(Z_shell[i]*np.ones(N_shell[-1]))
+            
+    # Flatten
+    A1_x = np.concatenate(A1_x)
+    A1_y = np.concatenate(A1_y)
+    A1_z = np.concatenate(A1_z)
+    A1_rho = np.concatenate(A1_rho)
+    A1_m = np.concatenate(A1_m)
+    A1_R = np.concatenate(A1_R)
+    A1_Z = np.concatenate(A1_Z)
+    
+    # Compute velocities (T_w in hours)
+    A1_vx = np.zeros(A1_m.shape[0])
+    A1_vy = np.zeros(A1_m.shape[0])
+    A1_vz = np.zeros(A1_m.shape[0])
+
+    hour_to_s = 3600
+    wz = 2*np.pi/Tw/hour_to_s
+
+    A1_vx = -A1_y*wz
+    A1_vy = A1_x*wz
+    
+    return A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_R, A1_Z
+    

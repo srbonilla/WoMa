@@ -111,6 +111,7 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
                 Value of the density which satisfies P(u(rho), rho) = 0
                 (SI).
     """
+    
     assert rho0 > 0
     assert P >= 0
     assert rho0 < rho1
