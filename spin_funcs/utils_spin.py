@@ -539,7 +539,8 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
        
     # Get picle mass of final configuration
     alpha = M/particles.A1_m.sum()
-    m_picle = alpha*np.median(particles.A1_m)
+    #m_picle = alpha*np.median(particles.A1_m)
+    m_picle = np.median(particles.A1_m)*max(z_array[rho_p > 0])/max(r_array[rho_e > 0])
     
     # Compute mass of every shell
     for i in range(M_shell.shape[0] - 1):
@@ -606,6 +607,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     for i in tqdm(range(N_shell.shape[0] - 1), desc="Creating shells..."):
         
         # first layer
+            
         if i == 0:
             particles = seagen.GenShell(N_shell[i], R_shell[i])
             A1_x.append(particles.A1_x)
@@ -715,10 +717,10 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
         A1_y.append(y)
         A1_z.append(z)
         
-        A1_rho.append(rho_shell[i]*np.ones(N_shell[-1]))
-        A1_m.append(m_picle_shell[i]*np.ones(N_shell[-1]))
-        A1_R.append(R_shell[i]*np.ones(N_shell[-1]))
-        A1_Z.append(Z_shell[i]*np.ones(N_shell[-1]))
+        A1_rho.append(rho_shell[-1]*np.ones(N_shell[-1]))
+        A1_m.append(m_picle_shell[-1]*np.ones(N_shell[-1]))
+        A1_R.append(R_shell[-1]*np.ones(N_shell[-1]))
+        A1_Z.append(Z_shell[-1]*np.ones(N_shell[-1]))
             
     # Flatten
     A1_x = np.concatenate(A1_x)
