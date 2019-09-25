@@ -12,7 +12,6 @@ import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import woma
 from scipy.interpolate import interp1d
-from tqdm import tqdm
 
 def vol_spheroid(R, Z):
     return 4*np.pi*R*R*Z/3
@@ -215,10 +214,11 @@ plt.show()
 
 # combine
 plt.figure()
-plt.scatter(theta_sorted[random_mask], n_theta_sph[random_mask]/N_picle_shell,
-            alpha = 0.5, label='spherical', s=5)
-plt.scatter(theta_bins, n_theta_elip/N_picle_shell, alpha = 0.5, label='eliptical - theory', s=5)
-plt.xlabel(r"$\theta$")
-plt.ylabel(r"cumulative $n(\theta) [\%]$")
+plt.plot(theta_sorted[random_mask], n_theta_sph[random_mask]/N_picle_shell,
+            alpha = 1, label='spherical', linewidth=2)
+plt.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='eliptical', linewidth=2)
+plt.xlabel(r"$\theta$ [rad]")
+plt.ylabel(r"$n(\theta)$ [%]")
 plt.legend()
+plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
 plt.show()

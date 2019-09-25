@@ -228,7 +228,7 @@ velocities = np.array([particles.A1_picle_vx, particles.A1_picle_vy, particles.A
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '2layer_10e7.hdf5'
+filename = '2layer_10e5.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, positions, velocities,
                              particles.A1_picle_m, particles.A1_picle_h,
