@@ -132,9 +132,14 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
     T_aux   = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
     u_aux   = u_rho_T(rho_aux, T_aux, mat_id)
     P_aux   = P_u_rho(u_aux, rho_aux, mat_id)
+    
+    if np.isnan(P0): P0 = 0.
+    if np.isnan(P_aux): P_aux = 0.
 
     if ((P0 < P and P < P1) or (P0 > P and P > P1)):
-        while np.abs(rho1 - rho0) > tolerance:
+        max_counter = 200
+        counter     = 0
+        while np.abs(rho1 - rho0) > tolerance and counter < max_counter:
             T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id)
             u0 = u_rho_T(rho0, T0, mat_id)
             P0 = P_u_rho(u0, rho0, mat_id)
@@ -144,6 +149,8 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
             T2 = T_rho(rho2, T_rho_type, T_rho_args, mat_id)
             u2 = u_rho_T(rho2, T2, mat_id)
             P2 = P_u_rho(u2, rho2, mat_id)
+            
+            if np.isnan(P0): P0 = 0.
 
             f0 = P - P0
             f2 = P - P2
@@ -153,7 +160,8 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
             else:
                 rho1 = rho2
 
-            rho2 = (rho0 + rho1)/2.
+            rho2     = (rho0 + rho1)/2.
+            counter += 1
 
         return rho2
 
@@ -213,7 +221,7 @@ def rho_P_T(P, T, mat_id):
         assert P > 0
         
         rho0 = 1e-3
-        rho1 = 1e6
+        rho1 = 1e5
     else:
         raise ValueError("Invalid material ID")
     return find_rho(P, mat_id, 1, [float(T), 0.], rho0, rho1)

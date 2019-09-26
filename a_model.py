@@ -217,6 +217,7 @@ plt.figure()
 plt.plot(theta_sorted[random_mask], n_theta_sph[random_mask]/N_picle_shell,
             alpha = 1, label='spherical', linewidth=2)
 plt.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='eliptical', linewidth=2)
+plt.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='analytical sphere')
 plt.xlabel(r"$\theta$ [rad]")
 plt.ylabel(r"$n(\theta)$ [%]")
 plt.legend()

@@ -125,7 +125,7 @@ l1_test_sp.spin()
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l1_test_sp,
-    N_particles = 1e5)
+    N_particles = 1e7)
 
 # Ploting
 rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)
@@ -146,6 +146,8 @@ plt.show()
         
 plt.figure()
 plt.scatter(particles.A1_picle_z/R_earth, delta_rho, s=1, alpha=0.5)
+plt.xlabel(r"z [$R_{earth}$]")
+plt.ylabel(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
 plt.show() 
 
 # Create swift in file
@@ -154,7 +156,7 @@ velocities = np.array([particles.A1_picle_vx, particles.A1_picle_vy, particles.A
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '1layer_10e5.hdf5'
+filename = '1layer_10e7.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, positions, velocities,
                              particles.A1_picle_m, particles.A1_picle_h,
@@ -171,12 +173,13 @@ np.save('rho_p', l1_test_sp.A1_rho_pole)
 
 l2_test = woma.Planet(
     name            = "prof_pE",
-    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    #A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
-    P_s             = 0,
+    P_s             = 1e3,
     T_s             = 300
     )
 

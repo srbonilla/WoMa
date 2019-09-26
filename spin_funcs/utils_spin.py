@@ -573,21 +573,23 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     # Tweek mass picle per shell to match total mass
     m_picle_shell = M_shell/N_shell
     
-    # n of theta for spherical shell
-    N_theta_sph_model = 2000000
-    particles = seagen.GenShell(N_theta_sph_model, 1)
-    
-    x = particles.A1_x
-    y = particles.A1_y
-    z = particles.A1_z
-    r = np.sqrt(x**2 + y**2 + z**2)
-    
-    theta = np.arccos(z/r)
-    theta_sph = np.sort(theta)
-    
-    assert len(theta) == len(theta_sph)
-    
-    n_theta_sph = np.arange(1, N_theta_sph_model + 1)/N_theta_sph_model
+# =============================================================================
+#     # n of theta for spherical shell
+#     N_theta_sph_model = 2000000
+#     particles = seagen.GenShell(N_theta_sph_model, 1)
+#     
+#     x = particles.A1_x
+#     y = particles.A1_y
+#     z = particles.A1_z
+#     r = np.sqrt(x**2 + y**2 + z**2)
+#     
+#     theta = np.arccos(z/r)
+#     theta_sph = np.sort(theta)
+#     
+#     assert len(theta) == len(theta_sph)
+#     
+#     n_theta_sph = np.arange(1, N_theta_sph_model + 1)/N_theta_sph_model
+# =============================================================================
     
     # Generate shells and make adjustments
     A1_x = []
@@ -664,7 +666,6 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
 # =============================================================================
             
             # Transfor theta acordingly
-            n_theta_sph_model = interp1d(theta_sph, n_theta_sph)
             theta_elip_n_model = interp1d(n_theta_elip, theta_elip)
             
             x = particles.A1_x
@@ -673,7 +674,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
             
             r, theta, phi = cart_to_spher(x, y, z)
             
-            theta = theta_elip_n_model(n_theta_sph_model(theta))
+            theta = theta_elip_n_model((1 - np.cos(theta))/2)
             
             x, y, z = spher_to_cart(r, theta, phi)
             
@@ -705,7 +706,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
         
         r, theta, phi = cart_to_spher(x, y, z)
         
-        theta = theta_elip_n_model(n_theta_sph_model(theta))
+        theta = theta_elip_n_model((1 - np.cos(theta))/2)
         
         x, y, z = spher_to_cart(r, theta, phi)
         alpha = np.sqrt(1/(x*x/R_0/R_0 + y*y/R_0/R_0 + z*z/Z_0/Z_0))
