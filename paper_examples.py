@@ -179,7 +179,7 @@ l2_test = woma.Planet(
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
-    P_s             = 1e3,
+    P_s             = 1e5,
     T_s             = 300
     )
 
@@ -202,7 +202,7 @@ plot_spin_profile(l2_test_sp)
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l2_test_sp,
-    N_particles = 1e5)
+    N_particles = 1e7)
 
 # Ploting
 rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)
@@ -231,7 +231,7 @@ velocities = np.array([particles.A1_picle_vx, particles.A1_picle_vy, particles.A
 
 swift_to_SI = swift_io.Conversions(1, 1, 1)
 
-filename = '2layer_10e5.hdf5'
+filename = '2layer_10e7.hdf5'
 with h5py.File(filename, 'w') as f:
     swift_io.save_picle_data(f, positions, velocities,
                              particles.A1_picle_m, particles.A1_picle_h,

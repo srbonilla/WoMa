@@ -13,6 +13,9 @@ import scipy.integrate as integrate
 import woma
 from scipy.interpolate import interp1d
 
+
+plt.rcParams.update({'font.size': 12})
+
 def vol_spheroid(R, Z):
     return 4*np.pi*R*R*Z/3
 
@@ -222,4 +225,15 @@ plt.xlabel(r"$\theta$ [rad]")
 plt.ylabel(r"$n(\theta)$ [%]")
 plt.legend()
 plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
+plt.show()
+
+fig, ax = plt.subplots(1, 1, figsize=(5,5))
+ax.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='Sphere')
+ax.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='Spheroid')
+ax.set_ylabel(r"$N(\theta)$")
+ax.set_xlabel(r"$\theta$")
+plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
+ax.legend()
+plt.tight_layout()
+fig.savefig('Fig5.pdf')
 plt.show()
