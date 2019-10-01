@@ -148,14 +148,26 @@ l2_test_sp = woma.SpinPlanet(
 
 l2_test_sp.spin()
 
-plot_spin_profile(l2_test_sp)
+#plot_spin_profile(l2_test_sp)
 
 #############
 
+cmap = plt.get_cmap('copper')
+colors = [cmap(i) for i in np.linspace(0, 1, 20)]
+color_copper = colors[17]
+
+cmap = plt.get_cmap('BrBG')
+colors = [cmap(i) for i in np.linspace(0, 1, 20)]
+color_ocean = colors[15]
+
 def plot_spherical_prof(l1_test, l2_test):
+    
+    
     fig, ax = plt.subplots(1, 1, figsize=(5,5), sharex=True)
-    ax.plot(l1_test.A1_r[l1_test.A1_rho > 0]/R_earth, l1_test.A1_rho[l1_test.A1_rho > 0], label='1 layer test')
-    ax.plot(l2_test.A1_r[l2_test.A1_rho > 0]/R_earth, l2_test.A1_rho[l2_test.A1_rho > 0], label='2 layer test')
+    ax.plot(l1_test.A1_r[l1_test.A1_rho > 0]/R_earth, l1_test.A1_rho[l1_test.A1_rho > 0],
+            label='1 layer test')
+    ax.plot(l2_test.A1_r[l2_test.A1_rho > 0]/R_earth, l2_test.A1_rho[l2_test.A1_rho > 0],
+            label='2 layer test')
     ax.set_xlabel(r"$r$ $[R_{earth}]$")
     ax.set_ylabel(r"$\rho$ $[Kg/m^3]$")
     plt.tight_layout()
@@ -270,30 +282,17 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
         
     de_1[0] = np.nan
     de_2[0] = np.nan
-        
-    fig, ax = plt.subplots(1, 1, figsize=(5,5), sharex=True)
-    ax.scatter(range(len(profile_e_1)), e_1, label='1 layer test')
-    ax.scatter(range(len(profile_e_1)), e_2, label='1 layer test')
-    ax.set_ylabel(r"$e$")
-    ax.set_xlabel(r"Iteration")
-    ax.set_xticks(np.arange(0, iterations + 1, step=5))
-    ax.set_ylim((0.58, 0.73))
-    ax.legend()
-    #ax.set_xticks((0, 5, 10, 15, 20), (r"0", r"5", r"10", r"15", r"20"))
-    plt.tight_layout()
-    #fig.savefig('Fig3.pdf')
-    plt.show()
     
     fig, ax = plt.subplots(2, 1, figsize=(5,5), sharex=True, gridspec_kw={'hspace': 0, 'height_ratios': [3, 1]})
     ax[0].scatter(range(len(profile_e_1)), e_1, label='1 layer test')
-    ax[0].scatter(range(len(profile_e_1)), e_2, label='1 layer test')
+    ax[0].scatter(range(len(profile_e_1)), e_2, label='2 layer test')
     ax[0].set_ylabel(r"$e$")
     ax[0].set_xlabel(r"Iteration")
     #ax[0].set_xticks(np.arange(0, iterations + 1, step=5))
     ax[0].set_ylim((0.58, 0.73))
     ax[0].legend()
     ax[1].scatter(range(len(profile_e_1)), de_1, label='1 layer test')
-    ax[1].scatter(range(len(profile_e_1)), de_2, label='1 layer test')
+    ax[1].scatter(range(len(profile_e_1)), de_2, label='2 layer test')
     ax[1].set_ylabel(r"$\Delta e_i = e_i - e_{i-1} $")
     ax[1].set_xlabel(r"Iteration")
     ax[1].set_xticks(np.arange(0, iterations + 1, step=5))
