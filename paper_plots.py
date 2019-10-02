@@ -160,31 +160,36 @@ cmap = plt.get_cmap('BrBG')
 colors = [cmap(i) for i in np.linspace(0, 1, 20)]
 color_ocean = colors[15]
 
+cmap = plt.get_cmap('Dark2')
+color_purple = cmap(2)
+color_ocre = cmap(5)
+color_green = cmap(0)
+
 def plot_spherical_prof(l1_test, l2_test):
     
     
     fig, ax = plt.subplots(1, 1, figsize=(5,5), sharex=True)
     ax.plot(l1_test.A1_r[l1_test.A1_rho > 0]/R_earth, l1_test.A1_rho[l1_test.A1_rho > 0],
-            label='1 layer test')
+            label='1 layer test', color=color_purple)
     ax.plot(l2_test.A1_r[l2_test.A1_rho > 0]/R_earth, l2_test.A1_rho[l2_test.A1_rho > 0],
-            label='2 layer test')
+            label='2 layer test', color=color_green)
     ax.set_xlabel(r"$r$ $[R_{earth}]$")
     ax.set_ylabel(r"$\rho$ $[Kg/m^3]$")
     plt.tight_layout()
     ax.legend()
-    fig.savefig('Fig1.pdf')
-    #plt.show()
+    #fig.savefig('Fig1.pdf')
+    plt.show()
     
 def plot_spin_prof(l1_test_sp, l2_test_sp):
     fig, ax = plt.subplots(2, 1, figsize=(5,7), sharex=True)
     ax[0].plot(l1_test_sp.A1_r_pole[l1_test_sp.A1_rho_pole > 0]/R_earth,
-            l1_test_sp.A1_rho_pole[l1_test_sp.A1_rho_pole > 0], label='1 layer test')
+            l1_test_sp.A1_rho_pole[l1_test_sp.A1_rho_pole > 0], label='1 layer test', color=color_purple)
     ax[0].plot(l2_test_sp.A1_r_pole[l2_test_sp.A1_rho_pole > 0]/R_earth,
-            l2_test_sp.A1_rho_pole[l2_test_sp.A1_rho_pole > 0], label='2 layer test')
+            l2_test_sp.A1_rho_pole[l2_test_sp.A1_rho_pole > 0], label='2 layer test', color=color_green)
     ax[1].plot(l1_test_sp.A1_r_equator[l1_test_sp.A1_rho_equator > 0]/R_earth,
-            l1_test_sp.A1_rho_equator[l1_test_sp.A1_rho_equator > 0], label='1 layer test')
+            l1_test_sp.A1_rho_equator[l1_test_sp.A1_rho_equator > 0], label='1 layer test', color=color_purple)
     ax[1].plot(l2_test_sp.A1_r_equator[l2_test_sp.A1_rho_equator > 0]/R_earth,
-            l2_test_sp.A1_rho_equator[l2_test_sp.A1_rho_equator > 0], label='2 layer test')
+            l2_test_sp.A1_rho_equator[l2_test_sp.A1_rho_equator > 0], label='2 layer test', color=color_green)
     ax[0].set_xlabel(r"$z$ $[R_{earth}]$")
     ax[0].set_ylabel(r"$\rho$ $[Kg/m^3]$")
     ax[1].set_xlabel(r"$r_{xy}$ $[R_{earth}]$")
@@ -193,7 +198,7 @@ def plot_spin_prof(l1_test_sp, l2_test_sp):
     ax[0].legend()
     ax[1].legend()
     fig.savefig('Fig2.pdf')
-    #plt.show()
+    plt.show()
     
 def plot_convergence_spin(l1_test_sp, l2_test_sp):
     
@@ -284,15 +289,15 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     de_2[0] = np.nan
     
     fig, ax = plt.subplots(2, 1, figsize=(5,5), sharex=True, gridspec_kw={'hspace': 0, 'height_ratios': [3, 1]})
-    ax[0].scatter(range(len(profile_e_1)), e_1, label='1 layer test')
-    ax[0].scatter(range(len(profile_e_1)), e_2, label='2 layer test')
+    ax[0].scatter(range(len(profile_e_1)), e_1, label='1 layer test', color=color_purple)
+    ax[0].scatter(range(len(profile_e_1)), e_2, label='2 layer test', color=color_green)
     ax[0].set_ylabel(r"$e$")
     ax[0].set_xlabel(r"Iteration")
     #ax[0].set_xticks(np.arange(0, iterations + 1, step=5))
     ax[0].set_ylim((0.58, 0.73))
     ax[0].legend()
-    ax[1].scatter(range(len(profile_e_1)), de_1, label='1 layer test')
-    ax[1].scatter(range(len(profile_e_1)), de_2, label='2 layer test')
+    ax[1].scatter(range(len(profile_e_1)), de_1, label='1 layer test', color=color_purple)
+    ax[1].scatter(range(len(profile_e_1)), de_2, label='2 layer test', color=color_green)
     ax[1].set_ylabel(r"$\Delta e_i = e_i - e_{i-1} $")
     ax[1].set_xlabel(r"Iteration")
     ax[1].set_xticks(np.arange(0, iterations + 1, step=5))

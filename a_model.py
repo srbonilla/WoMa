@@ -13,6 +13,11 @@ import scipy.integrate as integrate
 import woma
 from scipy.interpolate import interp1d
 
+cmap = plt.get_cmap('Dark2')
+color_purple = cmap(2)
+color_ocre = cmap(5)
+color_green = cmap(0)
+
 
 plt.rcParams.update({'font.size': 12})
 
@@ -228,8 +233,8 @@ plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
 plt.show()
 
 fig, ax = plt.subplots(1, 1, figsize=(5,5))
-ax.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='Sphere')
-ax.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='Spheroid')
+ax.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='Sphere', color=color_purple)
+ax.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='Spheroid', color=color_green)
 ax.set_ylabel(r"$N(\theta)$")
 ax.set_xlabel(r"$\theta$")
 plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
