@@ -324,6 +324,12 @@ class Planet():
     # ========
     # General
     # ========
+    def escape_velocity(self):
+        assert(self.M is not None)
+        assert(self.A1_R_layer[-1] is not None)
+        
+        self.v_escape = np.sqrt(2*gv.G*self.M/self.A1_R_layer[-1])
+        
     def update_attributes(self):
         """ Set all planet information after making the profiles.
         """
@@ -371,6 +377,8 @@ class Planet():
         self.P_s    = self.A1_P[-1]
         self.T_s    = self.A1_T[-1]
         self.rho_s  = self.A1_rho[-1]
+        
+        self.escape_velocity()
 
     def print_info(self):
         """ Print the Planet objects's main properties. """
@@ -1629,8 +1637,22 @@ class SpinPlanet():
             self.A1_rho_equator   = profile_e[-1]
             self.A1_rho_pole      = profile_p[-1]
         
+        # Compute mass of the planet
         self.M = us.compute_spin_planet_M(self.A1_r_equator, self.A1_rho_equator,
                                           self.A1_r_pole, self.A1_rho_pole)
+        
+        # Compute escape velocity
+        V_e, V_p = L1_spin._fillV(self.A1_r_equator, self.A1_rho_equator,
+                                  self.A1_r_pole, self.A1_rho_pole, self.Tw)
+        
+        i_equator = min(np.where(self.A1_rho_equator == 0)[0]) - 1
+        i_pole    = min(np.where(self.A1_rho_pole == 0)[0]) - 1
+        V_equator = V_e[i_equator]
+        V_pole    = V_p[i_pole]
+        self.v_escape_pole    = np.sqrt(-2*V_pole)
+        w = 2*np.pi/self.Tw/60/60
+        R_e = self.A1_r_equator[i_equator]
+        self.v_escape_equator = np.sqrt(-2*V_equator - (w*R_e)**2)
 
 class GenSpheroid():
 
