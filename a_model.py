@@ -235,10 +235,44 @@ plt.show()
 fig, ax = plt.subplots(1, 1, figsize=(5,5))
 ax.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='Sphere', color=color_purple)
 ax.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='Spheroid', color=color_green)
+ax.plot(theta_bins, rho_shell*_V_theta_an(theta_bins, shell_config)/m_shell, label='theory')
 ax.set_ylabel(r"$N(\theta)$")
 ax.set_xlabel(r"$\theta$")
 plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
 ax.legend()
 plt.tight_layout()
-fig.savefig('Fig5.pdf')
+#fig.savefig('Fig5.pdf')
 plt.show()
+
+#@njit
+def _i(theta, R, Z):
+    
+    i = - np.sqrt(2)*R*R*np.cos(theta)
+    i = i/np.sqrt(1/R/R + 1/Z/Z + (-1/R/R + 1/Z/Z)*np.cos(2*theta))
+    i = i + R*R*Z
+    
+    return i
+
+#@njit
+def V_theta_analytical(theta, shell_config):
+    
+    Rm1 = shell_config[0][0]
+    Zm1 = shell_config[0][1]
+    R1 = shell_config[1][0]
+    Z1 = shell_config[1][1]
+    
+    V = 2*np.pi/3*(_i(theta, R1, Z1) - _i(theta, Rm1, Zm1))
+    
+    return V
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    

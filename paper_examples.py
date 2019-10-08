@@ -125,7 +125,7 @@ l1_test_sp.spin()
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l1_test_sp,
-    N_particles = 1e7)
+    N_particles = 1e5)
 
 # Ploting
 rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)
@@ -202,7 +202,7 @@ plot_spin_profile(l2_test_sp)
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l2_test_sp,
-    N_particles = 1e7)
+    N_particles = 1e5)
 
 # Ploting
 rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)

@@ -442,6 +442,28 @@ def _SPH_density(x, y, z, m, N_neig):
     rho_sph = SPH_density(M, distances, h)
     
     return rho_sph
+
+@njit
+def _i(theta, R, Z):
+    
+    i = - np.sqrt(2)*R*R*np.cos(theta)
+    i = i/np.sqrt(1/R/R + 1/Z/Z + (-1/R/R + 1/Z/Z)*np.cos(2*theta))
+    i = i + R*R*Z
+    
+    return i
+
+
+def _V_theta_analytical(theta, shell_config):
+    
+    Rm1 = shell_config[0][0]
+    Zm1 = shell_config[0][1]
+    R1 = shell_config[1][0]
+    Z1 = shell_config[1][1]
+    
+    V = _i(theta, R1, Z1) - _i(theta, Rm1, Zm1)
+    V = V/(_i(np.pi, R1, Z1) - _i(np.pi, Rm1, Zm1))
+    
+    return V
     
 # main function 
 def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
@@ -511,8 +533,9 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     # mass of the model planet
     M = compute_spin_planet_M(r_array, rho_e, z_array, rho_p)
     
-    # Equatorial radius
+    # Equatorial and polar radius radius
     Re = np.max(r_array[rho_e > 0])
+    Rp = np.max(z_array[rho_p > 0])
     
     # First model - spherical planet from equatorial profile
     radii = np.arange(0, Re, Re/1000000)
@@ -540,7 +563,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     # Get picle mass of final configuration
     alpha = M/particles.A1_m.sum()
     #m_picle = alpha*np.median(particles.A1_m)
-    m_picle = np.median(particles.A1_m)*max(z_array[rho_p > 0])/max(r_array[rho_e > 0])
+    m_picle = np.median(particles.A1_m)*Rp/Re
     
     # Compute mass of every shell
     for i in range(M_shell.shape[0] - 1):
@@ -573,24 +596,6 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     # Tweek mass picle per shell to match total mass
     m_picle_shell = M_shell/N_shell
     
-# =============================================================================
-#     # n of theta for spherical shell
-#     N_theta_sph_model = 2000000
-#     particles = seagen.GenShell(N_theta_sph_model, 1)
-#     
-#     x = particles.A1_x
-#     y = particles.A1_y
-#     z = particles.A1_z
-#     r = np.sqrt(x**2 + y**2 + z**2)
-#     
-#     theta = np.arccos(z/r)
-#     theta_sph = np.sort(theta)
-#     
-#     assert len(theta) == len(theta_sph)
-#     
-#     n_theta_sph = np.arange(1, N_theta_sph_model + 1)/N_theta_sph_model
-# =============================================================================
-    
     # Generate shells and make adjustments
     A1_x = []
     A1_y = []
@@ -600,31 +605,93 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     A1_R = []
     A1_Z = []
     
-    theta_bins = np.linspace(0, np.pi, 10000)
-    delta_theta = (theta_bins[1] - theta_bins[0])/2
-    theta_elip = theta_bins[:-1] + delta_theta
-    
-    n_theta_elip = np.zeros_like(theta_bins)
-    
-    for i in tqdm(range(N_shell.shape[0] - 1), desc="Creating shells..."):
-        
-        # first layer
+    # all layers but first and last
+    for i in tqdm(range(N_shell.shape[0]), desc="Creating shells..."):
             
+        # First shell
         if i == 0:
-            particles = seagen.GenShell(N_shell[i], R_shell[i])
-            A1_x.append(particles.A1_x)
-            A1_y.append(particles.A1_y)
-            A1_z.append(particles.A1_z*Z_shell[i]/R_shell[i])
-            A1_rho.append(rho_shell[i]*np.ones(N_shell[i]))
-            A1_m.append(m_picle_shell[i]*np.ones(N_shell[i]))
-            A1_R.append(R_shell[i]*np.ones(N_shell[i]))
-            A1_Z.append(Z_shell[i]*np.ones(N_shell[i]))
-            
-        else:
-            
             # Create analitical model for the shell
-            theta_elip = theta_bins[:-1] + delta_theta
-            n_theta_elip = np.zeros_like(theta_bins)
+            theta_elip = np.linspace(0, np.pi, 100000)
+            
+            particles = seagen.GenShell(N_shell[i], R_shell[i])
+                
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            
+            x_R_extrap = np.array([R_shell[1], R_shell[2]])
+            y_R_extrap = np.array([R_shell[0], R_shell[1]])
+            z_R_extrap = np.polyfit(x_R_extrap, y_R_extrap, 1)
+            p = np.poly1d(z_R_extrap)
+            R_l = p(R_shell[0])
+            
+            del x_R_extrap, y_R_extrap, z_R_extrap, p
+            
+            x_Z_extrap = np.array([Z_shell[1], Z_shell[2]])
+            y_Z_extrap = np.array([Z_shell[0], Z_shell[1]])
+            z_Z_extrap = np.polyfit(x_Z_extrap, y_Z_extrap, 1)
+            p = np.poly1d(z_Z_extrap)
+            Z_l = p(Z_shell[0])
+            
+            del x_Z_extrap, y_Z_extrap, z_Z_extrap, p
+                
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+            shell_config = [[R_l, Z_l], [R_h, Z_h]]
+            
+            n_theta_elip = _V_theta_analytical(theta_elip, shell_config)
+            
+        # Last shell
+        elif i == N_shell.shape[0] - 1:
+            
+            if N_shell[-1] > 0:
+                # Create analitical model for the shell
+                theta_elip = np.linspace(0, np.pi, 100000)
+                
+                particles = seagen.GenShell(N_shell[i], R_shell[i])
+                    
+                R_0 = R_shell[i]
+                Z_0 = Z_shell[i]
+                R_l = R_shell[i - 1]
+                Z_l = Z_shell[i - 1]
+                
+                x_R_extrap = np.array([R_shell[-3], R_shell[-2]])
+                y_R_extrap = np.array([R_shell[-2], R_shell[-1]])
+                z_R_extrap = np.polyfit(x_R_extrap, y_R_extrap, 1)
+                p = np.poly1d(z_R_extrap)
+                R_h = p(R_shell[-1])
+                
+                del x_R_extrap, y_R_extrap, z_R_extrap, p
+                
+                x_Z_extrap = np.array([Z_shell[-3], Z_shell[-2]])
+                y_Z_extrap = np.array([Z_shell[-2], Z_shell[-1]])
+                z_Z_extrap = np.polyfit(x_Z_extrap, y_Z_extrap, 1)
+                p = np.poly1d(z_Z_extrap)
+                Z_h = p(Z_shell[-1])
+                
+                del x_Z_extrap, y_Z_extrap, z_Z_extrap, p
+                    
+                R_l = (R_l + R_0)/2
+                Z_l = (Z_l + Z_0)/2
+                R_h = (R_h + R_0)/2
+                Z_h = (Z_h + Z_0)/2
+                
+                shell_config = [[R_l, Z_l], [R_h, Z_h]]
+                
+                n_theta_elip = _V_theta_analytical(theta_elip, shell_config)
+                
+            else:
+                break
+            
+        # Rest of shells
+        else:
+            # Create analitical model for the shell
+            theta_elip = np.linspace(0, np.pi, 100000)
+            
             particles = seagen.GenShell(N_shell[i], R_shell[i])
                 
             R_0 = R_shell[i]
@@ -641,64 +708,10 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
             
             shell_config = [[R_l, Z_l], [R_h, Z_h]]
             
-            for j in range(theta_bins.shape[0] - 1):
-                low = theta_bins[j]
-                high = theta_bins[j + 1]
-                
-                # analitical solution particle number
-                n_theta_elip[j] = rho_shell[i]*V_theta(low, high, shell_config)/m_picle_shell[i]
-                
-            for j in range(1, n_theta_elip.shape[0]):
-                n_theta_elip[j] = n_theta_elip[j] + n_theta_elip[j - 1]
-                
-            n_theta_elip = n_theta_elip[:-1]/N_shell[i]
-                
-# =============================================================================
-#             random_mask = np.random.binomial(1, 0.1, N_theta_sph_model) > 0
-#             plt.figure()
-#             plt.scatter(theta_sph[random_mask], n_theta_sph[random_mask],
-#                         alpha = 0.5, label='spherical', s=5)
-#             plt.scatter(theta_elip, n_theta_elip, alpha = 0.5, label='eliptical - theory', s=5)
-#             plt.xlabel(r"$\theta$")
-#             plt.ylabel(r"cumulative $n(\theta) [\%]$")
-#             plt.legend()
-#             plt.show()
-# =============================================================================
+            n_theta_elip = _V_theta_analytical(theta_elip, shell_config)
             
-            # Transfor theta acordingly
-            theta_elip_n_model = interp1d(n_theta_elip, theta_elip)
-            
-            x = particles.A1_x
-            y = particles.A1_y
-            z = particles.A1_z
-            
-            r, theta, phi = cart_to_spher(x, y, z)
-            
-            theta = theta_elip_n_model((1 - np.cos(theta))/2)
-            
-            x, y, z = spher_to_cart(r, theta, phi)
-            
-            # Project on the spheroid without changing theta
-            alpha = np.sqrt(1/(x*x/R_0/R_0 + y*y/R_0/R_0 + z*z/Z_0/Z_0))
-            x = alpha*x
-            y = alpha*y
-            z = alpha*z
-            
-            # Save results
-            A1_x.append(x)
-            A1_y.append(y)
-            A1_z.append(z)
-    
-            A1_rho.append(rho_shell[i]*np.ones(N_shell[i]))
-            A1_m.append(m_picle_shell[i]*np.ones(N_shell[i]))
-            A1_R.append(R_shell[i]*np.ones(N_shell[i]))
-            A1_Z.append(Z_shell[i]*np.ones(N_shell[i]))
-            
-    # last shell: use model from previous shell
-    if N_shell[-1] > 0:
-        particles = seagen.GenShell(N_shell[-1], R_shell[-1])
-        R_0 = R_shell[-1]
-        Z_0 = Z_shell[-1]
+        # Transfor theta acordingly
+        theta_elip_n_model = interp1d(n_theta_elip, theta_elip)
         
         x = particles.A1_x
         y = particles.A1_y
@@ -709,19 +722,22 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
         theta = theta_elip_n_model((1 - np.cos(theta))/2)
         
         x, y, z = spher_to_cart(r, theta, phi)
+        
+        # Project on the spheroid without changing theta
         alpha = np.sqrt(1/(x*x/R_0/R_0 + y*y/R_0/R_0 + z*z/Z_0/Z_0))
         x = alpha*x
         y = alpha*y
         z = alpha*z
         
+        # Save results
         A1_x.append(x)
         A1_y.append(y)
         A1_z.append(z)
-        
-        A1_rho.append(rho_shell[-1]*np.ones(N_shell[-1]))
-        A1_m.append(m_picle_shell[-1]*np.ones(N_shell[-1]))
-        A1_R.append(R_shell[-1]*np.ones(N_shell[-1]))
-        A1_Z.append(Z_shell[-1]*np.ones(N_shell[-1]))
+
+        A1_rho.append(rho_shell[i]*np.ones(N_shell[i]))
+        A1_m.append(m_picle_shell[i]*np.ones(N_shell[i]))
+        A1_R.append(R_shell[i]*np.ones(N_shell[i]))
+        A1_Z.append(Z_shell[i]*np.ones(N_shell[i]))
             
     # Flatten
     A1_x = np.concatenate(A1_x)
@@ -744,4 +760,3 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     A1_vy = A1_x*wz
     
     return A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_R, A1_Z
-    
