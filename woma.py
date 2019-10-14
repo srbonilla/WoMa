@@ -1533,6 +1533,123 @@ class SpinPlanet():
                                            for mat in self.A1_mat_layer]
 
         assert(self.num_layer in [1, 2, 3])
+        
+    def find_Tw_min(self, Tw_max=10, iterations=20):
+        # Check for necessary input
+        assert(self.R_e is not None)
+        assert(self.R_p is not None)
+        assert(self.Tw is not None)
+        
+        Tw_min = 0.
+
+        P_c   = np.max(self.A1_P)
+        P_s   = np.min(self.A1_P)
+        rho_c = np.max(self.A1_rho)
+        rho_s = np.min(self.A1_rho)
+
+        r_array     = np.linspace(0, self.R_e, self.num_prof)
+        z_array     = np.linspace(0, self.R_p, self.num_prof)
+
+        if self.num_layer == 1:
+            # Check for necessary input
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+            
+            for _ in range(iterations):
+                
+                Tw_try = np.mean([Tw_min, Tw_max])
+    
+                profile_e, profile_p = \
+                    L1_spin.spin1layer(1, r_array, z_array,
+                                       self.A1_r, self.A1_rho, Tw_try,
+                                       P_c, P_s, rho_c, rho_s,
+                                       self.A1_mat_id_layer[0],
+                                       self.A1_T_rho_type[0],
+                                       self.A1_T_rho_args[0]
+                                       )
+                    
+                if profile_e[-1][-1] > 0:
+                    Tw_min = Tw_try     
+                else:
+                    Tw_max = Tw_try
+                
+            self.Tw_min = Tw_max
+
+        elif self.num_layer == 2:
+            # Check for necessary input
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type[1] is not None)
+
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary = 0.5*(a + b)
+
+            self.P_R1 = P_boundary
+            
+            for _ in range(iterations):
+                
+                Tw_try = np.mean([Tw_min, Tw_max])
+
+                profile_e, profile_p = \
+                    L2_spin.spin2layer(1, r_array, z_array,
+                               self.A1_r, self.A1_rho, Tw_try,
+                               P_c, P_boundary, P_s,
+                               rho_c, rho_s,
+                               self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
+                               self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+                               )
+
+                if profile_e[-1][-1] > 0:
+                    Tw_min = Tw_try     
+                else:
+                    Tw_max = Tw_try
+                
+            self.Tw_min = Tw_max
+            
+        elif self.num_layer == 3:
+            # Check for necessary input
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type[1] is not None)
+            assert(self.A1_mat_id_layer[2] is not None)
+            assert(self.A1_T_rho_type[2] is not None)
+
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary_12 = 0.5*(a + b)
+
+            self.P_R1 = P_boundary_12
+
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
+            P_boundary_ma = 0.5*(a + b)
+
+            self.P_R2 = P_boundary_ma
+            
+            for _ in range(iterations):
+                
+                Tw_try = np.mean([Tw_min, Tw_max])
+
+                profile_e, profile_p = \
+                    L3_spin.spin3layer(1, r_array, z_array,
+                               self.A1_r, self.A1_rho, Tw_try,
+                               P_c, P_boundary_12, P_boundary_ma, P_s,
+                               rho_c, rho_s,
+                               self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
+                               self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+                               self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+                               )
+
+                if profile_e[-1][-1] > 0:
+                    Tw_min = Tw_try     
+                else:
+                    Tw_max = Tw_try
+                
+            self.Tw_min = Tw_max
+
 
     def spin(self):
         # Check for necessary input
@@ -1643,7 +1760,7 @@ class SpinPlanet():
         
         # Compute escape velocity
         V_e, V_p = L1_spin._fillV(self.A1_r_equator, self.A1_rho_equator,
-                                  self.A1_r_pole, self.A1_rho_pole, self.Tw)
+                              self.A1_r_pole, self.A1_rho_pole, self.Tw)
         
         i_equator = min(np.where(self.A1_rho_equator == 0)[0]) - 1
         i_pole    = min(np.where(self.A1_rho_pole == 0)[0]) - 1

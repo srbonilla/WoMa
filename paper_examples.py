@@ -111,21 +111,26 @@ l1_test.gen_prof_L1_fix_M_given_R()
 #plot_spherical_profile(l1_test)
 
 l1_test_sp = woma.SpinPlanet(
+    num_prof     = 4000,
     name         = 'sp_planet',
     planet       = l1_test,
-    Tw           = 3,
-    R_e          = 1.3*R_earth,
+    Tw           = 2.8,
+    R_e          = 2.7*R_earth,
     R_p          = 1.1*R_earth
     )
 
+l1_test_sp.find_Tw_min(iterations=20)
+
+l1_test_sp.Tw = l1_test_sp.Tw_min
+
 l1_test_sp.spin()
 
-#plot_spin_profile(l1_test_sp)
+plot_spin_profile(l1_test_sp)
 
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l1_test_sp,
-    N_particles = 1e5)
+    N_particles = 1e7)
 
 # Ploting
 rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)
@@ -185,7 +190,7 @@ l2_test = woma.Planet(
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
-plot_spherical_profile(l2_test)
+#plot_spherical_profile(l2_test)
 
 l2_test_sp = woma.SpinPlanet(
     name         = 'sp_planet',
@@ -195,6 +200,10 @@ l2_test_sp = woma.SpinPlanet(
     R_p          = 1.1*R_earth
     )
 
+l2_test_sp.find_Tw_min(iterations=20)
+
+l2_test_sp.Tw = l2_test_sp.Tw_min
+
 l2_test_sp.spin()
 
 plot_spin_profile(l2_test_sp)
@@ -202,7 +211,7 @@ plot_spin_profile(l2_test_sp)
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l2_test_sp,
-    N_particles = 1e5)
+    N_particles = 1e7)
 
 # Ploting
 rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)

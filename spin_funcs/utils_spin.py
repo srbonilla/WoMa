@@ -620,24 +620,8 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
             R_h = R_shell[i + 1]
             Z_h = Z_shell[i + 1]
             
-            x_R_extrap = np.array([R_shell[1], R_shell[2]])
-            y_R_extrap = np.array([R_shell[0], R_shell[1]])
-            z_R_extrap = np.polyfit(x_R_extrap, y_R_extrap, 1)
-            p = np.poly1d(z_R_extrap)
-            R_l = p(R_shell[0])
-            
-            del x_R_extrap, y_R_extrap, z_R_extrap, p
-            
-            x_Z_extrap = np.array([Z_shell[1], Z_shell[2]])
-            y_Z_extrap = np.array([Z_shell[0], Z_shell[1]])
-            z_Z_extrap = np.polyfit(x_Z_extrap, y_Z_extrap, 1)
-            p = np.poly1d(z_Z_extrap)
-            Z_l = p(Z_shell[0])
-            
-            del x_Z_extrap, y_Z_extrap, z_Z_extrap, p
-                
-            R_l = (R_l + R_0)/2
-            Z_l = (Z_l + Z_0)/2
+            R_l = 1e-5
+            Z_l = 1e-5
             R_h = (R_h + R_0)/2
             Z_h = (Z_h + Z_0)/2
             
@@ -658,27 +642,11 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
                 Z_0 = Z_shell[i]
                 R_l = R_shell[i - 1]
                 Z_l = Z_shell[i - 1]
-                
-                x_R_extrap = np.array([R_shell[-3], R_shell[-2]])
-                y_R_extrap = np.array([R_shell[-2], R_shell[-1]])
-                z_R_extrap = np.polyfit(x_R_extrap, y_R_extrap, 1)
-                p = np.poly1d(z_R_extrap)
-                R_h = p(R_shell[-1])
-                
-                del x_R_extrap, y_R_extrap, z_R_extrap, p
-                
-                x_Z_extrap = np.array([Z_shell[-3], Z_shell[-2]])
-                y_Z_extrap = np.array([Z_shell[-2], Z_shell[-1]])
-                z_Z_extrap = np.polyfit(x_Z_extrap, y_Z_extrap, 1)
-                p = np.poly1d(z_Z_extrap)
-                Z_h = p(Z_shell[-1])
-                
-                del x_Z_extrap, y_Z_extrap, z_Z_extrap, p
                     
                 R_l = (R_l + R_0)/2
                 Z_l = (Z_l + Z_0)/2
-                R_h = (R_h + R_0)/2
-                Z_h = (Z_h + Z_0)/2
+                R_h = Re
+                Z_h = Rp
                 
                 shell_config = [[R_l, Z_l], [R_h, Z_h]]
                 

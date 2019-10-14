@@ -318,7 +318,7 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
             ax[1].plot(r_array_2[profile_e_2[i] > 0]/R_earth, profile_e_2[i][profile_e_2[i] > 0], label=str(i))
     ax[0].set_ylabel(r"$\rho$ $[Kg/m^3]$")
     ax[1].set_ylabel(r"$\rho$ $[Kg/m^3]$")
-    ax[1].set_xlabel(r"$r$ $[R_{earth}]$")
+    ax[1].set_xlabel(r"$r_{xy}$ $[R_{earth}]$")
     ax[0].legend(title='Iteration')
     ax[1].legend(title='Iteration')
     plt.tight_layout()
