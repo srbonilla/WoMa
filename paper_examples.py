@@ -110,18 +110,19 @@ l1_test.gen_prof_L1_fix_M_given_R()
 
 #plot_spherical_profile(l1_test)
 
-l1_test_sp = woma.SpinPlanet(
-    num_prof     = 4000,
+l1_test_sp = woma.SpinPlanet(   
+    num_attempt  = 5,
+    num_prof     = 1000,
     name         = 'sp_planet',
     planet       = l1_test,
-    Tw           = 2.8,
-    R_e          = 2.7*R_earth,
+    Tw           = 3,
+    R_e          = 1.3*R_earth,
     R_p          = 1.1*R_earth
     )
 
-l1_test_sp.find_Tw_min(iterations=20)
+#l1_test_sp.find_Tw_min(iterations=20)
 
-l1_test_sp.Tw = l1_test_sp.Tw_min
+#l1_test_sp.Tw = l1_test_sp.Tw_min
 
 l1_test_sp.spin()
 
@@ -202,7 +203,7 @@ l2_test_sp = woma.SpinPlanet(
 
 l2_test_sp.find_Tw_min(iterations=20)
 
-l2_test_sp.Tw = l2_test_sp.Tw_min
+#l2_test_sp.Tw = l2_test_sp.Tw_min
 
 l2_test_sp.spin()
 

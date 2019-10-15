@@ -162,7 +162,8 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
                P_c, P_12, P_23, P_s, rho_c, rho_s,
                mat_id_L1, T_rho_type_L1, T_rho_args_L1,
                mat_id_L2, T_rho_type_L2, T_rho_args_L2,
-               mat_id_L3, T_rho_type_L3, T_rho_args_L3):
+               mat_id_L3, T_rho_type_L3, T_rho_args_L3,
+               verbose=1):
     """ Compute spining profile of densities for a 3 layer planet.
 
         Args:
@@ -229,6 +230,9 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
 
             T_rho_args_L3 (list):
                 Extra arguments to determine the relation in layer 3.
+                
+            vervose (int):
+                Printing options.
 
 
         Returns:
@@ -251,7 +255,7 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
     profile_e.append(rho_e)
     profile_p.append(rho_p)
 
-    for i in tqdm(range(num_attempt), desc="Solving spining profile"):
+    for i in tqdm(range(num_attempt), desc="Solving spining profile", disable = (not verbose>=1)):
         V_e, V_p = L1_spin._fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
                                  mat_id_L1, T_rho_type_L1, T_rho_args_L1,

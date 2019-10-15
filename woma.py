@@ -31,6 +31,7 @@ import utils_spin as us
 from T_rho import set_T_rho_args
 from T_rho import T_rho
 from scipy.interpolate import interp1d
+from tqdm import tqdm
 
 # Output
 Di_hdf5_planet_label  = {
@@ -293,13 +294,12 @@ class Planet():
         if self.P_s is not None and self.T_s is not None:
             self.rho_s  = eos.rho_P_T(self.P_s, self.T_s,
                                       self.A1_mat_id_layer[-1])
-        ###todo:
         # elif self.P_s is not None and self.rho_s is not None:
-        #     self.T_s    = weos.find_T_fixed_P_rho(self.P_s, self.rho_s,
+        #     self.T_s    = eos.find_T_fixed_P_rho(self.P_s, self.rho_s,
         #                                           self.A1_mat_id_layer[-1])
-        # elif self.rho_s is not None and self.T_s is not None:
-        #     self.P_s    = weos.find_P_fixed_rho_T(self.rho_s, self.T_s,
-        #                                           self.A1_mat_id_layer[-1])
+        elif self.rho_s is not None and self.T_s is not None:
+            self.P_s    = eos.P_T_rho(self.T_s, self.rho_s,
+                                                  self.A1_mat_id_layer[-1])
 
         ### default M_max and R_max?
 
@@ -547,19 +547,24 @@ class Planet():
     # ========
     # 1 Layer
     # ========
-    def gen_prof_L1_fix_R_given_M(self):
-        """ Compute the profile of a planet with 1 layer by finding the correct
-            radius for a given mass.
-        """
-        # Check for necessary input
+    def _1_layer_tests(self):
+        
         assert(self.num_layer == 1)
-        assert(self.R_max is not None)
-        assert(self.M is not None)
         assert(self.P_s is not None)
         assert(self.T_s is not None)
         assert(self.rho_s is not None)
         assert(self.A1_mat_id_layer[0] is not None)
         assert(self.A1_T_rho_type[0] is not None)
+        
+    def gen_prof_L1_fix_R_given_M(self):
+        """ Compute the profile of a planet with 1 layer by finding the correct
+            radius for a given mass.
+        """
+        # Check for necessary input
+        assert(self.R_max is not None)
+        assert(self.M is not None)
+        self._1_layer_tests()
+
 
         self.R = L1_spherical.L1_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
@@ -591,14 +596,9 @@ class Planet():
 
     def gen_prof_L1_fix_M_given_R(self):
         # Check for necessary input
-        assert(self.num_layer == 1)
         assert(self.R is not None)
         assert(self.M_max is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        self._1_layer_tests()
 
         print("Finding M given R...")
 
@@ -623,14 +623,9 @@ class Planet():
 
     def gen_prof_L1_given_R_M(self):
         # Check for necessary input
-        assert(self.num_layer == 1)
         assert(self.R is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        self._1_layer_tests()
 
         # Integrate the profiles
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
@@ -646,11 +641,9 @@ class Planet():
     # ========
     # 2 Layers
     # ========
-    def gen_prof_L2_fix_R1_given_R_M(self):
-        # Check for necessary input
+    def _2_layer_tests(self):
+        
         assert(self.num_layer == 2)
-        assert(self.R is not None)
-        assert(self.M is not None)
         assert(self.P_s is not None)
         assert(self.T_s is not None)
         assert(self.rho_s is not None)
@@ -658,6 +651,12 @@ class Planet():
         assert(self.A1_T_rho_type[0] is not None)
         assert(self.A1_mat_id_layer[1] is not None)
         assert(self.A1_T_rho_type[1] is not None)
+        
+    def gen_prof_L2_fix_R1_given_R_M(self):
+        # Check for necessary input
+        assert(self.R is not None)
+        assert(self.M is not None)
+        self._2_layer_tests()
 
         self.A1_R_layer[0] = L2_spherical.L2_find_R1(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
@@ -690,17 +689,10 @@ class Planet():
 
     def gen_prof_L2_fix_M_given_R1_R(self):
         # Check for necessary input
-        assert(self.num_layer == 2)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        self._2_layer_tests()
 
         print("Finding M given R1 and R...")
 
@@ -726,17 +718,10 @@ class Planet():
 
     def gen_prof_L2_fix_R_given_M_R1(self):
         # Check for necessary input
-        assert(self.num_layer == 2)
         assert(self.A1_R_layer[0] is not None)
         assert(self.R_max is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        self._2_layer_tests()
 
         self.R = L2_spherical.L2_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
@@ -781,16 +766,9 @@ class Planet():
             self.R_max  = R_max
         if M_frac_tol is not None:
             self.M_frac_tol = M_frac_tol
-        assert(self.num_layer == 2)
         assert(self.A1_M_layer[0] is not None)
         assert(self.A1_M_layer[1] is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        self._2_layer_tests()
         M_tot   = np.sum(self.A1_M_layer)
 
         # Update R_min and R_max without changing the attributes
@@ -896,17 +874,10 @@ class Planet():
 
     def gen_prof_L2_given_R_M_R1(self):
         # Check for necessary input
-        assert(self.num_layer == 2)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        self._2_layer_tests()
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
@@ -922,12 +893,9 @@ class Planet():
     # ========
     # 3 Layers
     # ========
-    def gen_prof_L3_fix_R1_R2_given_R_M_I(self):
-        # Check for necessary input
+    def _3_layer_tests(self):
+        
         assert(self.num_layer == 3)
-        assert(self.R is not None)
-        assert(self.M is not None)
-        assert(self.I_MR2 is not None)
         assert(self.P_s is not None)
         assert(self.T_s is not None)
         assert(self.rho_s is not None)
@@ -937,6 +905,13 @@ class Planet():
         assert(self.A1_T_rho_type[1] is not None)
         assert(self.A1_mat_id_layer[2] is not None)
         assert(self.A1_T_rho_type[2] is not None)
+        
+    def gen_prof_L3_fix_R1_R2_given_R_M_I(self):
+        # Check for necessary input
+        assert(self.R is not None)
+        assert(self.M is not None)
+        assert(self.I_MR2 is not None)
+        self._3_layer_tests()
 
         self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
@@ -975,19 +950,10 @@ class Planet():
 
     def gen_prof_L3_fix_R2_given_R_M_R1(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_tests()
 
         self.A1_R_layer[1] = L3_spherical.L3_find_R2(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
@@ -1026,19 +992,10 @@ class Planet():
 
     def gen_prof_L3_fix_R1_given_R_M_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_tests()
 
         self.A1_R_layer[0] = L3_spherical.L3_find_R1(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
@@ -1077,20 +1034,11 @@ class Planet():
 
     def gen_prof_L3_fix_M_given_R_R1_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M_max is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_tests()
 
         print("Finding M given R1, R2 and R...")
 
@@ -1120,20 +1068,11 @@ class Planet():
 
     def gen_prof_L3_fix_R_given_M_R1_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R_max is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_tests()
 
         self.R = L3_spherical.L3_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
@@ -1173,20 +1112,11 @@ class Planet():
 
     def gen_prof_L3_given_R_M_R1_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_tests()
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L3_spherical.L3_integrate(
@@ -1515,6 +1445,7 @@ class SpinPlanet():
             self.A1_P            = planet.A1_P
             self.A1_T            = planet.A1_T
             self.A1_rho          = planet.A1_rho
+            self.M               = planet.M
 
         else:
             self.A1_R_layer      = A1_R_layer
@@ -1534,6 +1465,26 @@ class SpinPlanet():
 
         assert(self.num_layer in [1, 2, 3])
         
+    def _check_input(self):
+        
+        assert (self.num_layer in [1, 2, 3])
+        
+        if self.num_layer == 1:
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+        elif self.num_layer == 2:
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type[1] is not None)
+        elif self.num_layer == 3:
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type[1] is not None)
+            assert(self.A1_mat_id_layer[2] is not None)
+            assert(self.A1_T_rho_type[2] is not None)
+        
     def find_Tw_min(self, Tw_max=10, iterations=20):
         # Check for necessary input
         assert(self.R_e is not None)
@@ -1552,10 +1503,9 @@ class SpinPlanet():
 
         if self.num_layer == 1:
             # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
+            self._check_input()
             
-            for _ in range(iterations):
+            for _ in tqdm(range(iterations), desc="Finding Tw min:"):
                 
                 Tw_try = np.mean([Tw_min, Tw_max])
     
@@ -1565,7 +1515,8 @@ class SpinPlanet():
                                        P_c, P_s, rho_c, rho_s,
                                        self.A1_mat_id_layer[0],
                                        self.A1_T_rho_type[0],
-                                       self.A1_T_rho_args[0]
+                                       self.A1_T_rho_args[0],
+                                       verbose=0
                                        )
                     
                 if profile_e[-1][-1] > 0:
@@ -1577,10 +1528,7 @@ class SpinPlanet():
 
         elif self.num_layer == 2:
             # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
-            assert(self.A1_mat_id_layer[1] is not None)
-            assert(self.A1_T_rho_type[1] is not None)
+            self._check_input()
 
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
@@ -1588,7 +1536,7 @@ class SpinPlanet():
 
             self.P_R1 = P_boundary
             
-            for _ in range(iterations):
+            for _ in tqdm(range(iterations), desc="Finding Tw min:"):
                 
                 Tw_try = np.mean([Tw_min, Tw_max])
 
@@ -1598,7 +1546,8 @@ class SpinPlanet():
                                P_c, P_boundary, P_s,
                                rho_c, rho_s,
                                self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                               self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+                               self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+                               verbose=0
                                )
 
                 if profile_e[-1][-1] > 0:
@@ -1610,12 +1559,7 @@ class SpinPlanet():
             
         elif self.num_layer == 3:
             # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
-            assert(self.A1_mat_id_layer[1] is not None)
-            assert(self.A1_T_rho_type[1] is not None)
-            assert(self.A1_mat_id_layer[2] is not None)
-            assert(self.A1_T_rho_type[2] is not None)
+            self._check_input()
 
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
@@ -1629,7 +1573,7 @@ class SpinPlanet():
 
             self.P_R2 = P_boundary_ma
             
-            for _ in range(iterations):
+            for _ in tqdm(range(iterations), desc="Finding Tw min:"):
                 
                 Tw_try = np.mean([Tw_min, Tw_max])
 
@@ -1640,7 +1584,8 @@ class SpinPlanet():
                                rho_c, rho_s,
                                self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
                                self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                               self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+                               self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
+                               verbose=0
                                )
 
                 if profile_e[-1][-1] > 0:
@@ -1667,8 +1612,7 @@ class SpinPlanet():
 
         if self.num_layer == 1:
             # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
+            self._check_input()
 
             profile_e, profile_p = \
                 L1_spin.spin1layer(self.num_attempt, r_array, z_array,
@@ -1688,10 +1632,7 @@ class SpinPlanet():
 
         elif self.num_layer == 2:
             # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
-            assert(self.A1_mat_id_layer[1] is not None)
-            assert(self.A1_T_rho_type[1] is not None)
+            self._check_input()
 
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
@@ -1718,12 +1659,7 @@ class SpinPlanet():
 
         elif self.num_layer == 3:
             # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
-            assert(self.A1_mat_id_layer[1] is not None)
-            assert(self.A1_T_rho_type[1] is not None)
-            assert(self.A1_mat_id_layer[2] is not None)
-            assert(self.A1_T_rho_type[2] is not None)
+            self._check_input()
 
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
@@ -1770,6 +1706,10 @@ class SpinPlanet():
         w = 2*np.pi/self.Tw/60/60
         R_e = self.A1_r_equator[i_equator]
         self.v_escape_equator = np.sqrt(-2*V_equator - (w*R_e)**2)
+        
+        def spin_fixed_M(self):
+            
+            assert self.M is not None
 
 class GenSpheroid():
 

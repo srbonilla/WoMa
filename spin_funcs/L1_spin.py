@@ -170,7 +170,8 @@ def _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
 
 def spin1layer(num_attempt, r_array, z_array, radii, densities, Tw,
                P_c, P_s, rho_c, rho_s,
-               mat_id_L1, T_rho_type_L1, T_rho_args_L1
+               mat_id_L1, T_rho_type_L1, T_rho_args_L1,
+               verbose = 1
                ):
     """ Compute spining profile of densities for a 1 layer planet.
 
@@ -214,6 +215,9 @@ def spin1layer(num_attempt, r_array, z_array, radii, densities, Tw,
 
             T_rho_args_L1 (list):
                 Extra arguments to determine the relation in layer 1.
+                
+            vervose (int):
+                Printing options.
 
         Returns:
 
@@ -236,7 +240,7 @@ def spin1layer(num_attempt, r_array, z_array, radii, densities, Tw,
     profile_e.append(rho_e)
     profile_p.append(rho_p)
 
-    for i in tqdm(range(num_attempt), desc="Solving spining profile"):
+    for i in tqdm(range(num_attempt), desc="Solving spining profile", disable = (not verbose>=1)):
         V_e, V_p = _fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho1(r_array, V_e, z_array, V_p, P_c, P_s, rho_c, rho_s,
                                  mat_id_L1, T_rho_type_L1, T_rho_args_L1)
@@ -346,3 +350,4 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
 
     return A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_u, A1_P, \
            A1_h, A1_mat_id, A1_id
+     
