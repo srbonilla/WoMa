@@ -1695,17 +1695,11 @@ class SpinPlanet():
                                           self.A1_r_pole, self.A1_rho_pole)
         
         # Compute escape velocity
-        V_e, V_p = L1_spin._fillV(self.A1_r_equator, self.A1_rho_equator,
-                              self.A1_r_pole, self.A1_rho_pole, self.Tw)
+        v_esc_eq, v_esc_p = us.spin_escape_vel(self.A1_r_equator, self.A1_rho_equator,
+                                               self.A1_r_pole, self.A1_rho_pole, self.Tw)
         
-        i_equator = min(np.where(self.A1_rho_equator == 0)[0]) - 1
-        i_pole    = min(np.where(self.A1_rho_pole == 0)[0]) - 1
-        V_equator = V_e[i_equator]
-        V_pole    = V_p[i_pole]
-        self.v_escape_pole    = np.sqrt(-2*V_pole)
-        w = 2*np.pi/self.Tw/60/60
-        R_e = self.A1_r_equator[i_equator]
-        self.v_escape_equator = np.sqrt(-2*V_equator - (w*R_e)**2)
+        self.v_escape_pole    = v_esc_p
+        self.v_escape_equator = v_esc_eq
         
         def spin_fixed_M(self):
             

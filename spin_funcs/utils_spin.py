@@ -14,6 +14,7 @@ import seagen
 import scipy.integrate as integrate
 from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
+import L1_spin
 
 # Spining model functions
 @njit
@@ -728,3 +729,48 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     A1_vy = A1_x*wz
     
     return A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_R, A1_Z
+
+def spin_escape_vel(r_array, rho_e, z_array, rho_p, Tw):
+    """
+        Computes the escape velocity for a spining planet.
+        
+        Args:
+
+            r_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+
+            rho_e ([float]):
+                Equatorial profile of densities (SI).
+
+            z_array ([float]):
+                Points at equatorial profile where the solution is defined (SI).
+
+            rho_p ([float]):
+                Polar profile of densities (SI).
+                
+            Tw (float):
+                Period of the planet (hours).
+
+        Returns:
+
+            v_escape_equator ([float]):
+                Escape velocity at the equator (SI).
+
+            v_escape_pole ([float]):
+                Escape velocity at the pole (SI).
+
+        
+    """
+    V_e, V_p = L1_spin._fillV(r_array, rho_e,
+                              z_array, rho_p, Tw)
+        
+    i_equator = min(np.where(rho_e == 0)[0]) - 1
+    i_pole    = min(np.where(rho_p == 0)[0]) - 1
+    V_equator = V_e[i_equator]
+    V_pole    = V_p[i_pole]
+    v_escape_pole    = np.sqrt(-2*V_pole)
+    w = 2*np.pi/Tw/60/60
+    R_e = r_array[i_equator]
+    v_escape_equator = np.sqrt(-2*V_equator - (w*R_e)**2)
+    
+    return v_escape_equator, v_escape_pole
