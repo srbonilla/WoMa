@@ -12,14 +12,37 @@ import matplotlib.pyplot as plt
 import scipy.integrate as integrate
 import woma
 from scipy.interpolate import interp1d
+import matplotlib as mpl
 
 cmap = plt.get_cmap('Dark2')
 color_purple = cmap(2)
 color_ocre = cmap(5)
 color_green = cmap(0)
 
+font_size   = 20
+params      = { "backend"               : "ps",
+                #"text.latex.preamble"   : [r"\usepackage{gensymb}"
+                #                           # Avoid the cosma error
+                #                           r"\newcommand{\mathdefault}{}"],
+                "axes.labelsize"        : font_size,
+                "axes.titlesize"        : font_size,
+                "font.size"             : font_size,
+                "legend.fontsize"       : font_size - 4,
+                "xtick.labelsize"       : font_size,
+                "ytick.labelsize"       : font_size,
+                "text.usetex"           : True,
+                "figure.figsize"        : [7, 7],
+                "font.family"           : "serif",
+                # "font.family"           : "sans-serif",
+                # "font.sans-serif"       : "Open Sans",
+                "savefig.dpi"           : 100,
+                "legend.framealpha"     : 0.7,
+                "lines.linewidth"       : 1.7,
+               }
+mpl.rcParams.update(params)
 
-plt.rcParams.update({'font.size': 12})
+
+
 
 def vol_spheroid(R, Z):
     return 4*np.pi*R*R*Z/3
@@ -173,14 +196,16 @@ for i in range(theta_bins.shape[0] - 1):
     m_bins_theory[i] = rho_shell*V_theta(low, high, shell_config)
 
 
-plt.figure()
-plt.scatter(theta_bins[:-1], m_bins_theory[:-1], alpha = 0.5, label='theory', s=5)
-plt.scatter(theta_bins[:-1], m_bins_picle[:-1], alpha = 0.5, label='picle placement', s=5)
-plt.xlabel(r"$\theta$")
-plt.ylabel(r"$m(\theta)$")
-plt.yscale('log')
-plt.legend()
-plt.show()
+# =============================================================================
+# plt.figure()
+# plt.scatter(theta_bins[:-1], m_bins_theory[:-1], alpha = 0.5, label='theory', s=5)
+# plt.scatter(theta_bins[:-1], m_bins_picle[:-1], alpha = 0.5, label='picle placement', s=5)
+# plt.xlabel(r"$\theta$")
+# plt.ylabel(r"$m(\theta)$")
+# plt.yscale('log')
+# plt.legend()
+# plt.show()
+# =============================================================================
 
 # compute n of theta spherical
 x = particles.A1_x
@@ -199,13 +224,15 @@ p = 0.1
 N = n_theta_sph.shape[0]
 random_mask = np.random.binomial(1, p, N) > 0
 
-plt.figure()
-plt.scatter(theta_sorted[random_mask], n_theta_sph[random_mask],
-            alpha = 0.5, label='spherical', s=5)
-plt.xlabel(r"$\theta$")
-plt.ylabel(r"$n(\theta)$")
-plt.legend()
-plt.show()
+# =============================================================================
+# plt.figure()
+# plt.scatter(theta_sorted[random_mask], n_theta_sph[random_mask],
+#             alpha = 0.5, label='spherical', s=5)
+# plt.xlabel(r"$\theta$")
+# plt.ylabel(r"$n(\theta)$")
+# plt.legend()
+# plt.show()
+# =============================================================================
 
 # compute n of theta elipsoid
 n_theta_elip = np.zeros_like(theta_bins)
@@ -213,32 +240,36 @@ n_theta_elip[1:] = m_bins_theory[:- 1]/(m_picle[0])
 for i in range(1, n_theta_elip.shape[0]):
     n_theta_elip[i] = n_theta_elip[i] + n_theta_elip[i - 1]
 
-plt.figure()
-plt.scatter(theta_bins, n_theta_elip, alpha = 0.5, label='eliptical - theory', s=5)
-plt.xlabel(r"$\theta$")
-plt.ylabel(r"$n(\theta)$")
-plt.legend()
-plt.show()
+# =============================================================================
+# plt.figure()
+# plt.scatter(theta_bins, n_theta_elip, alpha = 0.5, label='eliptical - theory', s=5)
+# plt.xlabel(r"$\theta$")
+# plt.ylabel(r"$n(\theta)$")
+# plt.legend()
+# plt.show()
+# 
+# # combine
+# plt.figure()
+# plt.plot(theta_sorted[random_mask], n_theta_sph[random_mask]/N_picle_shell,
+#             alpha = 1, label='spherical', linewidth=2)
+# plt.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='eliptical', linewidth=2)
+# plt.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='analytical sphere')
+# plt.xlabel(r"$\theta$ [rad]")
+# plt.ylabel(r"$n(\theta)$ [%]")
+# plt.legend()
+# plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
+# plt.show()
+# =============================================================================
 
-# combine
-plt.figure()
-plt.plot(theta_sorted[random_mask], n_theta_sph[random_mask]/N_picle_shell,
-            alpha = 1, label='spherical', linewidth=2)
-plt.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='eliptical', linewidth=2)
-plt.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='analytical sphere')
-plt.xlabel(r"$\theta$ [rad]")
-plt.ylabel(r"$n(\theta)$ [%]")
-plt.legend()
-plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
-plt.show()
-
-fig, ax = plt.subplots(1, 1, figsize=(5,5))
+fig, ax = plt.subplots(1, 1)
 ax.plot(theta_bins, 1/2 - np.cos(theta_bins)/2, label='Sphere', color=color_purple)
 ax.plot(theta_bins, n_theta_elip/N_picle_shell, alpha = 1, label='Spheroid', color=color_green)
-#ax.plot(theta_bins, rho_shell*_V_theta_an(theta_bins, shell_config)/m_shell, label='theory')
+###ax.plot(theta_bins, rho_shell*_V_theta_an(theta_bins, shell_config)/m_shell, label='theory')
 ax.set_ylabel(r"$f(\theta)$")
 ax.set_xlabel(r"$\theta$")
 plt.xticks((0, np.pi/2, np.pi), (r"0", r"$\pi/2$", r"$\pi$"))
+plt.xlim((0,np.pi))
+plt.ylim((0,1))
 ax.legend()
 plt.tight_layout()
 fig.savefig('Fig5.pdf')

@@ -177,8 +177,8 @@ np.save('rho_p', l1_test_sp.A1_rho_pole)
 
 l2_test = woma.Planet(
     name            = "prof_pE",
-    #A1_mat_layer    = ['Til_iron', 'Til_granite'],
-    A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
+    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
     A1_T_rho_args   = [[None, 0.], [None, 0.]],
     A1_R_layer      = [None, R_earth],
@@ -189,7 +189,7 @@ l2_test = woma.Planet(
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
-#plot_spherical_profile(l2_test)
+plot_spherical_profile(l2_test)
 
 l2_test_sp = woma.SpinPlanet(
     name         = 'sp_planet',
@@ -199,7 +199,7 @@ l2_test_sp = woma.SpinPlanet(
     R_p          = 1.1*R_earth
     )
 
-#l2_test_sp.find_Tw_min(iterations=20)
+l2_test_sp.find_Tw_min(iterations=20)
 
 #l2_test_sp.Tw = l2_test_sp.Tw_min
 
