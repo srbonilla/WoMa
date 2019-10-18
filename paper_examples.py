@@ -94,6 +94,7 @@ def plot_spin_profile(spin_planet):
     
 # Example 1 layer
 l1_test = woma.Planet(
+    
     name            = "prof_pE",
     A1_mat_layer    = ['Til_granite'],
     A1_T_rho_type   = [1],
@@ -111,6 +112,7 @@ l1_test.gen_prof_L1_fix_M_given_R()
 #plot_spherical_profile(l1_test)
 
 l1_test_sp = woma.SpinPlanet(
+        #num_prof=10000,
     name         = 'sp_planet',
     planet       = l1_test,
     Tw           = 3,
@@ -189,7 +191,7 @@ l2_test = woma.Planet(
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
-plot_spherical_profile(l2_test)
+#plot_spherical_profile(l2_test)
 
 l2_test_sp = woma.SpinPlanet(
     name         = 'sp_planet',
@@ -199,13 +201,13 @@ l2_test_sp = woma.SpinPlanet(
     R_p          = 1.1*R_earth
     )
 
-l2_test_sp.find_Tw_min(iterations=20)
+#l2_test_sp.find_Tw_min(iterations=20)
 
 #l2_test_sp.Tw = l2_test_sp.Tw_min
 
 l2_test_sp.spin()
 
-plot_spin_profile(l2_test_sp)
+#plot_spin_profile(l2_test_sp)
 
 particles = woma.GenSpheroid(
     name        = 'picles_spin',

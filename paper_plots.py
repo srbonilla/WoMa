@@ -17,9 +17,9 @@ import L2_spin
 
 font_size   = 20
 params      = { "backend"               : "ps",
-                #"text.latex.preamble"   : [r"\usepackage{gensymb}"
+                "text.latex.preamble"   : [r"\usepackage{gensymb}"
                 #                           # Avoid the cosma error
-                #                           r"\newcommand{\mathdefault}{}"],
+                                           r"\newcommand{\mathdefault}{}"],
                 "axes.labelsize"        : font_size,
                 "axes.titlesize"        : font_size,
                 "font.size"             : font_size,
@@ -237,10 +237,16 @@ def plot_spin_prof(l1_test_sp, l2_test_sp):
     ax.plot(l2_test_sp.A1_r_pole[l2_test_sp.A1_rho_pole > 0]/R_earth,
             l2_test_sp.A1_rho_pole[l2_test_sp.A1_rho_pole > 0], label='2 layer: Polar profile', color=color_2,
             linestyle='dashed')
+    ax.plot([], [], c='k', label="Equatorial")
+    ax.plot([], [], c='k', ls='dashed', label="Polar")
     ax.set_xlabel(r"Distance from the centre [R$_\oplus]$")
     ax.set_ylabel(r"$\rho$ [kg m$^{-3}$]")
     ax.set_xlim((0,1.4))
-    ax.legend(loc='upper right')
+    lines = ax.get_lines()
+    legend1 = plt.legend([lines[i] for i in [0,2]], ["1 layer", "2 layer"], loc=1, title="Test case")
+    legend2 = plt.legend([lines[i] for i in [4,5]], ["Equatorial", "Polar"], loc=9, title="Profile")
+    ax.add_artist(legend1)
+    ax.add_artist(legend2)
     plt.tight_layout()
     fig.savefig('Fig2.pdf')
     plt.show()
@@ -347,7 +353,7 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     ax[1].set_xlabel(r"Iteration")
     ax[1].set_xticks(np.arange(0, iterations + 1, step=5))
     ax[1].set_ylim((-0.01, 0.06))
-    ax[1].axhline(zorder=-1, color='black', linewidth=1)
+    ax[1].axhline(zorder=-1, color='black', linewidth=1, linestyle=':')
     #ax[1].legend()
     #ax.set_xticks((0, 5, 10, 15, 20), (r"0", r"5", r"10", r"15", r"20"))
     plt.tight_layout()
@@ -385,21 +391,19 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     fig, ax = plt.subplots(1, 1)
     for i in range(10):
         if i%2 == 0:
+            ax.plot(r_array_1[profile_e_1[i] > 0]/R_earth, profile_e_1[i][profile_e_1[i] > 0],
+                    label=str(i), color=colors_1[int(i/2)], linestyle='-')
             ax.plot(r_array_2[profile_e_2[i] > 0]/R_earth, profile_e_2[i][profile_e_2[i] > 0],
-                    label=str(i), color=colors_2[int(i/2)], linestyle='-')
+                    label=str(i), color=colors_2[int(i/2)], linestyle='-.')
         
     ax.set_ylabel(r"$\rho$ [kg m$^{-3}$]")
     ax.set_xlabel(r"$r_{xy}$ [R$_\oplus$]")
-    #ax.legend(title='Iteration')
-    for i in range(10):
-        if i%2 == 0:
-            ax.plot(r_array_1[profile_e_1[i] > 0]/R_earth, profile_e_1[i][profile_e_1[i] > 0],
-                    label=str(i), color=colors_1[int(i/2)], linestyle='-.')
+            
             
     
     lines = ax.get_lines()
-    legend1 = plt.legend([lines[i] for i in [0,1,2]], ["algo1", "algo2", "algo3"], loc=1)
-    legend2 = plt.legend([lines[i] for i in [0,3,6]], ["1", "2", "3"], loc=4)
+    legend1 = plt.legend([lines[i] for i in [0,1]], ["1 layer", "2 layer"], loc=9, title="Test")
+    legend2 = plt.legend([lines[i] for i in [0,2,4,6,8]], ["0", "2", "4", "6", "8"], loc=1, title="Iteration")
     ax.add_artist(legend1)
     ax.add_artist(legend2)
     
