@@ -234,14 +234,15 @@ def L2_find_mass(
                 M_min = M_try
 
     else:
-        print("M_max is too low, ran out of mass in first iteration")
+        raise Exception("M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n")
         return 0.
 
     return M_max
 
 def L2_find_radius(
     num_prof, R_max, M, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_L1,
-    T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40
+    T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40,
+    verbose=1
     ):
     """ Finder of the total radius of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -305,16 +306,16 @@ def L2_find_radius(
         )
 
     if A1_m_enc_1[-1] > 0:
-        print("R_max too low, excess of mass for R = R_max")
-        return R_max
+        raise Exception("R_max too low, excess of mass for R = R_max.\nPlease increase R_max.\n")
 
     if A1_m_enc_2[-1] == 0:
-        print("R = R1 yields a planet which already lacks mass.")
-        print("Try increase M or reduce R1.")
+        e = "R = R1 yields a planet which already lacks mass.\n" + \
+            "Try increase M or reduce R1.\n"
+        raise Exception(e)
         return -1
 
     if A1_m_enc_1[-1] == 0.:
-        for i in tqdm(range(num_attempt), desc="Finding R given M, R1"):
+        for i in tqdm(range(num_attempt), desc="Finding R given M, R1", disable=(not verbose)):
             R_try = (R_min + R_max) * 0.5
 
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -330,10 +331,10 @@ def L2_find_radius(
 
     return R_min
 
-#@jit(nopython=True)
 def L2_find_R1(
     num_prof, R, M, P_s, T_s, rho_s, mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-    mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40
+    mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40,
+    verbose=1
     ):
     """ Finder of the boundary of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -397,16 +398,16 @@ def L2_find_R1(
         )
 
     if A1_m_enc_1[-1] == 0:
-        print("Ran out of mass for a planet made of layer 2 material")
-        print("Try increasing the mass or decreasing the radius")
-        return R1_min
+        e = "Ran out of mass for a planet made of layer 2 material.\n" + \
+            "Try increasing the mass (M) or decreasing the radius (R).\n"
+        raise Exception(e)
 
     elif A1_m_enc_2[-1] > 0:
-        print("Excess of mass for a planet made of layer 1 material")
-        print("Try decreasing the mass or increasing the radius")
-        return R1_max
+        e = "Excess of mass for a planet made of layer 1 material.\n" + \
+            "Try decreasing the mass (M) or increasing the radius (R).\n"
+        raise Exception(e)
 
-    for i in tqdm(range(num_attempt), desc="Finding R1 given R, M"):
+    for i in tqdm(range(num_attempt), desc="Finding R1 given R, M", disable=(not verbose)):
         R1_try = (R1_min + R1_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -420,3 +421,99 @@ def L2_find_R1(
             R1_max = R1_try
 
     return R1_min
+
+#@jit(nopython=True)
+def L2_find_R1_R(
+    num_prof, R_max, M1, M2, P_s, T_s, rho_s, mat_id_L1, T_rho_type_L1, T_rho_args_L1,
+    mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40,
+    verbose=1
+    ):
+    """ Finder of the boundary and radius of the planet.
+        The correct value yields A1_m_enc -> 0 at the center of the planet.
+
+        Args:
+            num_prof (int):
+                Number of profile integration steps.
+
+            R_max (float):
+                Max. radius of the planet (SI).
+
+            M1 (float):
+                Mass of the core (SI).
+                
+            M2 (float):
+                Mass of the mantle (SI).
+
+            P_s (float):
+                Pressure at the surface (SI).
+
+            T_s (float):
+                Temperature at the surface (SI).
+
+            rho_s (float):
+                Temperature at the surface (SI).
+
+            mat_id_L1 (int):
+                Material id for layer 1.
+
+            T_rho_type_L1 (int)
+                Relation between A1_T and A1_rho to be used in layer 1.
+
+            T_rho_args_L1 (list):
+                Extra arguments to determine the relation in layer 1.
+
+            mat_id_L2 (int):
+                Material id for layer 2.
+
+            T_rho_type_L2 (int)
+                Relation between A1_T and A1_rho to be used in layer 2.
+
+            T_rho_args_L2 (list):
+                Extra arguments to determine the relation in layer 2.
+
+        Returns:
+            R1_min ([float]):
+                Boundary of the planet (SI).
+    """
+    
+    M = M1 + M2
+    rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
+    
+    # Build planet made of core material
+    try:
+        R_min = L1_spherical.L1_find_radius(
+            num_prof, R_max, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_L1,
+            T_rho_args_L1, verbose=0)
+    except:
+        raise Exception("Could not build a planet made of core material.\nPlease increase R_max.\n")
+    
+    # Build planet made of mantle material
+    try:
+        R_max = L1_spherical.L1_find_radius(
+            num_prof, R_max, M, P_s, T_s, rho_s, mat_id_L2, T_rho_type_L2,
+            T_rho_args_L2, verbose=0)
+    except:
+        raise Exception("Could not build a planet made of mantle material.\nPlease increase R_max.\n")
+    
+    if R_min > R_max:
+        raise Exception("A planet made of core material is bigger than one made of mantle material.\n")
+    
+    for i in tqdm(range(num_attempt), desc="Finding R1 and R given M1, M2", disable=(not verbose)):
+        R_try = (R_min + R_max) * 0.5
+
+        R1_try = L2_find_R1(
+            num_prof, R_try, M, P_s, T_s, rho_s, mat_id_L1, T_rho_type_L1, T_rho_args_L1,
+            mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=20, verbose=0)
+        
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
+            num_prof, R_try, M, P_s, T_s, rho_s, R1_try, mat_id_L1, T_rho_type_L1,
+            T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2)
+        
+        M1_try = A1_m_enc[A1_mat_id == mat_id_L1][0]
+
+        if M1_try > M1:
+            R_min = R_try
+        else:
+            R_max = R_try
+            
+    return R1_try, R_try

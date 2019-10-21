@@ -175,6 +175,26 @@ np.save('z_array', l1_test_sp.A1_r_pole)
 np.save('rho_e', l1_test_sp.A1_rho_equator)
 np.save('rho_p', l1_test_sp.A1_rho_pole)
     
+import woma
+R_earth = 6371000
+M_earth = 5.972E24
+
+l2_test = woma.Planet(
+    name            = "prof_pE",
+    num_attempt     = 10,
+    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_R_layer      = [None, R_earth],
+    M               = M_earth,
+    A1_M_layer      = [M_earth/3, 2*M_earth/3],
+    R_max           = 1.2*R_earth,
+    P_s             = 1e5,
+    T_s             = 300
+    )
+
+l2_test.gen_prof_L2_fix_R1_R_given_M1_M2()
 # Example 2 layer
 
 l2_test = woma.Planet(

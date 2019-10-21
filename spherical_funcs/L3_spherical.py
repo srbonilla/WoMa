@@ -267,8 +267,7 @@ def L3_find_mass(
                 M_min = M_try
 
     else:
-        print("M_max is too low, ran out of mass in first iteration")
-        return 0.
+        raise Exception("M_max is too low, ran out of mass in first iteration.\n Please increase M_max.\n")
 
     return M_max
 
@@ -353,9 +352,9 @@ def L3_find_radius(
         )
 
     if A1_m_enc[-1] == 0:
-        print("Ran out of mass for a 2 layer planet.")
-        print("Try increase the mass or reduce R1")
-        return R_min
+        e = "Ran out of mass for a 2 layer planet.\n" + \
+            "Try increase the mass or reduce R1.\n"
+        raise Exception(e)
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
         num_prof, R_max, M, P_s, T_s, rho_s, R1, R2, mat_id_L1, T_rho_type_L1,
@@ -364,9 +363,9 @@ def L3_find_radius(
         )
 
     if A1_m_enc[-1] > 0:
-        print("Excess of mass for a 3 layer planet with R = R_max.")
-        print("Try reduce the mass or increase R_max")
-        return R_max
+        e = "Excess of mass for a 3 layer planet with R = R_max.\n" + \
+            "Try reduce the mass or increase R_max.\n"
+        raise Exception(e)
 
     for i in tqdm(range(num_attempt), desc="Finding R given M, R1, R2"):
             R_try = (R_min + R_max) * 0.5
@@ -455,9 +454,9 @@ def L3_find_R2(
         )
 
     if A1_m_enc[-1] == 0:
-        print("A planet made of layer 1 and layer 2 materials excess mass.")
-        print("Try decreasing the mass, decreasing R1 or increasing R")
-        return R2_min
+        e = "A planet made of layer 1 and layer 2 materials excess mass.\n" + \
+            "Try decreasing the mass, decreasing R1 or increasing R.\n"
+        raise Exception(e)
 
     rho_s_L2 = eos.rho_P_T(P_s, T_s, mat_id_L2)
 
@@ -467,8 +466,9 @@ def L3_find_R2(
         )
 
     if A1_m_enc[-1] > 0:
-        print("A planet made of layer 1 and layer 3 materials lacks mass.")
-        print("Try increasing the mass, increasing R1 or decreasing R.")
+        e = "A planet made of layer 1 and layer 3 materials lacks mass.\n" + \
+            "Try increasing the mass, increasing R1 or decreasing R.\n"
+        raise Exception(e)
 
         return R2_max
 
@@ -561,9 +561,9 @@ def L3_find_R1(
         )
 
     if A1_m_enc[-1] > 0:
-        print("A planet made of layer 1 and layer 3 materials excess mass.")
-        print("Try decreasing the mass, increasing R2 or increasing R")
-        return R1_min
+        e = "A planet made of layer 1 and layer 3 materials excess mass.\n" + \
+            "Try decreasing the mass, increasing R2 or increasing R.\n"
+        raise Exception(e)
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_spherical.L2_integrate(
         num_prof, R, M, P_s, T_s, rho_s, R2, mat_id_L2, T_rho_type_L2,
@@ -571,9 +571,9 @@ def L3_find_R1(
         )
 
     if A1_m_enc[-1] == 0:
-        print("A planet made of layer 2 and layer 3 materials lacks mass.")
-        print("Try increasing the mass, increasing R2 or decreasing R")
-        return R1_max
+        e = "A planet made of layer 2 and layer 3 materials lacks mass.\n" + \
+            "Try increasing the mass, increasing R2 or decreasing R.\n"
+        raise Exception(e)
 
     for i in tqdm(range(num_attempt), desc="Finding R1 given R, M, R2"):
 

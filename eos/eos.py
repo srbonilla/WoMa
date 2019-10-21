@@ -40,8 +40,10 @@ def P_u_rho(u, rho, mat_id):
         P = tillotson.P_u_rho(u, rho, mat_id)
     elif mat_type == gv.type_HM80:
         P = hm80.P_u_rho(u, rho, mat_id)
+        if np.isnan(P): P = 0.
     elif mat_type == gv.type_SESAME:
         P = sesame.P_u_rho(u, rho, mat_id)
+        if np.isnan(P): P = 0.
     else:
         raise ValueError("Invalid material ID")
     return P
@@ -133,8 +135,8 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
     u_aux   = u_rho_T(rho_aux, T_aux, mat_id)
     P_aux   = P_u_rho(u_aux, rho_aux, mat_id)
     
-    if np.isnan(P0): P0 = 0.
-    if np.isnan(P_aux): P_aux = 0.
+    #if np.isnan(P0): P0 = 0.
+    #if np.isnan(P_aux): P_aux = 0.
 
     if ((P0 < P and P < P1) or (P0 > P and P > P1)):
         max_counter = 200
@@ -150,7 +152,7 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
             u2 = u_rho_T(rho2, T2, mat_id)
             P2 = P_u_rho(u2, rho2, mat_id)
             
-            if np.isnan(P0): P0 = 0.
+            #if np.isnan(P0): P0 = 0.
 
             f0 = P - P0
             f2 = P - P2
@@ -193,8 +195,19 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
     elif P > P1 and P0 < P1:
         return rho1
     else:
-        raise ValueError("Critical error in find rho")
-        return rho2
+# =============================================================================
+#         e = "Critical error in find rho.\n" + \
+#             "Material: " + str(mat_id) + \
+#             "P: " + str(P) + \
+#             "T_rho_type: {:d}\n".format(mat_id) + \
+#             "T_rho_args: " + str(T_rho_args) + "\n" + \
+#             "rho0: {:f}\n".format(rho0) + \
+#             "rho1: {:f}\n".format(rho1) + \
+#             "Please report this message to the developers. Thank you!\n"
+# =============================================================================
+        e = "Critical error in find_rho."
+            
+        raise ValueError(e)
 
 @njit
 def P_T_rho(T, rho, mat_id):
@@ -214,7 +227,7 @@ def rho_P_T(P, T, mat_id):
         rho1 = 1e6
     elif mat_type == gv.type_HM80:
         assert T > 0
-        rho0 = 1e-1
+        rho0 = 1e-6
         rho1 = 1e6
     elif mat_type == gv.type_SESAME:
         assert T > 0

@@ -272,6 +272,7 @@ plt.xlim((0,np.pi))
 plt.ylim((0,1))
 ax.legend()
 plt.tight_layout()
+set_large_ticks(ax)
 fig.savefig('Fig5.pdf')
 plt.show()
 

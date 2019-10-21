@@ -157,7 +157,7 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
         )
 
     if A1_m_enc[-1] < 0:
-        print("M_max is too low, ran out of mass in first iteration")
+        raise Exception("M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n")
 
     # Iterate the mass
     while np.abs(M_min - M_max) > 1e-8*M_min:
@@ -175,7 +175,7 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
     return M_max
 
 def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
-                   T_rho_args, num_attempt=40):
+                   T_rho_args, num_attempt=40, verbose=1):
     """ Finder of the total radius of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
 
@@ -219,11 +219,10 @@ def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         )
 
     if A1_m_enc[-1] != 0:
-        print("R_max is too low, did not ran out of mass in first iteration")
-        return 0.
+        raise Exception("R_max is too low, did not ran out of mass in first iteration.\nPlease increase R_max.\n")
 
     # Iterate the radius
-    for i in tqdm(range(num_attempt), desc="Finding R given M"):
+    for i in tqdm(range(num_attempt), desc="Finding R given M", disable=(not verbose)):
         R_try = (R_min + R_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(

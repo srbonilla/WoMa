@@ -14,6 +14,45 @@ import matplotlib as mpl
 import L1_spin
 import L2_spin
 
+def set_large_ticks(ax):
+    """ Set larger ticks on plot axes, especially for logarithmic scales.
+
+        Args:
+            ax (plt axes)
+                The plot axes.
+    """
+    # Check if either axis is logarithmic
+    log_x   = False
+    log_y   = False
+    if ax.get_xscale() == "log":
+        log_x   = True
+    if ax.get_yscale() == "log":
+        log_y   = True
+
+    # Tick sizes
+    width_log   = 1.0
+    width_lin   = 0.8
+    width_min   = 0.8
+    length_log  = 10
+    length_lin  = 6
+    length_min  = 4
+
+    # First set all major and minor ticks to the logarithmic sizes
+    ax.tick_params("both", width=width_log, length=length_log, which="major")
+    ax.tick_params("both", width=width_log, length=length_lin, which="minor")
+
+    # Reset linear ticks ((this weird order seems to work best))
+    if not log_x:
+        ax.xaxis.set_tick_params(width=width_lin, length=length_lin,
+                                 which="major")
+        ax.xaxis.set_tick_params(width=width_min, length=length_min,
+                                 which="minor")
+    if not log_y:
+        ax.yaxis.set_tick_params(width=width_lin, length=length_lin,
+                                 which="major")
+        ax.yaxis.set_tick_params(width=width_min, length=length_min,
+                                 which="minor")
+
 
 font_size   = 20
 params      = { "backend"               : "ps",
@@ -200,6 +239,7 @@ def plot_spherical_prof(l1_test, l2_test):
     plt.tight_layout()
     ax.legend()
     plt.xlim((0,1))
+    set_large_ticks(ax)
     fig.savefig('Fig1.pdf')
     plt.show()
     
@@ -248,6 +288,7 @@ def plot_spin_prof(l1_test_sp, l2_test_sp):
     ax.add_artist(legend1)
     ax.add_artist(legend2)
     plt.tight_layout()
+    set_large_ticks(ax)
     fig.savefig('Fig2.pdf')
     plt.show()
     
@@ -345,6 +386,7 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     ax[0].set_ylabel(r"$e$")
     ax[0].set_xlabel(r"Iteration")
     #ax[0].set_xticks(np.arange(0, iterations + 1, step=5))
+    ax[0].set_xlim((0,13))
     ax[0].set_ylim((0.58, 0.73))
     ax[0].legend()
     ax[1].scatter(range(len(profile_e_1)), de_1, label='1 layer test', color=color_1, zorder=3)
@@ -357,6 +399,8 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     #ax[1].legend()
     #ax.set_xticks((0, 5, 10, 15, 20), (r"0", r"5", r"10", r"15", r"20"))
     plt.tight_layout()
+    set_large_ticks(ax[0])
+    set_large_ticks(ax[1])
     fig.savefig('Fig3.pdf')
     plt.show()
     
@@ -402,13 +446,14 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
             
     
     lines = ax.get_lines()
-    legend1 = plt.legend([lines[i] for i in [0,1]], ["1 layer", "2 layer"], loc=9, title="Test")
+    legend1 = plt.legend([lines[i] for i in [0,1]], ["1 layer", "2 layer"], loc=9, title="Test case")
     legend2 = plt.legend([lines[i] for i in [0,2,4,6,8]], ["0", "2", "4", "6", "8"], loc=1, title="Iteration")
     ax.add_artist(legend1)
     ax.add_artist(legend2)
     
     ax.set_xlim((0,1.3))
     plt.tight_layout()
+    set_large_ticks(ax)
     fig.savefig('Fig4.pdf')
     plt.show()
         
