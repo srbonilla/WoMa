@@ -189,7 +189,7 @@ l2_test = woma.Planet(
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
     A1_M_layer      = [M_earth/3, 2*M_earth/3],
-    R_max           = 1.2*R_earth,
+    R_max           = 0.1*R_earth,
     P_s             = 1e5,
     T_s             = 300
     )

@@ -14,6 +14,7 @@ import sesame
 import idg
 import hm80
 from T_rho import T_rho
+import matplotlib.pyplot as plt
 
 @njit
 def P_u_rho(u, rho, mat_id):
@@ -238,4 +239,24 @@ def rho_P_T(P, T, mat_id):
     else:
         raise ValueError("Invalid material ID")
     return find_rho(P, mat_id, 1, [float(T), 0.], rho0, rho1)
+
+# Visualize EoS
+def plot_EoS_P_rho_fixed_T(mat_id_1, mat_id_2, T,
+                           P_min=0.1, P_max=1e11, rho_min=100, rho_max=15000):
+    
+    rho = np.linspace(rho_min, rho_max, 1000)
+    P_1 = np.zeros_like(rho)
+    P_2 = np.zeros_like(rho)
+    for i, rho_i in enumerate(rho):
+        P_1[i] = P_T_rho(T, rho_i, mat_id_1)
+        P_2[i] = P_T_rho(T, rho_i, mat_id_2)
+    
+    plt.figure()
+    plt.scatter(rho, P_1, label=str(mat_id_1))
+    plt.scatter(rho, P_2, label=str(mat_id_2))
+    plt.legend(title='Material')
+    plt.xlabel(r"$\rho$ [kg m$^{-3}$]")
+    plt.ylabel(r"$P$ [Pa]")
+    plt.show()
+    
     
