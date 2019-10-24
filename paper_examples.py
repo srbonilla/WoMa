@@ -112,12 +112,11 @@ l1_test.gen_prof_L1_fix_M_given_R()
 #plot_spherical_profile(l1_test)
 
 l1_test_sp = woma.SpinPlanet(
-        #num_prof=10000,
     name         = 'sp_planet',
     planet       = l1_test,
     Tw           = 3,
-    R_e          = 1.3*R_earth,
-    R_p          = 1.1*R_earth
+    R_e_max      = 1.3*R_earth,
+    R_p_max      = 1.1*R_earth
     )
 
 #l1_test_sp.find_Tw_min(iterations=20)
@@ -181,7 +180,7 @@ M_earth = 5.972E24
 
 l2_test = woma.Planet(
     name            = "prof_pE",
-    num_attempt     = 10,
+    num_attempt     = 15,
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
     #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
@@ -189,12 +188,27 @@ l2_test = woma.Planet(
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
     A1_M_layer      = [M_earth/3, 2*M_earth/3],
-    R_max           = 0.1*R_earth,
-    P_s             = 1e5,
-    T_s             = 300
+    R_max           = 1.2*R_earth,
+    P_s             = 0,
+    T_s             = 3000
     )
 
 l2_test.gen_prof_L2_fix_R1_R_given_M1_M2()
+
+l2_test_sp = woma.SpinPlanet(
+    name         = 'sp_planet',
+    planet       = l2_test,
+    Tw           = 2.8,
+    R_e_max      = 1.45*R_earth,
+    R_p_max      = 1.1*R_earth
+    )
+
+#l2_test_sp.find_Tw_min(iterations=20)
+
+#l2_test_sp.Tw = l2_test_sp.Tw_min
+
+l2_test_sp.spin()
+
 # Example 2 layer
 
 l2_test = woma.Planet(

@@ -156,7 +156,6 @@ l1_test = woma.Planet(
     A1_T_rho_type   = [1],
     A1_T_rho_args   = [[None, 0.]],
     A1_R_layer      = [R_earth],
-    M               = 0.8*M_earth,
     P_s             = 0,
     T_s             = 300
     )
