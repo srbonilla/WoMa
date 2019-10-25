@@ -145,6 +145,7 @@ def L2_integrate(
         A1_T[i]     = T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
         A1_u[i]     = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
         A1_mat_id[i] = mat_id
+        
 
         if A1_m_enc[i] < 0:
             break
@@ -382,21 +383,21 @@ def L2_find_R1(
     """
     R1_min = 0.
     R1_max = R
-
+    
     rho_s_L2 = eos.rho_P_T(P_s, T_s, mat_id_L2)
 
     A1_r, A1_m_enc_1, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
         num_prof, R, M, P_s, T_s, rho_s_L2, mat_id_L2, T_rho_type_L2,
         T_rho_args_L2
         )
-
+    
     rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
-
+    
     A1_r, A1_m_enc_2, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
         num_prof, R, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_L1,
         T_rho_args_L1
         )
-
+    
     if A1_m_enc_1[-1] == 0:
         e = "Ran out of mass for a planet made of layer 2 material.\n" + \
             "Try increasing the mass (M) or decreasing the radius (R).\n"

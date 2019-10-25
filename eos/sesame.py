@@ -22,7 +22,7 @@ def check_end(string, end):
 
 @njit
 def find_index_and_interp(x, A1_x):
-   """ Return the index and interpolation factor of a value in an array.
+    """ Return the index and interpolation factor of a value in an array.
 
        Allows x outside A1_x. If so then intp will be < 0 or > 1.
 
@@ -46,17 +46,21 @@ def find_index_and_interp(x, A1_x):
 
                < 0     If x is below A1_x.
                > 1     If x is above A1_x.
-   """
-   idx = np.searchsorted(A1_x, x) - 1
-   # Return error values if outside the array
-   if idx == -1:
-       idx = 0
-   elif idx >= len(A1_x) - 1:
-       idx = len(A1_x) - 2
-   intp    = (x - A1_x[idx]) / (A1_x[idx + 1] - A1_x[idx])
+    """
+    idx = np.searchsorted(A1_x, x) - 1
+    # Return error values if outside the array
+    if idx == -1:
+        idx = 0
+    elif idx >= len(A1_x) - 1:
+        idx = len(A1_x) - 2
+    if A1_x[idx + 1] != A1_x[idx]:
+        intp = (x - A1_x[idx]) / (A1_x[idx + 1] - A1_x[idx])
+    else:
+        intp = 1.
+       
 
-   return np.array([idx, intp])
-
+    return np.array([idx, intp])
+    
 def load_table_SESAME(Fp_table):
     """ Load and return the table file data.
 
@@ -223,7 +227,7 @@ def P_u_rho(u, rho, mat_id):
     idx_rho_intp_rho   = find_index_and_interp(log_rho, A1_log_rho[1:])
     idx_rho     = int(idx_rho_intp_rho[0])
     intp_rho    = idx_rho_intp_rho[1]
-
+    
     # u (in this and the next density slice of the 2D u array)
     idx_u_1_intp_u_1   = find_index_and_interp(log_u, A2_log_u[idx_rho])
     idx_u_1            = int(idx_u_1_intp_u_1[0])
@@ -231,7 +235,7 @@ def P_u_rho(u, rho, mat_id):
     idx_u_2_intp_u_2   = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
     idx_u_2            = int(idx_u_2_intp_u_2[0])
     intp_u_2           = idx_u_2_intp_u_2[1]
-
+    
     P_1 = A2_P[idx_rho, idx_u_1]
     P_2 = A2_P[idx_rho, idx_u_1 + 1]
     P_3 = A2_P[idx_rho + 1, idx_u_2]

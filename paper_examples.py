@@ -94,34 +94,32 @@ def plot_spin_profile(spin_planet):
     
 # Example 1 layer
 l1_test = woma.Planet(
-    
     name            = "prof_pE",
     A1_mat_layer    = ['Til_granite'],
     A1_T_rho_type   = [1],
     A1_T_rho_args   = [[None, 0.]],
     A1_R_layer      = [R_earth],
-    M               = 0.8*M_earth,
-    P_s             = 0,
-    T_s             = 300
+    P_s             = 1e5,
+    T_s             = 3000,
+    M_max           = M_earth
     )
-
-l1_test.M_max = M_earth
 
 l1_test.gen_prof_L1_fix_M_given_R()
 
 #plot_spherical_profile(l1_test)
 
 l1_test_sp = woma.SpinPlanet(
+    num_prof     = 10000,
     name         = 'sp_planet',
     planet       = l1_test,
-    Tw           = 3,
-    R_e_max      = 1.3*R_earth,
+    Tw           = 3.4,
+    R_e_max      = 1.5*R_earth,
     R_p_max      = 1.1*R_earth
     )
 
-#l1_test_sp.find_Tw_min(iterations=20)
+#l1_test_sp.find_Tw_min()
 
-#l1_test_sp.Tw = l1_test_sp.Tw_min
+#print(l1_test_sp.Tw_min)
 
 l1_test_sp.spin()
 
@@ -130,7 +128,7 @@ l1_test_sp.spin()
 particles = woma.GenSpheroid(
     name        = 'picles_spin',
     spin_planet = l1_test_sp,
-    N_particles = 1e5)
+    N_particles = 1e7)
 
 # Ploting
 rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)
@@ -169,58 +167,47 @@ with h5py.File(filename, 'w') as f:
                              particles.A1_picle_id, particles.A1_picle_mat_id,
                              4*R_earth, swift_to_SI) 
     
-np.save('r_array', l1_test_sp.A1_r_equator)
-np.save('z_array', l1_test_sp.A1_r_pole)
-np.save('rho_e', l1_test_sp.A1_rho_equator)
-np.save('rho_p', l1_test_sp.A1_rho_pole)
+np.save('A1_r_1l', l1_test_sp.A1_r_equator)
+np.save('A1_z_1l', l1_test_sp.A1_r_pole)
+np.save('A1_rho_r_1l', l1_test_sp.A1_rho_equator)
+np.save('A1_rho_z_1l', l1_test_sp.A1_rho_pole)
     
-import woma
-R_earth = 6371000
-M_earth = 5.972E24
-
-l2_test = woma.Planet(
-    name            = "prof_pE",
-    num_attempt     = 15,
-    A1_mat_layer    = ['Til_iron', 'Til_granite'],
-    #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
-    A1_T_rho_type   = [1, 1],
-    A1_T_rho_args   = [[None, 0.], [None, 0.]],
-    A1_R_layer      = [None, R_earth],
-    M               = M_earth,
-    A1_M_layer      = [M_earth/3, 2*M_earth/3],
-    R_max           = 1.2*R_earth,
-    P_s             = 0,
-    T_s             = 3000
-    )
-
-l2_test.gen_prof_L2_fix_R1_R_given_M1_M2()
-
-l2_test_sp = woma.SpinPlanet(
-    name         = 'sp_planet',
-    planet       = l2_test,
-    Tw           = 2.8,
-    R_e_max      = 1.45*R_earth,
-    R_p_max      = 1.1*R_earth
-    )
-
-#l2_test_sp.find_Tw_min(iterations=20)
-
-#l2_test_sp.Tw = l2_test_sp.Tw_min
-
-l2_test_sp.spin()
+# =============================================================================
+# # Example 2 layer
+# import woma
+# R_earth = 6371000
+# M_earth = 5.972E24
+# 
+# l2_test = woma.Planet(
+#     name            = "prof_pE",
+#     num_attempt     = 5,
+#     #A1_mat_layer    = ['Til_iron', 'Til_granite'],
+#     A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
+#     A1_T_rho_type   = [1, 1],
+#     A1_T_rho_args   = [[None, 0.], [None, 0.]],
+#     M               = M_earth,
+#     A1_M_layer      = [M_earth/3, 2*M_earth/3],
+#     R_max           = 2*R_earth,
+#     P_s             = 1e5,
+#     T_s             = 3000
+#     )
+# 
+# l2_test.gen_prof_L2_fix_R1_R_given_M1_M2()
+# =============================================================================
 
 # Example 2 layer
-
+import woma
 l2_test = woma.Planet(
     name            = "prof_pE",
-    A1_mat_layer    = ['Til_iron', 'Til_granite'],
-    #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
+    #num_attempt     = 5,
+    #A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
-    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_T_rho_args   = [[None, 0.7], [None, 0.7]],
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
     P_s             = 1e5,
-    T_s             = 300
+    T_s             = 3000
     )
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
@@ -228,14 +215,15 @@ l2_test.gen_prof_L2_fix_R1_given_R_M()
 #plot_spherical_profile(l2_test)
 
 l2_test_sp = woma.SpinPlanet(
+    num_prof     = 10000,
     name         = 'sp_planet',
     planet       = l2_test,
-    Tw           = 2.6,
-    R_e          = 1.45*R_earth,
-    R_p          = 1.1*R_earth
+    Tw           = 2.7,
+    R_e_max      = 1.45*R_earth,
+    R_p_max      = 1.1*R_earth
     )
 
-#l2_test_sp.find_Tw_min(iterations=20)
+l2_test_sp.find_Tw_min()
 
 #l2_test_sp.Tw = l2_test_sp.Tw_min
 
@@ -283,10 +271,17 @@ with h5py.File(filename, 'w') as f:
                              particles.A1_picle_id, particles.A1_picle_mat_id,
                              4*R_earth, swift_to_SI) 
     
-np.save('r_array', l2_test_sp.A1_r_equator)
-np.save('z_array', l2_test_sp.A1_r_pole)
-np.save('rho_e', l2_test_sp.A1_rho_equator)
-np.save('rho_p', l2_test_sp.A1_rho_pole)
+np.save('A1_r_2l', l2_test_sp.A1_r_equator)
+np.save('A1_z_2l', l2_test_sp.A1_r_pole)
+np.save('A1_rho_r_2l', l2_test_sp.A1_rho_equator)
+np.save('A1_rho_z_2l', l2_test_sp.A1_rho_pole)
+
+
+
+
+
+
+
 
 # Example 3 layer
 
