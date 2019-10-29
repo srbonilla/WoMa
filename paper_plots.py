@@ -152,27 +152,32 @@ def plot_spin_profile(spin_planet):
 # Example 1 layer
 l1_test = woma.Planet(
     name            = "prof_pE",
-    A1_mat_layer    = ['Til_granite'],
+    #A1_mat_layer    = ['Til_granite'],
+    A1_mat_layer    = ['SESAME_basalt'],
     A1_T_rho_type   = [1],
     A1_T_rho_args   = [[None, 0.]],
     A1_R_layer      = [R_earth],
-    P_s             = 0,
-    T_s             = 300
+    P_s             = 1e5,
+    T_s             = 3000,
+    M_max           = M_earth
     )
-
-l1_test.M_max = M_earth
 
 l1_test.gen_prof_L1_fix_M_given_R()
 
 #plot_spherical_profile(l1_test)
 
 l1_test_sp = woma.SpinPlanet(
+    num_prof     = 10000,
     name         = 'sp_planet',
     planet       = l1_test,
-    Tw           = 3,
-    R_e          = 1.3*R_earth,
-    R_p          = 1.1*R_earth
+    Tw           = 3.25,
+    R_e_max      = 1.5*R_earth,
+    R_p_max      = 1.1*R_earth
     )
+
+#l1_test_sp.find_Tw_min()
+
+#print(l1_test_sp.Tw_min)
 
 l1_test_sp.spin()
 
@@ -182,13 +187,15 @@ l1_test_sp.spin()
 
 l2_test = woma.Planet(
     name            = "prof_pE",
-    A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
+    #num_attempt     = 5,
+    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
-    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_T_rho_args   = [[None, 0.5], [None, 0.5]],
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
     P_s             = 1e5,
-    T_s             = 300
+    T_s             = 3000
     )
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
@@ -196,16 +203,19 @@ l2_test.gen_prof_L2_fix_R1_given_R_M()
 #plot_spherical_profile(l2_test)
 
 l2_test_sp = woma.SpinPlanet(
+    num_prof     = 10000,
     name         = 'sp_planet',
     planet       = l2_test,
     Tw           = 2.6,
-    R_e          = 1.45*R_earth,
-    R_p          = 1.1*R_earth
+    R_e_max      = 1.45*R_earth,
+    R_p_max      = 1.1*R_earth
     )
 
-l2_test_sp.spin()
+#l2_test_sp.find_Tw_min()
 
-#plot_spin_profile(l2_test_sp)
+#l2_test_sp.Tw = l2_test_sp.Tw_min
+
+l2_test_sp.spin()
 
 #############
 
@@ -239,7 +249,7 @@ def plot_spherical_prof(l1_test, l2_test):
     ax.legend()
     plt.xlim((0,1))
     set_large_ticks(ax)
-    fig.savefig('Fig1.pdf')
+    fig.savefig('fig_spherical_profiles.pdf')
     plt.show()
     
 def plot_spin_prof(l1_test_sp, l2_test_sp):
@@ -260,7 +270,7 @@ def plot_spin_prof(l1_test_sp, l2_test_sp):
     plt.tight_layout()
     ax[0].legend()
     ax[1].legend()
-    fig.savefig('Fig2.pdf')
+    fig.savefig('fig_spinning_profiles.pdf')
     plt.show()
     
     fig, ax = plt.subplots(1, 1, figsize=(7,7))
@@ -288,7 +298,7 @@ def plot_spin_prof(l1_test_sp, l2_test_sp):
     ax.add_artist(legend2)
     plt.tight_layout()
     set_large_ticks(ax)
-    fig.savefig('Fig2.pdf')
+    fig.savefig('fig_spinning_profiles.pdf')
     plt.show()
     
 def plot_convergence_spin(l1_test_sp, l2_test_sp):
@@ -298,10 +308,10 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     rho_c = np.max(l1_test_sp.A1_rho)
     rho_s = np.min(l1_test_sp.A1_rho)
 
-    r_array_1     = np.linspace(0, l1_test_sp.R_e, l1_test_sp.num_prof)
-    z_array_1     = np.linspace(0, l1_test_sp.R_p, l1_test_sp.num_prof)
+    r_array_1     = np.linspace(0, l1_test_sp.R_e_max, l1_test_sp.num_prof)
+    z_array_1     = np.linspace(0, l1_test_sp.R_p_max, l1_test_sp.num_prof)
     
-    iterations = 13
+    iterations = 40
 
     if l1_test_sp.num_layer == 1:
         # Check for necessary input
@@ -322,8 +332,8 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     rho_c = np.max(l2_test_sp.A1_rho)
     rho_s = np.min(l2_test_sp.A1_rho)
 
-    r_array_2     = np.linspace(0, l2_test_sp.R_e, l2_test_sp.num_prof)
-    z_array_2     = np.linspace(0, l2_test_sp.R_p, l2_test_sp.num_prof)
+    r_array_2     = np.linspace(0, l2_test_sp.R_e_max, l2_test_sp.num_prof)
+    z_array_2     = np.linspace(0, l2_test_sp.R_p_max, l2_test_sp.num_prof)
             
     if l2_test_sp.num_layer == 2:
         # Check for necessary input
@@ -373,8 +383,8 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     de_2 = np.zeros_like(e_2)
     
     for i in range(1, len(de_1)):
-        de_1[i] = (e_1[i] - e_1[i - 1])/e_1[i]
-        de_2[i] = (e_2[i] - e_2[i - 1])/e_2[i]
+        de_1[i] = np.abs(e_1[i] - e_1[i - 1])/e_1[i]
+        de_2[i] = np.abs(e_2[i] - e_2[i - 1])/e_2[i]
         
     de_1[0] = np.nan
     de_2[0] = np.nan
@@ -385,43 +395,50 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     ax[0].set_ylabel(r"$e$")
     ax[0].set_xlabel(r"Iteration")
     #ax[0].set_xticks(np.arange(0, iterations + 1, step=5))
-    ax[0].set_xlim((0,13))
-    ax[0].set_ylim((0.58, 0.73))
-    ax[0].legend()
+    ax[0].set_xlim((0,14))
+    ax[0].set_ylim((0.58, 0.80))
+    ax[0].legend(loc='lower right')
     ax[1].scatter(range(len(profile_e_1)), de_1, label='1 layer test', color=color_1, zorder=3)
     ax[1].scatter(range(len(profile_e_1)), de_2, label='2 layer test', color=color_2)
     ax[1].set_ylabel(r"$\Delta e_i$")
     ax[1].set_xlabel(r"Iteration")
-    ax[1].set_xticks(np.arange(0, iterations + 1, step=5))
-    ax[1].set_ylim((-0.01, 0.06))
+    ax[1].set_xticks([1, 5, 10, 15, 20])
+    #ax[1].set_ylim((-0.01, 0.06))
+    ax[1].set_ylim((1e-4, 1e-1))
     ax[1].axhline(zorder=-1, color='black', linewidth=1, linestyle=':')
+    ax[1].set_yscale('log')
+    ax[1].set_yticks([1e-1, 1e-2, 1e-3, 1e-4, 1e-5])
+    #ax[1].set_xticks(np.arange(1, iterations - 5, step=5))
     #ax[1].legend()
     #ax.set_xticks((0, 5, 10, 15, 20), (r"0", r"5", r"10", r"15", r"20"))
     plt.tight_layout()
     set_large_ticks(ax[0])
     set_large_ticks(ax[1])
-    fig.savefig('Fig3.pdf')
+    fig.savefig('fig_iteration_e.pdf')
     plt.show()
     
-    cmap = plt.get_cmap('hsv')
-    colors = [cmap(i) for i in np.linspace(0, 1, 6)]
+# =============================================================================
+#     cmap = plt.get_cmap('hsv')
+#     colors = [cmap(i) for i in np.linspace(0, 1, 6)]
+#     
+#     fig, ax = plt.subplots(2, 1, figsize=(7,12), sharex=True, gridspec_kw={'hspace': 0})
+#     for i in range(10):
+#         if i%2 == 0:
+#             ax[0].plot(r_array_1[profile_e_1[i] > 0]/R_earth, profile_e_1[i][profile_e_1[i] > 0],
+#                        label=str(i), color=colors[int(i/2)])
+#             ax[1].plot(r_array_2[profile_e_2[i] > 0]/R_earth, profile_e_2[i][profile_e_2[i] > 0],
+#                        label=str(i), color=colors[int(i/2)])
+#     ax[0].set_ylabel(r"$\rho$ [kg m$^{-3}$]")
+#     ax[1].set_ylabel(r"$\rho$ [kg m$^{-3}$]")
+#     ax[1].set_xlabel(r"$r_{xy}$ [R$_\oplus$]")
+#     ax[0].legend(title='Iteration')
+#     ax[1].legend(title='Iteration')
+#     ax[0].set_xlim((0,1.3))
+#     plt.tight_layout()
+#     fig.savefig('fig_iteration_eq_profile.pdf')
+#     plt.show()
+# =============================================================================
     
-    fig, ax = plt.subplots(2, 1, figsize=(7,12), sharex=True, gridspec_kw={'hspace': 0})
-    for i in range(10):
-        if i%2 == 0:
-            ax[0].plot(r_array_1[profile_e_1[i] > 0]/R_earth, profile_e_1[i][profile_e_1[i] > 0],
-                       label=str(i), color=colors[int(i/2)])
-            ax[1].plot(r_array_2[profile_e_2[i] > 0]/R_earth, profile_e_2[i][profile_e_2[i] > 0],
-                       label=str(i), color=colors[int(i/2)])
-    ax[0].set_ylabel(r"$\rho$ [kg m$^{-3}$]")
-    ax[1].set_ylabel(r"$\rho$ [kg m$^{-3}$]")
-    ax[1].set_xlabel(r"$r_{xy}$ [R$_\oplus$]")
-    ax[0].legend(title='Iteration')
-    ax[1].legend(title='Iteration')
-    ax[0].set_xlim((0,1.3))
-    plt.tight_layout()
-    fig.savefig('Fig4.pdf')
-    plt.show()
     
     cmap = plt.get_cmap('copper')
     colors_1 = [cmap(i) for i in np.linspace(0, 1, 5)]
@@ -442,8 +459,6 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     ax.set_ylabel(r"$\rho$ [kg m$^{-3}$]")
     ax.set_xlabel(r"$r_{xy}$ [R$_\oplus$]")
             
-            
-    
     lines = ax.get_lines()
     legend1 = plt.legend([lines[i] for i in [0,1]], ["1 layer", "2 layer"], loc=9, title="Test case")
     legend2 = plt.legend([lines[i] for i in [0,2,4,6,8]], ["0", "2", "4", "6", "8"], loc=1, title="Iteration")
@@ -453,6 +468,6 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     ax.set_xlim((0,1.3))
     plt.tight_layout()
     set_large_ticks(ax)
-    fig.savefig('Fig4.pdf')
+    fig.savefig('fig_iteration_eq_profile.pdf')
     plt.show()
         

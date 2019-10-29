@@ -53,12 +53,13 @@ def find_index_and_interp(x, A1_x):
         idx = 0
     elif idx >= len(A1_x) - 1:
         idx = len(A1_x) - 2
+
+    # Check for duplicate elements
     if A1_x[idx + 1] != A1_x[idx]:
         intp = (x - A1_x[idx]) / (A1_x[idx + 1] - A1_x[idx])
     else:
         intp = 1.
        
-
     return np.array([idx, intp])
     
 def load_table_SESAME(Fp_table):
