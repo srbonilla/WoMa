@@ -1385,6 +1385,15 @@ class SpinPlanet():
                 self.num_layer          = len(self.A1_mat_layer)
                 self.A1_mat_id_layer    = [gv.Di_mat_id[mat]
                                            for mat in self.A1_mat_layer]
+                
+                
+        # Set default R_e_max and R_p_max
+        assert(self.A1_r is not None)
+        if self.R_e_max is None:
+            self.R_e_max = 1.5*np.max(self.A1_r)
+            
+        if self.R_p_max is None:
+            self.R_p_max = 1.2*np.max(self.A1_r)
 
         assert(self.num_layer in [1, 2, 3])
         assert(self.R_e_max is not None)
@@ -1410,6 +1419,18 @@ class SpinPlanet():
             assert(self.A1_T_rho_type[1] is not None)
             assert(self.A1_mat_id_layer[2] is not None)
             assert(self.A1_T_rho_type[2] is not None)
+            
+    def update_attributes(self):
+        # Compute mass of the planet
+        self.M = us.compute_spin_planet_M(self.A1_r_equator, self.A1_rho_equator,
+                                          self.A1_r_pole, self.A1_rho_pole)
+        
+        # Compute escape velocity
+        v_esc_eq, v_esc_p = us.spin_escape_vel(self.A1_r_equator, self.A1_rho_equator,
+                                               self.A1_r_pole, self.A1_rho_pole, self.Tw)
+        
+        self.v_escape_pole    = v_esc_p
+        self.v_escape_equator = v_esc_eq
         
     def find_Tw_min(self, Tw_max=10, iterations=20):
         
@@ -1560,16 +1581,7 @@ class SpinPlanet():
         self.A1_rho_equator   = profile_e[-1]
         self.A1_rho_pole      = profile_p[-1]
         
-        # Compute mass of the planet
-        self.M = us.compute_spin_planet_M(self.A1_r_equator, self.A1_rho_equator,
-                                          self.A1_r_pole, self.A1_rho_pole)
-        
-        # Compute escape velocity
-        v_esc_eq, v_esc_p = us.spin_escape_vel(self.A1_r_equator, self.A1_rho_equator,
-                                               self.A1_r_pole, self.A1_rho_pole, self.Tw)
-        
-        self.v_escape_pole    = v_esc_p
-        self.v_escape_equator = v_esc_eq
+        self.update_attributes()
         
         def spin_fixed_M(self):
             
