@@ -214,9 +214,9 @@ l2_test = woma.Planet(
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
 #plot_spherical_profile(l2_test)
-
+import woma
 l2_test_sp = woma.SpinPlanet(
-    num_prof     = 10000,
+    num_prof     = 1000,
     name         = 'sp_planet',
     planet       = l2_test,
     Tw           = 2.6,
@@ -277,84 +277,53 @@ np.save('A1_z_2l', l2_test_sp.A1_r_pole)
 np.save('A1_rho_r_2l', l2_test_sp.A1_rho_equator)
 np.save('A1_rho_z_2l', l2_test_sp.A1_rho_pole)
 
+# Synestia
 
-
-
-
-
-
-
-# Example 3 layer
-
-l3_test = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "SESAME_steam"],
-        A1_T_rho_type   = [1, 1, 1],
-        A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
-        A1_R_layer      = [0.55*R_earth, None, R_earth],
-        P_s             = 1e5,
-        T_s             = 300,
-        M               = M_earth
-        )
-
-l3_test.gen_prof_L3_fix_R2_given_R_M_R1()
-
-plot_spherical_profile(l3_test)
-
-l3_test_sp = woma.SpinPlanet(
-    name         = 'sp_planet',
-    planet       = l3_test,
-    Tw           = 10,
-    R_e          = 1.5*R_earth,
-    R_p          = 1.1*R_earth
+# Proto-Earth (PE)
+m_frac = np.array([1/3, 2/3])
+PE = woma.Planet(
+    name            = "PE",
+    A1_mat_layer    = ['Til_iron', 'Til_granite'],
+    A1_T_rho_type   = [1, 1],
+    A1_T_rho_args   = [[None, 0.], [None, 0.]],
+    A1_M_layer      = m_frac*M_earth,
+    P_s             = 1e5,
+    T_s             = 3000,
+    R_max           = 2*R_earth
     )
 
-l3_test_sp.spin()
+PE.gen_prof_L2_fix_R1_R_given_M1_M2()
 
-plot_spin_profile(l3_test_sp)
+plot_spherical_profile(PE)
+
+PE_mod = woma.Planet(
+    A1_mat_layer    = PE.A1_mat_layer,
+    A1_T_rho_type   = PE.A1_T_rho_type,
+    A1_T_rho_args   = PE.A1_T_rho_args,
+    P_s             = PE.P_s,
+    T_s             = PE.T_s,
+    A1_R_layer      = PE.A1_R_layer*0.9625,
+    M_max           = PE.M
+    )
+
+PE_mod.gen_prof_L2_fix_M_given_R1_R()
+
+PE_spin = woma.SpinPlanet(
+    planet       = PE_mod,
+    Tw           = 3
+    )
+
+#PE_spin.find_Tw_min()
+
+PE_spin.spin()
+
+PE_spin.M/M_earth
+
+plot_spin_profile(PE_spin)
 
 particles = woma.GenSpheroid(
-    name        = 'picles_spin',
-    spin_planet = l3_test_sp,
-    N_particles = 1e5)
+    spin_planet = PE_spin,
+    N_particles = 1e7)
 
-# Ploting
-rho_sph = us._SPH_density(particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z, particles.A1_picle_m, 48)
-   
-delta_rho = (rho_sph - particles.A1_picle_rho)/particles.A1_picle_rho    
-rc = np.sqrt(particles.A1_picle_x**2 + particles.A1_picle_y**2)
 
-plt.figure(figsize=(12, 12))
-plt.scatter(rc/R_earth, np.abs(particles.A1_picle_z)/R_earth, s = 40, alpha = 0.5, c = delta_rho, 
-            marker='.', edgecolor='none', cmap = 'coolwarm')
-plt.xlabel(r"$r_c$ $[R_{earth}]$")
-plt.ylabel(r"$z$ $[R_{earth}]$")
-cbar = plt.colorbar()
-cbar.set_label(r"$(\rho_{\rm SPH} - \rho_{\rm model}) / \rho_{\rm model}$")
-plt.clim(-0.1, 0.1)
-plt.axes().set_aspect('equal')
-plt.show()
-        
-plt.figure()
-plt.scatter(particles.A1_picle_z/R_earth, delta_rho, s=1, alpha=0.5)
-plt.show() 
-
-# Create swift in file
-positions = np.array([particles.A1_picle_x, particles.A1_picle_y, particles.A1_picle_z]).T
-velocities = np.array([particles.A1_picle_vx, particles.A1_picle_vy, particles.A1_picle_vz]).T
-
-swift_to_SI = swift_io.Conversions(1, 1, 1)
-
-filename = '2layer_10e7.hdf5'
-with h5py.File(filename, 'w') as f:
-    swift_io.save_picle_data(f, positions, velocities,
-                             particles.A1_picle_m, particles.A1_picle_h,
-                             particles.A1_picle_rho, particles.A1_picle_P, particles.A1_picle_u,
-                             particles.A1_picle_id, particles.A1_picle_mat_id,
-                             4*R_earth, swift_to_SI) 
-    
-np.save('r_array', l2_test_sp.A1_r_equator)
-np.save('z_array', l2_test_sp.A1_r_pole)
-np.save('rho_e', l2_test_sp.A1_rho_equator)
-np.save('rho_p', l2_test_sp.A1_rho_pole)
 

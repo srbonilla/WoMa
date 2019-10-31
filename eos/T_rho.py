@@ -8,7 +8,7 @@ Created on Thu Jul 25 16:37:58 2019
 
 from numba import njit
 import glob_vars as gv
-#import numpy as np
+import numpy as np
 #import idg
 #import hm80
 #import tillotson
@@ -38,9 +38,10 @@ def T_rho(rho, T_rho_type, T_rho_args, mat_id):
 
     # T = K*rho**alpha, T_rho_args = [K, alpha]
     if (T_rho_type == gv.type_rho_pow):
-        K       = T_rho_args[0]
-        alpha   = T_rho_args[1]
-        return K * rho**alpha
+        K         = T_rho_args[0]
+        alpha     = T_rho_args[1]
+        T         = K*np.power(rho, alpha)
+        return T
 
     # Adiabatic, T_rho_args = [s_adb], [rho_prv, T_prv], or [T rho^(1-gamma)]
 # =============================================================================
