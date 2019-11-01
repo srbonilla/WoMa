@@ -110,7 +110,7 @@ l1_test.gen_prof_L1_fix_M_given_R()
 #plot_spherical_profile(l1_test)
 
 l1_test_sp = woma.SpinPlanet(
-    num_prof     = 10000,
+    num_prof     = 1000,
     name         = 'sp_planet',
     planet       = l1_test,
     Tw           = 3.25,
@@ -200,23 +200,20 @@ np.save('A1_rho_z_1l', l1_test_sp.A1_rho_pole)
 import woma
 l2_test = woma.Planet(
     name            = "prof_pE",
-    #num_attempt     = 5,
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
-    #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
-    A1_T_rho_args   = [[None, 0.5], [None, 0.5]],
+    A1_T_rho_args   = [[None, 2.5], [None, 2.5]],
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
     P_s             = 1e5,
-    T_s             = 3000
+    T_s             = 300
     )
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
 #plot_spherical_profile(l2_test)
-import woma
 l2_test_sp = woma.SpinPlanet(
-    num_prof     = 1000,
+    num_prof     = 10000,
     name         = 'sp_planet',
     planet       = l2_test,
     Tw           = 2.6,

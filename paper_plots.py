@@ -187,21 +187,18 @@ l1_test_sp.spin()
 
 l2_test = woma.Planet(
     name            = "prof_pE",
-    #num_attempt     = 5,
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
-    #A1_mat_layer    = ['SESAME_iron', 'SESAME_basalt'],
     A1_T_rho_type   = [1, 1],
-    A1_T_rho_args   = [[None, 0.5], [None, 0.5]],
+    A1_T_rho_args   = [[None, 2.5], [None, 2.5]],
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
     P_s             = 1e5,
-    T_s             = 3000
+    T_s             = 300
     )
 
 l2_test.gen_prof_L2_fix_R1_given_R_M()
 
 #plot_spherical_profile(l2_test)
-
 l2_test_sp = woma.SpinPlanet(
     num_prof     = 10000,
     name         = 'sp_planet',
@@ -216,6 +213,7 @@ l2_test_sp = woma.SpinPlanet(
 #l2_test_sp.Tw = l2_test_sp.Tw_min
 
 l2_test_sp.spin()
+
 
 #############
 
@@ -254,24 +252,26 @@ def plot_spherical_prof(l1_test, l2_test):
     
 def plot_spin_prof(l1_test_sp, l2_test_sp):
     
-    fig, ax = plt.subplots(2, 1, figsize=(5,7), sharex=True)
-    ax[0].plot(l1_test_sp.A1_r_pole[l1_test_sp.A1_rho_pole > 0]/R_earth,
-            l1_test_sp.A1_rho_pole[l1_test_sp.A1_rho_pole > 0], label='1 layer test', color=color_1)
-    ax[0].plot(l2_test_sp.A1_r_pole[l2_test_sp.A1_rho_pole > 0]/R_earth,
-            l2_test_sp.A1_rho_pole[l2_test_sp.A1_rho_pole > 0], label='2 layer test', color=color_2)
-    ax[1].plot(l1_test_sp.A1_r_equator[l1_test_sp.A1_rho_equator > 0]/R_earth,
-            l1_test_sp.A1_rho_equator[l1_test_sp.A1_rho_equator > 0], label='1 layer test', color=color_1)
-    ax[1].plot(l2_test_sp.A1_r_equator[l2_test_sp.A1_rho_equator > 0]/R_earth,
-            l2_test_sp.A1_rho_equator[l2_test_sp.A1_rho_equator > 0], label='2 layer test', color=color_2)
-    ax[0].set_xlabel(r"$z$ $[R_{earth}]$")
-    ax[0].set_ylabel(r"$\rho$ $[Kg/m^3]$")
-    ax[1].set_xlabel(r"$r_{xy}$ $[R_{earth}]$")
-    ax[1].set_ylabel(r"$\rho$ $[Kg/m^3]$")
-    plt.tight_layout()
-    ax[0].legend()
-    ax[1].legend()
-    fig.savefig('fig_spinning_profiles.pdf')
-    plt.show()
+# =============================================================================
+#     fig, ax = plt.subplots(2, 1, figsize=(5,7), sharex=True)
+#     ax[0].plot(l1_test_sp.A1_r_pole[l1_test_sp.A1_rho_pole > 0]/R_earth,
+#             l1_test_sp.A1_rho_pole[l1_test_sp.A1_rho_pole > 0], label='1 layer test', color=color_1)
+#     ax[0].plot(l2_test_sp.A1_r_pole[l2_test_sp.A1_rho_pole > 0]/R_earth,
+#             l2_test_sp.A1_rho_pole[l2_test_sp.A1_rho_pole > 0], label='2 layer test', color=color_2)
+#     ax[1].plot(l1_test_sp.A1_r_equator[l1_test_sp.A1_rho_equator > 0]/R_earth,
+#             l1_test_sp.A1_rho_equator[l1_test_sp.A1_rho_equator > 0], label='1 layer test', color=color_1)
+#     ax[1].plot(l2_test_sp.A1_r_equator[l2_test_sp.A1_rho_equator > 0]/R_earth,
+#             l2_test_sp.A1_rho_equator[l2_test_sp.A1_rho_equator > 0], label='2 layer test', color=color_2)
+#     ax[0].set_xlabel(r"$z$ $[R_{earth}]$")
+#     ax[0].set_ylabel(r"$\rho$ $[Kg/m^3]$")
+#     ax[1].set_xlabel(r"$r_{xy}$ $[R_{earth}]$")
+#     ax[1].set_ylabel(r"$\rho$ $[Kg/m^3]$")
+#     plt.tight_layout()
+#     ax[0].legend()
+#     ax[1].legend()
+#     fig.savefig('fig_spinning_profiles.pdf')
+#     plt.show()
+# =============================================================================
     
     fig, ax = plt.subplots(1, 1, figsize=(7,7))
     ax.plot(l1_test_sp.A1_r_equator[l1_test_sp.A1_rho_equator > 0]/R_earth,
@@ -311,7 +311,7 @@ def plot_convergence_spin(l1_test_sp, l2_test_sp):
     r_array_1     = np.linspace(0, l1_test_sp.R_e_max, l1_test_sp.num_prof)
     z_array_1     = np.linspace(0, l1_test_sp.R_p_max, l1_test_sp.num_prof)
     
-    iterations = 40
+    iterations = 20
 
     if l1_test_sp.num_layer == 1:
         # Check for necessary input
