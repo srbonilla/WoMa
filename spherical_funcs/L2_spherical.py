@@ -20,8 +20,8 @@ warnings.filterwarnings("ignore")
 
 @njit
 def L2_integrate(
-    num_prof, R, M, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_L1,
-    T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2
+    num_prof, R, M, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_id_L1,
+    T_rho_args_L1, mat_id_L2, T_rho_type_id_L2, T_rho_args_L2
     ):
     """ Integration of a 2 layer spherical planet.
 
@@ -50,7 +50,7 @@ def L2_integrate(
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between A1_T and A1_rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -59,7 +59,7 @@ def L2_integrate(
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between A1_T and A1_rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -97,7 +97,7 @@ def L2_integrate(
 
     u_s = eos.u_rho_T(rho_s, T_s, mat_id_L2)
     # Set the T-rho relation
-    T_rho_args_L2   = set_T_rho_args(T_s, rho_s, T_rho_type_L2,
+    T_rho_args_L2   = set_T_rho_args(T_s, rho_s, T_rho_type_id_L2,
                                      T_rho_args_L2, mat_id_L2)
 
     dr = A1_r[0] - A1_r[1]
@@ -114,7 +114,7 @@ def L2_integrate(
         if A1_r[i] > R1:
             rho             = A1_rho[i - 1]
             mat_id          = mat_id_L2
-            T_rho_type      = T_rho_type_L2
+            T_rho_type_id      = T_rho_type_id_L2
             T_rho_args      = T_rho_args_L2
             rho0            = rho
         # Layer 1, 2 boundary
@@ -122,10 +122,10 @@ def L2_integrate(
             rho = eos.find_rho(A1_P[i - 1], mat_id_L1, 1, [A1_T[i - 1], 0.], A1_rho[i - 1], 100000)
             rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1)
             T_rho_args_L1  = set_T_rho_args(
-                A1_T[i - 1], rho, T_rho_type_L1, T_rho_args_L1, mat_id_L1)
+                A1_T[i - 1], rho, T_rho_type_id_L1, T_rho_args_L1, mat_id_L1)
 
             mat_id          = mat_id_L1
-            T_rho_type      = T_rho_type_L1
+            T_rho_type_id      = T_rho_type_id_L1
             T_rho_args      = T_rho_args_L1
             rho0            = A1_rho[i - 1]
             
@@ -133,16 +133,16 @@ def L2_integrate(
         elif A1_r[i] <= R1:
             rho             = A1_rho[i - 1]
             mat_id          = mat_id_L1
-            T_rho_type      = T_rho_type_L1
+            T_rho_type_id      = T_rho_type_id_L1
             T_rho_args      = T_rho_args_L1
             rho0            = A1_rho[i - 1]
 
         A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*rho*dr
         A1_P[i]     = A1_P[i - 1] + gv.G*A1_m_enc[i - 1]*rho/(A1_r[i - 1]**2)*dr
         A1_rho[i]   = eos.find_rho(
-            A1_P[i], mat_id, T_rho_type, T_rho_args, rho0, 1.1*rho,
+            A1_P[i], mat_id, T_rho_type_id, T_rho_args, rho0, 1.1*rho,
             )
-        A1_T[i]     = T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
+        A1_T[i]     = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
         A1_u[i]     = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
         A1_mat_id[i] = mat_id
         
@@ -154,8 +154,8 @@ def L2_integrate(
 
 @njit
 def L2_find_mass(
-    num_prof, R, M_max, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_L1,
-    T_rho_args_L1,mat_id_L2, T_rho_type_L2, T_rho_args_L2
+    num_prof, R, M_max, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_id_L1,
+    T_rho_args_L1,mat_id_L2, T_rho_type_id_L2, T_rho_args_L2
     ):
     """ Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -185,7 +185,7 @@ def L2_find_mass(
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between A1_T and A1_rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -194,7 +194,7 @@ def L2_find_mass(
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between A1_T and A1_rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -215,8 +215,8 @@ def L2_find_mass(
     M_min = 0.
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-        num_prof, R, M_max, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_L1,
-        T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2
+        num_prof, R, M_max, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_id_L1,
+        T_rho_args_L1, mat_id_L2, T_rho_type_id_L2, T_rho_args_L2
         )
 
     if A1_m_enc[-1] > 0.:
@@ -225,7 +225,7 @@ def L2_find_mass(
 
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
                 num_prof, R, M_try, P_s, T_s, rho_s, R1, mat_id_L1,
-                T_rho_type_L1, T_rho_args_L1, mat_id_L2, T_rho_type_L2,
+                T_rho_type_id_L1, T_rho_args_L1, mat_id_L2, T_rho_type_id_L2,
                 T_rho_args_L2
                 )
 
@@ -241,8 +241,8 @@ def L2_find_mass(
     return M_max
 
 def L2_find_radius(
-    num_prof, R_max, M, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_L1,
-    T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40,
+    num_prof, R_max, M, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_id_L1,
+    T_rho_args_L1, mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, num_attempt=40,
     verbose=1
     ):
     """ Finder of the total radius of the planet.
@@ -273,7 +273,7 @@ def L2_find_radius(
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between A1_T and A1_rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -282,7 +282,7 @@ def L2_find_radius(
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between A1_T and A1_rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -295,14 +295,14 @@ def L2_find_radius(
     R_min = R1
 
     A1_r, A1_m_enc_1, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-        num_prof, R_max, M, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_L1,
-        T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2
+        num_prof, R_max, M, P_s, T_s, rho_s, R1, mat_id_L1, T_rho_type_id_L1,
+        T_rho_args_L1, mat_id_L2, T_rho_type_id_L2, T_rho_args_L2
         )
 
     rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
 
     A1_r, A1_m_enc_2, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
-        num_prof, R1, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_L1,
+        num_prof, R1, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_id_L1,
         T_rho_args_L1
         )
 
@@ -321,7 +321,7 @@ def L2_find_radius(
 
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
                 num_prof, R_try, M, P_s, T_s, rho_s, R1, mat_id_L1,
-                T_rho_type_L1, T_rho_args_L1, mat_id_L2, T_rho_type_L2,
+                T_rho_type_id_L1, T_rho_args_L1, mat_id_L2, T_rho_type_id_L2,
                 T_rho_args_L2
                 )
 
@@ -333,8 +333,8 @@ def L2_find_radius(
     return R_min
 
 def L2_find_R1(
-    num_prof, R, M, P_s, T_s, rho_s, mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-    mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40,
+    num_prof, R, M, P_s, T_s, rho_s, mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
+    mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, num_attempt=40,
     verbose=1
     ):
     """ Finder of the boundary of the planet.
@@ -362,7 +362,7 @@ def L2_find_R1(
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between A1_T and A1_rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -371,7 +371,7 @@ def L2_find_R1(
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between A1_T and A1_rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -387,14 +387,14 @@ def L2_find_R1(
     rho_s_L2 = eos.rho_P_T(P_s, T_s, mat_id_L2)
 
     A1_r, A1_m_enc_1, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
-        num_prof, R, M, P_s, T_s, rho_s_L2, mat_id_L2, T_rho_type_L2,
+        num_prof, R, M, P_s, T_s, rho_s_L2, mat_id_L2, T_rho_type_id_L2,
         T_rho_args_L2
         )
     
     rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
     
     A1_r, A1_m_enc_2, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
-        num_prof, R, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_L1,
+        num_prof, R, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_id_L1,
         T_rho_args_L1
         )
     
@@ -412,8 +412,8 @@ def L2_find_R1(
         R1_try = (R1_min + R1_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-            num_prof, R, M, P_s, T_s, rho_s, R1_try, mat_id_L1, T_rho_type_L1,
-            T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2
+            num_prof, R, M, P_s, T_s, rho_s, R1_try, mat_id_L1, T_rho_type_id_L1,
+            T_rho_args_L1, mat_id_L2, T_rho_type_id_L2, T_rho_args_L2
             )
 
         if A1_m_enc[-1] > 0.:
@@ -425,8 +425,8 @@ def L2_find_R1(
 
 #@jit(nopython=True)
 def L2_find_R1_R(
-    num_prof, R_max, M1, M2, P_s, T_s, rho_s, mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-    mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=40,
+    num_prof, R_max, M1, M2, P_s, T_s, rho_s, mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
+    mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, num_attempt=40,
     verbose=1
     ):
     """ Finder of the boundary and radius of the planet.
@@ -457,7 +457,7 @@ def L2_find_R1_R(
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between A1_T and A1_rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -466,7 +466,7 @@ def L2_find_R1_R(
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between A1_T and A1_rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -483,7 +483,7 @@ def L2_find_R1_R(
     # Build planet made of core material
     try:
         R_min = L1_spherical.L1_find_radius(
-            num_prof, R_max, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_L1,
+            num_prof, R_max, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_id_L1,
             T_rho_args_L1, verbose=0)
     except:
         raise Exception("Could not build a planet made of core material.\nPlease increase R_max.\n")
@@ -491,7 +491,7 @@ def L2_find_R1_R(
     # Build planet made of mantle material
     try:
         R_max = L1_spherical.L1_find_radius(
-            num_prof, R_max, M, P_s, T_s, rho_s, mat_id_L2, T_rho_type_L2,
+            num_prof, R_max, M, P_s, T_s, rho_s, mat_id_L2, T_rho_type_id_L2,
             T_rho_args_L2, verbose=0)
     except:
         raise Exception("Could not build a planet made of mantle material.\nPlease increase R_max.\n")
@@ -503,12 +503,12 @@ def L2_find_R1_R(
         R_try = (R_min + R_max) * 0.5
 
         R1_try = L2_find_R1(
-            num_prof, R_try, M, P_s, T_s, rho_s, mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-            mat_id_L2, T_rho_type_L2, T_rho_args_L2, num_attempt=20, verbose=0)
+            num_prof, R_try, M, P_s, T_s, rho_s, mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
+            mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, num_attempt=20, verbose=0)
         
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-            num_prof, R_try, M, P_s, T_s, rho_s, R1_try, mat_id_L1, T_rho_type_L1,
-            T_rho_args_L1, mat_id_L2, T_rho_type_L2, T_rho_args_L2)
+            num_prof, R_try, M, P_s, T_s, rho_s, R1_try, mat_id_L1, T_rho_type_id_L1,
+            T_rho_args_L1, mat_id_L2, T_rho_type_id_L2, T_rho_args_L2)
         
         M1_try = A1_m_enc[A1_mat_id == mat_id_L1][0]
 

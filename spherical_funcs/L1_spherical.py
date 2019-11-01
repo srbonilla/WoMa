@@ -18,7 +18,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 @njit
-def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
+def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id,
                  T_rho_args):
     """ Integration of a 1 layer spherical planet.
 
@@ -44,7 +44,7 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
             mat_id (int):
                 Material id.
 
-            T_rho_type (int)
+            T_rho_type_id (int)
                 Relation between A1_T and A1_rho to be used.
 
             T_rho_args (list):
@@ -83,7 +83,7 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
 
     u_s = eos.u_rho_T(rho_s, T_s, mat_id)
     # Set the T-rho relation
-    T_rho_args  = set_T_rho_args(T_s, rho_s, T_rho_type, T_rho_args,
+    T_rho_args  = set_T_rho_args(T_s, rho_s, T_rho_type_id, T_rho_args,
                                  mat_id)
 
     dr = A1_r[0] - A1_r[1]
@@ -100,10 +100,10 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         A1_m_enc[i] = A1_m_enc[i - 1] - 4*np.pi*A1_r[i - 1]**2*A1_rho[i - 1]*dr
         A1_P[i]     = A1_P[i - 1] + gv.G*A1_m_enc[i - 1]*A1_rho[i - 1]/(A1_r[i - 1]**2)*dr
         A1_rho[i]   = eos.find_rho(
-            A1_P[i], mat_id, T_rho_type, T_rho_args,
+            A1_P[i], mat_id, T_rho_type_id, T_rho_args,
             A1_rho[i - 1], 1.1*A1_rho[i - 1]
             )
-        A1_T[i]     = T_rho(A1_rho[i], T_rho_type, T_rho_args, mat_id)
+        A1_T[i]     = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
         A1_u[i]     = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
 
         if A1_m_enc[i] < 0:
@@ -112,7 +112,7 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type,
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 @njit
-def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
+def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type_id,
                  T_rho_args):
     """ Finder of the total mass of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
@@ -139,7 +139,7 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
             mat_id (int):
                 Material id.
 
-            T_rho_type (int)
+            T_rho_type_id (int)
                 Relation between A1_T and A1_rho to be used.
 
             T_rho_args (list):
@@ -153,7 +153,7 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
 
     # Try integrating the profile with the maximum mass
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-        num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type, T_rho_args
+        num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
         )
 
     if A1_m_enc[-1] < 0:
@@ -165,7 +165,7 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
             num_prof, R, M_try, P_s, T_s, rho_s, mat_id,
-            T_rho_type, T_rho_args)
+            T_rho_type_id, T_rho_args)
 
         if A1_m_enc[-1] > 0.:
             M_max = M_try
@@ -174,7 +174,7 @@ def L1_find_mass(num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type,
 
     return M_max
 
-def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
+def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type_id,
                    T_rho_args, num_attempt=40, verbose=1):
     """ Finder of the total radius of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
@@ -201,7 +201,7 @@ def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
             mat_id (int):
                 Material id.
 
-            T_rho_type (int)
+            T_rho_type_id (int)
                 Relation between A1_T and A1_rho to be used.
 
             T_rho_args (list):
@@ -215,7 +215,7 @@ def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
 
     # Try integrating the profile with the minimum radius
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-        num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type, T_rho_args
+        num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
         )
 
     if A1_m_enc[-1] != 0:
@@ -226,7 +226,7 @@ def L1_find_radius(num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type,
         R_try = (R_min + R_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-            num_prof, R_try, M, P_s, T_s, rho_s, mat_id, T_rho_type, T_rho_args,
+            num_prof, R_try, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args,
             )
 
         if A1_m_enc[-1] > 0.:

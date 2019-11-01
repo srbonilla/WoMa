@@ -17,8 +17,8 @@ let us know!
 
 Contents
 --------
-+ `/eos` Equations of state and relation temperature-density.
-+ `/data` Data forder for EoS tables. 
++ `/data` Data forder for equation of state (EoS) tables. 
++ `/eos` EoS and relation temperature-density.
 + `/misc` Miscellaneus functions.
 + `/spherical_funcs` Miscellaneus functions for spherical planets.
 + `/spin_funcs` Miscellaneus functions for spinning planets.

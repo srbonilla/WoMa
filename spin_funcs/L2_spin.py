@@ -17,8 +17,8 @@ import L1_spin
 
 @njit
 def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
-             mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-             mat_id_L2, T_rho_type_L2, T_rho_args_L2
+             mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
+             mat_id_L2, T_rho_type_id_L2, T_rho_args_L2
              ):
     """ Compute densities of equatorial and polar profiles given the potential
         for a 2 layer planet.
@@ -55,7 +55,7 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between T and rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -64,7 +64,7 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between T and rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -97,13 +97,13 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
 
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_i:
             rho_e[i + 1] = eos.find_rho(
-                P_e[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s*0.1,
+                P_e[i + 1], mat_id_L1, T_rho_type_id_L1, T_rho_args_L1, rho_s*0.1,
                 rho_e[i]
                 )
 
         elif P_e[i + 1] >= P_s and P_e[i + 1] < P_i:
             rho_e[i + 1] = eos.find_rho(
-                P_e[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s*0.1,
+                P_e[i + 1], mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, rho_s*0.1,
                 rho_e[i]
                 )
 
@@ -118,13 +118,13 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
 
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_i:
             rho_p[i + 1] = eos.find_rho(
-                P_p[i + 1], mat_id_L1, T_rho_type_L1, T_rho_args_L1, rho_s*0.1,
+                P_p[i + 1], mat_id_L1, T_rho_type_id_L1, T_rho_args_L1, rho_s*0.1,
                 rho_p[i]
                 )
 
         elif P_p[i + 1] >= P_s and P_p[i + 1] < P_i:
             rho_p[i + 1] = eos.find_rho(
-                P_p[i + 1], mat_id_L2, T_rho_type_L2, T_rho_args_L2, rho_s*0.1,
+                P_p[i + 1], mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, rho_s*0.1,
                 rho_p[i]
                 )
 
@@ -136,8 +136,8 @@ def _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
 
 def spin2layer(num_attempt, r_array, z_array, radii, densities, Tw,
                P_c, P_i, P_s, rho_c, rho_s,
-               mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-               mat_id_L2, T_rho_type_L2, T_rho_args_L2,
+               mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
+               mat_id_L2, T_rho_type_id_L2, T_rho_args_L2,
                verbose=1
                ):
     """ Compute spining profile of densities for a 2 layer planet.
@@ -180,7 +180,7 @@ def spin2layer(num_attempt, r_array, z_array, radii, densities, Tw,
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between T and rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -189,7 +189,7 @@ def spin2layer(num_attempt, r_array, z_array, radii, densities, Tw,
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between T and rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -223,16 +223,16 @@ def spin2layer(num_attempt, r_array, z_array, radii, densities, Tw,
     for i in tqdm(range(num_attempt), desc="Solving spining profile", disable = (not verbose>=1)):
         V_e, V_p = L1_spin._fillV(r_array, rho_e, z_array, rho_p, Tw)
         rho_e, rho_p = _fillrho2(r_array, V_e, z_array, V_p, P_c, P_i, P_s, rho_c, rho_s,
-                                 mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                                 mat_id_L2, T_rho_type_L2, T_rho_args_L2)
+                                 mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
+                                 mat_id_L2, T_rho_type_id_L2, T_rho_args_L2)
         profile_e.append(rho_e)
         profile_p.append(rho_p)
 
     return profile_e, profile_p
 
 def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
-                       mat_id_L1, T_rho_type_L1, T_rho_args_L1,
-                       mat_id_L2, T_rho_type_L2, T_rho_args_L2,
+                       mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
+                       mat_id_L2, T_rho_type_id_L2, T_rho_args_L2,
                        N_neig=48):
     """
     Args:
@@ -261,7 +261,7 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             mat_id_L1 (int):
                 Material id for layer 1.
 
-            T_rho_type_L1 (int)
+            T_rho_type_id_L1 (int)
                 Relation between T and rho to be used in layer 1.
 
             T_rho_args_L1 (list):
@@ -270,7 +270,7 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
             mat_id_L2 (int):
                 Material id for layer 2.
 
-            T_rho_type_L2 (int)
+            T_rho_type_id_L2 (int)
                 Relation between T and rho to be used in layer 2.
 
             T_rho_args_L2 (list):
@@ -331,11 +331,11 @@ def picle_placement_L2(r_array, rho_e, z_array, rho_p, Tw, N, rho_i,
 
     for k in range(A1_m.shape[0]):
         if A1_rho[k] > rho_i:
-            T = T_rho(A1_rho[k], T_rho_type_L1, T_rho_args_L1, mat_id_L1)
+            T = T_rho(A1_rho[k], T_rho_type_id_L1, T_rho_args_L1, mat_id_L1)
             A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L1)
             A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L1)
         else:
-            T = T_rho(A1_rho[k], T_rho_type_L2, T_rho_args_L2, mat_id_L2)
+            T = T_rho(A1_rho[k], T_rho_type_id_L2, T_rho_args_L2, mat_id_L2)
             A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L2)
             A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L2)
 

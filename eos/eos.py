@@ -234,7 +234,7 @@ def rho_P_T(P, T, mat_id):
         assert T > 0
         assert P > 0
         
-        rho0 = 1e-3
+        rho0 = 1e-9
         rho1 = 1e5
     else:
         raise ValueError("Invalid material ID")
