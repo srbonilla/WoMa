@@ -70,6 +70,10 @@ id_SESAME_CO2       = Di_mat_id["SESAME_CO2"]
 # T-rho relation types
 type_rho_pow    = 1
 type_adb        = 2
+Di_T_rho_id =  {
+        "power"     : type_rho_pow,
+        "adiabatic" : type_adb
+        }
 
 # Local data files
 dir_data    = "data/"

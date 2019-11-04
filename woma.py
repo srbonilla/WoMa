@@ -31,6 +31,7 @@ import utils_spin as us
 from T_rho import set_T_rho_args
 from T_rho import T_rho
 from scipy.interpolate import interp1d
+from tqdm import tqdm
 
 # Output
 Di_hdf5_planet_label  = {
@@ -153,15 +154,15 @@ class Planet():
             A1_mat_layer ([str])
                 The name of the material in each layer, from the central layer
                 outwards. See Di_mat_id in weos.py.
-
+                
             A1_T_rho_type ([int])
                 The type of temperature-density relation in each layer, from the
                 central layer outwards.
 
-                type_rho_pow = 1:   T = K * rho^alpha, K is set internally using
+                'power':   T = K * rho^alpha, K is set internally using
                                     each layer's outer temperature.
                                     Set alpha = 0 for isothermal.
-                type_adb = 2:       Adiabatic, constant s_adb is set internally,
+                'adiabatic':       Adiabatic, constant s_adb is set internally,
                                     if applicable.
 
             A1_T_rho_args ([float])
@@ -228,7 +229,7 @@ class Planet():
             ...
     """
     def __init__(
-        self, name, Fp_planet=None, A1_mat_layer=None, A1_T_rho_type=None,
+        self, name=None, Fp_planet=None, A1_mat_layer=None, A1_T_rho_type=None,
         A1_T_rho_args=None, A1_R_layer=None, A1_M_layer=None, A1_idx_layer=None,
         M=None, P_0=None, T_0=None, rho_0=None, P_1=None, T_1=None, rho_1=None,
         P_2=None, T_2=None, rho_2=None, P_s=None, T_s=None, rho_s=None,
@@ -274,6 +275,10 @@ class Planet():
         else:
             # Placeholder
             self.num_layer  = 1
+        if self.A1_T_rho_type is not None:
+            self.A1_T_rho_type_id = [gv.Di_T_rho_id[T_rho_id]
+                                       for T_rho_id in self.A1_T_rho_type]
+        
         if self.Fp_planet is None:
             self.Fp_planet  = "data/%s.hdf5" % self.name
         if self.A1_R_layer is None:
@@ -293,13 +298,12 @@ class Planet():
         if self.P_s is not None and self.T_s is not None:
             self.rho_s  = eos.rho_P_T(self.P_s, self.T_s,
                                       self.A1_mat_id_layer[-1])
-        ###todo:
         # elif self.P_s is not None and self.rho_s is not None:
-        #     self.T_s    = weos.find_T_fixed_P_rho(self.P_s, self.rho_s,
+        #     self.T_s    = eos.find_T_fixed_P_rho(self.P_s, self.rho_s,
         #                                           self.A1_mat_id_layer[-1])
-        # elif self.rho_s is not None and self.T_s is not None:
-        #     self.P_s    = weos.find_P_fixed_rho_T(self.rho_s, self.T_s,
-        #                                           self.A1_mat_id_layer[-1])
+        elif self.rho_s is not None and self.T_s is not None:
+            self.P_s    = eos.P_T_rho(self.T_s, self.rho_s,
+                                                  self.A1_mat_id_layer[-1])
 
         ### default M_max and R_max?
 
@@ -324,6 +328,12 @@ class Planet():
     # ========
     # General
     # ========
+    def escape_velocity(self):
+        assert(self.M is not None)
+        assert(self.A1_R_layer[-1] is not None)
+        
+        self.v_escape = np.sqrt(2*gv.G*self.M/self.A1_R_layer[-1])
+        
     def update_attributes(self):
         """ Set all planet information after making the profiles.
         """
@@ -371,6 +381,8 @@ class Planet():
         self.P_s    = self.A1_P[-1]
         self.T_s    = self.A1_T[-1]
         self.rho_s  = self.A1_rho[-1]
+        
+        self.escape_velocity()
 
     def print_info(self):
         """ Print the Planet objects's main properties. """
@@ -437,8 +449,8 @@ class Planet():
               (utils.add_whitespace("A1_mat_layer", space),
                utils.format_array_string(self.A1_mat_layer, "string")))
         print("    %s = %s," %
-              (utils.add_whitespace("A1_T_rho_type", space),
-               utils.format_array_string(self.A1_T_rho_type, "%d")))
+              (utils.add_whitespace("A1_T_rho_type_id", space),
+               utils.format_array_string(self.A1_T_rho_type_id, "%d")))
         print("    %s = %s," %
               (utils.add_whitespace("A1_T_rho_args", space),
                utils.format_array_string(self.A1_T_rho_args, "dorf")))
@@ -539,23 +551,28 @@ class Planet():
     # ========
     # 1 Layer
     # ========
+    def _1_layer_input(self):
+        
+        assert(self.num_layer == 1)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
+        
     def gen_prof_L1_fix_R_given_M(self):
         """ Compute the profile of a planet with 1 layer by finding the correct
             radius for a given mass.
         """
         # Check for necessary input
-        assert(self.num_layer == 1)
         assert(self.R_max is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        self._1_layer_input()
+
 
         self.R = L1_spherical.L1_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.num_attempt
             )
         self.A1_R_layer[-1] = self.R
@@ -564,7 +581,7 @@ class Planet():
 
         self.M = L1_spherical.L1_find_mass(
             self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0]
             )
 
@@ -574,7 +591,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L1_spherical.L1_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0]
             )
 
@@ -583,20 +600,18 @@ class Planet():
 
     def gen_prof_L1_fix_M_given_R(self):
         # Check for necessary input
-        assert(self.num_layer == 1)
-        assert(self.R is not None)
+        assert(self.R is not None or self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        assert(len(self.A1_R_layer) == 1)
+        self._1_layer_input()
+        if self.R is None:
+            self.R = self.A1_R_layer[0]
 
         print("Finding M given R...")
 
         self.M = L1_spherical.L1_find_mass(
             self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0]
             )
 
@@ -606,7 +621,7 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L1_spherical.L1_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0]
             )
 
@@ -615,20 +630,15 @@ class Planet():
 
     def gen_prof_L1_given_R_M(self):
         # Check for necessary input
-        assert(self.num_layer == 1)
         assert(self.R is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        self._1_layer_input()
 
         # Integrate the profiles
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L1_spherical.L1_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0]
             )
 
@@ -638,41 +648,45 @@ class Planet():
     # ========
     # 2 Layers
     # ========
-    def gen_prof_L2_fix_R1_given_R_M(self):
-        # Check for necessary input
+    def _2_layer_input(self):
+        
         assert(self.num_layer == 2)
-        assert(self.R is not None)
-        assert(self.M is not None)
         assert(self.P_s is not None)
         assert(self.T_s is not None)
         assert(self.rho_s is not None)
         assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
         assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_T_rho_type_id[1] is not None)
+        
+    def gen_prof_L2_fix_R1_given_R_M(self):
+        # Check for necessary input
+        assert(self.R is not None)
+        assert(self.M is not None)
+        self._2_layer_input()
 
         self.A1_R_layer[0] = L2_spherical.L2_find_R1(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1], self.num_attempt
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], self.num_attempt
             )
 
         print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L2_spherical.L2_find_mass(
             self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
         print("Done!")
@@ -682,33 +696,26 @@ class Planet():
 
     def gen_prof_L2_fix_M_given_R1_R(self):
         # Check for necessary input
-        assert(self.num_layer == 2)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        self._2_layer_input()
 
         print("Finding M given R1 and R...")
 
         self.M = L2_spherical.L2_find_mass(
             self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
         print("Done!")
@@ -718,23 +725,16 @@ class Planet():
 
     def gen_prof_L2_fix_R_given_M_R1(self):
         # Check for necessary input
-        assert(self.num_layer == 2)
         assert(self.A1_R_layer[0] is not None)
         assert(self.R_max is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        self._2_layer_input()
 
         self.R = L2_spherical.L2_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1], self.num_attempt
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], self.num_attempt
             )
         self.A1_R_layer[-1] = self.R
 
@@ -742,9 +742,9 @@ class Planet():
 
         self.M = L2_spherical.L2_find_mass(
             self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
         print("Done!")
@@ -752,160 +752,72 @@ class Planet():
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
         self.update_attributes()
         self.print_info()
-
-    def gen_prof_L2_fix_R1_R_given_M1_M2(self, M1=None, M2=None, R_min=None,
-                                         R_max=None, M_frac_tol=None):
+        
+    def gen_prof_L2_fix_R1_R_given_M1_M2(self):
+        
         # Check for necessary input
-        if M1 is not None:
-            self.A1_M_layer[0]  = M1
-        if M2 is not None:
-            self.A1_M_layer[1]  = M2
-        if R_min is not None:
-            self.R_min  = R_min
-        if R_max is not None:
-            self.R_max  = R_max
-        if M_frac_tol is not None:
-            self.M_frac_tol = M_frac_tol
-        assert(self.num_layer == 2)
+        self._2_layer_input()
+        assert(self.R_max is not None)
         assert(self.A1_M_layer[0] is not None)
         assert(self.A1_M_layer[1] is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        M_tot   = np.sum(self.A1_M_layer)
+        # Check masses
+        if self.M is not None:
+            assert self.M == self.A1_M_layer[0] + self.A1_M_layer[1]
+        else:
+            self.M = self.A1_M_layer[0] + self.A1_M_layer[1]
 
-        # Update R_min and R_max without changing the attributes
-        R_min   = self.R_min
-        R_max   = self.R_max
-
-        ###Tidy this! Replace with other function, verb=0.
-
-        # Check the maximum radius yields a too small layer 1 mass
-        print("R_max  = %.5g m  = %.5g R_E " % (R_max, R_max / gv.R_earth))
-        self.A1_R_layer[0] = L2_spherical.L2_find_R1(
-            self.num_prof, R_max, M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+        self.A1_R_layer[0], self.R = L2_spherical.L2_find_R1_R(
+            self.num_prof, self.R_max, self.A1_M_layer[0], self.A1_M_layer[1],
+            self.P_s, self.T_s, self.rho_s,
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1], int(self.num_attempt / 2)
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], self.num_attempt
             )
+        self.A1_R_layer[-1] = self.R
+
+        print("Tweaking M to avoid peaks at the center of the planet...")
+        
         self.M = L2_spherical.L2_find_mass(
-            self.num_prof, R_max, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
-        (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
-         self.A1_mat_id) = L2_spherical.L2_integrate(
-            self.num_prof, R_max, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
-            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
-            )
-        M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
-        print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
-              % (M1, M1 / gv.M_earth, M1 / M_tot))
-        assert M1 < self.A1_M_layer[0], \
-            "R_max must be big enough to yield a too low M1"
 
-        # Check the minimum radius yields a too large layer 1 mass
-        print("R_min  = %.5g m  = %.5g R_E " % (R_min, R_min / gv.R_earth))
-        self.A1_R_layer[0] = L2_spherical.L2_find_R1(
-            self.num_prof, R_min, M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
-            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1], int(self.num_attempt / 2)
-            )
-        self.M = L2_spherical.L2_find_mass(
-            self.num_prof, R_min, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
-            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
-            )
-        (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
-         self.A1_mat_id) = L2_spherical.L2_integrate(
-            self.num_prof, R_min, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
-            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
-            )
-        M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
-        print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
-              % (M1, M1 / gv.M_earth, M1 / M_tot))
-        assert M1 > self.A1_M_layer[0], \
-            "R_min must be small enough to yield a too high M1"
-
-        # Iterate to obtain desired layer masses
-        iter    = 0
-        M1      = 0
-        while self.M_frac_tol < abs(M1 - self.A1_M_layer[0]) / M_tot:
-            R_try = (R_min + R_max) * 0.5
-            print("iter %d: R  = %.5g m  = %.5g R_E"
-                  % (iter, R_try, R_try / gv.R_earth))
-
-            self.A1_R_layer[0] = L2_spherical.L2_find_R1(
-                self.num_prof, R_try, M_tot, self.P_s, self.T_s, self.rho_s,
-                self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
-                self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type[1], self.A1_T_rho_args[1], self.num_attempt
-                )
-            self.M = L2_spherical.L2_find_mass(
-                self.num_prof, R_try, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
-                self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type[1], self.A1_T_rho_args[1]
-                )
-            (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
-             self.A1_mat_id) = L2_spherical.L2_integrate(
-                self.num_prof, R_try, self.M, self.P_s, self.T_s, self.rho_s,
-                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
-                self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type[1], self.A1_T_rho_args[1]
-                )
-            M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
-            print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
-                  % (M1, M1 / gv.M_earth, M1 / self.M))
-
-            if M1 < self.A1_M_layer[0]:
-                R_max = R_try
-            else:
-                R_min = R_try
-
-            iter    += 1
-
-        self.update_attributes()
-        self.print_info()
-
-    def gen_prof_L2_given_R_M_R1(self):
-        # Check for necessary input
-        assert(self.num_layer == 2)
-        assert(self.R is not None)
-        assert(self.A1_R_layer[0] is not None)
-        assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        print("Done!")
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
+            )
+
+        self.update_attributes()
+        self.print_info()
+        
+
+    def gen_prof_L2_given_R_M_R1(self):
+        # Check for necessary input
+        assert(self.R is not None)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.M is not None)
+        self._2_layer_input()
+
+        (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
+         self.A1_mat_id) = L2_spherical.L2_integrate(
+            self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
         self.update_attributes()
@@ -914,28 +826,32 @@ class Planet():
     # ========
     # 3 Layers
     # ========
-    def gen_prof_L3_fix_R1_R2_given_R_M_I(self):
-        # Check for necessary input
+    def _3_layer_input(self):
+        
         assert(self.num_layer == 3)
-        assert(self.R is not None)
-        assert(self.M is not None)
-        assert(self.I_MR2 is not None)
         assert(self.P_s is not None)
         assert(self.T_s is not None)
         assert(self.rho_s is not None)
         assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
         assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_T_rho_type_id[1] is not None)
         assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        assert(self.A1_T_rho_type_id[2] is not None)
+        
+    def gen_prof_L3_fix_R1_R2_given_R_M_I(self):
+        # Check for necessary input
+        assert(self.R is not None)
+        assert(self.M is not None)
+        assert(self.I_MR2 is not None)
+        self._3_layer_input()
 
         self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.I_MR2, self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.I_MR2, self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-            self.A1_mat_id_layer[2], self.A1_T_rho_type[2],
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+            self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2], self.num_attempt, self.num_attempt_2
             )
 
@@ -944,20 +860,20 @@ class Planet():
         self.M = L3_spherical.L3_find_mass(
             self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L3_spherical.L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         print("Done!")
@@ -967,26 +883,17 @@ class Planet():
 
     def gen_prof_L3_fix_R2_given_R_M_R1(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_input()
 
         self.A1_R_layer[1] = L3_spherical.L3_find_R2(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-            self.A1_mat_id_layer[2], self.A1_T_rho_type[2],
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+            self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2], self.num_attempt
             )
 
@@ -995,20 +902,20 @@ class Planet():
         self.M = L3_spherical.L3_find_mass(
             self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L3_spherical.L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         print("Done!")
@@ -1018,26 +925,17 @@ class Planet():
 
     def gen_prof_L3_fix_R1_given_R_M_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_input()
 
         self.A1_R_layer[0] = L3_spherical.L3_find_R1(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[1], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[1], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-            self.A1_mat_id_layer[2], self.A1_T_rho_type[2],
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+            self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2], self.num_attempt
             )
 
@@ -1046,20 +944,20 @@ class Planet():
         self.M = L3_spherical.L3_find_mass(
             self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L3_spherical.L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         print("Done!")
@@ -1069,40 +967,31 @@ class Planet():
 
     def gen_prof_L3_fix_M_given_R_R1_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M_max is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_input()
 
         print("Finding M given R1, R2 and R...")
 
         self.M = L3_spherical.L3_find_mass(
             self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L3_spherical.L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         print("Done!")
@@ -1112,28 +1001,19 @@ class Planet():
 
     def gen_prof_L3_fix_R_given_M_R1_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R_max is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_input()
 
         self.R = L3_spherical.L3_find_radius(
             self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2], self.num_attempt
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2], self.num_attempt
             )
         self.A1_R_layer[-1] = self.R
 
@@ -1142,20 +1022,20 @@ class Planet():
         self.M = L3_spherical.L3_find_mass(
             self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L3_spherical.L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         print("Done!")
@@ -1165,35 +1045,26 @@ class Planet():
 
     def gen_prof_L3_given_R_M_R1_R2(self):
         # Check for necessary input
-        assert(self.num_layer == 3)
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.A1_R_layer[1] is not None)
         assert(self.M is not None)
-        assert(self.P_s is not None)
-        assert(self.T_s is not None)
-        assert(self.rho_s is not None)
-        assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        self._3_layer_input()
 
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L3_spherical.L3_integrate(
             self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_R_layer[1], self.A1_mat_id_layer[0],
-            self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1], self.A1_T_rho_type[1],
+            self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1], self.A1_mat_id_layer[2],
-            self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+            self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
             )
 
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_given_prof_L2(self, mat=None, T_rho_type=None,
+    def gen_prof_L3_given_prof_L2(self, mat=None, T_rho_type_id=None,
                                   T_rho_args=None, rho_min=None):
         """ Add a third layer (atmosphere) on top of existing 2 layer profiles.
 
@@ -1212,17 +1083,17 @@ class Planet():
         assert(self.T_s is not None)
         assert(self.rho_s is not None)
         assert(self.A1_mat_id_layer[0] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
         assert(self.A1_mat_id_layer[1] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
+        assert(self.A1_T_rho_type_id[1] is not None)
 
         self.num_layer   = 3
         if mat is not None: ###else...?
             self.A1_mat_layer       = np.append(self.A1_mat_layer, mat)
             self.A1_mat_id_layer    = [gv.Di_mat_id[mat]
                                        for mat in self.A1_mat_layer]
-        if T_rho_type is not None:
-            self.A1_T_rho_type = np.append(self.A1_T_rho_type, T_rho_type)
+        if T_rho_type_id is not None:
+            self.A1_T_rho_type_id = np.append(self.A1_T_rho_type_id, T_rho_type_id)
         if T_rho_args is not None:
             A1_T_rho_args_aux = np.zeros((3,2))
             A1_T_rho_args_aux[0:2] = self.A1_T_rho_args
@@ -1255,7 +1126,7 @@ class Planet():
 
         # Set any T-rho relation variables
         self.A1_T_rho_args[2]   = set_T_rho_args(
-            A1_T[0], A1_rho[0], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
+            A1_T[0], A1_rho[0], self.A1_T_rho_type_id[2], self.A1_T_rho_args[2],
             mat_id_L3
             )
 
@@ -1266,16 +1137,16 @@ class Planet():
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
             A1_P.append(A1_P[-1] - gv.G*A1_m_enc[-1]*A1_rho[-1]/(A1_r[-1]**2)*dr)
             # Update T-rho relation variables 
-            if (self.A1_T_rho_type[2] == gv.type_adb and
+            if (self.A1_T_rho_type_id[2] == gv.type_adb and
                 mat_id_L3 == gv.id_HM80_HHe):
                 # T_rho_args = [rho_prv, T_prv]
                 self.A1_T_rho_args[2]   = [A1_rho[-1], A1_T[-1]]
             rho = eos.find_rho(
-                A1_P[-1], mat_id_L3, self.A1_T_rho_type[2],
+                A1_P[-1], mat_id_L3, self.A1_T_rho_type_id[2],
                 self.A1_T_rho_args[2], 0.9*A1_rho[-1], A1_rho[-1]
                 )
             A1_rho.append(rho)
-            A1_T.append(T_rho(rho, self.A1_T_rho_type[2], 
+            A1_T.append(T_rho(rho, self.A1_T_rho_type_id[2], 
                                    self.A1_T_rho_args[2], mat_id_L3))
             A1_u.append(eos.u_rho_T(rho, A1_T[-1], mat_id_L3))
             A1_mat_id.append(mat_id_L3)
@@ -1338,9 +1209,9 @@ class Planet():
         assert(self.A1_mat_id_layer[0] is not None)
         assert(self.A1_mat_id_layer[1] is not None)
         assert(self.A1_mat_id_layer[2] is not None)
-        assert(self.A1_T_rho_type[0] is not None)
-        assert(self.A1_T_rho_type[1] is not None)
-        assert(self.A1_T_rho_type[2] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
+        assert(self.A1_T_rho_type_id[1] is not None)
+        assert(self.A1_T_rho_type_id[2] is not None)
 
         # Update R_min and R_max without changing the attributes
         R_min   = self.R_min
@@ -1348,7 +1219,7 @@ class Planet():
 
         # Store the layer 3 properties
         mat_L3          = self.A1_mat_layer[2]
-        T_rho_type_L3   = self.A1_T_rho_type[2]
+        T_rho_type_L3   = self.A1_T_rho_type_id[2]
         T_rho_args_L3   = self.A1_T_rho_args[2]
 
         # Temporarily set self to be 2 layer planet
@@ -1357,7 +1228,7 @@ class Planet():
         self.A1_R_layer         = self.A1_R_layer[:2]
         self.A1_mat_layer       = self.A1_mat_layer[:2]
         self.A1_mat_id_layer    = self.A1_mat_id_layer[:2]
-        self.A1_T_rho_type      = self.A1_T_rho_type[:2]
+        self.A1_T_rho_type_id      = self.A1_T_rho_type_id[:2]
         self.A1_T_rho_args      = self.A1_T_rho_args[:2]
         self.rho_s              = eos.rho_P_T(
             self.P_s, self.T_s, self.A1_mat_id_layer[-1])
@@ -1371,23 +1242,23 @@ class Planet():
         print("R_max  = %.5g m  = %.5g R_E " % (R_max, R_max / gv.R_earth))
         self.A1_R_layer[0] = L2_spherical.L2_find_R1(
             self.num_prof, R_max, M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1], 
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], 
             int(self.num_attempt / 2)
             )
         self.M = L2_spherical.L2_find_mass(
             self.num_prof, R_max, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
             self.num_prof, R_max, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
         M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
         print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
@@ -1399,23 +1270,23 @@ class Planet():
         print("R_min  = %.5g m  = %.5g R_E " % (R_min, R_min / gv.R_earth))
         self.A1_R_layer[0] = L2_spherical.L2_find_R1(
             self.num_prof, R_min, M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
             int(self.num_attempt / 2)
             )
         self.M = L2_spherical.L2_find_mass(
             self.num_prof, R_min, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
             self.num_prof, R_min, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
         M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
         print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
@@ -1433,23 +1304,23 @@ class Planet():
 
             self.A1_R_layer[0] = L2_spherical.L2_find_R1(
                 self.num_prof, R_try, M_tot, self.P_s, self.T_s, self.rho_s,
-                self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+                self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
                 self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type[1], self.A1_T_rho_args[1],
+                self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
                 self.num_attempt
                 )
             self.M = L2_spherical.L2_find_mass(
                 self.num_prof, R_try, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
                 self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+                self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
                 )
             (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
              self.A1_mat_id) = L2_spherical.L2_integrate(
                 self.num_prof, R_try, self.M, self.P_s, self.T_s, self.rho_s,
-                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type[0],
+                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
                 self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+                self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
                 )
             M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
             print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
@@ -1466,10 +1337,10 @@ class Planet():
 
         # Add the third layer
         self.gen_prof_L3_given_prof_L2(
-            mat         = mat_L3,
-            T_rho_type  = T_rho_type_L3,
-            T_rho_args  = T_rho_args_L3,
-            rho_min     = self.rho_min,
+            mat            = mat_L3,
+            T_rho_type_id  = T_rho_type_L3,
+            T_rho_args     = T_rho_args_L3,
+            rho_min        = self.rho_min,
             )
 
 # ============================================================================ #
@@ -1482,31 +1353,33 @@ class SpinPlanet():
     self, name=None, planet=None, Fp_planet=None, Tw=None,
     A1_mat_layer=None, A1_R_layer=None,
     A1_T_rho_type=None, A1_T_rho_args=None, A1_r=None, A1_P=None, A1_T=None,
-    A1_rho=None, num_prof=1000, num_attempt=15, R_e=None, R_p=None
+    A1_rho=None, num_prof=1000, num_attempt=15, R_e_max=None, R_p_max=None
     ):
-
         self.name               = name
         self.Fp_planet          = Fp_planet
         self.num_prof           = num_prof
         self.num_attempt        = num_attempt
-        self.R_e                = R_e
-        self.R_p                = R_p
+        self.R_e_max            = R_e_max
+        self.R_p_max            = R_p_max
         self.Tw                 = Tw
-        self.P_R1               = None
-        self.P_R2               = None
+        self.P_1                = None
+        self.P_2                = None
         self.M                  = None
 
         if planet is not None:
-            self.num_layer       = planet.num_layer
-            self.A1_mat_layer    = planet.A1_mat_layer
-            self.A1_R_layer      = planet.A1_R_layer
-            self.A1_mat_id_layer = planet.A1_mat_id_layer
-            self.A1_T_rho_type   = planet.A1_T_rho_type
-            self.A1_T_rho_args   = planet.A1_T_rho_args
-            self.A1_r            = planet.A1_r
-            self.A1_P            = planet.A1_P
-            self.A1_T            = planet.A1_T
-            self.A1_rho          = planet.A1_rho
+            self.planet           = planet
+            self.num_layer        = planet.num_layer
+            self.A1_mat_layer     = planet.A1_mat_layer
+            self.A1_R_layer       = planet.A1_R_layer
+            self.A1_mat_id_layer  = planet.A1_mat_id_layer
+            self.A1_T_rho_type    = planet.A1_T_rho_type
+            self.A1_T_rho_type_id = planet.A1_T_rho_type_id
+            self.A1_T_rho_args    = planet.A1_T_rho_args
+            self.A1_r             = planet.A1_r
+            self.A1_P             = planet.A1_P
+            self.A1_T             = planet.A1_T
+            self.A1_rho           = planet.A1_rho
+            self.M                = planet.M
 
         else:
             self.A1_R_layer      = A1_R_layer
@@ -1523,114 +1396,439 @@ class SpinPlanet():
                 self.num_layer          = len(self.A1_mat_layer)
                 self.A1_mat_id_layer    = [gv.Di_mat_id[mat]
                                            for mat in self.A1_mat_layer]
+                
+            if self.A1_T_rho_type is not None:
+                self.A1_T_rho_type_id = [gv.Di_T_rho_id[T_rho_id]
+                                         for T_rho_id in self.A1_T_rho_type]
+                
+        # Set default R_e_max and R_p_max
+        assert(self.A1_r is not None)
+        if self.R_e_max is None:
+            self.R_e_max = 1.5*np.max(self.A1_r)
+            
+        if self.R_p_max is None:
+            self.R_p_max = 1.2*np.max(self.A1_r)
 
         assert(self.num_layer in [1, 2, 3])
+        assert(self.R_e_max is not None)
+        assert(self.R_p_max is not None)
+
+        self.A1_r_equator     = np.linspace(0, self.R_e_max, self.num_prof)
+        self.A1_r_pole        = np.linspace(0, self.R_p_max, self.num_prof)
+        
+    def _check_input(self):
+        
+        if self.num_layer == 1:
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type_id[0] is not None)
+        elif self.num_layer == 2:
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type_id[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type_id[1] is not None)
+        elif self.num_layer == 3:
+            assert(self.A1_mat_id_layer[0] is not None)
+            assert(self.A1_T_rho_type_id[0] is not None)
+            assert(self.A1_mat_id_layer[1] is not None)
+            assert(self.A1_T_rho_type_id[1] is not None)
+            assert(self.A1_mat_id_layer[2] is not None)
+            assert(self.A1_T_rho_type_id[2] is not None)
+            
+    def update_attributes(self):
+        # Compute mass of the planet
+        self.M = us.compute_spin_planet_M(self.A1_r_equator, self.A1_rho_equator,
+                                          self.A1_r_pole, self.A1_rho_pole)
+        
+        # Compute escape velocity
+        v_esc_eq, v_esc_p = us.spin_escape_vel(self.A1_r_equator, self.A1_rho_equator,
+                                               self.A1_r_pole, self.A1_rho_pole, self.Tw)
+        
+        self.v_escape_pole    = v_esc_p
+        self.v_escape_equator = v_esc_eq
+        
+        # Compute equatorial and polar radius
+        self.R_e = np.max(self.A1_r_equator[self.A1_rho_equator > 0.])
+        self.R_p = np.max(self.A1_r_pole[self.A1_rho_pole > 0.])
+        
+        # Mass per layer, Equatorial and polar temperature and pressure
+        if self.num_layer == 1:
+            self.A1_R_layer_equator = np.array([self.R_e])
+            self.A1_R_layer_pole    = np.array([self.R_p])
+            # Mass
+            self.A1_M_layer = np.array([self.M])
+            # Temperature
+            self.A1_T_equator = T_rho(self.A1_rho_equator, self.A1_T_rho_type_id[0],
+                                      self.A1_T_rho_args[0], self.A1_mat_id_layer[0]) 
+            self.A1_T_pole    = T_rho(self.A1_rho_equator, self.A1_T_rho_type_id[0],
+                                      self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+            self.A1_T_equator[self.A1_rho_equator <= 0] = 0.
+            self.A1_T_pole[self.A1_rho_pole <= 0]       = 0.
+            # Pressure
+            self.A1_P_equator = np.zeros_like(self.A1_T_equator)
+            self.A1_P_pole    = np.zeros_like(self.A1_T_pole)
+            for i in range(self.A1_P_equator.shape[0]):
+                self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
+                                 self.A1_rho_equator[i], self.A1_mat_id_layer[0])
+            for i in range(self.A1_P_pole.shape[0]):
+                self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
+                              self.A1_rho_pole[i], self.A1_mat_id_layer[0])
+            # Mat_id
+            self.A1_mat_id_equator = np.ones(self.A1_r_equator.shape)*self.A1_mat_id_layer[0]
+            self.A1_mat_id_pole    = np.ones(self.A1_r_pole.shape)*self.A1_mat_id_layer[0]
+                
+        elif self.num_layer == 2:
+            self.R_1_equator        = np.max(self.A1_r_equator[self.A1_rho_equator >= self.rho_1])
+            self.A1_R_layer_equator = np.array([self.R_1_equator, self.R_e])
+            self.R_1_pole           = np.max(self.A1_r_pole[self.A1_rho_pole >= self.rho_1])
+            self.A1_R_layer_pole    = np.array([self.R_1_pole, self.R_p])
+            self.A1_mat_id_equator  = (self.A1_rho_equator >= self.rho_1)*self.A1_mat_id_layer[0] + \
+                                      (self.A1_rho_equator < self.rho_1)*self.A1_mat_id_layer[1]
+            self.A1_mat_id_pole     = (self.A1_rho_pole >= self.rho_1)*self.A1_mat_id_layer[0] + \
+                                      (self.A1_rho_pole < self.rho_1)*self.A1_mat_id_layer[1]
+                                      
+            self.A1_mat_id_equator[self.A1_rho_equator <= 0] = -1
+            self.A1_mat_id_pole[self.A1_rho_pole <= 0]       = -1
+            
+            self.A1_P_equator = np.zeros_like(self.A1_r_equator)
+            self.A1_P_pole    = np.zeros_like(self.A1_r_pole)
+            self.A1_T_equator = np.zeros_like(self.A1_r_equator)
+            self.A1_T_pole    = np.zeros_like(self.A1_r_pole)
+            
+            for i, rho in enumerate(self.A1_rho_equator):
+                if rho >= self.rho_1:
+                    self.A1_T_equator[i] = T_rho(rho, self.A1_T_rho_type_id[0],
+                                                 self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+                    self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
+                                                       rho, self.A1_mat_id_layer[0])
+                elif rho >= self.rho_s:
+                    self.A1_T_equator[i] = T_rho(rho, self.A1_T_rho_type_id[1],
+                                                 self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
+                    self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
+                                                       rho, self.A1_mat_id_layer[1])
+            for i, rho in enumerate(self.A1_rho_pole):
+                if rho >= self.rho_1:
+                    self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[0],
+                                                 self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+                    self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
+                                                    rho, self.A1_mat_id_layer[0])
+                elif rho >= self.rho_s:
+                    self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[1],
+                                                 self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
+                    self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
+                                                    rho, self.A1_mat_id_layer[1])
+            
+            r_temp = np.copy(self.A1_r_equator)
+            z_temp = np.copy(self.A1_r_pole)
+            rho_r_temp = np.copy(self.A1_rho_equator)
+            rho_z_temp = np.copy(self.A1_rho_pole)
+            rho_r_temp[rho_r_temp < self.rho_1] = 0.
+            rho_z_temp[rho_z_temp < self.rho_1] = 0.
+            M1 =  us.compute_spin_planet_M(r_temp, rho_r_temp, z_temp, rho_z_temp)
+
+            M2 = self.M - M1
+            
+            self.A1_M_layer = np.array([M1, M2])
+            
+        elif self.num_layer == 3:
+            self.R_1_equator        = np.max(self.A1_r_equator[self.A1_rho_equator >= self.rho_1])
+            self.R_2_equator        = np.max(self.A1_r_equator[self.A1_rho_equator >= self.rho_2])
+            self.A1_R_layer_equator = np.array([self.R_1_equator, self.R_2_equator, self.R_e])
+            self.R_1_pole           = np.max(self.A1_r_pole[self.A1_rho_pole >= self.rho_1])
+            self.R_2_pole           = np.max(self.A1_r_pole[self.A1_rho_pole >= self.rho_2])
+            self.A1_R_layer_pole    = np.array([self.R_1_pole, self.R_2_pole, self.R_p])
+            self.A1_mat_id_equator  = (self.A1_rho_equator >= self.rho_1)*self.A1_mat_id_layer[0] + \
+                                      np.logical_and(self.A1_rho_equator < self.rho_1,
+                                                     self.A1_rho_equator >= self.rho_2)*self.A1_mat_id_layer[1] + \
+                                      (self.A1_rho_equator < self.rho_2)*self.A1_mat_id_layer[2]
+            self.A1_mat_id_equator  = (self.A1_rho_pole >= self.rho_1)*self.A1_mat_id_layer[0] + \
+                                       np.logical_and(self.A1_rho_pole < self.rho_1,
+                                                     self.A1_rho_pole >= self.rho_2)*self.A1_mat_id_layer[1] + \
+                                      (self.A1_rho_pole < self.rho_2)*self.A1_mat_id_layer[2]
+                                      
+            self.A1_mat_id_equator[self.A1_rho_equator <= 0] = -1
+            self.A1_mat_id_pole[self.A1_rho_pole <= 0]       = -1
+            
+            self.A1_P_equator = np.zeros_like(self.A1_r_equator)
+            self.A1_P_pole    = np.zeros_like(self.A1_r_pole)
+            self.A1_T_equator = np.zeros_like(self.A1_r_equator)
+            self.A1_T_pole    = np.zeros_like(self.A1_r_pole)
+            
+            for i, rho in enumerate(self.A1_rho_equator):
+                if rho >= self.rho_1:
+                    self.A1_T_equator[i] = T_rho(rho, self.A1_T_rho_type_id[0],
+                                                 self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+                    self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
+                                                       rho, self.A1_mat_id_layer[0])
+                elif rho >= self.rho_2:
+                    self.A1_T_equator[i] = T_rho(rho, self.A1_T_rho_type_id[1],
+                                                 self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
+                    self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
+                                                       rho, self.A1_mat_id_layer[1])
+                elif rho >= self.rho_s:
+                    self.A1_T_equator[i] = T_rho(rho, self.A1_T_rho_type_id[2],
+                                                 self.A1_T_rho_args[2], self.A1_mat_id_layer[2])
+                    self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
+                                                       rho, self.A1_mat_id_layer[2])
+            for i, rho in enumerate(self.A1_rho_pole):
+                if rho >= self.rho_1:
+                    self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[0],
+                                                 self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+                    self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
+                                                    rho, self.A1_mat_id_layer[0])
+                elif rho >= self.rho_2:
+                    self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[1],
+                                                 self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
+                    self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
+                                                    rho, self.A1_mat_id_layer[1])
+                elif rho >= self.rho_s:
+                    self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[2],
+                                                 self.A1_T_rho_args[2], self.A1_mat_id_layer[2])
+                    self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
+                                                    rho, self.A1_mat_id_layer[2])
+                    
+            r_temp = np.copy(self.A1_r_equator)
+            z_temp = np.copy(self.A1_r_pole)
+            rho_r_temp = np.copy(self.A1_rho_equator)
+            rho_z_temp = np.copy(self.A1_rho_pole)
+            rho_r_temp[rho_r_temp < self.rho_1] = 0.
+            rho_z_temp[rho_z_temp < self.rho_1] = 0.
+            M1 =  us.compute_spin_planet_M(r_temp, rho_r_temp, z_temp, rho_z_temp)
+            
+            rho_r_temp = np.copy(self.A1_rho_equator)
+            rho_z_temp = np.copy(self.A1_rho_pole)
+            rho_r_temp[rho_r_temp < self.rho_2] = 0.
+            rho_z_temp[rho_z_temp < self.rho_2] = 0.
+            M2 =  us.compute_spin_planet_M(r_temp, rho_r_temp, z_temp, rho_z_temp)
+            M2 = M2 - M1
+            
+            M3 = self.M - M2 - M1
+            
+            self.A1_M_layer = np.array([M1, M2, M3])
+             
+        self.T_0 = self.A1_T_equator[0]
+        self.T_s = self.A1_T_equator[self.A1_T_equator > 0][-1]
+        
+    def print_info(self):
+        """ Print the Planet objects's main properties. """
+        # Print and catch if any variables are None
+        def print_try(string, variables):
+            try:
+                print(string % variables)
+            except TypeError:
+                print("    %s = None" % variables[0])
+        
+        space   = 12
+        print_try("Planet \"%s\": ", self.name)
+        print_try("    %s = %.5g kg = %.5g M_earth",
+                  (utils.add_whitespace("M", space), self.M, self.M/gv.M_earth))
+        print_try("    %s = %.5g m = %.5g R_earth",
+                  (utils.add_whitespace("R_equator", space), self.R_e, self.R_e/gv.R_earth))
+        print_try("    %s = %.5g m = %.5g R_earth",
+                  (utils.add_whitespace("R_pole", space), self.R_p, self.R_p/gv.R_earth))
+        print_try("    %s = %s ", (utils.add_whitespace("mat", space),
+                  utils.format_array_string(self.A1_mat_layer, "string")))
+        print_try("    %s = %s ", (utils.add_whitespace("mat_id", space),
+                  utils.format_array_string(self.A1_mat_id_layer, "%d")))
+        print_try("    %s = %s R_earth", (utils.add_whitespace("R_layer_eq", space),
+                  utils.format_array_string(self.A1_R_layer_equator / gv.R_earth, "%.5g")))
+        print_try("    %s = %s R_earth", (utils.add_whitespace("R_layer_pole", space),
+                  utils.format_array_string(self.A1_R_layer_pole / gv.R_earth, "%.5g")))
+        print_try("    %s = %s M_earth", (utils.add_whitespace("M_layer", space),
+                  utils.format_array_string(self.A1_M_layer / gv.M_earth, "%.5g")))
+        print_try("    %s = %s M_total", (utils.add_whitespace("M_frac_layer", space),
+                  utils.format_array_string(self.A1_M_layer / self.M, "%.5g")))
+        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_s", space), self.P_s))
+        print_try("    %s = %.5g K", (utils.add_whitespace("T_s", space), self.T_s))
+        print_try("    %s = %.5g kg/m^3", 
+                  (utils.add_whitespace("rho_s", space), self.rho_s))
+        if self.num_layer > 2:
+            print_try("    %s = %.5g Pa",
+                      (utils.add_whitespace("P_2", space), self.P_2))
+            print_try("    %s = %.5g K", 
+                      (utils.add_whitespace("T_2", space), self.T_2))
+            print_try("    %s = %.5g kg/m^3", 
+                      (utils.add_whitespace("rho_2", space), self.rho_2))
+        if self.num_layer > 1:
+            print_try("    %s = %.5g Pa", 
+                      (utils.add_whitespace("P_1", space), self.P_1))
+            print_try("    %s = %.5g K", 
+                      (utils.add_whitespace("T_1", space), self.T_1))
+            print_try("    %s = %.5g kg/m^3", 
+                      (utils.add_whitespace("rho_1", space), self.rho_1))
+        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_0", space), self.P_0))
+        print_try("    %s = %.5g K", (utils.add_whitespace("T_0", space), self.T_0))
+        print_try("    %s = %.5g kg/m^3", 
+                  (utils.add_whitespace("rho_0", space), self.rho_0))
+# =============================================================================
+#         print_try("    %s = %.5g M_tot*R_tot^2",
+#                   (utils.add_whitespace("I_MR2", space), 
+#                    self.I_MR2/self.M/self.R/self.R))
+# =============================================================================
+        
+    def find_Tw_min(self, Tw_max=10, iterations=20):
+        
+        Tw_min = 0.
+
+        P_c   = np.max(self.A1_P)
+        P_s   = np.min(self.A1_P)
+        rho_c = np.max(self.A1_rho)
+        rho_s = np.min(self.A1_rho)
+        
+        # Check for necessary input
+        self._check_input()
+        
+        # Other necessary input in case of 2 and 3 layers
+        if self.num_layer == 2:
+            
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary = 0.5*(a + b)
+            
+            
+        elif self.num_layer == 3:
+            
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary_12 = 0.5*(a + b)
+
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
+            P_boundary_23 = 0.5*(a + b)
+            
+        for k in tqdm(range(iterations), desc="Finding Tw min:"):
+            
+            Tw_try = np.mean([Tw_min, Tw_max])
+            
+            if self.num_layer == 1:
+                profile_e, profile_p = \
+                    L1_spin.spin1layer(1, self.A1_r_equator, self.A1_r_pole,
+                                self.A1_r, self.A1_rho, Tw_try,
+                                P_c, P_s, rho_c, rho_s,
+                                self.A1_mat_id_layer[0],
+                                self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                                verbose=0
+                                )
+                    
+            elif self.num_layer == 2:  
+                profile_e, profile_p = \
+                    L2_spin.spin2layer(1, self.A1_r_equator, self.A1_r_pole,
+                               self.A1_r, self.A1_rho, Tw_try,
+                               P_c, P_boundary, P_s,
+                               rho_c, rho_s,
+                               self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                               self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+                               verbose=0
+                               )
+                    
+            elif self.num_layer == 3:
+                profile_e, profile_p = \
+                    L3_spin.spin3layer(1, self.A1_r_equator, self.A1_r_pole,
+                               self.A1_r, self.A1_rho, Tw_try,
+                               P_c, P_boundary_12, P_boundary_23, P_s,
+                               rho_c, rho_s,
+                               self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                               self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+                               self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2], self.A1_T_rho_args[2],
+                               verbose=0
+                               )
+                
+            if profile_e[-1][-1] > 0:
+                Tw_min = Tw_try     
+            else:
+                Tw_max = Tw_try
+            
+        self.Tw_min = Tw_max
+
 
     def spin(self):
         # Check for necessary input
-        assert(self.R_e is not None)
-        assert(self.R_p is not None)
+        self._check_input()
         assert(self.Tw is not None)
 
         P_c   = np.max(self.A1_P)
         P_s   = np.min(self.A1_P)
         rho_c = np.max(self.A1_rho)
         rho_s = np.min(self.A1_rho)
-
-        r_array     = np.linspace(0, self.R_e, self.num_prof)
-        z_array     = np.linspace(0, self.R_p, self.num_prof)
-
+        
+        self.P_0 = P_c
+        self.P_s = P_s
+        self.rho_0 = rho_c
+        self.rho_s = rho_s
+        
+        # Use correct function
         if self.num_layer == 1:
-            # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
 
             profile_e, profile_p = \
-                L1_spin.spin1layer(self.num_attempt, r_array, z_array,
+                L1_spin.spin1layer(self.num_attempt, self.A1_r_equator, self.A1_r_pole,
                                    self.A1_r, self.A1_rho, self.Tw,
                                    P_c, P_s, rho_c, rho_s,
                                    self.A1_mat_id_layer[0],
-                                   self.A1_T_rho_type[0],
+                                   self.A1_T_rho_type_id[0],
                                    self.A1_T_rho_args[0]
                                    )
 
-            print("\nDone!")
-
-            self.A1_r_equator   = r_array
-            self.A1_r_pole      = z_array
-            self.A1_rho_equator = profile_e[-1]
-            self.A1_rho_pole    = profile_p[-1]
-
         elif self.num_layer == 2:
-            # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
-            assert(self.A1_mat_id_layer[1] is not None)
-            assert(self.A1_T_rho_type[1] is not None)
 
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
             P_boundary = 0.5*(a + b)
 
-            self.P_R1 = P_boundary
+            self.P_1   = P_boundary
+            self.rho_1 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[0]])
+            self.T_1   = T_rho(self.rho_1, self.A1_T_rho_type_id[0],
+                               self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
 
             profile_e, profile_p = \
-                L2_spin.spin2layer(self.num_attempt, r_array, z_array,
+                L2_spin.spin2layer(self.num_attempt, self.A1_r_equator, self.A1_r_pole,
                            self.A1_r, self.A1_rho, self.Tw,
                            P_c, P_boundary, P_s,
                            rho_c, rho_s,
-                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                           self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1]
+                           self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                           self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
                            )
 
-            print("\nDone!")
-
-            self.A1_r_equator     = r_array
-            self.A1_r_pole        = z_array
-            self.A1_rho_equator   = profile_e[-1]
-            self.A1_rho_pole      = profile_p[-1]
-
-
         elif self.num_layer == 3:
-            # Check for necessary input
-            assert(self.A1_mat_id_layer[0] is not None)
-            assert(self.A1_T_rho_type[0] is not None)
-            assert(self.A1_mat_id_layer[1] is not None)
-            assert(self.A1_T_rho_type[1] is not None)
-            assert(self.A1_mat_id_layer[2] is not None)
-            assert(self.A1_T_rho_type[2] is not None)
 
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
             P_boundary_12 = 0.5*(a + b)
 
-            self.P_R1 = P_boundary_12
+            self.P_1   = P_boundary_12
+            self.rho_1 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[0]])
+            self.T_1   = T_rho(self.rho_1, self.A1_T_rho_type_id[0],
+                               self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
 
             a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
             b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
-            P_boundary_ma = 0.5*(a + b)
+            P_boundary_23 = 0.5*(a + b)
 
-            self.P_R2 = P_boundary_ma
+            self.P_2   = P_boundary_23
+            self.rho_2 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[1]])
+            self.T_2   = T_rho(self.rho_1, self.A1_T_rho_type_id[1],
+                               self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
 
             profile_e, profile_p = \
-                L3_spin.spin3layer(self.num_attempt, r_array, z_array,
+                L3_spin.spin3layer(self.num_attempt, self.A1_r_equator, self.A1_r_pole,
                            self.A1_r, self.A1_rho, self.Tw,
-                           P_c, P_boundary_12, P_boundary_ma, P_s,
+                           P_c, P_boundary_12, P_boundary_23, P_s,
                            rho_c, rho_s,
-                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                           self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                           self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2]
+                           self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                           self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+                           self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
                            )
 
-            print("\nDone!")
+        print("\nDone!")
 
-            self.A1_r_equator     = r_array
-            self.A1_r_pole        = z_array
-            self.A1_rho_equator   = profile_e[-1]
-            self.A1_rho_pole      = profile_p[-1]
+        # Save profile
+        self.A1_rho_equator   = profile_e[-1]
+        self.A1_rho_pole      = profile_p[-1]
         
-        self.M = us.compute_spin_planet_M(self.A1_r_equator, self.A1_rho_equator,
-                                       self.A1_r_pole, self.A1_rho_pole)
+        self.update_attributes()
+        self.print_info()
+        
+        #def spin_fixed_M(self):
+            
+            #assert self.M is not None
 
 class GenSpheroid():
 
@@ -1638,7 +1836,7 @@ class GenSpheroid():
     self, name=None, spin_planet=None, Fp_planet=None, Tw=None,
     A1_mat_layer=None, A1_T_rho_args=None, A1_T_rho_type=None,
     A1_r_equator=None, A1_rho_equator=None,
-    A1_r_pole=None, A1_rho_pole=None, P_R1=None, P_R2=None,
+    A1_r_pole=None, A1_rho_pole=None, P_1=None, P_2=None,
     N_particles = None, N_neig=48, num_attempt=10,
     A1_r=None, A1_rho=None, A1_P=None
     ):
@@ -1648,21 +1846,22 @@ class GenSpheroid():
         self.num_attempt        = num_attempt
 
         if spin_planet is not None:
-            self.num_layer       = spin_planet.num_layer
-            self.A1_mat_layer    = spin_planet.A1_mat_layer
-            self.A1_mat_id_layer = spin_planet.A1_mat_id_layer
-            self.A1_T_rho_type   = spin_planet.A1_T_rho_type
-            self.A1_T_rho_args   = spin_planet.A1_T_rho_args
-            self.A1_r_equator    = spin_planet.A1_r_equator
-            self.A1_rho_equator  = spin_planet.A1_rho_equator
-            self.A1_r_pole       = spin_planet.A1_r_pole
-            self.A1_rho_pole     = spin_planet.A1_rho_pole
-            self.Tw              = spin_planet.Tw
-            self.P_R1            = spin_planet.P_R1
-            self.P_R2            = spin_planet.P_R2
-            self.A1_r            = spin_planet.A1_r
-            self.A1_rho          = spin_planet.A1_rho
-            self.A1_P            = spin_planet.A1_P
+            self.num_layer        = spin_planet.num_layer
+            self.A1_mat_layer     = spin_planet.A1_mat_layer
+            self.A1_mat_id_layer  = spin_planet.A1_mat_id_layer
+            self.A1_T_rho_type    = spin_planet.A1_T_rho_type
+            self.A1_T_rho_type_id = spin_planet.A1_T_rho_type_id
+            self.A1_T_rho_args    = spin_planet.A1_T_rho_args
+            self.A1_r_equator     = spin_planet.A1_r_equator
+            self.A1_rho_equator   = spin_planet.A1_rho_equator
+            self.A1_r_pole        = spin_planet.A1_r_pole
+            self.A1_rho_pole      = spin_planet.A1_rho_pole
+            self.Tw               = spin_planet.Tw
+            self.P_1              = spin_planet.P_1
+            self.P_2              = spin_planet.P_2
+            self.A1_r             = spin_planet.A1_r
+            self.A1_rho           = spin_planet.A1_rho
+            self.A1_P             = spin_planet.A1_P
 
         else:
             self.A1_mat_layer    = A1_mat_layer
@@ -1673,8 +1872,8 @@ class GenSpheroid():
             self.A1_r_pole       = A1_r_pole
             self.A1_rho_pole     = A1_rho_pole
             self.Tw              = Tw
-            self.P_R1            = P_R1
-            self.P_R2            = P_R2
+            self.P_1             = P_1
+            self.P_2             = P_2
             self.A1_r            = A1_r
             self.A1_rho          = A1_rho
             self.A1_P            = A1_P
@@ -1684,17 +1883,23 @@ class GenSpheroid():
                 self.num_layer          = len(self.A1_mat_layer)
                 self.A1_mat_id_layer    = [gv.Di_mat_id[mat]
                                            for mat in self.A1_mat_layer]
+                
+            if self.A1_T_rho_type is not None:
+                self.A1_T_rho_type_id = [gv.Di_T_rho_id[T_rho_id]
+                                         for T_rho_id in self.A1_T_rho_type]
+                
+            
 
         assert(self.num_layer in [1, 2, 3])
         assert(self.N_particles is not None)
 
         if self.num_layer == 1:
 
-            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            x, y, z, vx, vy, vz, m, rho, u, P, h, mat_id, picle_id = \
             L1_spin.picle_placement_L1(self.A1_r_equator, self.A1_rho_equator,
                                        self.A1_r_pole, self.A1_rho_pole, self.Tw, self.N_particles,
-                                       self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                                       N_neig, num_attempt)
+                                       self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                                       N_neig)
 
             self.A1_picle_x      = x
             self.A1_picle_y      = y
@@ -1703,10 +1908,10 @@ class GenSpheroid():
             self.A1_picle_vy     = vy
             self.A1_picle_vz     = vz
             self.A1_picle_m      = m
-            self.A1_picle_h      = h
             self.A1_picle_rho    = rho
-            self.A1_picle_P      = P
             self.A1_picle_u      = u
+            self.A1_picle_P      = P
+            self.A1_picle_h      = h
             self.A1_picle_mat_id = mat_id
             self.A1_picle_id     = picle_id
             self.N_particles     = x.shape[0]
@@ -1714,15 +1919,15 @@ class GenSpheroid():
         elif self.num_layer == 2:
 
             rho_P_model       = interp1d(self.A1_P, self.A1_rho)
-            self.rho_R1       = rho_P_model(self.P_R1)
+            self.rho_1       = rho_P_model(self.P_1)
 
-            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            x, y, z, vx, vy, vz, m, rho, u, P, h, mat_id, picle_id = \
                 L2_spin.picle_placement_L2(self.A1_r_equator, self.A1_rho_equator,
                                            self.A1_r_pole, self.A1_rho_pole,
-                                           self.Tw, self.N_particles, self.rho_R1,
-                                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                                           self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                                           N_neig, num_attempt)
+                                           self.Tw, self.N_particles, self.rho_1,
+                                           self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                                           self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+                                           N_neig)
 
             self.A1_picle_x      = x
             self.A1_picle_y      = y
@@ -1731,10 +1936,10 @@ class GenSpheroid():
             self.A1_picle_vy     = vy
             self.A1_picle_vz     = vz
             self.A1_picle_m      = m
-            self.A1_picle_h      = h
             self.A1_picle_rho    = rho
-            self.A1_picle_P      = P
             self.A1_picle_u      = u
+            self.A1_picle_P      = P
+            self.A1_picle_h      = h
             self.A1_picle_mat_id = mat_id
             self.A1_picle_id     = picle_id
             self.N_particles     = x.shape[0]
@@ -1742,17 +1947,17 @@ class GenSpheroid():
         elif self.num_layer == 3:
 
             rho_P_model  = interp1d(self.A1_P, self.A1_rho)
-            self.rho_R1  = rho_P_model(self.P_R1)
-            self.rho_R2  = rho_P_model(self.P_R2)
+            self.rho_1  = rho_P_model(self.P_1)
+            self.rho_2  = rho_P_model(self.P_2)
 
-            x, y, z, vx, vy, vz, m, h, rho, P, u, mat_id, picle_id = \
+            x, y, z, vx, vy, vz, m, rho, u, P, h, mat_id, picle_id = \
                 L3_spin.picle_placement_L3(self.A1_r_equator, self.A1_rho_equator,
                                            self.A1_r_pole, self.A1_rho_pole,
-                                           self.Tw, self.N_particles, self.rho_R1, self.rho_R2,
-                                           self.A1_mat_id_layer[0], self.A1_T_rho_type[0], self.A1_T_rho_args[0],
-                                           self.A1_mat_id_layer[1], self.A1_T_rho_type[1], self.A1_T_rho_args[1],
-                                           self.A1_mat_id_layer[2], self.A1_T_rho_type[2], self.A1_T_rho_args[2],
-                                           N_neig, num_attempt)
+                                           self.Tw, self.N_particles, self.rho_1, self.rho_2,
+                                           self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
+                                           self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+                                           self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2], self.A1_T_rho_args[2],
+                                           N_neig)
 
             self.A1_picle_x      = x
             self.A1_picle_y      = y
@@ -1761,10 +1966,10 @@ class GenSpheroid():
             self.A1_picle_vy     = vy
             self.A1_picle_vz     = vz
             self.A1_picle_m      = m
-            self.A1_picle_h      = h
             self.A1_picle_rho    = rho
-            self.A1_picle_P      = P
             self.A1_picle_u      = u
+            self.A1_picle_P      = P
+            self.A1_picle_h      = h
             self.A1_picle_mat_id = mat_id
             self.A1_picle_id     = picle_id
             self.N_particles     = x.shape[0]
