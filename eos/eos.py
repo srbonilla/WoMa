@@ -135,9 +135,6 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
     T_aux   = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
     u_aux   = u_rho_T(rho_aux, T_aux, mat_id)
     P_aux   = P_u_rho(u_aux, rho_aux, mat_id)
-    
-    #if np.isnan(P0): P0 = 0.
-    #if np.isnan(P_aux): P_aux = 0.
 
     if ((P0 < P and P < P1) or (P0 > P and P > P1)):
         max_counter = 200
@@ -194,7 +191,9 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
     elif P < P0 and P0 < P1:
         return rho0
     elif P > P1 and P0 < P1:
-        return rho1        
+        return rho1   
+    elif P > P0 and P0 > P1:
+        return rho0
     else:
 # =============================================================================
 #         e = "Critical error in find rho.\n" + \

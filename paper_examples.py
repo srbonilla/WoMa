@@ -97,7 +97,7 @@ l1_test = woma.Planet(
     name            = "prof_pE",
     #A1_mat_layer    = ['Til_granite'],
     A1_mat_layer    = ['SESAME_basalt'],
-    A1_T_rho_type   = [1],
+    A1_T_rho_type   = ['power'],
     A1_T_rho_args   = [[None, 0.]],
     A1_R_layer      = [R_earth],
     P_s             = 1e5,
@@ -201,7 +201,7 @@ import woma
 l2_test = woma.Planet(
     name            = "prof_pE",
     A1_mat_layer    = ['Til_iron', 'Til_granite'],
-    A1_T_rho_type   = [1, 1],
+    A1_T_rho_type   = ['power', 'power'],
     A1_T_rho_args   = [[None, 2.5], [None, 2.5]],
     A1_R_layer      = [None, R_earth],
     M               = M_earth,
@@ -273,6 +273,10 @@ np.save('A1_r_2l', l2_test_sp.A1_r_equator)
 np.save('A1_z_2l', l2_test_sp.A1_r_pole)
 np.save('A1_rho_r_2l', l2_test_sp.A1_rho_equator)
 np.save('A1_rho_z_2l', l2_test_sp.A1_rho_pole)
+
+
+
+
 
 # Synestia
 

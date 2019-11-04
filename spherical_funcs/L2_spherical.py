@@ -423,7 +423,6 @@ def L2_find_R1(
 
     return R1_min
 
-#@jit(nopython=True)
 def L2_find_R1_R(
     num_prof, R_max, M1, M2, P_s, T_s, rho_s, mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
     mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, num_attempt=40,

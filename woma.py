@@ -1355,7 +1355,6 @@ class SpinPlanet():
     A1_T_rho_type=None, A1_T_rho_args=None, A1_r=None, A1_P=None, A1_T=None,
     A1_rho=None, num_prof=1000, num_attempt=15, R_e_max=None, R_p_max=None
     ):
-
         self.name               = name
         self.Fp_planet          = Fp_planet
         self.num_prof           = num_prof
