@@ -7,7 +7,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import woma_v2 as woma
+import woma
 
 R_earth = 6371000
 M_earth = 5.972E24
@@ -46,7 +46,7 @@ def test_gen_prof_L1_fix_R_given_M():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_granite"],
-        A1_T_rho_type   = [1],
+        A1_T_rho_type   = ['power'],
         A1_T_rho_args   = [[None, 0.]],
         A1_R_layer      = [0.988 * R_earth],
         M               = 0.8*M_earth,
@@ -64,7 +64,7 @@ def test_gen_prof_L1_fix_M_given_R():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_granite"],
-        A1_T_rho_type   = [1],
+        A1_T_rho_type   = ['power'],
         A1_T_rho_args   = [[None, 0.]],
         A1_R_layer      = [R_earth],
         P_s             = 0,
@@ -81,7 +81,7 @@ def test_gen_prof_L2_fix_R1_given_R_M():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = [1, 1],
+        A1_T_rho_type   = ['power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [None, R_earth],
         M               = M_earth,
@@ -97,7 +97,7 @@ def test_gen_prof_L2_fix_R_given_M_R1():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = [1, 1],
+        A1_T_rho_type   = ['power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [0.40*R_earth, R_earth],
         M               = M_earth,
@@ -114,7 +114,7 @@ def test_gen_prof_L2_fix_M_given_R1_R():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = [1, 1],
+        A1_T_rho_type   = ['power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [0.40*R_earth, R_earth],
         P_s             = 0,
@@ -130,7 +130,7 @@ def test_gen_prof_L3_given_prof_L2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = [1, 1],
+        A1_T_rho_type   = ['power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [None, R_earth],
         M               = 0.887*M_earth,
@@ -158,7 +158,7 @@ def test_gen_prof_L3_fix_R1_R2_given_R_M_I():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = [1, 1, 1],
+        A1_T_rho_type   = ['power', 'power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [None, None, R_earth],
         P_s             = 0,
@@ -177,7 +177,7 @@ def test_gen_prof_L3_fix_R2_given_R_M_R1():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "SESAME_steam"],
-        A1_T_rho_type   = [1, 1, 1],
+        A1_T_rho_type   = ['power', 'power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.55*R_earth, None, R_earth],
         P_s             = 1e5,
@@ -193,7 +193,7 @@ def test_gen_prof_L3_fix_R1_given_R_M_R2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = [1, 1, 1],
+        A1_T_rho_type   = ['power', 'power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [None, 0.9*R_earth, R_earth],
         P_s             = 0,
@@ -209,7 +209,7 @@ def test_gen_prof_L3_fix_M_given_R_R1_R2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = [1, 1, 1],
+        A1_T_rho_type   = ['power', 'power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.5*R_earth, 0.9*R_earth, R_earth],
         P_s             = 0,
@@ -225,7 +225,7 @@ def test_gen_prof_L3_fix_R_given_M_R1_R2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = [1, 1, 1],
+        A1_T_rho_type   = ['power', 'power', 'power'],
         A1_T_rho_args   = [[None, 0.], [None, 0.], [None, 0.]],
         A1_R_layer      = [0.5*R_earth, 0.9*R_earth, None],
         P_s             = 0,
