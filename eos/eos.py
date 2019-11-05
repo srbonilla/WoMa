@@ -165,7 +165,7 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
 
         return rho2
 
-    elif (P0 == P and P_aux == P and P1 != P):
+    elif (P0 == P and P_aux == P and P1 != P and P0 < P1):
         while np.abs(rho1 - rho0) > tolerance:
             rho2 = (rho0 + rho1)/2.
             T0 = T_rho(rho0, T_rho_type, T_rho_args, mat_id)
@@ -194,6 +194,8 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho0, rho1):
         return rho1   
     elif P > P0 and P0 > P1:
         return rho0
+    elif P < P1 and P0 > P1:
+        return rho1
     else:
 # =============================================================================
 #         e = "Critical error in find rho.\n" + \
