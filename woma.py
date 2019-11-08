@@ -1456,22 +1456,23 @@ class SpinPlanet():
             self.A1_R_layer_pole    = np.array([self.R_p])
             # Mass
             self.A1_M_layer = np.array([self.M])
-            # Temperature
-            self.A1_T_equator = T_rho(self.A1_rho_equator, self.A1_T_rho_type_id[0],
-                                      self.A1_T_rho_args[0], self.A1_mat_id_layer[0]) 
-            self.A1_T_pole    = T_rho(self.A1_rho_equator, self.A1_T_rho_type_id[0],
-                                      self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
-            self.A1_T_equator[self.A1_rho_equator <= 0] = 0.
-            self.A1_T_pole[self.A1_rho_pole <= 0]       = 0.
-            # Pressure
-            self.A1_P_equator = np.zeros_like(self.A1_T_equator)
-            self.A1_P_pole    = np.zeros_like(self.A1_T_pole)
-            for i in range(self.A1_P_equator.shape[0]):
-                self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
-                                 self.A1_rho_equator[i], self.A1_mat_id_layer[0])
-            for i in range(self.A1_P_pole.shape[0]):
-                self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
-                              self.A1_rho_pole[i], self.A1_mat_id_layer[0])
+            # Pressure and temperature
+            self.A1_P_equator = np.zeros_like(self.A1_r_equator)
+            self.A1_P_pole    = np.zeros_like(self.A1_r_pole)
+            self.A1_T_equator = np.zeros_like(self.A1_r_equator)
+            self.A1_T_pole    = np.zeros_like(self.A1_r_pole)
+            for i, rho in enumerate(self.A1_rho_equator):
+                if rho >= self.rho_s:
+                    self.A1_T_equator[i] = T_rho(rho, self.A1_T_rho_type_id[0],
+                                                 self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+                    self.A1_P_equator[i] = eos.P_T_rho(self.A1_T_equator[i],
+                                                       rho, self.A1_mat_id_layer[0])
+            for i, rho in enumerate(self.A1_rho_pole):
+                if rho >= self.rho_s:
+                    self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[0],
+                                              self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+                    self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
+                                                    rho, self.A1_mat_id_layer[0])
             # Mat_id
             self.A1_mat_id_equator = np.ones(self.A1_r_equator.shape)*self.A1_mat_id_layer[0]
             self.A1_mat_id_pole    = np.ones(self.A1_r_pole.shape)*self.A1_mat_id_layer[0]
@@ -1508,12 +1509,12 @@ class SpinPlanet():
             for i, rho in enumerate(self.A1_rho_pole):
                 if rho >= self.rho_1:
                     self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[0],
-                                                 self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+                                              self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
                     self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
                                                     rho, self.A1_mat_id_layer[0])
                 elif rho >= self.rho_s:
                     self.A1_T_pole[i] = T_rho(rho, self.A1_T_rho_type_id[1],
-                                                 self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
+                                              self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
                     self.A1_P_pole[i] = eos.P_T_rho(self.A1_T_pole[i],
                                                     rho, self.A1_mat_id_layer[1])
             
