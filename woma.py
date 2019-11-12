@@ -9,6 +9,7 @@ import sys
 import os
 
 # Go to the WoMa directory
+cwd = os.getcwd()
 dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir)
 sys.path.append(dir + '/eos')
@@ -32,6 +33,8 @@ from T_rho import set_T_rho_args
 from T_rho import T_rho
 from scipy.interpolate import interp1d
 from tqdm import tqdm
+
+os.chdir(cwd)
 
 # Output
 Di_hdf5_planet_label  = {
