@@ -8,7 +8,7 @@ Created on Thu Jul 25 08:54:38 2019
 
 G       = 6.67408E-11
 R_earth = 6371000
-M_earth = 5.972E24
+M_earth = 5.9724E24
 R_gas   = 8.3145     # Gas constant (J K^-1 mol^-1)
 
 # Material IDs, same as SWIFT ( = type_id * type_factor + unit_id)
