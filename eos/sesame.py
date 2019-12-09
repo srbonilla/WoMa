@@ -159,6 +159,10 @@ def load_table_SESAME(Fp_table):
  )  = load_table_SESAME(gv.Fp_SESAME_CO2)
 
 @njit
+def round_to_n(x, n):
+    return round(x, -int(np.floor(np.sign(x) * np.log10(abs(x)))) + n)
+
+@njit
 def P_u_rho(u, rho, mat_id):
     """ Computes pressure for the SESAME EoS.
 
@@ -276,7 +280,7 @@ def P_u_rho(u, rho, mat_id):
            + intp_rho * ((1 - intp_u_2) * P_3 + intp_u_2 * P_4))
 
     # Convert back from log
-    return np.exp(P)
+    return round_to_n(np.exp(P), 5)
 
 @njit
 def u_rho_T(rho, T, mat_id):
@@ -394,7 +398,7 @@ def u_rho_T(rho, T, mat_id):
            + intp_rho * ((1 - intp_T) * u_3 + intp_T * u_4))
 
     # Convert back from log
-    return np.exp(u)
+    return round_to_n(np.exp(u), 5)
 
 @njit
 def s_rho_T(rho, T, mat_id):
