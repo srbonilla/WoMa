@@ -280,7 +280,7 @@ def P_u_rho(u, rho, mat_id):
            + intp_rho * ((1 - intp_u_2) * P_3 + intp_u_2 * P_4))
 
     # Convert back from log
-    return round_to_n(np.exp(P), 5)
+    return np.exp(P)
 
 @njit
 def u_rho_T(rho, T, mat_id):
@@ -398,7 +398,7 @@ def u_rho_T(rho, T, mat_id):
            + intp_rho * ((1 - intp_T) * u_3 + intp_T * u_4))
 
     # Convert back from log
-    return round_to_n(np.exp(u), 5)
+    return np.exp(u)
 
 @njit
 def s_rho_T(rho, T, mat_id):
