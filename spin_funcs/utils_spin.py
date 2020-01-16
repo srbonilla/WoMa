@@ -591,6 +591,71 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     M_shell[-1] = M - M_shell.sum()
     if M_shell[-1] < 0: M_shell[-1] = 0
     
+    #########################################################
+    M_shell_model = np.zeros_like(rho_shell)
+    
+    for i in range(M_shell_model.shape[0]):
+        if i == 0:
+            
+            R_l = 1e-5
+            Z_l = 1e-5
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+        elif i == M_shell_model.shape[0] - 1:
+            
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = Re
+            Z_h = Rp
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            
+        else:
+            
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+        rho_e_temp = np.copy(rho_e)
+        rho_p_temp = np.copy(rho_p)
+        
+        rho_e_temp[r_array > R_h] = 0
+        rho_p_temp[z_array > Z_h] = 0
+        
+        M_shell_model[i] = compute_spin_planet_M(r_array, rho_e_temp,
+                                                 z_array, rho_p_temp)
+        
+        rho_e_temp = np.copy(rho_e)
+        rho_p_temp = np.copy(rho_p)
+        
+        rho_e_temp[r_array > R_l] = 0
+        rho_p_temp[z_array > Z_l] = 0
+        
+        M_shell_model[i] = M_shell_model[i] - \
+            compute_spin_planet_M(r_array, rho_e_temp,
+                                  z_array, rho_p_temp)
+        
+    # return M_shell, M_shell_model
+    M_shell = M_shell_model
+    ###################################################
+    
     # Number of particles per shell
     N_shell = np.round(M_shell/m_picle).astype(int)
     
