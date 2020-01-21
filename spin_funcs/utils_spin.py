@@ -564,32 +564,35 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     # Get picle mass of final configuration
     alpha = M/particles.A1_m.sum()
     #m_picle = alpha*np.median(particles.A1_m)
-    m_picle = np.median(particles.A1_m)*Rp/Re
+    #m_picle = np.median(particles.A1_m)*Rp/Re
+    m_picle = M/N
     
-    # Compute mass of every shell
-    for i in range(M_shell.shape[0] - 1):
-        if i == 0:
-            
-            M_shell[i] = N_shell_original[i]*m_picle
-            
-        else:
-            R_l = R_shell[i - 1]
-            Z_l = Z_shell[i - 1]
-            R_h = R_shell[i + 1]
-            Z_h = Z_shell[i + 1]
-            R_0 = R_shell[i]
-            Z_0 = Z_shell[i]
-            
-            R_l = (R_l + R_0)/2
-            Z_l = (Z_l + Z_0)/2
-            R_h = (R_h + R_0)/2
-            Z_h = (Z_h + Z_0)/2
-            
-            M_shell[i] = rho_shell[i]*V_theta(0, np.pi, [[R_l, Z_l], [R_h, Z_h]])
-    
-    # Last shell
-    M_shell[-1] = M - M_shell.sum()
-    if M_shell[-1] < 0: M_shell[-1] = 0
+# =============================================================================
+#     # Compute mass of every shell
+#     for i in range(M_shell.shape[0] - 1):
+#         if i == 0:
+#             
+#             M_shell[i] = N_shell_original[i]*m_picle
+#             
+#         else:
+#             R_l = R_shell[i - 1]
+#             Z_l = Z_shell[i - 1]
+#             R_h = R_shell[i + 1]
+#             Z_h = Z_shell[i + 1]
+#             R_0 = R_shell[i]
+#             Z_0 = Z_shell[i]
+#             
+#             R_l = (R_l + R_0)/2
+#             Z_l = (Z_l + Z_0)/2
+#             R_h = (R_h + R_0)/2
+#             Z_h = (Z_h + Z_0)/2
+#             
+#             M_shell[i] = rho_shell[i]*V_theta(0, np.pi, [[R_l, Z_l], [R_h, Z_h]])
+#     
+#     # Last shell
+#     M_shell[-1] = M - M_shell.sum()
+#     if M_shell[-1] < 0: M_shell[-1] = 0
+# =============================================================================
     
     #########################################################
     M_shell_model = np.zeros_like(rho_shell)
@@ -654,6 +657,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
         
     # return M_shell, M_shell_model
     M_shell = M_shell_model
+    
     ###################################################
     
     # Number of particles per shell
