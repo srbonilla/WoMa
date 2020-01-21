@@ -465,6 +465,95 @@ def _V_theta_analytical(theta, shell_config):
     V = V/(_i(np.pi, R1, Z1) - _i(np.pi, Rm1, Zm1))
     
     return V
+
+def get_spining_mass_profile(r_array, rho_e, z_array, rho_p):
+    """ Calculate the mass profile from the density profile.
+    """
+    # Find the mass in each profile shell, starting with the central sphere
+    A1_m_prof      = np.zeros_like(r_array)
+    for i in range(2, A1_m_prof.shape[0]):
+        A1_m_prof[i] = compute_spin_planet_M(r_array[:i], rho_e[:i],
+                                             z_array[:i], rho_p[:i])
+        
+    A1_m_enc = np.zeros_like(A1_m_prof)
+    for i in range(A1_m_prof.shape[0] - 1):
+        A1_m_enc[i + 1] = A1_m_prof[i + 1] - A1_m_prof[i]
+        
+    A1_m_enc[rho_e == 0] = 0
+    A1_m_enc[1] = A1_m_enc[2]
+
+    return A1_m_enc
+
+def create_rho_e_art(r_array, rho_e, z_array, rho_p):
+    
+    A1_m_enc = get_spining_mass_profile(r_array, rho_e, z_array, rho_p)
+    rho_e_art = 3*A1_m_enc[1:]/4/np.pi/(r_array[1:]**3 - r_array[:-1]**3)
+    
+    return np.append([rho_e_art[0]], rho_e_art)
+
+def compute_M_shell(R_shell, Z_shell, r_array, rho_e, z_array, rho_p):
+    
+    M_shell = np.zeros_like(R_shell)
+    Re = np.max(r_array[rho_e > 0])
+    Rp = np.max(z_array[rho_p > 0])
+    for i in range(M_shell.shape[0]):
+        if i == 0:
+            
+            R_l = 1e-5
+            Z_l = 1e-5
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+        elif i == M_shell.shape[0] - 1:
+            
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = Re
+            Z_h = Rp
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            
+        else:
+            
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+        rho_e_temp = np.copy(rho_e)
+        rho_p_temp = np.copy(rho_p)
+        
+        rho_e_temp[r_array > R_h] = 0
+        rho_p_temp[z_array > Z_h] = 0
+        
+        M_shell[i] = compute_spin_planet_M(r_array, rho_e_temp,
+                                           z_array, rho_p_temp)
+        
+        rho_e_temp = np.copy(rho_e)
+        rho_p_temp = np.copy(rho_p)
+        
+        rho_e_temp[r_array > R_l] = 0
+        rho_p_temp[z_array > Z_l] = 0
+        
+        M_shell[i] = M_shell[i] - \
+            compute_spin_planet_M(r_array, rho_e_temp,
+                                  z_array, rho_p_temp)
+    return M_shell
     
 # main function 
 def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
@@ -543,7 +632,12 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     rho_e_model = interp1d(r_array, rho_e)
     densities = rho_e_model(radii)
     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
-    
+    #####
+    #rho_e_art       = create_rho_e_art(r_array, rho_e, z_array, rho_p)
+    #rho_e_model_art = interp1d(r_array, rho_e_art)
+    #densities_art   = rho_e_model_art(radii)
+    #particles = seagen.GenSphere(N, radii[1:], densities_art[1:], verb=0)
+    #####
     # Compute R, Z, rho and mass for every shell
     
     rho_p_model_inv = interp1d(rho_p, z_array)
@@ -595,69 +689,25 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
 # =============================================================================
     
     #########################################################
-    M_shell_model = np.zeros_like(rho_shell)
-    
-    for i in range(M_shell_model.shape[0]):
-        if i == 0:
-            
-            R_l = 1e-5
-            Z_l = 1e-5
-            R_h = R_shell[i + 1]
-            Z_h = Z_shell[i + 1]
-            R_0 = R_shell[i]
-            Z_0 = Z_shell[i]
-            
-            R_h = (R_h + R_0)/2
-            Z_h = (Z_h + Z_0)/2
-            
-        elif i == M_shell_model.shape[0] - 1:
-            
-            R_l = R_shell[i - 1]
-            Z_l = Z_shell[i - 1]
-            R_h = Re
-            Z_h = Rp
-            R_0 = R_shell[i]
-            Z_0 = Z_shell[i]
-            
-            R_l = (R_l + R_0)/2
-            Z_l = (Z_l + Z_0)/2
-            
-        else:
-            
-            R_l = R_shell[i - 1]
-            Z_l = Z_shell[i - 1]
-            R_h = R_shell[i + 1]
-            Z_h = Z_shell[i + 1]
-            R_0 = R_shell[i]
-            Z_0 = Z_shell[i]
-            
-            R_l = (R_l + R_0)/2
-            Z_l = (Z_l + Z_0)/2
-            R_h = (R_h + R_0)/2
-            Z_h = (Z_h + Z_0)/2
-            
-        rho_e_temp = np.copy(rho_e)
-        rho_p_temp = np.copy(rho_p)
-        
-        rho_e_temp[r_array > R_h] = 0
-        rho_p_temp[z_array > Z_h] = 0
-        
-        M_shell_model[i] = compute_spin_planet_M(r_array, rho_e_temp,
-                                                 z_array, rho_p_temp)
-        
-        rho_e_temp = np.copy(rho_e)
-        rho_p_temp = np.copy(rho_p)
-        
-        rho_e_temp[r_array > R_l] = 0
-        rho_p_temp[z_array > Z_l] = 0
-        
-        M_shell_model[i] = M_shell_model[i] - \
-            compute_spin_planet_M(r_array, rho_e_temp,
-                                  z_array, rho_p_temp)
         
     # return M_shell, M_shell_model
-    M_shell = M_shell_model
+    M_shell = compute_M_shell(R_shell, Z_shell,
+                              r_array, rho_e,
+                              z_array, rho_p)
     
+    median_M_shell_increase = np.median(M_shell[1:]/M_shell[:-1])
+    median_M_shell_increase = np.max([median_M_shell_increase, 1.01])
+    
+    rel_M_shell_increase = (Re/R_shell[-1] - 1)/100 + 1
+    #print(rel_M_shell_increase)
+    while M_shell[-1]/M_shell[-2] > median_M_shell_increase:
+        #print(M_shell[-1]/M_shell[-2])
+        R_shell   = rel_M_shell_increase*R_shell
+        rho_shell = rho_e_model(R_shell)
+        Z_shell   = rho_p_model_inv(rho_shell)
+        M_shell   = compute_M_shell(R_shell, Z_shell,
+                                    r_array, rho_e,
+                                    z_array, rho_p)
     ###################################################
     
     # Number of particles per shell
