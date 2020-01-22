@@ -627,19 +627,24 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
                               r_array, rho_e,
                               z_array, rho_p)
     
-    median_M_shell_increase = np.median(M_shell[1:]/M_shell[:-1])
-    median_M_shell_increase = np.max([median_M_shell_increase, 1.01])
-    
-    rel_M_shell_increase = (Re/R_shell[-1] - 1)/100 + 1
-    
-    while M_shell[-1]/M_shell[-2] > median_M_shell_increase:
-    
-        R_shell   = rel_M_shell_increase*R_shell
-        rho_shell = rho_e_model(R_shell)
-        Z_shell   = rho_p_model_inv(rho_shell)
-        M_shell   = compute_M_shell(R_shell, Z_shell,
-                                    r_array, rho_e,
-                                    z_array, rho_p)
+# =============================================================================
+#     median_M_shell_increase = np.median(M_shell[1:]/M_shell[:-1])
+#     median_M_shell_increase = np.max([median_M_shell_increase, 1.01])
+#     
+#     rel_M_shell_increase = (Re/R_shell[-1] - 1)/100 + 1
+#     
+#     while M_shell[-1]/M_shell[-2] > median_M_shell_increase:
+#     
+#         R_shell   = rel_M_shell_increase*R_shell
+#         rho_shell = rho_e_model(R_shell)
+#         Z_shell   = rho_p_model_inv(rho_shell)
+#         M_shell   = compute_M_shell(R_shell, Z_shell,
+#                                     r_array, rho_e,
+#                                     z_array, rho_p)
+# =============================================================================
+    M_shell_threshold = np.median(M_shell[1:]/M_shell[:-1])**2
+    if M_shell[-1]/M_shell[-2] > M_shell_threshold and M_shell_threshold > 1:
+        M_shell[-1] = M_shell[-2]*M_shell_threshold
     
     # Number of particles per shell
     N_shell = np.round(M_shell/m_picle).astype(int)
