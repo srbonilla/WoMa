@@ -529,6 +529,70 @@ def compute_M_shell(R_shell, Z_shell, r_array, rho_e, z_array, rho_p):
             compute_spin_planet_M(r_array, rho_e_temp,
                                   z_array, rho_p_temp)
     return M_shell
+
+def compute_M_shell(R_shell, Z_shell, r_array, rho_e, z_array, rho_p):
+    
+    M_shell = np.zeros_like(R_shell)
+    Re = np.max(r_array[rho_e > 0])
+    Rp = np.max(z_array[rho_p > 0])
+    for i in range(M_shell.shape[0]):
+        if i == 0:
+            
+            R_l = 1e-5
+            Z_l = 1e-5
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+        elif i == M_shell.shape[0] - 1:
+            
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = Re
+            Z_h = Rp
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            
+        else:
+            
+            R_l = R_shell[i - 1]
+            Z_l = Z_shell[i - 1]
+            R_h = R_shell[i + 1]
+            Z_h = Z_shell[i + 1]
+            R_0 = R_shell[i]
+            Z_0 = Z_shell[i]
+            
+            R_l = (R_l + R_0)/2
+            Z_l = (Z_l + Z_0)/2
+            R_h = (R_h + R_0)/2
+            Z_h = (Z_h + Z_0)/2
+            
+        rho_e_temp = np.copy(rho_e)
+        rho_p_temp = np.copy(rho_p)
+        
+        rho_e_temp[r_array > R_h] = 0
+        rho_p_temp[z_array > Z_h] = 0
+        
+        M_shell[i] = compute_spin_planet_M(r_array, rho_e_temp,
+                                           z_array, rho_p_temp)
+        
+        rho_e_temp = np.copy(rho_e)
+        rho_p_temp = np.copy(rho_p)
+        
+        rho_e_temp[r_array > R_l] = 0
+        rho_p_temp[z_array > Z_l] = 0
+        
+        M_shell[i] = M_shell[i] - \
+            compute_spin_planet_M(r_array, rho_e_temp,
+                                  z_array, rho_p_temp)
+    return M_shell
     
 # main function 
 def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
@@ -626,25 +690,6 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     M_shell = compute_M_shell(R_shell, Z_shell,
                               r_array, rho_e,
                               z_array, rho_p)
-    
-# =============================================================================
-#     median_M_shell_increase = np.median(M_shell[1:]/M_shell[:-1])
-#     median_M_shell_increase = np.max([median_M_shell_increase, 1.01])
-#     
-#     rel_M_shell_increase = (Re/R_shell[-1] - 1)/100 + 1
-#     
-#     while M_shell[-1]/M_shell[-2] > median_M_shell_increase:
-#     
-#         R_shell   = rel_M_shell_increase*R_shell
-#         rho_shell = rho_e_model(R_shell)
-#         Z_shell   = rho_p_model_inv(rho_shell)
-#         M_shell   = compute_M_shell(R_shell, Z_shell,
-#                                     r_array, rho_e,
-#                                     z_array, rho_p)
-# =============================================================================
-    M_shell_threshold = np.median(M_shell[1:]/M_shell[:-1])**2
-    if M_shell[-1]/M_shell[-2] > M_shell_threshold and M_shell_threshold > 1:
-        M_shell[-1] = M_shell[-2]*M_shell_threshold
     
     # Number of particles per shell
     N_shell = np.round(M_shell/m_picle).astype(int)
