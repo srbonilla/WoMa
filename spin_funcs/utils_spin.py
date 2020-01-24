@@ -357,21 +357,7 @@ def V_spheroid(R, Z):
     
     return np.pi*4/3*R*R*Z
 
-@jit(nopython=False)
-def compute_spin_planet_M(r_array, rho_e, z_array, rho_p):
-    
-    rho_p_model_inv = interp1d(rho_p, z_array)
-    R_array = r_array
-    Z_array = rho_p_model_inv(rho_e)
-    
-    M = 0.
-    
-    for i in range(1, R_array.shape[0]):
-        dV = V_spheroid(R_array[i], Z_array[i]) -  \
-             V_spheroid(R_array[i - 1], Z_array[i - 1])
-        M += rho_e[i]*dV
-        
-    return M
+
 
 # Particle placement functions
 @njit
@@ -466,78 +452,6 @@ def _V_theta_analytical(theta, shell_config):
     
     return V
 
-# =============================================================================
-# def compute_M_shell(R_shell, Z_shell, r_array, rho_e, z_array, rho_p):
-#     
-#     M_shell = np.zeros_like(R_shell)
-#     Re = np.max(r_array[rho_e > 0])
-#     Rp = np.max(z_array[rho_p > 0])
-#     
-#     rho_e_model     = interp1d(r_array, rho_e)
-#     rho_p_model_inv = interp1d(rho_p, z_array)
-#     
-#     for i in range(M_shell.shape[0]):
-#         if i == 0:
-#             
-#             R_l = 1e-5
-#             Z_l = 1e-5
-#             R_h = R_shell[i + 1]
-#             Z_h = Z_shell[i + 1]
-#             R_0 = R_shell[i]
-#             Z_0 = Z_shell[i]
-#             
-#             R_h = (R_h + R_0)/2
-#             Z_h = (Z_h + Z_0)/2
-#             
-#             # set all Zs with model
-#             
-#         elif i == M_shell.shape[0] - 1:
-#             
-#             R_l = R_shell[i - 1]
-#             Z_l = Z_shell[i - 1]
-#             R_h = Re
-#             Z_h = Rp
-#             R_0 = R_shell[i]
-#             Z_0 = Z_shell[i]
-#             
-#             R_l = (R_l + R_0)/2
-#             Z_l = (Z_l + Z_0)/2
-#             
-#         else:
-#             
-#             R_l = R_shell[i - 1]
-#             Z_l = Z_shell[i - 1]
-#             R_h = R_shell[i + 1]
-#             Z_h = Z_shell[i + 1]
-#             R_0 = R_shell[i]
-#             Z_0 = Z_shell[i]
-#             
-#             R_l = (R_l + R_0)/2
-#             Z_l = (Z_l + Z_0)/2
-#             R_h = (R_h + R_0)/2
-#             Z_h = (Z_h + Z_0)/2
-#             
-#         rho_e_temp = np.copy(rho_e)
-#         rho_p_temp = np.copy(rho_p)
-#         
-#         rho_e_temp[r_array > R_h] = 0
-#         rho_p_temp[z_array > Z_h] = 0
-#         
-#         M_shell[i] = compute_spin_planet_M(r_array, rho_e_temp,
-#                                            z_array, rho_p_temp)
-#         
-#         rho_e_temp = np.copy(rho_e)
-#         rho_p_temp = np.copy(rho_p)
-#         
-#         rho_e_temp[r_array > R_l] = 0
-#         rho_p_temp[z_array > Z_l] = 0
-#         
-#         M_shell[i] = M_shell[i] - \
-#             compute_spin_planet_M(r_array, rho_e_temp,
-#                                   z_array, rho_p_temp)
-#     return M_shell
-# =============================================================================
-
 @jit(nopython=False)
 def compute_M_array(r_array, rho_e, z_array, rho_p):
     
@@ -547,12 +461,27 @@ def compute_M_array(r_array, rho_e, z_array, rho_p):
     
     M = np.zeros_like(R_array)
     
+    Rp = np.max(z_array[rho_p > 0])
+    
     for i in range(1, R_array.shape[0]):
+        if Z_array[i] > Rp:
+            Z_array[i] = Rp
+            
+        if rho_e[i] == 0:
+            break
+        
         dV = V_spheroid(R_array[i], Z_array[i]) -  \
              V_spheroid(R_array[i - 1], Z_array[i - 1])
         M[i] = rho_e[i]*dV
         
     return M
+
+@jit(nopython=False)
+def compute_spin_planet_M(r_array, rho_e, z_array, rho_p):
+    
+    M = compute_M_array(r_array, rho_e, z_array, rho_p)
+        
+    return np.sum(M)
     
 def compute_M_shell(R_shell, r_array, rho_e, z_array, rho_p):
     
@@ -587,65 +516,9 @@ def compute_M_shell(R_shell, r_array, rho_e, z_array, rho_p):
             R_l = (R_l + R_0)/2
             R_h = (R_h + R_0)/2
             
-        M_shell[i] = M_cum_model(R_h) - M_cum_model(R_l)            
+        M_shell[i] = M_cum_model(R_h) - M_cum_model(R_l)   
         
     return M_shell
-
-# =============================================================================
-# def compute_M_shell(R_shell, R_shell_outer, r_array, rho_e, z_array, rho_p):
-#     
-#     M_shell = np.zeros_like(R_shell)
-#     Re = np.max(r_array[rho_e > 0])
-#     Rp = np.max(z_array[rho_p > 0])
-#     
-#     rho_e_model     = interp1d(r_array, rho_e)
-#     rho_p_model_inv = interp1d(rho_p, z_array)
-#     
-#     for i in range(M_shell.shape[0]):
-#         if i == 0:
-#             
-#             R_l = 1e-5
-#             R_h = R_shell_outer[i]
-#             
-#             Z_l = rho_p_model_inv(rho_e_model(R_l))
-#             Z_h = rho_p_model_inv(rho_e_model(R_l))
-#             
-#         elif i == M_shell.shape[0] - 1:
-#             
-#             R_l = R_shell_outer[i - 1]
-#             R_h = Re
-#             
-#             Z_l = rho_p_model_inv(rho_e_model(R_l))
-#             Z_h = Rp
-#             
-#         else:
-#             
-#             R_l = R_shell_outer[i - 1]
-#             R_h = R_shell_outer[i]
-#             
-#             Z_l = rho_p_model_inv(rho_e_model(R_l))
-#             Z_h = rho_p_model_inv(rho_e_model(R_l))
-#             
-#         rho_e_temp = np.copy(rho_e)
-#         rho_p_temp = np.copy(rho_p)
-#         
-#         rho_e_temp[r_array > R_h] = 0
-#         rho_p_temp[z_array > Z_h] = 0
-#         
-#         M_shell[i] = compute_spin_planet_M(r_array, rho_e_temp,
-#                                            z_array, rho_p_temp)
-#         
-#         rho_e_temp = np.copy(rho_e)
-#         rho_p_temp = np.copy(rho_p)
-#         
-#         rho_e_temp[r_array > R_l] = 0
-#         rho_p_temp[z_array > Z_l] = 0
-#         
-#         M_shell[i] = M_shell[i] - \
-#             compute_spin_planet_M(r_array, rho_e_temp,
-#                                   z_array, rho_p_temp)
-#     return M_shell
-# =============================================================================
 
 # main function 
 def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
