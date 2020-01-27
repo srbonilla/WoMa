@@ -240,7 +240,8 @@ def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
 
     rho_e_model = interp1d(r_array, rho_e, bounds_error=False, fill_value=0)
     rho_p_model = interp1d(z_array, rho_p, bounds_error=False, fill_value=0)
-    rho_p_model_inv = interp1d(rho_p, z_array)
+    index = np.where(rho_p==0)[0][0] + 1
+    rho_p_model_inv = interp1d(rho_p[:index], z_array[:index])
 
     r_0 = r
     r_1 = r_array[(rho_e > 0).sum() - 1]
@@ -439,7 +440,6 @@ def _i(theta, R, Z):
     
     return i
 
-
 def _V_theta_analytical(theta, shell_config):
     
     Rm1 = shell_config[0][0]
@@ -455,21 +455,18 @@ def _V_theta_analytical(theta, shell_config):
 @jit(nopython=False)
 def compute_M_array(r_array, rho_e, z_array, rho_p):
     
-    rho_p_model_inv = interp1d(rho_p, z_array)
+    index = np.where(rho_p == 0)[0][0] + 1
+    rho_p_model_inv = interp1d(rho_p[:index], z_array[:index])
     R_array = r_array
     Z_array = rho_p_model_inv(rho_e)
     
     M = np.zeros_like(R_array)
     
-    Rp = np.max(z_array[rho_p > 0])
-    
     for i in range(1, R_array.shape[0]):
-        if Z_array[i] > Rp:
-            Z_array[i] = Rp
             
         if rho_e[i] == 0:
             break
-        
+            
         dV = V_spheroid(R_array[i], Z_array[i]) -  \
              V_spheroid(R_array[i - 1], Z_array[i - 1])
         M[i] = rho_e[i]*dV
@@ -598,7 +595,8 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     densities = rho_e_model(radii)
     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
-    rho_p_model_inv = interp1d(rho_p, z_array)
+    index = np.where(rho_p==0)[0][0] + 1
+    rho_p_model_inv = interp1d(rho_p[:index], z_array[:index])
     
     R_shell       = np.unique(particles.A1_r)
     #R_shell_outer = particles.A1_r_outer.copy()
@@ -607,15 +605,8 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
        
     # Get picle mass of final configuration
     m_picle = M/N
-        
-    # return M_shell, M_shell_model
-    #M_shell = compute_M_shell(R_shell, Z_shell,
-    #                          r_array, rho_e,
-    #                          z_array, rho_p)
     
     M_shell = compute_M_shell(R_shell, r_array, rho_e, z_array, rho_p)
-    
-    print(M_shell, flush=True)
     
     # Number of particles per shell
     N_shell = np.round(M_shell/m_picle).astype(int)
