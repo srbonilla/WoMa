@@ -301,64 +301,9 @@ def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     return -1
 
 @njit
-def cubic_spline_kernel(rij, h):
-
-    gamma = 1.825742
-    H     = gamma*h
-    C     = 16/np.pi
-    u     = rij/H
-
-    fu = np.zeros(u.shape)
-
-    mask_1     = u < 1/2
-    fu[mask_1] = (3*np.power(u,3) - 3*np.power(u,2) + 0.5)[mask_1]
-
-    mask_2     = np.logical_and(u > 1/2, u < 1)
-    fu[mask_2] = (-np.power(u,3) + 3*np.power(u,2) - 3*u + 1)[mask_2]
-
-    return C*fu/np.power(H,3)
-
-@njit
-def N_neig_cubic_spline_kernel(eta):
-
-    gamma = 1.825742
-
-    return 4/3*np.pi*(gamma*eta)**3
-
-@njit
-def eta_cubic_spline_kernel(N_neig):
-
-    gamma = 1.825742
-
-    return np.cbrt(3*N_neig/4/np.pi)/gamma
-
-@njit
-def SPH_density(M, R, H):
-
-    rho_sph = np.zeros(H.shape[0])
-
-    for i in range(H.shape[0]):
-
-        rho_sph[i] = np.sum(M[i,:]*cubic_spline_kernel(R[i,:], H[i]))
-
-    return rho_sph
-
-@njit
-def _generate_M(indices, m_enc):
-
-    M = np.zeros(indices.shape)
-
-    for i in range(M.shape[0]):
-        M[i,:] = m_enc[indices[i]]
-
-    return M
-
-@njit
 def V_spheroid(R, Z):
     
     return np.pi*4/3*R*R*Z
-
-
 
 # Particle placement functions
 @njit
@@ -408,28 +353,6 @@ def spher_to_cart(r, theta, phi):
     z = r*np.cos(theta)
     
     return x, y ,z
-
-def _SPH_density(x, y, z, m, N_neig):
-    
-    x_reshaped = x.reshape((-1,1))
-    y_reshaped = y.reshape((-1,1))
-    z_reshaped = z.reshape((-1,1))
-    
-    X = np.hstack((x_reshaped, y_reshaped, z_reshaped))
-    
-    del x_reshaped, y_reshaped, z_reshaped
-    
-    nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
-    nbrs.fit(X)
-    
-    distances, indices = nbrs.kneighbors(X)
-    
-    w_edge = 2
-    h = np.max(distances, axis=1)/w_edge
-    M = _generate_M(indices, m)
-    rho_sph = SPH_density(M, distances, h)
-    
-    return rho_sph
 
 @njit
 def _i(theta, R, Z):

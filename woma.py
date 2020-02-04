@@ -1742,6 +1742,7 @@ class SpinPlanet():
                 Tw_max = Tw_try
             
         self.Tw_min = Tw_max
+        print("Minimum period: %.3f hours" % (self.Tw_min))
 
 
     def spin(self):

@@ -340,7 +340,6 @@ def picle_placement_L1(r_array, rho_e, z_array, rho_p, Tw, N,
         A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L1)
         A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L1)
 
-    #print("Internal energy u computed\n")
     # Smoothing lengths, crudely estimated from the densities
     w_edge  = 2     # r/h at which the kernel goes to zero
     A1_h       = np.cbrt(N_neig*A1_m / (4/3*np.pi*A1_rho)) / w_edge
