@@ -240,7 +240,8 @@ def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
 
     rho_e_model = interp1d(r_array, rho_e, bounds_error=False, fill_value=0)
     rho_p_model = interp1d(z_array, rho_p, bounds_error=False, fill_value=0)
-    rho_p_model_inv = interp1d(rho_p, z_array)
+    index = np.where(rho_p==0)[0][0] + 1
+    rho_p_model_inv = interp1d(rho_p[:index], z_array[:index])
 
     r_0 = r
     r_1 = r_array[(rho_e > 0).sum() - 1]
@@ -300,78 +301,9 @@ def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     return -1
 
 @njit
-def cubic_spline_kernel(rij, h):
-
-    gamma = 1.825742
-    H     = gamma*h
-    C     = 16/np.pi
-    u     = rij/H
-
-    fu = np.zeros(u.shape)
-
-    mask_1     = u < 1/2
-    fu[mask_1] = (3*np.power(u,3) - 3*np.power(u,2) + 0.5)[mask_1]
-
-    mask_2     = np.logical_and(u > 1/2, u < 1)
-    fu[mask_2] = (-np.power(u,3) + 3*np.power(u,2) - 3*u + 1)[mask_2]
-
-    return C*fu/np.power(H,3)
-
-@njit
-def N_neig_cubic_spline_kernel(eta):
-
-    gamma = 1.825742
-
-    return 4/3*np.pi*(gamma*eta)**3
-
-@njit
-def eta_cubic_spline_kernel(N_neig):
-
-    gamma = 1.825742
-
-    return np.cbrt(3*N_neig/4/np.pi)/gamma
-
-@njit
-def SPH_density(M, R, H):
-
-    rho_sph = np.zeros(H.shape[0])
-
-    for i in range(H.shape[0]):
-
-        rho_sph[i] = np.sum(M[i,:]*cubic_spline_kernel(R[i,:], H[i]))
-
-    return rho_sph
-
-@njit
-def _generate_M(indices, m_enc):
-
-    M = np.zeros(indices.shape)
-
-    for i in range(M.shape[0]):
-        M[i,:] = m_enc[indices[i]]
-
-    return M
-
-@njit
 def V_spheroid(R, Z):
     
     return np.pi*4/3*R*R*Z
-
-@jit(nopython=False)
-def compute_spin_planet_M(r_array, rho_e, z_array, rho_p):
-    
-    rho_p_model_inv = interp1d(rho_p, z_array)
-    R_array = r_array
-    Z_array = rho_p_model_inv(rho_e)
-    
-    M = 0.
-    
-    for i in range(1, R_array.shape[0]):
-        dV = V_spheroid(R_array[i], Z_array[i]) -  \
-             V_spheroid(R_array[i - 1], Z_array[i - 1])
-        M += rho_e[i]*dV
-        
-    return M
 
 # Particle placement functions
 @njit
@@ -422,28 +354,6 @@ def spher_to_cart(r, theta, phi):
     
     return x, y ,z
 
-def _SPH_density(x, y, z, m, N_neig):
-    
-    x_reshaped = x.reshape((-1,1))
-    y_reshaped = y.reshape((-1,1))
-    z_reshaped = z.reshape((-1,1))
-    
-    X = np.hstack((x_reshaped, y_reshaped, z_reshaped))
-    
-    del x_reshaped, y_reshaped, z_reshaped
-    
-    nbrs = NearestNeighbors(n_neighbors=N_neig, algorithm='kd_tree', metric='euclidean', leaf_size=15)
-    nbrs.fit(X)
-    
-    distances, indices = nbrs.kneighbors(X)
-    
-    w_edge = 2
-    h = np.max(distances, axis=1)/w_edge
-    M = _generate_M(indices, m)
-    rho_sph = SPH_density(M, distances, h)
-    
-    return rho_sph
-
 @njit
 def _i(theta, R, Z):
     
@@ -452,7 +362,6 @@ def _i(theta, R, Z):
     i = i + R*R*Z
     
     return i
-
 
 def _V_theta_analytical(theta, shell_config):
     
@@ -465,7 +374,72 @@ def _V_theta_analytical(theta, shell_config):
     V = V/(_i(np.pi, R1, Z1) - _i(np.pi, Rm1, Zm1))
     
     return V
+
+@jit(nopython=False)
+def compute_M_array(r_array, rho_e, z_array, rho_p):
     
+    index = np.where(rho_p == 0)[0][0] + 1
+    rho_p_model_inv = interp1d(rho_p[:index], z_array[:index])
+    R_array = r_array
+    Z_array = rho_p_model_inv(rho_e)
+    
+    M = np.zeros_like(R_array)
+    
+    for i in range(1, R_array.shape[0]):
+            
+        if rho_e[i] == 0:
+            break
+            
+        dV = V_spheroid(R_array[i], Z_array[i]) -  \
+             V_spheroid(R_array[i - 1], Z_array[i - 1])
+        M[i] = rho_e[i]*dV
+        
+    return M
+
+@jit(nopython=False)
+def compute_spin_planet_M(r_array, rho_e, z_array, rho_p):
+    
+    M = compute_M_array(r_array, rho_e, z_array, rho_p)
+        
+    return np.sum(M)
+    
+def compute_M_shell(R_shell, r_array, rho_e, z_array, rho_p):
+    
+    M_shell = np.zeros_like(R_shell)
+    M_array = compute_M_array(r_array, rho_e, z_array, rho_p)
+    
+    Re = np.max(r_array[rho_e > 0])
+    
+    M_cum = np.cumsum(M_array)
+    M_cum_model = interp1d(r_array, M_cum)
+    
+    for i in range(M_shell.shape[0]):
+        if i == 0:
+            
+            R_l = 1e-5
+            R_0 = R_shell[i]
+            R_h = R_shell[i + 1]
+            R_h = (R_h + R_0)/2
+            
+        elif i == M_shell.shape[0] - 1:
+            
+            R_l = R_shell[i - 1]
+            R_h = Re
+            R_0 = R_shell[i]
+            R_l = (R_l + R_0)/2
+            
+        else:
+            
+            R_l = R_shell[i - 1]
+            R_h = R_shell[i + 1]
+            R_0 = R_shell[i]
+            R_l = (R_l + R_0)/2
+            R_h = (R_h + R_0)/2
+            
+        M_shell[i] = M_cum_model(R_h) - M_cum_model(R_l)   
+        
+    return M_shell
+
 # main function 
 def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     
@@ -544,52 +518,18 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     densities = rho_e_model(radii)
     particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
     
-    # Compute R, Z, rho and mass for every shell
+    index = np.where(rho_p==0)[0][0] + 1
+    rho_p_model_inv = interp1d(rho_p[:index], z_array[:index])
     
-    rho_p_model_inv = interp1d(rho_p, z_array)
-    R = particles.A1_r.copy()
-    rho_shell = rho_e_model(R)
-    Z = rho_p_model_inv(rho_shell)
-    
-    R_shell = np.unique(R)
-    Z_shell = np.unique(Z)
-    rho_shell = np.unique(rho_shell)
-    rho_shell = -np.sort(-rho_shell)
-    N_shell_original = np.zeros_like(rho_shell, dtype='int')
-    M_shell = np.zeros_like(rho_shell)
-    
-    for i in range(N_shell_original.shape[0]):
-        N_shell_original[i] = int((R == R_shell[i]).sum())
+    R_shell       = np.unique(particles.A1_r)
+    #R_shell_outer = particles.A1_r_outer.copy()
+    rho_shell     = rho_e_model(R_shell)
+    Z_shell       = rho_p_model_inv(rho_shell)
        
     # Get picle mass of final configuration
-    alpha = M/particles.A1_m.sum()
-    #m_picle = alpha*np.median(particles.A1_m)
-    m_picle = np.median(particles.A1_m)*Rp/Re
+    m_picle = M/N
     
-    # Compute mass of every shell
-    for i in range(M_shell.shape[0] - 1):
-        if i == 0:
-            
-            M_shell[i] = N_shell_original[i]*m_picle
-            
-        else:
-            R_l = R_shell[i - 1]
-            Z_l = Z_shell[i - 1]
-            R_h = R_shell[i + 1]
-            Z_h = Z_shell[i + 1]
-            R_0 = R_shell[i]
-            Z_0 = Z_shell[i]
-            
-            R_l = (R_l + R_0)/2
-            Z_l = (Z_l + Z_0)/2
-            R_h = (R_h + R_0)/2
-            Z_h = (Z_h + Z_0)/2
-            
-            M_shell[i] = rho_shell[i]*V_theta(0, np.pi, [[R_l, Z_l], [R_h, Z_h]])
-    
-    # Last shell
-    M_shell[-1] = M - M_shell.sum()
-    if M_shell[-1] < 0: M_shell[-1] = 0
+    M_shell = compute_M_shell(R_shell, r_array, rho_e, z_array, rho_p)
     
     # Number of particles per shell
     N_shell = np.round(M_shell/m_picle).astype(int)
