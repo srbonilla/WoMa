@@ -46,13 +46,10 @@ Notation etc.
 + Particle is abbreviated to `picle`.
 
 
-To Do etc. (Jacob thoughts in progress)
+To Do:
 ---------------------------------------
 + Change the iterations to be for some tolerance not a number of iterations
 + Move the add-L3 function out of the class, like the others
-+ Add documentation to examples and basic instructions to readme
 + Make into a PyPI package
 + Add all output variables to the hdf5 file
-+ Add doc strings and prints to the examples, explain what they're trying to do
-    and how, so that someone can copy them and understand.
-+ Change T_rho_type options to string not int for input (and internal too?)
+
