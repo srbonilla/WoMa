@@ -229,8 +229,15 @@ def rho_P_T(P, T, mat_id):
         rho1 = 1e6
     elif mat_type == gv.type_HM80:
         assert T > 0
-        rho0 = 1e-6
-        rho1 = 1e6
+        if mat_id == gv.id_HM80_HHe:
+            rho0 = 1e-1
+            rho1 = 1e5
+        elif mat_id == gv.id_HM80_ice:
+            rho0 = hm80._rho_0_material(mat_id)
+            rho1 = 1e5
+        elif mat_id == gv.id_HM80_rock:
+            rho0 = hm80._rho_0_material(mat_id)
+            rho1 = 40000
     elif mat_type == gv.type_SESAME:
         assert T > 0
         assert P > 0

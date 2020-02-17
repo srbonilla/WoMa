@@ -9,6 +9,30 @@ Created on Thu Jul 25 14:37:00 2019
 import numpy as np
 from numba import njit
 import glob_vars as gv
+import os
+
+def load_u_cold_array(mat_id):
+    """ Load precomputed values of cold internal energy for a given material.
+
+        Returns:
+            u_cold_array ([float]):
+                Precomputed values of cold internal energy
+                with function _create_u_cold_array() (SI).
+    """
+    if mat_id == gv.id_HM80_ice:
+        u_cold_array = np.load(gv.Fp_u_cold_HM80_ice)
+    elif mat_id == gv.id_HM80_rock:
+        u_cold_array = np.load(gv.Fp_u_cold_HM80_rock)
+    else:
+        raise ValueError("Invalid material ID")
+
+    return u_cold_array
+
+# load u cold arrays
+if os.path.isfile(gv.Fp_u_cold_HM80_ice):
+    A1_u_cold_HM80_ice = load_u_cold_array(gv.id_HM80_ice)
+if os.path.isfile(gv.Fp_u_cold_HM80_rock):
+    A1_u_cold_HM80_rock = load_u_cold_array(gv.id_HM80_rock)
 
 def load_table_HM80(Fp_table):
     """ Load and return the table file data.
@@ -150,7 +174,222 @@ def P_u_rho(u, rho, mat_id):
     return np.exp(log_P)
 
 @njit
-def C_V_rho_T_HM80_HHe(rho, T):
+def T_u_rho(u, rho, mat_id):
+    """ Return the HM80 equation of state temperature as a function of density and 
+        sp. int. energy.
+
+        Args:
+            rho (float)
+                Density (kg m^-3).
+
+            u (float)
+                Specific internal energy (J kg^-1).
+
+            mat_id (int)
+                Material id.
+
+        Returns:
+            P (float)
+                Pressure (Pa).
+    """
+    # Choose the arrays from the global variables
+    if (mat_id == gv.id_HM80_HHe):
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step,  
+         A2_log_T)  = (
+            log_rho_min_HM80_HHe, num_rho_HM80_HHe, log_rho_step_HM80_HHe, 
+            log_u_min_HM80_HHe, num_u_HM80_HHe, log_u_step_HM80_HHe,
+            A2_log_T_HM80_HHe
+            )
+    elif (mat_id == gv.id_HM80_ice):
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, 
+         A2_log_T)  = (
+            log_rho_min_HM80_ice, num_rho_HM80_ice, log_rho_step_HM80_ice, 
+            log_u_min_HM80_ice, num_u_HM80_ice, log_u_step_HM80_ice,
+            A2_log_T_HM80_ice
+            )
+    elif (mat_id == gv.id_HM80_rock):
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, 
+         A2_log_T)  = (
+            log_rho_min_HM80_rock, num_rho_HM80_rock, log_rho_step_HM80_rock, 
+            log_u_min_HM80_rock, num_u_HM80_rock, log_u_step_HM80_rock,
+            A2_log_T_HM80_rock
+            )
+    else:
+       raise ValueError("Invalid material ID")
+
+    # Convert to log
+    log_rho = np.log(rho)
+    log_u   = np.log(u)
+
+    # 2D interpolation (bilinear with log(rho), log(u)) to find P(rho, u).
+    # If rho and/or u are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    idx_rho = int(np.floor((log_rho - log_rho_min) / log_rho_step))
+    idx_u   = int(np.floor((log_u - log_u_min) / log_u_step))
+
+    # Check if outside the table
+    if idx_rho == -1:
+        idx_rho = 0
+    elif idx_rho >= num_rho - 1:
+        idx_rho = num_rho - 2
+    if idx_u == -1:
+        idx_u   = 0
+    elif idx_u >= num_u - 1:
+        idx_u   = num_u - 2
+
+    intp_rho    = (log_rho - log_rho_min - idx_rho*log_rho_step) / log_rho_step
+    intp_u      = (log_u - log_u_min - idx_u*log_u_step) / log_u_step
+
+    log_T_1 = A2_log_T[idx_rho, idx_u]
+    log_T_2 = A2_log_T[idx_rho, idx_u + 1]
+    log_T_3 = A2_log_T[idx_rho + 1, idx_u]
+    log_T_4 = A2_log_T[idx_rho + 1, idx_u + 1]
+
+    # log_P(rho, u)
+    log_T   = ((1 - intp_rho) * ((1 - intp_u) * log_T_1 + intp_u * log_T_2)
+               + intp_rho * ((1 - intp_u) * log_T_3 + intp_u * log_T_4))
+
+    # Convert back from log
+    return np.exp(log_T)
+
+@njit
+def _rho_0_material(mat_id):
+    """ Returns rho0 for a given material id. u_{cold}(rho0) = 0
+
+        Args:
+            mat_id (int)
+                Material id.
+
+        Returns:
+            rho0 (double)
+                Density (SI).
+
+    """
+    if (mat_id == gv.id_HM80_HHe):
+        return 0.
+    elif (mat_id == gv.id_HM80_ice):
+        return 947.8
+    elif (mat_id == gv.id_HM80_rock):
+        return 2704.8
+    else:
+        raise ValueError("Invalid material ID")
+        
+@njit
+def u_cold(rho, mat_id, N):
+    """ Computes internal energy cold.
+
+        Args:
+            rho (float)
+                Density (SI).
+
+            mat_id (int)
+                Material id.
+
+            N (int)
+                Number of subdivisions for the numerical integral.
+
+        Returns:
+            u_cold (float)
+                Cold Specific internal energy (SI).
+    """
+    assert(rho >= 0)
+    if mat_id == gv.id_HM80_HHe:
+        return 0.
+    
+    mat_type    = mat_id // gv.type_factor
+    if (mat_type == gv.type_HM80):
+        rho0 = _rho_0_material(mat_id)
+        drho = (rho - rho0)/N
+        x = rho0
+        u_cold = 1e-10
+
+        for j in range(N):
+            x += drho
+            u_cold += P_u_rho(u_cold, x, mat_id)*drho/x**2
+            
+    else:
+        raise ValueError("Invalid material ID")
+
+    return u_cold
+        
+@njit
+def _create_u_cold_array(mat_id):
+    """ Computes values of the cold internal energy and stores it to save
+        computation time in future calculations.
+        It ranges from density = 100 kg/m^3 to 100000 kg/m^3
+
+        Args:
+            mat_id (int):
+                Material id.
+
+        Returns:
+            u_cold_array ([float])
+    """
+    N_row = 10000
+    u_cold_array = np.zeros((N_row,))
+    rho_min = 100
+    rho_max = 100000
+    N_u_cold = 10000
+
+    rho = rho_min
+    drho = (rho_max - rho_min)/(N_row - 1)
+
+    for i in range(N_row):
+        u_cold_array[i] = u_cold(rho, mat_id, N_u_cold)
+        rho = rho + drho
+
+    return u_cold_array
+
+@njit
+def u_cold_tab(rho, mat_id):
+    """ Fast computation of cold internal energy using the table previously
+        computed.
+
+        Args:
+            rho (float):
+                Density (SI).
+
+            mat_id (int):
+                Material id.
+
+        Returns:
+            interpolation (float):
+                cold Specific internal energy (SI).
+    """
+    
+    if mat_id == gv.id_HM80_HHe:
+        return 0.
+    elif mat_id == gv.id_HM80_ice:
+        u_cold_array = A1_u_cold_HM80_ice
+    elif mat_id == gv.id_HM80_rock:
+        u_cold_array = A1_u_cold_HM80_rock
+    else:
+        raise ValueError("Invalid material ID")
+
+    N_row = u_cold_array.shape[0]
+    rho_min = 100
+    rho_max = 100000
+
+    drho = (rho_max - rho_min)/(N_row - 1)
+
+    a = int(((rho - rho_min)/drho))
+    b = a + 1
+
+    if a >= 0 and a < (N_row - 1):
+        interpolation = u_cold_array[a]
+        interpolation += ((u_cold_array[b] - u_cold_array[a])/drho)*(rho - rho_min - a*drho)
+
+    elif rho < rho_min:
+        interpolation = u_cold_array[0]
+    else:
+        interpolation = u_cold_array[int(N_row - 1)]
+        interpolation += ((u_cold_array[int(N_row - 1)] - u_cold_array[int(N_row) - 2])/drho)*(rho - rho_max)
+
+    return interpolation
+
+@njit
+def C_V_HM80(rho, T, mat_id):
     """ Return the HM80 hydrogen-helium sp. heat capacity as a function of 
         density and temperature.
 
@@ -167,43 +406,54 @@ def C_V_rho_T_HM80_HHe(rho, T):
     """
     # Convert to cgs for HM80's units
     rho_cgs = rho * 1e-3
-
-    A1_c    = [2.3638, -4.9842e-5, 1.1788e-8, -3.8101e-4, 2.6182, 0.45053]
-
-    C_V = (A1_c[0] + A1_c[1]*T + A1_c[2]*T**2 + A1_c[3]*T*rho_cgs 
-           + A1_c[4]*rho_cgs + A1_c[5]*rho_cgs**2) * gv.R_gas*1e7 / m_mol_HHe
+    R_gas_cgs = gv.R_gas * 1e+7
+    
+    if mat_id == gv.id_HM80_HHe:
+        
+        A1_c    = [2.3638, -4.9842e-5, 1.1788e-8, -3.8101e-4, 2.6182, 0.45053]
+    
+        C_V = (A1_c[0] + A1_c[1]*T + A1_c[2]*T**2 + A1_c[3]*T*rho_cgs 
+               + A1_c[4]*rho_cgs + A1_c[5]*rho_cgs**2) * gv.R_gas*1e7 / m_mol_HHe
+               
+    elif mat_id == gv.id_HM80_ice:
+        # H20, CH4, NH3
+        A1_abun = np.array([0.565, 0.325, 0.11])
+        A1_nu   = np.array([3, 5, 4])
+        f_nu    = 2.067
+        A1_m_mol     = np.array([18, 18, 18])
+        m_mol = np.sum(A1_m_mol * A1_abun)
+        C_V = (np.sum(A1_abun * A1_nu) * f_nu
+                   * R_gas_cgs / m_mol)
+        
+    elif mat_id == gv.id_HM80_rock:
+        # SiO, MgO, FeS, FeO
+        A1_abun = np.array([0.38, 0.25, 0.25, 0.12])
+        A1_nu   = np.array([3, 2, 2, 2])
+        f_nu    = 3
+        A1_m_mol     = np.array([44, 40, 88, 72])
+        m_mol = np.sum(A1_m_mol * A1_abun)
+        C_V = (np.sum(A1_abun * A1_nu) * f_nu 
+                   * R_gas_cgs / m_mol)
+        
+    else:
+        raise ValueError("Material not fully implemented yet")
 
     # Convert back to SI
     return C_V * 1e-4
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Return the HM80 equation of state sp. int. energy as a function of 
-        density and temperature.
+    mat_type    = mat_id // gv.type_factor
 
-        Args:
-            rho (float)
-                Density (kg m^-3).
-
-            T (float)
-                Temperature (K)
-
-            mat_id (int)
-                Material id.
-
-        Returns:
-            u (float)
-                Specific internal energy (J kg^-1).
-    """
-    if mat_id == gv.id_HM80_HHe:
-        # No cold curve
-        u_cold  = 0.
+    if (mat_type == gv.type_HM80):
+        cv = C_V_HM80(rho, T, mat_id)
+        u = u_cold_tab(rho, mat_id) + cv*T
         
-        C_V     = C_V_rho_T_HM80_HHe(rho, T)
     else:
-        raise ValueError("Non-HHe HM80 materials not fully implemented yet")
+        raise ValueError("Invalid material ID")
 
-    return u_cold + C_V * T
+    return u
+
 
 @njit
 def T_rho_HM80_HHe(rho, rho_prv, T_prv):
