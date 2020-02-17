@@ -85,6 +85,9 @@ Fp_u_cold_Til_water     = dir_data + "u_cold_array_Til_water.npy"
 Fp_HM80_HHe         = dir_data + "HM80_HHe.txt"
 Fp_HM80_ice         = dir_data + "HM80_ice.txt"
 Fp_HM80_rock        = dir_data + "HM80_rock.txt"
+# HM80 cold curves
+Fp_u_cold_HM80_ice    = dir_data + "u_cold_array_HM80_ice.npy"
+Fp_u_cold_HM80_rock   = dir_data + "u_cold_array_HM80_rock.npy"
 # SESAME tables
 Fp_SESAME_iron      = dir_data + "SESAME_iron_2140.txt"
 Fp_SESAME_basalt    = dir_data + "SESAME_basalt_7530.txt"
