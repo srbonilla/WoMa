@@ -399,13 +399,15 @@ def L2_find_R1(
         )
     
     if A1_m_enc_1[-1] == 0:
-        e = "Ran out of mass for a planet made of layer 2 material.\n" + \
+        e = ("Ran out of mass for a planet made of layer 2 material %s.\n"
             "Try increasing the mass (M) or decreasing the radius (R).\n"
+            % gv.Di_id_mat[mat_id_L2])
         raise Exception(e)
 
     elif A1_m_enc_2[-1] > 0:
-        e = "Excess of mass for a planet made of layer 1 material.\n" + \
+        e = ("Excess of mass for a planet made of layer 1 material %s.\n"
             "Try decreasing the mass (M) or increasing the radius (R).\n"
+            % gv.Di_id_mat[mat_id_L2])
         raise Exception(e)
 
     for i in tqdm(range(num_attempt), desc="Finding R1 given R, M", disable=(not verbose)):

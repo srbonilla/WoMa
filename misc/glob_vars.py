@@ -42,6 +42,8 @@ Di_mat_id   = {
     "SESAME_steam"  : Di_mat_type["SESAME"]*type_factor + 6,    # 7152
     "SESAME_CO2"    : Di_mat_type["SESAME"]*type_factor + 7,    # 5212
     }
+# Invert so the ID are the keys
+Di_id_mat   = {mat_id : mat for mat, mat_id in Di_mat_id.items()}
 # Separate variables because numba can't handle dictionaries
 # Types
 type_idg    = Di_mat_type["idg"]
