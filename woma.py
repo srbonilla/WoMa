@@ -807,7 +807,6 @@ class Planet():
         self.update_attributes()
         self.print_info()
         
-
     def gen_prof_L2_given_R_M_R1(self):
         # Check for necessary input
         assert(self.R is not None)
@@ -1135,7 +1134,9 @@ class Planet():
 
         # Integrate outwards until the minimum density (or zero pressure)
         step = 1
+        print(A1_rho[-1], self.rho_min, A1_P[-1], 0)###
         while A1_rho[-1] > self.rho_min and A1_P[-1] > 0:
+            #print(step, A1_r[-1], A1_rho[-1], A1_T[-1], A1_mat_id[-1])###
             A1_r.append(A1_r[-1] + dr)
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
             A1_P.append(A1_P[-1] - gv.G*A1_m_enc[-1]*A1_rho[-1]/(A1_r[-1]**2)*dr)
@@ -1168,7 +1169,7 @@ class Planet():
         self.A1_rho     = np.append(self.A1_rho, A1_rho[1:-1])
         self.A1_u       = np.append(self.A1_u, A1_u[1:-1])
         self.A1_mat_id  = np.append(self.A1_mat_id, A1_mat_id[1:-1])
-
+        
         self.update_attributes()
         self.print_info()
 
@@ -1231,120 +1232,54 @@ class Planet():
         self.A1_R_layer         = self.A1_R_layer[:2]
         self.A1_mat_layer       = self.A1_mat_layer[:2]
         self.A1_mat_id_layer    = self.A1_mat_id_layer[:2]
-        self.A1_T_rho_type_id      = self.A1_T_rho_type_id[:2]
+        self.A1_T_rho_type_id   = self.A1_T_rho_type_id[:2]
         self.A1_T_rho_args      = self.A1_T_rho_args[:2]
         self.rho_s              = eos.rho_P_T(
             self.P_s, self.T_s, self.A1_mat_id_layer[-1])
         ###what if T_s or P_s was derived instead?
 
         # Find the radii of the inner 2 layers in isolation
-        M_tot   = np.sum(self.A1_M_layer)
-        ###Replace with a function like the identical L2 version
+        self.M = np.sum(self.A1_M_layer)
 
-        # Check the maximum radius yields a too small layer 1 mass
-        print("R_max  = %.5g m  = %.5g R_E " % (R_max, R_max / gv.R_earth))
-        self.A1_R_layer[0] = L2_spherical.L2_find_R1(
-            self.num_prof, R_max, M_tot, self.P_s, self.T_s, self.rho_s,
+        self.A1_R_layer[0], self.R = L2_spherical.L2_find_R1_R(
+            self.num_prof, self.R_max, self.A1_M_layer[0], self.A1_M_layer[1],
+            self.P_s, self.T_s, self.rho_s,
             self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], 
-            int(self.num_attempt / 2)
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], int(self.num_attempt/2)###
             )
+        self.A1_R_layer[-1] = self.R
+
+        print("Tweaking M to avoid peaks at the center of the planet...")
+        
         self.M = L2_spherical.L2_find_mass(
-            self.num_prof, R_max, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
+
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
          self.A1_mat_id) = L2_spherical.L2_integrate(
-            self.num_prof, R_max, self.M, self.P_s, self.T_s, self.rho_s,
+            self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
             self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
-        M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
-        print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
-              % (M1, M1 / gv.M_earth, M1 / M_tot))
-        assert M1 < self.A1_M_layer[0], \
-            "R_max must be big enough to yield a too low M1"
-
-        # Check the minimum radius yields a too large layer 1 mass
-        print("R_min  = %.5g m  = %.5g R_E " % (R_min, R_min / gv.R_earth))
-        self.A1_R_layer[0] = L2_spherical.L2_find_R1(
-            self.num_prof, R_min, M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
-            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
-            int(self.num_attempt / 2)
-            )
-        self.M = L2_spherical.L2_find_mass(
-            self.num_prof, R_min, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
-            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
-            )
-        (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
-         self.A1_mat_id) = L2_spherical.L2_integrate(
-            self.num_prof, R_min, self.M, self.P_s, self.T_s, self.rho_s,
-            self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
-            self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
-            )
-        M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
-        print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
-              % (M1, M1 / gv.M_earth, M1 / M_tot))
-        assert M1 > self.A1_M_layer[0], \
-            "R_min must be small enough to yield a too high M1"
-
-        # Iterate to obtain desired layer masses
-        iter    = 0
-        M1      = 0
-        while self.M_frac_tol < abs(M1 - self.A1_M_layer[0]) / M_tot:
-            R_try = (R_min + R_max) * 0.5
-            print("iter %d: R  = %.5g m  = %.5g R_E"
-                  % (iter, R_try, R_try / gv.R_earth))
-
-            self.A1_R_layer[0] = L2_spherical.L2_find_R1(
-                self.num_prof, R_try, M_tot, self.P_s, self.T_s, self.rho_s,
-                self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
-                self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
-                self.num_attempt
-                )
-            self.M = L2_spherical.L2_find_mass(
-                self.num_prof, R_try, 2 * M_tot, self.P_s, self.T_s, self.rho_s,
-                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
-                self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
-                )
-            (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
-             self.A1_mat_id) = L2_spherical.L2_integrate(
-                self.num_prof, R_try, self.M, self.P_s, self.T_s, self.rho_s,
-                self.A1_R_layer[0], self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
-                self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-                self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
-                )
-            M1  = self.A1_m_enc[self.A1_mat_id == self.A1_mat_id_layer[0]][0]
-            print("    --> M1  = %.5g kg  = %.5g M_E  = %.4f M_tot"
-                  % (M1, M1 / gv.M_earth, M1 / M_tot))
-
-            if M1 < self.A1_M_layer[0]:
-                R_max = R_try
-            else:
-                R_min = R_try
-
-            iter    += 1
 
         self.update_attributes()
 
         # Add the third layer
+        print("Adding the third layer on top...")
+        
         self.gen_prof_L3_given_prof_L2(
             mat            = mat_L3,
             T_rho_type_id  = T_rho_type_L3,
             T_rho_args     = T_rho_args_L3,
             rho_min        = self.rho_min,
             )
+
+        print("Done!")
 
 # ============================================================================ #
 #                       Spining profile classes                                #
