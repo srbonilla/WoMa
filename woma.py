@@ -1134,17 +1134,24 @@ class Planet():
 
         # Integrate outwards until the minimum density (or zero pressure)
         step = 1
-        print(A1_rho[-1], self.rho_min, A1_P[-1], 0)###
-        while A1_rho[-1] > self.rho_min and A1_P[-1] > 0:
-            #print(step, A1_r[-1], A1_rho[-1], A1_T[-1], A1_mat_id[-1])###
+        while A1_rho[-1] > self.rho_min:
             A1_r.append(A1_r[-1] + dr)
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
             A1_P.append(A1_P[-1] - gv.G*A1_m_enc[-1]*A1_rho[-1]/(A1_r[-1]**2)*dr)
-            # Update T-rho relation variables 
+            if A1_P[-1] <= 0:
+                # Add dummy values which will be removed along with the -ve P
+                A1_rho.append(0)
+                A1_T.append(0)
+                A1_u.append(0)
+                A1_mat_id.append(0)
+                break
+            # Update the T-rho parameters
             if (self.A1_T_rho_type_id[2] == gv.type_adb and
                 mat_id_L3 == gv.id_HM80_HHe):
-                # T_rho_args = [rho_prv, T_prv]
-                self.A1_T_rho_args[2]   = [A1_rho[-1], A1_T[-1]]
+                self.A1_T_rho_args[2]   = set_T_rho_args(
+                    A1_T[-1], A1_rho[-1], self.A1_T_rho_type_id[2], 
+                    self.A1_T_rho_args[2], mat_id_L3
+                    )
             rho = eos.find_rho(
                 A1_P[-1], mat_id_L3, self.A1_T_rho_type_id[2],
                 self.A1_T_rho_args[2], 0.9*A1_rho[-1], A1_rho[-1]
@@ -1246,7 +1253,7 @@ class Planet():
             self.P_s, self.T_s, self.rho_s,
             self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0], self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], int(self.num_attempt/2)###
+            self.A1_T_rho_type_id[1], self.A1_T_rho_args[1], self.num_attempt
             )
         self.A1_R_layer[-1] = self.R
 

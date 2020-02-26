@@ -454,11 +454,10 @@ def u_rho_T(rho, T, mat_id):
 
     return u
 
-
 @njit
 def T_rho_HM80_HHe(rho, rho_prv, T_prv):
     """ Return the HM80 equation of state temperature as a function of density
-        for the hydrogen-helium atmosphere.
+        for the hydrogen-helium atmosphere, assuming a small change in both.
 
         Args:
             rho (float)
@@ -485,5 +484,6 @@ def T_rho_HM80_HHe(rho, rho_prv, T_prv):
                 + A1_b[5]*x**2)
         
     y   = y_prv + dy_dx(x_prv, y_prv) * (x - x_prv)
-
+    
     return np.exp(y)
+    

@@ -9,10 +9,10 @@ Created on Thu Jul 25 16:37:58 2019
 from numba import njit
 import glob_vars as gv
 import numpy as np
-#import idg
-#import hm80
-#import tillotson
-#import sesame
+import idg
+import hm80
+import tillotson
+import sesame
 
 @njit
 def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
@@ -34,7 +34,7 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
         Returns:
             Temperature (SI)
     """
-    #mat_type    = mat_id // gv.type_factor
+    mat_type    = mat_id // gv.type_factor
 
     # T = K*rho**alpha, T_rho_args = [K, alpha]
     if (T_rho_type_id == gv.type_rho_pow):
@@ -44,20 +44,17 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
         return T
 
     # Adiabatic, T_rho_args = [s_adb], [rho_prv, T_prv], or [T rho^(1-gamma)]
-# =============================================================================
-#     elif T_rho_type_id == gv.type_adb:
-#         if mat_type == gv.type_idg:
-#             # T rho^(1-gamma) = constant
-#             gamma   = idg.idg_gamma(mat_id)
-#             return T_rho_args[0] * rho**(gamma - 1)
-#         elif mat_id == gv.id_HM80_HHe:
-#             return hm80.T_rho_HM80_HHe(rho, T_rho_args[0], T_rho_args[1])
-#         elif mat_type == gv.type_SESAME:
-#             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
-#         elif mat_type == gv.type_Til:
-#             raise ValueError("Entropy not implemented for this material type")
-# 
-# =============================================================================
+    elif T_rho_type_id == gv.type_adb:
+        if mat_type == gv.type_idg:
+            # T rho^(1-gamma) = constant
+            gamma   = idg.idg_gamma(mat_id)
+            return T_rho_args[0] * rho**(gamma - 1)
+        elif mat_id == gv.id_HM80_HHe:
+            return hm80.T_rho_HM80_HHe(rho, T_rho_args[0], T_rho_args[1])
+        # elif mat_type == gv.type_SESAME:
+        #     return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
+        elif mat_type == gv.type_Til:
+            raise ValueError("Entropy not implemented for this material type")
     else:
         raise ValueError("T_rho_type_id not implemented")
         
@@ -85,29 +82,27 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
             T_rho_args ([float])
                 T-rho parameters (for a single layer). See woma.Planet.
     """
-    #mat_type    = mat_id // gv.type_factor
+    mat_type    = mat_id // gv.type_factor
 
-    # T = K*rho**alpha, T_rho_args = [K, alpha]
+    # Power: T = K*rho**alpha, T_rho_args = [K, alpha]
     if T_rho_type_id == gv.type_rho_pow:
-        T_rho_args[0]   = T * rho**(-T_rho_args[1])
-        #T_rho_args[0]   = T * np.power(rho, -T_rho_args[1])
+        T_rho_args[0]   = T * rho**-T_rho_args[1]
 
-# =============================================================================
-#     # Adiabatic, T_rho_args = [s_adb,], [A2_x_y_adb_HM80_HHe], or 
-#     # [T rho^(1-gamma),]
-#     elif T_rho_type_id == gv.type_adb:
-#         if mat_type == gv.type_idg:
-#             gamma   = idg.idg_gamma(mat_id)
-#             T_rho_args[0]   = T * rho**(1 - gamma)
-#             
-#         elif mat_id == gv.id_HM80_HHe:
-#             raise ValueError("Relation not implemented for HM80 materials")
-#             
-#         elif mat_type == gv.type_SESAME:
-#             T_rho_args[0]   = s_rho_T(rho, T, mat_id)
-# 
-#     else:
-#         raise ValueError("T-rho relation not implemented")
-# =============================================================================
+    # Adiabatic: T_rho_args = [T rho^(1-gamma),], [rho_prv, T_prv], or [s_adb,]
+    elif T_rho_type_id == gv.type_adb:
+        if mat_type == gv.type_idg:
+            gamma   = idg.idg_gamma(mat_id)
+            T_rho_args[0]   = T * rho**(1 - gamma)
+            
+        elif mat_id == gv.id_HM80_HHe:
+            T_rho_args[0]   = rho
+            T_rho_args[1]   = T
+            
+        elif mat_type == gv.type_SESAME:
+            # T_rho_args[0]   = s_rho_T(rho, T, mat_id)
+            raise ValueError("Relation not implemented for SESAME materials")
+
+    else:
+        raise ValueError("T-rho relation not implemented")
 
     return T_rho_args
