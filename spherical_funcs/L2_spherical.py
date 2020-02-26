@@ -384,6 +384,7 @@ def L2_find_R1(
     R1_min = 0.
     R1_max = R
     
+    # Check all material 2, should be too low density overall
     rho_s_L2 = eos.rho_P_T(P_s, T_s, mat_id_L2)
 
     A1_r, A1_m_enc_1, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
@@ -391,6 +392,7 @@ def L2_find_R1(
         T_rho_args_L2
         )
     
+    # Check all material 1, should be too dense overall
     rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
     
     A1_r, A1_m_enc_2, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
