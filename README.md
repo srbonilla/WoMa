@@ -1,14 +1,21 @@
 WoMa
-======
+====
 
-A python solver of the differential equations of a planet in hydrostatic
-equilibrium for rotating and non-rotating cases, and it's corresponding
-particle placement for smooth particle hydrodynamics (SPH) simulations.
+Create models of rotating and non-rotating planets by solving the differential 
+equations for hydrostatic equilibrium, and create initial conditions for 
+smoothed particle hydrodynamics (SPH) simulations by placing particles that
+precisely match the planet's profiles.
 
-It includes SEAGen (Kegerreis et al. 2019) and a new algorithm
-to suit initial conditions for spining planets in SPH simulations.
+<!-- Presented in Ruiz-Bonilla et al. (2020), MNRAS..., https://doi.org/... -->
+
+Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 
+487:4) with modifications for spinning planets.
 
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
+Jacob Kegerreis
+
+<!-- Visit https://github.com/.../woma to download the code including examples
+and for support. -->
 
 This program has been tested for a wide range of cases but not exhaustively. If
 you find any bugs, potential improvements, or features worth adding, then please
@@ -17,13 +24,14 @@ let us know!
 
 Contents
 --------
-+ `/data` Data forder for equation of state (EoS) tables. 
-+ `/eos` EoS and relation temperature-density.
-+ `/misc` Miscellaneus functions.
-+ `/spherical_funcs` Miscellaneus functions for spherical planets.
-+ `/spin_funcs` Miscellaneus functions for spinning planets.
 + `woma.py` The main program classes and functions.
-+ `examples.py` Examples to demonstrate how to use the WoMa module.
++ `tutorial.ipynb` Jupyter notebookto demonstrate how to use the WoMa module.
++ `examples.py` Other examples.
++ `data/` Data folder for equation of state (EoS) tables. 
++ `eos/` EoS and temperature-density relations.
++ `spherical_funcs/` Functions for spherical planets.
++ `spin_funcs/` Functions for spinning planets.
++ `misc/` Miscellaneous functions.
 + `LICENSE.txt` GNU general public license v3+.
 
 
