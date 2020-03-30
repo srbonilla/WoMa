@@ -42,7 +42,7 @@ def plot_planet_profiles(planet):
 
 # ============================================================================ #
 
-def test_gen_prof_L1_fix_R_given_M():
+def demo_gen_prof_L1_find_R_given_M():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_granite"],
@@ -56,11 +56,11 @@ def test_gen_prof_L1_fix_R_given_M():
 
     planet.R_max = R_earth
 
-    planet.gen_prof_L1_fix_R_given_M()
+    planet.gen_prof_L1_find_R_given_M()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L1_fix_M_given_R():
+def demo_gen_prof_L1_find_M_given_R():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_granite"],
@@ -73,11 +73,11 @@ def test_gen_prof_L1_fix_M_given_R():
 
     planet.M_max = M_earth
 
-    planet.gen_prof_L1_fix_M_given_R()
+    planet.gen_prof_L1_find_M_given_R()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L2_fix_R1_given_R_M():
+def demo_gen_prof_L2_find_R1_given_R_M():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
@@ -89,11 +89,11 @@ def test_gen_prof_L2_fix_R1_given_R_M():
         T_s             = 300,
         )
 
-    planet.gen_prof_L2_fix_R1_given_R_M()
+    planet.gen_prof_L2_find_R1_given_R_M()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L2_fix_R_given_M_R1():
+def demo_gen_prof_L2_find_R_given_M_R1():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
@@ -106,11 +106,11 @@ def test_gen_prof_L2_fix_R_given_M_R1():
         )
 
     planet.R_max = 2*R_earth
-    planet.gen_prof_L2_fix_R_given_M_R1()
+    planet.gen_prof_L2_find_R_given_M_R1()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L2_fix_M_given_R1_R():
+def demo_gen_prof_L2_find_M_given_R1_R():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
@@ -122,11 +122,11 @@ def test_gen_prof_L2_fix_M_given_R1_R():
         )
 
     planet.M_max = 2*M_earth
-    planet.gen_prof_L2_fix_M_given_R1_R()
+    planet.gen_prof_L2_find_M_given_R1_R()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L3_given_prof_L2():
+def demo_gen_prof_L3_given_prof_L2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
@@ -139,10 +139,10 @@ def test_gen_prof_L3_given_prof_L2():
         num_attempt     = 10
         )
 
-    planet.gen_prof_L2_fix_R1_given_R_M()
+    planet.gen_prof_L2_find_R1_given_R_M()
 
     mat_id_atm = "idg_N2"
-    T_rho_type_atm = 1
+    T_rho_type_atm = woma.gv.type_rho_pow
     T_rho_args_atm = [None, 0]
 
     planet.gen_prof_L3_given_prof_L2(
@@ -154,7 +154,7 @@ def test_gen_prof_L3_given_prof_L2():
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L3_fix_R1_R2_given_R_M_I():
+def demo_gen_prof_L3_find_R1_R2_given_R_M_I():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
@@ -169,11 +169,11 @@ def test_gen_prof_L3_fix_R1_R2_given_R_M_I():
         num_attempt_2   = 5
         )
 
-    planet.gen_prof_L3_fix_R1_R2_given_R_M_I()
+    planet.gen_prof_L3_find_R1_R2_given_R_M_I()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L3_fix_R2_given_R_M_R1():
+def demo_gen_prof_L3_find_R2_given_R_M_R1():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "SESAME_steam"],
@@ -185,11 +185,11 @@ def test_gen_prof_L3_fix_R2_given_R_M_R1():
         M               = M_earth
         )
 
-    planet.gen_prof_L3_fix_R2_given_R_M_R1()
+    planet.gen_prof_L3_find_R2_given_R_M_R1()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L3_fix_R1_given_R_M_R2():
+def demo_gen_prof_L3_find_R1_given_R_M_R2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
@@ -201,11 +201,11 @@ def test_gen_prof_L3_fix_R1_given_R_M_R2():
         M               = M_earth
         )
 
-    planet.gen_prof_L3_fix_R1_given_R_M_R2()
+    planet.gen_prof_L3_find_R1_given_R_M_R2()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L3_fix_M_given_R_R1_R2():
+def demo_gen_prof_L3_find_M_given_R_R1_R2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
@@ -217,11 +217,11 @@ def test_gen_prof_L3_fix_M_given_R_R1_R2():
         M_max           = 2*M_earth
         )
 
-    planet.gen_prof_L3_fix_M_given_R_R1_R2()
+    planet.gen_prof_L3_find_M_given_R_R1_R2()
 
     plot_planet_profiles(planet)
 
-def test_gen_prof_L3_fix_R_given_M_R1_R2():
+def demo_gen_prof_L3_find_R_given_M_R1_R2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
@@ -234,16 +234,14 @@ def test_gen_prof_L3_fix_R_given_M_R1_R2():
         R_max           = 2*R_earth
         )
 
-    planet.gen_prof_L3_fix_R_given_M_R1_R2()
+    planet.gen_prof_L3_find_R_given_M_R1_R2()
 
     plot_planet_profiles(planet)
 
 # ============================================================================ #
 
 if __name__ == "__main__":    
-    # Run some standard tests
-    test_gen_prof_L1_fix_R_given_M()
-    test_gen_prof_L2_fix_R1_given_R_M()
-    test_gen_prof_L3_given_prof_L2()
+    # Run an example
+    demo_gen_prof_L2_find_R1_given_R_M()
     
     plt.show()

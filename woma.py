@@ -563,7 +563,7 @@ class Planet():
         assert(self.A1_mat_id_layer[0] is not None)
         assert(self.A1_T_rho_type_id[0] is not None)
         
-    def gen_prof_L1_fix_R_given_M(self):
+    def gen_prof_L1_find_R_given_M(self):
         """ Compute the profile of a planet with 1 layer by finding the correct
             radius for a given mass.
         """
@@ -601,7 +601,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L1_fix_M_given_R(self):
+    def gen_prof_L1_find_M_given_R(self):
         # Check for necessary input
         assert(self.R is not None or self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
@@ -662,7 +662,7 @@ class Planet():
         assert(self.A1_mat_id_layer[1] is not None)
         assert(self.A1_T_rho_type_id[1] is not None)
         
-    def gen_prof_L2_fix_R1_given_R_M(self):
+    def gen_prof_L2_find_R1_given_R_M(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.M is not None)
@@ -697,7 +697,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L2_fix_M_given_R1_R(self):
+    def gen_prof_L2_find_M_given_R1_R(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -726,7 +726,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L2_fix_R_given_M_R1(self):
+    def gen_prof_L2_find_R_given_M_R1(self):
         # Check for necessary input
         assert(self.A1_R_layer[0] is not None)
         assert(self.R_max is not None)
@@ -763,7 +763,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
         
-    def gen_prof_L2_fix_R1_R_given_M1_M2(self):
+    def gen_prof_L2_find_R1_R_given_M1_M2(self):
         
         # Check for necessary input
         self._2_layer_input()
@@ -841,7 +841,7 @@ class Planet():
         assert(self.A1_mat_id_layer[2] is not None)
         assert(self.A1_T_rho_type_id[2] is not None)
         
-    def gen_prof_L3_fix_R1_R2_given_R_M_I(self):
+    def gen_prof_L3_find_R1_R2_given_R_M_I(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.M is not None)
@@ -883,7 +883,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R2_given_R_M_R1(self):
+    def gen_prof_L3_find_R2_given_R_M_R1(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -925,7 +925,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R1_given_R_M_R2(self):
+    def gen_prof_L3_find_R1_given_R_M_R2(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[1] is not None)
@@ -967,7 +967,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_M_given_R_R1_R2(self):
+    def gen_prof_L3_find_M_given_R_R1_R2(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -1001,7 +1001,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R_given_M_R1_R2(self):
+    def gen_prof_L3_find_R_given_M_R1_R2(self):
         # Check for necessary input
         assert(self.R_max is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -1180,7 +1180,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R1_R2_given_M1_M2_add_L3(
+    def gen_prof_L3_find_R1_R2_given_M1_M2_add_L3(
         self, M1=None, M2=None, R_min=None, R_max=None, M_frac_tol=None,
         rho_min=None
         ):
