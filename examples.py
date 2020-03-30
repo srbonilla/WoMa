@@ -9,34 +9,37 @@ import numpy as np
 import matplotlib.pyplot as plt
 import woma
 
-R_earth = 6371000
-M_earth = 5.972E24
+R_earth = 6.371e6 # m
+M_earth = 5.972e24 # kg
 
 # ============================================================================ #
 
 def plot_planet_profiles(planet):
-    fig, ax = plt.subplots(2, 2, figsize=(9, 9))
+    fig, ax = plt.subplots(2, 2, figsize=(7, 7))
     
     ax[0,0].plot(planet.A1_r/R_earth, planet.A1_rho)
-    ax[0,0].set_xlabel(r"$r$ $[R_{earth}]$")
-    ax[0,0].set_ylabel(r"$\rho$ $[kg/m^3]$")
+    ax[0,0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0,0].set_ylabel(r"Density [kg m$^{-3}$]")
     ax[0,0].set_yscale("log")
     ax[0,0].set_xlim(0, None)
     
     ax[1,0].plot(planet.A1_r/R_earth, planet.A1_m_enc/M_earth)
-    ax[1,0].set_xlabel(r"$r$ $[R_{earth}]$")
-    ax[1,0].set_ylabel(r"$M$ $[M_{earth}]$")
+    ax[1,0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[1,0].set_ylabel(r"Enclosed Mass $[M_\oplus]$")
     ax[1,0].set_xlim(0, None)
+    ax[1,0].set_ylim(0, None)
     
     ax[0,1].plot(planet.A1_r/R_earth, planet.A1_P)
-    ax[0,1].set_xlabel(r"$r$ $[R_{earth}]$")
-    ax[0,1].set_ylabel(r"$P$ $[Pa]$")
+    ax[0,1].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0,1].set_ylabel(r"Pressure [Pa]")
+    ax[0,1].set_yscale("log")
     ax[0,1].set_xlim(0, None)
     
     ax[1,1].plot(planet.A1_r/R_earth, planet.A1_T)
-    ax[1,1].set_xlabel(r"$r$ $[R_{earth}]$")
-    ax[1,1].set_ylabel(r"$T$ $[K]$")
+    ax[1,1].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[1,1].set_ylabel(r"Temperature [K]")
     ax[1,1].set_xlim(0, None)
+    ax[1,1].set_ylim(0, None)
     
     plt.tight_layout()
 
