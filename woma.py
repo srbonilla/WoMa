@@ -12,10 +12,10 @@ import os
 cwd = os.getcwd()
 dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir)
-sys.path.append(dir + '/eos')
-sys.path.append(dir + '/spherical_funcs')
-sys.path.append(dir + '/spin_funcs')
-sys.path.append(dir + '/misc')
+sys.path.append(dir + "/eos")
+sys.path.append(dir + "/spherical_funcs")
+sys.path.append(dir + "/spin_funcs")
+sys.path.append(dir + "/misc")
 
 import numpy as np
 import h5py
@@ -118,7 +118,7 @@ def load_planet(name, Fp_planet):
 
     Fp_planet = utils.check_end(p.Fp_planet, ".hdf5")
 
-    print("Loading \"%s\"... " % Fp_planet[-60:], end='')
+    print("Loading \"%s\"... " % Fp_planet[-60:], end="")
     sys.stdout.flush()
 
     with h5py.File(Fp_planet, "r") as f:
@@ -162,10 +162,10 @@ class Planet():
                 The type of temperature-density relation in each layer, from the
                 central layer outwards.
 
-                'power':   T = K * rho^alpha, K is set internally using
+                "power":   T = K * rho^alpha, K is set internally using
                                     each layer's outer temperature.
                                     Set alpha = 0 for isothermal.
-                'adiabatic':       Adiabatic, constant s_adb is set internally,
+                "adiabatic":       Adiabatic, constant s_adb is set internally,
                                     if applicable.
 
             A1_T_rho_args ([float])
@@ -492,7 +492,7 @@ class Planet():
     def save_planet(self):
         Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
 
-        print("Saving \"%s\"... " % Fp_planet[-60:], end='')
+        print("Saving \"%s\"... " % Fp_planet[-60:], end="")
         sys.stdout.flush()
 
         with h5py.File(Fp_planet, "w") as f:
@@ -541,7 +541,7 @@ class Planet():
         """
         Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
 
-        print("Loading \"%s\"... " % Fp_planet[-60:], end='')
+        print("Loading \"%s\"... " % Fp_planet[-60:], end="")
         sys.stdout.flush()
 
         with h5py.File(Fp_planet, "r") as f:
@@ -1099,7 +1099,7 @@ class Planet():
         if T_rho_args is not None:
             A1_T_rho_args_aux = np.zeros((3,2))
             A1_T_rho_args_aux[0:2] = self.A1_T_rho_args
-            A1_T_rho_args_aux[2] = np.array(T_rho_args, dtype='float')
+            A1_T_rho_args_aux[2] = np.array(T_rho_args, dtype="float")
             self.A1_T_rho_args = A1_T_rho_args_aux
         if rho_min is not None:
             self.rho_min    = rho_min
