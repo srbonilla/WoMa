@@ -28,18 +28,45 @@ def plot_planet_profiles(planet):
     ax[1,0].set_ylabel(r"Enclosed Mass $[M_\oplus]$")
     ax[1,0].set_xlim(0, None)
     ax[1,0].set_ylim(0, None)
-    
+        
     ax[0,1].plot(planet.A1_r/R_earth, planet.A1_P)
     ax[0,1].set_xlabel(r"Radius $[R_\oplus]$")
     ax[0,1].set_ylabel(r"Pressure [Pa]")
     ax[0,1].set_yscale("log")
     ax[0,1].set_xlim(0, None)
     
-    ax[1,1].plot(planet.A1_r/R_earth, planet.A1_T)
+    ax[1,1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
     ax[1,1].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[1,1].set_ylabel(r"Temperature [K]")
+    ax[1,1].set_ylabel(r"Temperature [$10^3$ K]")
     ax[1,1].set_xlim(0, None)
     ax[1,1].set_ylim(0, None)
+    
+    plt.tight_layout()
+
+def plot_planet_profiles_alternate(planet):
+    fig, ax = plt.subplots(2, 2, figsize=(7, 7))
+    
+    ax[0,0].plot(planet.A1_r/R_earth, planet.A1_rho)
+    ax[0,0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0,0].set_ylabel(r"Density [kg m$^{-3}$]")
+    ax[0,0].set_yscale("log")
+    ax[0,0].set_xlim(0, None)
+            
+    ax[1,0].plot(planet.A1_r/R_earth, planet.A1_P)
+    ax[1,0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[1,0].set_ylabel(r"Pressure [Pa]")
+    ax[1,0].set_yscale("log")
+    ax[1,0].set_xlim(0, None)
+    
+    ax[0,1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
+    ax[0,1].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0,1].set_ylabel(r"Temperature [$10^3$ K]")
+    ax[0,1].set_xlim(0, None)
+    ax[0,1].set_ylim(0, None)
+    
+    ax[1,1].plot(np.log(planet.A1_rho/5), np.log(planet.A1_T))
+    ax[1,1].set_xlabel(r"ln( $\rho / 5$ kg m$^{-3}$ )")
+    ax[1,1].set_ylabel(r"ln( Temperature [K] )")
     
     plt.tight_layout()
 
@@ -240,6 +267,26 @@ def demo_gen_prof_L3_find_R_given_M_R1_R2():
     planet.gen_prof_L3_find_R_given_M_R1_R2()
 
     plot_planet_profiles(planet)
+
+# ============================================================================ #
+
+def demo_gen_uranus_prof():
+    
+    planet = woma.Planet(
+        name            = "Uranus",
+        A1_mat_layer    = ["HM80_rock", "HM80_ice", "HM80_HHe"],
+        A1_T_rho_type   = ["power", "power", "adiabatic"],
+        A1_T_rho_args   = [[None, 0], [None, 0.9], [None, None]],
+        # M               = 14.536 * M_earth,
+        M_max           = 14.7 * M_earth,
+        A1_R_layer      = [1.0 * R_earth, 3.1 * R_earth, 3.98 * R_earth],
+        P_s             = 1e5,
+        T_s             = 60,
+        )
+
+    planet.gen_prof_L3_find_M_given_R_R1_R2()
+
+    plot_planet_profiles_alternate(planet)
 
 # ============================================================================ #
 

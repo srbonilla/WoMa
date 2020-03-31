@@ -882,6 +882,10 @@ class Planet():
 
         self.update_attributes()
         self.print_info()
+        
+    def gen_prof_L3_find_R_R1_R2_given_M_M1_M2(self):
+        ###todo        
+        return None
 
     def gen_prof_L3_find_R2_given_R_M_R1(self):
         # Check for necessary input
