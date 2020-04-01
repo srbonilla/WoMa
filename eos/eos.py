@@ -262,7 +262,7 @@ def plot_EoS_P_rho_fixed_T(mat_id_1, mat_id_2, T,
     plt.figure()
     plt.scatter(rho, P_1, label=str(mat_id_1))
     plt.scatter(rho, P_2, label=str(mat_id_2))
-    plt.legend(title='Material')
+    plt.legend(title="Material")
     plt.xlabel(r"$\rho$ [kg m$^{-3}$]")
     plt.ylabel(r"$P$ [Pa]")
     plt.show()

@@ -12,10 +12,10 @@ import os
 cwd = os.getcwd()
 dir = os.path.dirname(os.path.realpath(__file__))
 os.chdir(dir)
-sys.path.append(dir + '/eos')
-sys.path.append(dir + '/spherical_funcs')
-sys.path.append(dir + '/spin_funcs')
-sys.path.append(dir + '/misc')
+sys.path.append(dir + "/eos")
+sys.path.append(dir + "/spherical_funcs")
+sys.path.append(dir + "/spin_funcs")
+sys.path.append(dir + "/misc")
 
 import numpy as np
 import h5py
@@ -118,7 +118,7 @@ def load_planet(name, Fp_planet):
 
     Fp_planet = utils.check_end(p.Fp_planet, ".hdf5")
 
-    print("Loading \"%s\"... " % Fp_planet[-60:], end='')
+    print("Loading \"%s\"... " % Fp_planet[-60:], end="")
     sys.stdout.flush()
 
     with h5py.File(Fp_planet, "r") as f:
@@ -162,10 +162,10 @@ class Planet():
                 The type of temperature-density relation in each layer, from the
                 central layer outwards.
 
-                'power':   T = K * rho^alpha, K is set internally using
+                "power":   T = K * rho^alpha, K is set internally using
                                     each layer's outer temperature.
                                     Set alpha = 0 for isothermal.
-                'adiabatic':       Adiabatic, constant s_adb is set internally,
+                "adiabatic":       Adiabatic, constant s_adb is set internally,
                                     if applicable.
 
             A1_T_rho_args ([float])
@@ -492,7 +492,7 @@ class Planet():
     def save_planet(self):
         Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
 
-        print("Saving \"%s\"... " % Fp_planet[-60:], end='')
+        print("Saving \"%s\"... " % Fp_planet[-60:], end="")
         sys.stdout.flush()
 
         with h5py.File(Fp_planet, "w") as f:
@@ -541,7 +541,7 @@ class Planet():
         """
         Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
 
-        print("Loading \"%s\"... " % Fp_planet[-60:], end='')
+        print("Loading \"%s\"... " % Fp_planet[-60:], end="")
         sys.stdout.flush()
 
         with h5py.File(Fp_planet, "r") as f:
@@ -563,7 +563,7 @@ class Planet():
         assert(self.A1_mat_id_layer[0] is not None)
         assert(self.A1_T_rho_type_id[0] is not None)
         
-    def gen_prof_L1_fix_R_given_M(self):
+    def gen_prof_L1_find_R_given_M(self):
         """ Compute the profile of a planet with 1 layer by finding the correct
             radius for a given mass.
         """
@@ -601,7 +601,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L1_fix_M_given_R(self):
+    def gen_prof_L1_find_M_given_R(self):
         # Check for necessary input
         assert(self.R is not None or self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
@@ -662,7 +662,7 @@ class Planet():
         assert(self.A1_mat_id_layer[1] is not None)
         assert(self.A1_T_rho_type_id[1] is not None)
         
-    def gen_prof_L2_fix_R1_given_R_M(self):
+    def gen_prof_L2_find_R1_given_R_M(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.M is not None)
@@ -697,7 +697,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L2_fix_M_given_R1_R(self):
+    def gen_prof_L2_find_M_given_R1_R(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -726,7 +726,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L2_fix_R_given_M_R1(self):
+    def gen_prof_L2_find_R_given_M_R1(self):
         # Check for necessary input
         assert(self.A1_R_layer[0] is not None)
         assert(self.R_max is not None)
@@ -763,7 +763,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
         
-    def gen_prof_L2_fix_R1_R_given_M1_M2(self):
+    def gen_prof_L2_find_R1_R_given_M1_M2(self):
         
         # Check for necessary input
         self._2_layer_input()
@@ -841,7 +841,7 @@ class Planet():
         assert(self.A1_mat_id_layer[2] is not None)
         assert(self.A1_T_rho_type_id[2] is not None)
         
-    def gen_prof_L3_fix_R1_R2_given_R_M_I(self):
+    def gen_prof_L3_find_R1_R2_given_R_M_I(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.M is not None)
@@ -883,7 +883,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R2_given_R_M_R1(self):
+    def gen_prof_L3_find_R2_given_R_M_R1(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -925,7 +925,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R1_given_R_M_R2(self):
+    def gen_prof_L3_find_R1_given_R_M_R2(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[1] is not None)
@@ -967,7 +967,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_M_given_R_R1_R2(self):
+    def gen_prof_L3_find_M_given_R_R1_R2(self):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -1001,7 +1001,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R_given_M_R1_R2(self):
+    def gen_prof_L3_find_R_given_M_R1_R2(self):
         # Check for necessary input
         assert(self.R_max is not None)
         assert(self.A1_R_layer[0] is not None)
@@ -1099,7 +1099,7 @@ class Planet():
         if T_rho_args is not None:
             A1_T_rho_args_aux = np.zeros((3,2))
             A1_T_rho_args_aux[0:2] = self.A1_T_rho_args
-            A1_T_rho_args_aux[2] = np.array(T_rho_args, dtype='float')
+            A1_T_rho_args_aux[2] = np.array(T_rho_args, dtype="float")
             self.A1_T_rho_args = A1_T_rho_args_aux
         if rho_min is not None:
             self.rho_min    = rho_min
@@ -1180,7 +1180,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L3_fix_R1_R2_given_M1_M2_add_L3(
+    def gen_prof_L3_find_R1_R2_given_M1_M2_add_L3(
         self, M1=None, M2=None, R_min=None, R_max=None, M_frac_tol=None,
         rho_min=None
         ):
