@@ -127,7 +127,7 @@ def L3_integrate(
         if A1_r[i] > R2:
             rho             = A1_rho[i - 1]
             mat_id          = mat_id_L3
-            T_rho_type_id      = T_rho_type_id_L3
+            T_rho_type_id   = T_rho_type_id_L3
             T_rho_args      = T_rho_args_L3
             rho0            = rho
         # Layer 2, 3 boundary
@@ -136,14 +136,14 @@ def L3_integrate(
             T_rho_args_L2   = set_T_rho_args(
                 A1_T[i - 1], rho, T_rho_type_id_L2, T_rho_args_L2, mat_id_L2)
             mat_id          = mat_id_L2
-            T_rho_type_id      = T_rho_type_id_L2
+            T_rho_type_id   = T_rho_type_id_L2
             T_rho_args      = T_rho_args_L2
             rho0            = A1_rho[i - 1]
         # Layer 2
         elif A1_r[i] > R1:
             rho             = A1_rho[i - 1]
             mat_id          = mat_id_L2
-            T_rho_type_id      = T_rho_type_id_L2
+            T_rho_type_id   = T_rho_type_id_L2
             T_rho_args      = T_rho_args_L2
             rho0            = rho
         # Layer 1, 2 boundary
@@ -152,14 +152,14 @@ def L3_integrate(
             T_rho_args_L1   = set_T_rho_args(
                 A1_T[i - 1], rho, T_rho_type_id_L1, T_rho_args_L1, mat_id_L1)
             mat_id          = mat_id_L1
-            T_rho_type_id      = T_rho_type_id_L1
+            T_rho_type_id   = T_rho_type_id_L1
             T_rho_args      = T_rho_args_L1
             rho0            = A1_rho[i - 1]
         # Layer 1
         elif A1_r[i] <= R1:
             rho             = A1_rho[i - 1]
             mat_id          = mat_id_L1
-            T_rho_type_id      = T_rho_type_id_L1
+            T_rho_type_id   = T_rho_type_id_L1
             T_rho_args      = T_rho_args_L1
             rho0            = A1_rho[i - 1]
 
@@ -170,6 +170,10 @@ def L3_integrate(
         A1_T[i]     = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
         A1_u[i]     = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
         A1_mat_id[i] = mat_id
+        # Update the T-rho parameters
+        if mat_id == gv.id_HM80_HHe and T_rho_type_id == gv.type_adb:
+            T_rho_args  = set_T_rho_args(A1_T[i], A1_rho[i], T_rho_type_id, 
+                                         T_rho_args, mat_id)
 
         if A1_m_enc[i] < 0:
             break

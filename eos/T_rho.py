@@ -88,17 +88,20 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
     if T_rho_type_id == gv.type_rho_pow:
         T_rho_args[0]   = T * rho**-T_rho_args[1]
 
-    # Adiabatic: T_rho_args = [T rho^(1-gamma),], [rho_prv, T_prv], or [s_adb,]
+    # Adiabatic
     elif T_rho_type_id == gv.type_adb:
         if mat_type == gv.type_idg:
+            # T_rho_args = [T rho^(1-gamma),]
             gamma   = idg.idg_gamma(mat_id)
             T_rho_args[0]   = T * rho**(1 - gamma)
             
         elif mat_id == gv.id_HM80_HHe:
+            # T_rho_args = [rho_prv, T_prv]
             T_rho_args[0]   = rho
             T_rho_args[1]   = T
             
         elif mat_type == gv.type_SESAME:
+            # T_rho_args = [s_adb,]
             # T_rho_args[0]   = s_rho_T(rho, T, mat_id)
             raise ValueError("Relation not implemented for SESAME materials")
 
