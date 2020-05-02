@@ -41,6 +41,14 @@ def set_up():
         del u_cold_array
         print("Done")
 
+    if not os.path.isfile(gv.Fp_u_cold_Til_basalt):
+        print('Creating u cold curve for material Til_basalt... ', end='')
+        sys.stdout.flush()
+        u_cold_array = tillotson._create_u_cold_array(gv.id_Til_basalt)
+        np.save(gv.Fp_u_cold_Til_basalt, u_cold_array)
+        del u_cold_array
+        print("Done")
+
     if not os.path.isfile(gv.Fp_u_cold_Til_water):
         print('Creating u cold curve for material Til_water... ', end='')
         sys.stdout.flush()
