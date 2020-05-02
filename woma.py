@@ -26,6 +26,7 @@ import L1_spin
 import L2_spin
 import L3_spin
 import glob_vars as gv
+import set_up
 import eos
 import utils
 import utils_spin as us
