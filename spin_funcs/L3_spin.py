@@ -16,7 +16,7 @@ from T_rho import T_rho
 import L1_spin
 
 @njit
-def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
+def _fillrho3(A1_r_equator, V_e, A1_r_pole, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
              mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
              mat_id_L2, T_rho_type_id_L2, T_rho_args_L2,
              mat_id_L3, T_rho_type_id_L3, T_rho_args_L3):
@@ -25,13 +25,13 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
 
         Args:
 
-            r_array ([float]):
+            A1_r_equator ([float]):
                 Points at equatorial profile where the solution is defined (SI).
 
             V_e ([float]):
                 Equatorial profile of potential (SI).
 
-            z_array ([float]):
+            A1_r_pole ([float]):
                 Points at equatorial profile where the solution is defined (SI).
 
             V_p ([float]):
@@ -85,80 +85,95 @@ def _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
 
         Returns:
 
-            rho_e ([float]):
+            A1_rho_equator ([float]):
                 Equatorial profile of densities (SI).
 
-            rho_p ([float]):
+            A1_rho_pole ([float]):
                 Polar profile of densities (SI).
     """
 
     P_e = np.zeros(V_e.shape[0])
     P_p = np.zeros(V_p.shape[0])
-    rho_e = np.zeros(V_e.shape[0])
-    rho_p = np.zeros(V_p.shape[0])
+    A1_rho_equator = np.zeros(V_e.shape[0])
+    A1_rho_pole = np.zeros(V_p.shape[0])
 
     P_e[0] = P_c
     P_p[0] = P_c
-    rho_e[0] = rho_c
-    rho_p[0] = rho_c
+    A1_rho_equator[0] = rho_c
+    A1_rho_pole[0] = rho_c
 
-    for i in range(r_array.shape[0] - 1):
+    # equatorial profile
+    for i in range(A1_r_equator.shape[0] - 1):
         gradV = V_e[i + 1] - V_e[i]
-        gradP = -rho_e[i]*gradV
+        gradP = -A1_rho_equator[i]*gradV
         P_e[i + 1] = P_e[i] + gradP
+        
+        # avoid overspin
+        if P_e[i + 1] > P_e[i]:
+            A1_rho_equator[i + 1:] = A1_rho_equator[i]
+            break
 
+        # compute density
         if P_e[i + 1] >= P_s and P_e[i + 1] >= P_12:
-            rho_e[i + 1] = eos.find_rho(
+            A1_rho_equator[i + 1] = eos.find_rho(
                 P_e[i + 1], mat_id_L1, T_rho_type_id_L1, T_rho_args_L1, rho_s*0.1,
-                rho_e[i]
+                A1_rho_equator[i]
                 )
 
         elif P_e[i + 1] >= P_s and P_e[i + 1] >= P_23:
-            rho_e[i + 1] = eos.find_rho(
+            A1_rho_equator[i + 1] = eos.find_rho(
                 P_e[i + 1], mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, rho_s*0.1,
-                rho_e[i]
+                A1_rho_equator[i]
                 )
 
         elif P_e[i + 1] >= P_s:
-            rho_e[i + 1] = eos.find_rho(
+            A1_rho_equator[i + 1] = eos.find_rho(
                 P_e[i + 1], mat_id_L3, T_rho_type_id_L3, T_rho_args_L3, rho_s*0.1,
-                rho_e[i]
+                A1_rho_equator[i]
                 )
 
         else:
-            rho_e[i + 1] = 0.
+            A1_rho_equator[i + 1] = 0.
             break
 
-    for i in range(z_array.shape[0] - 1):
+    # polar profile
+    for i in range(A1_r_pole.shape[0] - 1):
         gradV = V_p[i + 1] - V_p[i]
-        gradP = -rho_p[i]*gradV
+        gradP = -A1_rho_pole[i]*gradV
         P_p[i + 1] = P_p[i] + gradP
-
+        
+        # avoid overspin
+        if P_e[i + 1] > P_e[i]:
+            A1_rho_equator[i + 1:] = A1_rho_equator[i]
+            break
+        
+        # compute density
         if P_p[i + 1] >= P_s and P_p[i + 1] >= P_12:
-            rho_p[i + 1] = eos.find_rho(
+            A1_rho_pole[i + 1] = eos.find_rho(
                 P_p[i + 1], mat_id_L1, T_rho_type_id_L1, T_rho_args_L1, rho_s*0.1,
-                rho_p[i]
+                A1_rho_pole[i]
                 )
 
         elif P_p[i + 1] >= P_s and P_p[i + 1] >= P_23:
-            rho_p[i + 1] = eos.find_rho(
+            A1_rho_pole[i + 1] = eos.find_rho(
                 P_p[i + 1], mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, rho_s*0.1,
-                rho_p[i]
+                A1_rho_pole[i]
                 )
 
         elif P_p[i + 1] >= P_s:
-            rho_p[i + 1] = eos.find_rho(
+            A1_rho_pole[i + 1] = eos.find_rho(
                 P_p[i + 1], mat_id_L3, T_rho_type_id_L3, T_rho_args_L3, rho_s*0.1,
-                rho_p[i]
+                A1_rho_pole[i]
                 )
 
         else:
-            rho_p[i + 1] = 0.
+            A1_rho_pole[i + 1] = 0.
             break
 
-    return rho_e, rho_p
+    return A1_rho_equator, A1_rho_pole
 
-def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
+def spin3layer(num_attempt, A1_r_equator, A1_rho_equator,
+               A1_r_pole, A1_rho_pole, Tw,
                P_c, P_12, P_23, P_s, rho_c, rho_s,
                mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
                mat_id_L2, T_rho_type_id_L2, T_rho_args_L2,
@@ -171,10 +186,10 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
             num_attempt (int):
                 Number of num_attempt to run.
 
-            r_array ([float]):
+            A1_r_equator ([float]):
                 Points at equatorial profile where the solution is defined (SI).
 
-            z_array ([float]):
+            A1_r_pole ([float]):
                 Points at equatorial profile where the solution is defined (SI).
 
             radii ([float]):
@@ -244,29 +259,26 @@ def spin3layer(num_attempt, r_array, z_array, radii, densities, Tw,
                 List of the num_attempt of the polar density profile (SI).
 
     """
-    spherical_model = interp1d(radii, densities, bounds_error=False, fill_value=0)
-
-    rho_e = spherical_model(r_array)
-    rho_p = spherical_model(z_array)
 
     profile_e = []
     profile_p = []
 
-    profile_e.append(rho_e)
-    profile_p.append(rho_p)
+    profile_e.append(A1_rho_equator)
+    profile_p.append(A1_rho_pole)
 
     for i in tqdm(range(num_attempt), desc="Solving spining profile", disable = (not verbose>=1)):
-        V_e, V_p = L1_spin._fillV(r_array, rho_e, z_array, rho_p, Tw)
-        rho_e, rho_p = _fillrho3(r_array, V_e, z_array, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
+        V_e, V_p = L1_spin._fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, Tw)
+        A1_rho_equator, A1_rho_pole = _fillrho3(A1_r_equator, V_e, A1_r_pole, V_p, P_c, P_12, P_23, P_s, rho_c, rho_s,
                                  mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
                                  mat_id_L2, T_rho_type_id_L2, T_rho_args_L2,
                                  mat_id_L3, T_rho_type_id_L3, T_rho_args_L3)
-        profile_e.append(rho_e)
-        profile_p.append(rho_p)
+        profile_e.append(A1_rho_equator)
+        profile_p.append(A1_rho_pole)
 
     return profile_e, profile_p
 
-def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
+def picle_placement_L3(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole,
+                       Tw, N, rho_12, rho_23,
                        mat_id_L1, T_rho_type_id_L1, T_rho_args_L1,
                        mat_id_L2, T_rho_type_id_L2, T_rho_args_L2,
                        mat_id_L3, T_rho_type_id_L3, T_rho_args_L3,
@@ -274,16 +286,16 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
     """
     Args:
 
-            r_array ([float]):
+            A1_r_equator ([float]):
                 Points at equatorial profile where the solution is defined (SI).
 
-            rho_e ([float]):
+            A1_rho_equator ([float]):
                 Equatorial profile of densities (SI).
 
-            z_array ([float]):
+            A1_r_pole ([float]):
                 Points at equatorial profile where the solution is defined (SI).
 
-            rho_p ([float]):
+            A1_rho_pole ([float]):
                 Polar profile of densities (SI).
 
             Tw (float):
@@ -371,7 +383,7 @@ def picle_placement_L3(r_array, rho_e, z_array, rho_p, Tw, N, rho_12, rho_23,
                 
     """
     A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_R, A1_Z = \
-        us.picle_placement(r_array, rho_e, z_array, rho_p, N, Tw)
+        us.picle_placement(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, Tw)
         
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))

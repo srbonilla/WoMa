@@ -201,7 +201,7 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
 #         e = "Critical error in find rho.\n" + \
 #             "Material: " + str(mat_id) + \
 #             "P: " + str(P) + \
-#             "T_rho_type: {:d}\n".format(mat_id) + \
+#             "T_rho_type: {:d}\n".format(T_rho_type) + \
 #             "T_rho_args: " + str(T_rho_args) + "\n" + \
 #             "rho_min: {:f}\n".format(rho_min) + \
 #             "rho_max: {:f}\n".format(rho_max) + \
