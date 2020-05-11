@@ -1757,7 +1757,7 @@ def L1_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
         
         # make new profile
         new_planet.M_max = new_planet.M
-        new_planet.gen_prof_L1_fix_M_given_R(print_info=False)
+        new_planet.gen_prof_L1_find_M_given_R(print_info=False)
             
         spin_planet = SpinPlanet(
                 planet=new_planet,
@@ -1829,7 +1829,7 @@ def L2_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
             
             # make new profile
             new_planet.M_max = 1.05*planet.M
-            new_planet.gen_prof_L2_fix_M_given_R1_R(print_info=False)
+            new_planet.gen_prof_L2_find_M_given_R1_R(print_info=False)
                 
             spin_planet = SpinPlanet(
                     planet=new_planet,
@@ -1885,7 +1885,7 @@ def L2_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
             
             # make new profile
             new_planet.M_max = 1.05*planet.M
-            new_planet.gen_prof_L2_fix_M_given_R1_R(print_info=False)
+            new_planet.gen_prof_L2_find_M_given_R1_R(print_info=False)
                 
             spin_planet = SpinPlanet(
                     planet=new_planet,
@@ -1922,6 +1922,34 @@ def L2_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
     spin_planet.print_info()
     
     return spin_planet
+
+def spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
+                num_prof=1000, max_iter_1=20, max_iter_2=5):
+    
+    if planet.num_layer == 1:
+        
+        spin_planet = L1_spin_planet_fix_M(planet, Tw,
+                                           R_e_max, R_p_max,
+                                           num_prof, max_iter_1)
+        
+    elif planet.num_layer == 2:
+        
+        spin_planet = L2_spin_planet_fix_M(planet, Tw,
+                                           R_e_max, R_p_max,
+                                           num_prof, max_iter_1,
+                                           max_iter_2)
+        
+    elif planet.num_layer == 3:
+        
+        raise ValueError("Not implemented yet")
+        
+    else:
+        
+        raise ValueError("Number of layers in your planet is incorrect. \
+                         It should be 1, 2, or 3")
+        
+    return spin_planet
+        
 
 class GenSpheroid():
 
