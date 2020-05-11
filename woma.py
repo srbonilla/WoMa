@@ -27,7 +27,6 @@ import L1_spin
 import L2_spin
 import L3_spin
 import glob_vars as gv
-import set_up
 import eos
 import utils
 import utils_spin as us
@@ -603,7 +602,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L1_find_M_given_R(self):
+    def gen_prof_L1_find_M_given_R(self, print_info=True):
         # Check for necessary input
         assert(self.R is not None or self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
@@ -702,7 +701,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L2_find_M_given_R1_R(self):
+    def gen_prof_L2_find_M_given_R1_R(self, print_info=True):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
