@@ -832,6 +832,279 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
+    def gen_prof_L2_given_prof_L1(self, mat, T_rho_type_id, T_rho_args, rho_min):
+        """ Add a second layer (atmosphere) on top of existing 1 layer profiles.
+        
+            ### Could probably be combined with gen_prof_L3_given_prof_L2()
+                for any number of inner layers!
+
+            Args or set attributes:
+                ...
+
+            Sets:
+                ...
+        """
+        # Check for necessary input
+        assert(self.num_layer == 1)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.M is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
+
+        self.num_layer          = 2
+        self.A1_mat_layer       = np.append(self.A1_mat_layer, mat)
+        self.A1_mat_id_layer    = [gv.Di_mat_id[mat] for mat in self.A1_mat_layer]
+        self.A1_T_rho_type_id   = np.append(self.A1_T_rho_type_id, T_rho_type_id)
+        A1_T_rho_args_aux       = np.zeros((3,2))
+        A1_T_rho_args_aux[0:2]  = self.A1_T_rho_args
+        A1_T_rho_args_aux[2]    = np.array(T_rho_args, dtype="float")
+        self.A1_T_rho_args      = A1_T_rho_args_aux
+        self.rho_min            = rho_min
+
+        dr          = self.A1_r[1]
+        mat_id_L2   = self.A1_mat_id_layer[1]
+
+        # Reverse profile arrays to be ordered by increasing radius
+        if self.A1_r[-1] < self.A1_r[0]:
+            self.A1_r       = self.A1_r[::-1]
+            self.A1_m_enc   = self.A1_m_enc[::-1]
+            self.A1_P       = self.A1_P[::-1]
+            self.A1_T       = self.A1_T[::-1]
+            self.A1_rho     = self.A1_rho[::-1]
+            self.A1_u       = self.A1_u[::-1]
+            self.A1_mat_id  = self.A1_mat_id[::-1]
+
+        # Initialise the new profiles
+        A1_r        = [self.A1_r[-1]]
+        A1_m_enc    = [self.A1_m_enc[-1]]
+        A1_P        = [self.A1_P[-1]]
+        A1_T        = [self.A1_T[-1]]
+        A1_u        = [self.A1_u[-1]]
+        A1_mat_id   = [mat_id_L2]
+        A1_rho      = [eos.rho_P_T(A1_P[0], A1_T[0], mat_id_L2)]
+
+        # Set any T-rho relation variables
+        self.A1_T_rho_args[1]   = set_T_rho_args(
+            A1_T[0], A1_rho[0], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
+            mat_id_L2
+            )
+
+        # Integrate outwards until the minimum density (or zero pressure)
+        step = 1
+        while A1_rho[-1] > self.rho_min:
+            A1_r.append(A1_r[-1] + dr)
+            A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
+            A1_P.append(A1_P[-1] - gv.G*A1_m_enc[-1]*A1_rho[-1]/(A1_r[-1]**2)*dr)
+            if A1_P[-1] <= 0:
+                # Add dummy values which will be removed along with the -ve P
+                A1_rho.append(0)
+                A1_T.append(0)
+                A1_u.append(0)
+                A1_mat_id.append(0)
+                break
+            # Update the T-rho parameters
+            if (self.A1_T_rho_type_id[-1] == gv.type_adb and
+                mat_id_L2 == gv.id_HM80_HHe):
+                self.A1_T_rho_args[-1] = set_T_rho_args(
+                    A1_T[-1], A1_rho[-1], self.A1_T_rho_type_id[-1], 
+                    self.A1_T_rho_args[-1], mat_id_L2
+                    )
+            rho = eos.find_rho(
+                A1_P[-1], mat_id_L2, self.A1_T_rho_type_id[-1],
+                self.A1_T_rho_args[-1], 0.9*A1_rho[-1], A1_rho[-1]
+                )
+            A1_rho.append(rho)
+            A1_T.append(T_rho(
+                rho, self.A1_T_rho_type_id[-1], self.A1_T_rho_args[-1], mat_id_L2
+                ))
+            A1_u.append(eos.u_rho_T(rho, A1_T[-1], mat_id_L2))
+            A1_mat_id.append(mat_id_L2)
+
+            step += 1
+            if step >= self.num_prof:
+                print("Layer 2 goes out too far!")
+                break
+
+        # Apppend the new layer to the profiles, removing the final too-low 
+        # density or non-positive pressure step
+        self.A1_r       = np.append(self.A1_r, A1_r[1:-1])
+        self.A1_m_enc   = np.append(self.A1_m_enc, A1_m_enc[1:-1])
+        self.A1_P       = np.append(self.A1_P, A1_P[1:-1])
+        self.A1_T       = np.append(self.A1_T, A1_T[1:-1])
+        self.A1_rho     = np.append(self.A1_rho, A1_rho[1:-1])
+        self.A1_u       = np.append(self.A1_u, A1_u[1:-1])
+        self.A1_mat_id  = np.append(self.A1_mat_id, A1_mat_id[1:-1])
+        
+        self.update_attributes()
+        self.print_info()
+
+    def gen_prof_L2_find_R1_given_M1_add_L2(self):
+        """ Generate a 2 layer profile by first finding the inner 1 layer
+            profile using the mass of that layer then add the third layer
+            (atmosphere) on top.
+
+            Note: the input T_s, P_s, rho_s here are used for the outer boundary
+            of layer 1. They will then be overwritten with the final values
+            after layer 2 is added.
+
+            Args or set attributes:
+                ...
+
+            Sets:
+                ...
+        """
+        # Check for necessary input
+        assert(self.num_layer == 2)
+        assert(self.A1_M_layer[0] is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
+        assert(self.A1_T_rho_type_id[1] is not None)
+        
+        # Store the layer 2 properties
+        mat_L2          = self.A1_mat_layer[1]
+        T_rho_type_L2   = self.A1_T_rho_type_id[1]
+        T_rho_args_L2   = self.A1_T_rho_args[1]
+
+        # Temporarily set self to be a 1 layer planet
+        self.num_layer          = 1
+        self.A1_M_layer         = self.A1_M_layer[:-1]
+        self.A1_R_layer         = self.A1_R_layer[:-1]
+        self.A1_mat_layer       = self.A1_mat_layer[:-1]
+        self.A1_mat_id_layer    = self.A1_mat_id_layer[:-1]
+        self.A1_T_rho_type_id   = self.A1_T_rho_type_id[:-1]
+        self.A1_T_rho_args      = self.A1_T_rho_args[:-1]
+        self.rho_s              = eos.rho_P_T(
+            self.P_s, self.T_s, self.A1_mat_id_layer[-1])
+
+        # Find the radius of the inner 1 layer in isolation
+        self.M = np.sum(self.A1_M_layer)
+        
+        self.R = L1_spherical.L1_find_radius(
+            self.num_prof, self.R_max, self.M, self.P_s, self.T_s, self.rho_s,
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0], self.num_attempt
+            )
+        self.A1_R_layer[-1] = self.R
+
+        print("Tweaking M to avoid peaks at the center of the planet...")
+
+        self.M = L1_spherical.L1_find_mass(
+            self.num_prof, self.R, 1.05 * self.M, self.P_s, self.T_s, self.rho_s,
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0]
+            )
+
+        print("Done!")
+
+        # Integrate the profiles
+        (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
+         self.A1_mat_id) = L1_spherical.L1_integrate(
+            self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0]
+            )
+
+        self.update_attributes()
+        
+        # Add the second layer
+        print("Adding the second layer on top...")
+        
+        self.gen_prof_L2_given_prof_L1(
+            mat            = mat_L2,
+            T_rho_type_id  = T_rho_type_L2,
+            T_rho_args     = T_rho_args_L2,
+            rho_min        = self.rho_min,
+            )
+
+        print("Done!")
+        
+    def gen_prof_L2_find_M1_given_R1_add_L2(self):
+        """ Generate a 2 layer profile by first finding the inner 1 layer
+            profile using the radius of that layer then add the third layer
+            (atmosphere) on top.
+
+            Note: the input T_s, P_s, rho_s here are used for the outer boundary
+            of layer 1. They will then be overwritten with the final values
+            after layer 2 is added.
+
+            Args or set attributes:
+                ...
+
+            Sets:
+                ...
+        """
+        # Check for necessary input
+        assert(self.num_layer == 2)
+        assert(self.A1_R_layer[0] is not None)
+        assert(self.P_s is not None)
+        assert(self.T_s is not None)
+        assert(self.rho_s is not None)
+        assert(self.A1_mat_id_layer[0] is not None)
+        assert(self.A1_mat_id_layer[1] is not None)
+        assert(self.A1_T_rho_type_id[0] is not None)
+        assert(self.A1_T_rho_type_id[1] is not None)
+
+        # Store the layer 2 properties
+        mat_L2          = self.A1_mat_layer[1]
+        T_rho_type_L2   = self.A1_T_rho_type_id[1]
+        T_rho_args_L2   = self.A1_T_rho_args[1]
+
+        # Temporarily set self to be a 1 layer planet
+        self.num_layer          = 1
+        self.A1_M_layer         = self.A1_M_layer[:-1]
+        self.A1_R_layer         = self.A1_R_layer[:-1]
+        self.A1_mat_layer       = self.A1_mat_layer[:-1]
+        self.A1_mat_id_layer    = self.A1_mat_id_layer[:-1]
+        self.A1_T_rho_type_id   = self.A1_T_rho_type_id[:-1]
+        self.A1_T_rho_args      = self.A1_T_rho_args[:-1]
+        self.rho_s              = eos.rho_P_T(
+            self.P_s, self.T_s, self.A1_mat_id_layer[-1])
+
+        # Find the radius of the inner 1 layer in isolation
+        self.M = np.sum(self.A1_M_layer)
+        
+        if self.R is None or self.R == 0:
+            self.R = self.A1_R_layer[0]
+
+        print("Finding M given R...")
+
+        self.M = L1_spherical.L1_find_mass(
+            self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s,
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0]
+            )
+
+        print("Done!")
+
+        # Integrate the profiles
+        (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
+         self.A1_mat_id) = L1_spherical.L1_integrate(
+            self.num_prof, self.R, self.M, self.P_s, self.T_s, self.rho_s,
+            self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0]
+            )
+
+        self.update_attributes()
+                
+        # Add the second layer
+        print("Adding the second layer on top...")
+        
+        self.gen_prof_L2_given_prof_L1(
+            mat            = mat_L2,
+            T_rho_type_id  = T_rho_type_L2,
+            T_rho_args     = T_rho_args_L2,
+            rho_min        = self.rho_min,
+            )
+
+        print("Done!")
+
     # ========
     # 3 Layers
     # ========
@@ -1781,7 +2054,6 @@ def L1_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
     spin_planet.print_info()
     
     return spin_planet
-
 
 def L2_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
                 num_prof=1000, max_iter_1=20, max_iter_2=5):
