@@ -8,7 +8,6 @@
 *.gz
 *.log
 *.mp4
-# *.npy
 *.ods
 *.out
 *.pdf

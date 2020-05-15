@@ -23,6 +23,8 @@ def load_u_cold_array(mat_id):
         u_cold_array = np.load(gv.Fp_u_cold_Til_iron)
     elif mat_id == gv.id_Til_granite:
         u_cold_array = np.load(gv.Fp_u_cold_Til_granite)
+    elif mat_id == gv.id_Til_basalt:
+        u_cold_array = np.load(gv.Fp_u_cold_Til_basalt)
     elif mat_id == gv.id_Til_water:
         u_cold_array = np.load(gv.Fp_u_cold_Til_water)
     else:
@@ -35,6 +37,8 @@ if os.path.isfile(gv.Fp_u_cold_Til_iron):
     A1_u_cold_iron = load_u_cold_array(gv.id_Til_iron)
 if os.path.isfile(gv.Fp_u_cold_Til_granite):
     A1_u_cold_granite = load_u_cold_array(gv.id_Til_granite)
+if os.path.isfile(gv.Fp_u_cold_Til_basalt):
+    A1_u_cold_basalt = load_u_cold_array(gv.id_Til_basalt)
 if os.path.isfile(gv.Fp_u_cold_Til_water):
     A1_u_cold_water = load_u_cold_array(gv.id_Til_water)
 
@@ -57,12 +61,14 @@ def P_u_rho(u, rho, mat_id):
                 Pressure (SI).
     """
     
-    # Material constants for Tillotson EoS
+    # Material constants for Tillotson EoS (SI)
     # mat_id, rho0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
     iron    = np.array([gv.id_Til_iron, 7800, 0.5, 1.5, 1.28e11, 1.05e11,
                         9.5e6, 2.4e6, 8.67e6, 5, 5, 0, 0, 0])
     granite = np.array([gv.id_Til_granite, 2680, 0.5, 1.3, 1.8e10, 1.8e10,
                         1.6e7, 3.5e6, 1.8e7, 5, 5, 0, 0, 0])
+    basalt  = np.array([gv.id_Til_basalt, 2700, 0.5, 1.5, 2.67e10, 2.67e10,
+                        4.87e8, 4.72e6, 1.82e7, 5, 5, 0, 0, 0])
     water   = np.array([gv.id_Til_water, 998, 0.7, 0.15, 2.18e9, 1.325e10,
                         7.0e6, 4.19e5, 2.69e6, 10, 5, 0.925, 0, 0.875])
 
@@ -70,6 +76,8 @@ def P_u_rho(u, rho, mat_id):
         material = iron
     elif (mat_id == gv.id_Til_granite):
         material = granite
+    elif (mat_id == gv.id_Til_basalt):
+        material = basalt
     elif (mat_id == gv.id_Til_water):
         material = water
     else:
@@ -149,6 +157,8 @@ def Til_C_V(mat_id):
         return 449.
     elif mat_id == gv.id_Til_granite:
         return 790.
+    elif mat_id == gv.id_Til_basalt:
+        return 790.
     elif mat_id == gv.id_Til_water:
         return 4186.
     else:
@@ -171,6 +181,8 @@ def _rho_0_material(mat_id):
         return 7800.
     elif (mat_id == gv.id_Til_granite):
         return 2680.
+    elif (mat_id == gv.id_Til_basalt):
+        return 2700.
     elif (mat_id == gv.id_Til_water):
         return 998.
     else:
@@ -260,6 +272,8 @@ def u_cold_tab(rho, mat_id):
         u_cold_array = A1_u_cold_iron
     elif mat_id == gv.id_Til_granite:
         u_cold_array = A1_u_cold_granite
+    elif mat_id == gv.id_Til_basalt:
+        u_cold_array = A1_u_cold_basalt
     elif mat_id == gv.id_Til_water:
         u_cold_array = A1_u_cold_water
     else:

@@ -129,7 +129,13 @@ def load_table_SESAME(Fp_table):
                 A2_u[i_rho, i_T], A2_P[i_rho, i_T], A2_c[i_rho, i_T], \
                     A2_s[i_rho, i_T]    = np.array(f.readline().split(),
                                                    dtype=float)
-
+                    
+    # change values equal to 0
+    small               = 1e-10
+    A1_rho[A1_rho == 0] = small
+    A1_T[A1_T == 0]     = small
+    A2_u[A2_u == 0]     = small
+    
     return A2_u, A2_P, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
 
 # Load SESAME tables as global variables

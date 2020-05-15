@@ -12,9 +12,10 @@ import glob_vars as gv
 from scipy.interpolate import interp1d
 import seagen
 import scipy.integrate as integrate
-from sklearn.neighbors import NearestNeighbors
 from tqdm import tqdm
 import L1_spin
+import L2_spin
+import L3_spin
 
 # Spining model functions
 @njit
@@ -714,3 +715,99 @@ def spin_escape_vel(r_array, rho_e, z_array, rho_p, Tw):
     v_escape_equator = np.sqrt(-2*V_equator - (w*R_e)**2)
     
     return v_escape_equator, v_escape_pole
+
+
+def spin_iteration(Tw, num_layer,
+                   A1_r_equator, A1_rho_equator,
+                   A1_r_pole, A1_rho_pole,
+                   P_0, P_s,
+                   rho_0, rho_s,
+                   A1_mat_id_layer, A1_T_rho_type_id, A1_T_rho_args,
+                   P_1=None, P_2=None):
+    
+    
+    # Use correct function
+    if num_layer == 1:
+
+        profile_e, profile_p = \
+            L1_spin.spin1layer(1,
+                               A1_r_equator, A1_rho_equator,
+                               A1_r_pole, A1_rho_pole, Tw,
+                               P_0, P_s, rho_0, rho_s,
+                               A1_mat_id_layer[0],
+                               A1_T_rho_type_id[0],
+                               A1_T_rho_args[0],
+                               verbose=0
+                               )
+
+    elif num_layer == 2:
+
+        profile_e, profile_p = \
+            L2_spin.spin2layer(1,
+                       A1_r_equator, A1_rho_equator,
+                       A1_r_pole, A1_rho_pole, Tw,
+                       P_0, P_1, P_s,
+                       rho_0, rho_s,
+                       A1_mat_id_layer[0], A1_T_rho_type_id[0], A1_T_rho_args[0],
+                       A1_mat_id_layer[1], A1_T_rho_type_id[1], A1_T_rho_args[1],
+                       verbose=0
+                       )
+
+    elif num_layer == 3:
+
+        profile_e, profile_p = \
+            L3_spin.spin3layer(1,
+                       A1_r_equator, A1_rho_equator,
+                       A1_r_pole, A1_rho_pole, Tw,
+                       P_0, P_1, P_2, P_s,
+                       rho_0, rho_s,
+                       A1_mat_id_layer[0], A1_T_rho_type_id[0], A1_T_rho_args[0],
+                       A1_mat_id_layer[1], A1_T_rho_type_id[1], A1_T_rho_args[1],
+                       A1_mat_id_layer[2], A1_T_rho_type_id[2], A1_T_rho_args[2],
+                       verbose=0
+                       )
+
+    A1_rho_equator   = profile_e[-1]
+    A1_rho_pole      = profile_p[-1]
+    
+    return A1_rho_equator, A1_rho_pole
+
+
+def find_Tw_min(num_layer,
+                A1_r_equator, A1_rho_equator,
+                A1_r_pole, A1_rho_pole,
+                P_0, P_s,
+                rho_0, rho_s,
+                A1_mat_id_layer, A1_T_rho_type_id, A1_T_rho_args,
+                P_1=None, P_2=None,
+                Tw_max=10, max_iter=30, print_info=False):
+    
+    Tw_min = 0.0001
+    tol = 0.00001
+        
+    for k in tqdm(range(max_iter), desc="Finding Tw min", disable = not print_info):
+        
+        Tw_try = np.mean([Tw_min, Tw_max])
+        
+        profile_e, _ = spin_iteration(Tw_try, num_layer,
+                   A1_r_equator, A1_rho_equator,
+                   A1_r_pole, A1_rho_pole,
+                   P_0, P_s,
+                   rho_0, rho_s,
+                   A1_mat_id_layer, A1_T_rho_type_id, A1_T_rho_args,
+                   P_1, P_2)
+            
+        if profile_e[-1] > 0:
+            Tw_min = Tw_try     
+        else:
+            Tw_max = Tw_try
+            
+        if np.abs(Tw_max - Tw_min)/Tw_min < tol:
+            break
+        
+    Tw_min = Tw_max
+    
+    if print_info:
+        print("Minimum period: %.3f hours" % (Tw_min))
+        
+    return Tw_min

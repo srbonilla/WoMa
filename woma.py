@@ -18,6 +18,7 @@ sys.path.append(dir + "/spin_funcs")
 sys.path.append(dir + "/misc")
 
 import numpy as np
+import copy
 import h5py
 import L1_spherical
 import L2_spherical
@@ -601,7 +602,7 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L1_find_M_given_R(self):
+    def gen_prof_L1_find_M_given_R(self, print_info=True):
         # Check for necessary input
         assert(self.R is not None or self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
@@ -610,7 +611,8 @@ class Planet():
         if self.R is None:
             self.R = self.A1_R_layer[0]
 
-        print("Finding M given R...")
+        if print_info:
+            print("Finding M given R...")
 
         self.M = L1_spherical.L1_find_mass(
             self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s,
@@ -618,7 +620,8 @@ class Planet():
             self.A1_T_rho_args[0]
             )
 
-        print("Done!")
+        if print_info:
+            print("Done!")
 
         # Integrate the profiles
         (self.A1_r, self.A1_m_enc, self.A1_P, self.A1_T, self.A1_rho, self.A1_u,
@@ -629,7 +632,8 @@ class Planet():
             )
 
         self.update_attributes()
-        self.print_info()
+        if print_info:
+            self.print_info()
 
     def gen_prof_L1_given_R_M(self):
         # Check for necessary input
@@ -697,14 +701,15 @@ class Planet():
         self.update_attributes()
         self.print_info()
 
-    def gen_prof_L2_find_M_given_R1_R(self):
+    def gen_prof_L2_find_M_given_R1_R(self, print_info=True):
         # Check for necessary input
         assert(self.R is not None)
         assert(self.A1_R_layer[0] is not None)
         assert(self.M_max is not None)
         self._2_layer_input()
 
-        print("Finding M given R1 and R...")
+        if print_info:
+            print("Finding M given R1 and R...")
 
         self.M = L2_spherical.L2_find_mass(
             self.num_prof, self.R, self.M_max, self.P_s, self.T_s, self.rho_s,
@@ -721,10 +726,12 @@ class Planet():
             self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
             )
 
-        print("Done!")
+        if print_info:
+            print("Done!")
 
         self.update_attributes()
-        self.print_info()
+        if print_info:
+            self.print_info()
 
     def gen_prof_L2_find_R_given_M_R1(self):
         # Check for necessary input
@@ -1302,12 +1309,12 @@ class SpinPlanet():
     self, name=None, planet=None, Fp_planet=None, Tw=None,
     A1_mat_layer=None, A1_R_layer=None,
     A1_T_rho_type=None, A1_T_rho_args=None, A1_r=None, A1_P=None, A1_T=None,
-    A1_rho=None, num_prof=1000, num_attempt=15, R_e_max=None, R_p_max=None
+    A1_rho=None, num_prof=1000, iter_spin=15, R_e_max=None, R_p_max=None
     ):
         self.name               = name
         self.Fp_planet          = Fp_planet
         self.num_prof           = num_prof
-        self.num_attempt        = num_attempt
+        self.iter_spin          = iter_spin
         self.R_e_max            = R_e_max
         self.R_p_max            = R_p_max
         self.Tw                 = Tw
@@ -1361,9 +1368,56 @@ class SpinPlanet():
         assert(self.num_layer in [1, 2, 3])
         assert(self.R_e_max is not None)
         assert(self.R_p_max is not None)
-
+        
+        # Initialize A1_rho_equator and A1_rho_pole with the spherical profile
         self.A1_r_equator     = np.linspace(0, self.R_e_max, self.num_prof)
         self.A1_r_pole        = np.linspace(0, self.R_p_max, self.num_prof)
+        
+        spherical_model = interp1d(self.A1_r, self.A1_rho, bounds_error=False, fill_value=0)
+
+        self.A1_rho_equator = spherical_model(self.A1_r_equator)
+        self.A1_rho_pole    = spherical_model(self.A1_r_pole)
+        
+        # compute pressure and density at points of change of material      
+        self.P_0   = np.max(self.A1_P)
+        self.P_s   = np.min(self.A1_P)
+        self.rho_0 = np.max(self.A1_rho)
+        self.rho_s = np.min(self.A1_rho)
+        
+        self.P_1 = None # pressure between core and mantle
+        self.P_2 = None # pressure between mantle and atmosphere
+        
+        if self.num_layer == 2:
+
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary = 0.5*(a + b)
+
+            self.P_1   = P_boundary
+            self.rho_1 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[0]])
+            self.T_1   = T_rho(self.rho_1, self.A1_T_rho_type_id[0],
+                               self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+            
+        elif self.num_layer == 3:
+
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
+            P_boundary_12 = 0.5*(a + b)
+
+            self.P_1   = P_boundary_12
+            self.rho_1 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[0]])
+            self.T_1   = T_rho(self.rho_1, self.A1_T_rho_type_id[0],
+                               self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
+
+            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
+            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
+            P_boundary_23 = 0.5*(a + b)
+
+            self.P_2   = P_boundary_23
+            self.rho_2 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[1]])
+            self.T_2   = T_rho(self.rho_1, self.A1_T_rho_type_id[1],
+                               self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
+
         
     def _check_input(self):
         
@@ -1615,171 +1669,287 @@ class SpinPlanet():
 #                    self.I_MR2/self.M/self.R/self.R))
 # =============================================================================
         
-    def find_Tw_min(self, Tw_max=10, iterations=20):
+    def find_Tw_min(self, Tw_max=10, max_iter=20, print_info=True):
         
-        Tw_min = 0.
+        Tw_min = us.find_Tw_min(self.num_layer,
+                                self.A1_r_equator, self.A1_rho_equator, 
+                                self.A1_r_pole, self.A1_rho_pole,
+                                self.P_0, self.P_s,
+                                self.rho_0, self.rho_s,
+                                self.A1_mat_id_layer,
+                                self.A1_T_rho_type_id,
+                                self.A1_T_rho_args,
+                                self.P_1, self.P_2,
+                                Tw_max, max_iter, print_info)
+        
+        self.Tw_min = Tw_min
 
-        P_c   = np.max(self.A1_P)
-        P_s   = np.min(self.A1_P)
-        rho_c = np.max(self.A1_rho)
-        rho_s = np.min(self.A1_rho)
-        
+    def spin(self, max_iter=20, print_info=True, tol=0.001):
         # Check for necessary input
         self._check_input()
         
-        # Other necessary input in case of 2 and 3 layers
-        if self.num_layer == 2:
+        for i in tqdm(range(max_iter), desc="Computing spinning profile",
+                      disable = not print_info):
+            # compute Tw_min
+            self.find_Tw_min(print_info=False)
             
-            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
-            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
-            P_boundary = 0.5*(a + b)
-            
-            
-        elif self.num_layer == 3:
-            
-            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
-            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
-            P_boundary_12 = 0.5*(a + b)
-
-            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
-            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
-            P_boundary_23 = 0.5*(a + b)
-            
-        for k in tqdm(range(iterations), desc="Finding Tw min:"):
-            
-            Tw_try = np.mean([Tw_min, Tw_max])
-            
-            if self.num_layer == 1:
-                profile_e, profile_p = \
-                    L1_spin.spin1layer(1, self.A1_r_equator, self.A1_r_pole,
-                                self.A1_r, self.A1_rho, Tw_try,
-                                P_c, P_s, rho_c, rho_s,
-                                self.A1_mat_id_layer[0],
-                                self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
-                                verbose=0
-                                )
-                    
-            elif self.num_layer == 2:  
-                profile_e, profile_p = \
-                    L2_spin.spin2layer(1, self.A1_r_equator, self.A1_r_pole,
-                               self.A1_r, self.A1_rho, Tw_try,
-                               P_c, P_boundary, P_s,
-                               rho_c, rho_s,
-                               self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
-                               self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
-                               verbose=0
-                               )
-                    
-            elif self.num_layer == 3:
-                profile_e, profile_p = \
-                    L3_spin.spin3layer(1, self.A1_r_equator, self.A1_r_pole,
-                               self.A1_r, self.A1_rho, Tw_try,
-                               P_c, P_boundary_12, P_boundary_23, P_s,
-                               rho_c, rho_s,
-                               self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
-                               self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
-                               self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2], self.A1_T_rho_args[2],
-                               verbose=0
-                               )
-                
-            if profile_e[-1][-1] > 0:
-                Tw_min = Tw_try     
+            # select Tw for this iteration
+            if self.Tw >= self.Tw_min:
+                Tw_iter = self.Tw
             else:
-                Tw_max = Tw_try
+                Tw_iter = self.Tw_min
+                
+            # compute profile
+            A1_rho_equator, A1_rho_pole = us.spin_iteration(
+                    Tw_iter, self.num_layer,
+                    self.A1_r_equator, self.A1_rho_equator,
+                    self.A1_r_pole, self.A1_rho_pole,
+                    self.P_0, self.P_s,
+                    self.rho_0, self.rho_s,
+                    self.A1_mat_id_layer, self.A1_T_rho_type_id, self.A1_T_rho_args,
+                    self.P_1, self.P_2)
             
-        self.Tw_min = Tw_max
-        print("Minimum period: %.3f hours" % (self.Tw_min))
+            # convergence criteria
+            criteria = np.mean(np.abs(A1_rho_equator - self.A1_rho_equator)/self.rho_s)
+            
+             # save results
+            self.A1_rho_equator = A1_rho_equator
+            self.A1_rho_pole    = A1_rho_pole
+            
+            # check if there is convergence
+            # print(criteria)
+            if criteria < tol:
+                if print_info:
+                    print("Convergence criteria reached.")
+                break
+            
+        if self.Tw < Tw_iter:
+            if print_info:
+                print("")
+                print("Minimum period found at", Tw_iter, "h")
+            self.Tw = Tw_iter
 
-
-    def spin(self):
-        # Check for necessary input
-        self._check_input()
-        assert(self.Tw is not None)
-
-        P_c   = np.max(self.A1_P)
-        P_s   = np.min(self.A1_P)
-        rho_c = np.max(self.A1_rho)
-        rho_s = np.min(self.A1_rho)
-        
-        self.P_0 = P_c
-        self.P_s = P_s
-        self.rho_0 = rho_c
-        self.rho_s = rho_s
-        
-        # Use correct function
-        if self.num_layer == 1:
-
-            profile_e, profile_p = \
-                L1_spin.spin1layer(self.num_attempt, self.A1_r_equator, self.A1_r_pole,
-                                   self.A1_r, self.A1_rho, self.Tw,
-                                   P_c, P_s, rho_c, rho_s,
-                                   self.A1_mat_id_layer[0],
-                                   self.A1_T_rho_type_id[0],
-                                   self.A1_T_rho_args[0]
-                                   )
-
-        elif self.num_layer == 2:
-
-            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
-            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
-            P_boundary = 0.5*(a + b)
-
-            self.P_1   = P_boundary
-            self.rho_1 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[0]])
-            self.T_1   = T_rho(self.rho_1, self.A1_T_rho_type_id[0],
-                               self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
-
-            profile_e, profile_p = \
-                L2_spin.spin2layer(self.num_attempt, self.A1_r_equator, self.A1_r_pole,
-                           self.A1_r, self.A1_rho, self.Tw,
-                           P_c, P_boundary, P_s,
-                           rho_c, rho_s,
-                           self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
-                           self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1]
-                           )
-
-        elif self.num_layer == 3:
-
-            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[0]])
-            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[0]])
-            P_boundary_12 = 0.5*(a + b)
-
-            self.P_1   = P_boundary_12
-            self.rho_1 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[0]])
-            self.T_1   = T_rho(self.rho_1, self.A1_T_rho_type_id[0],
-                               self.A1_T_rho_args[0], self.A1_mat_id_layer[0])
-
-            a = np.min(self.A1_P[self.A1_r <= self.A1_R_layer[1]])
-            b = np.max(self.A1_P[self.A1_r >= self.A1_R_layer[1]])
-            P_boundary_23 = 0.5*(a + b)
-
-            self.P_2   = P_boundary_23
-            self.rho_2 = np.min(self.A1_rho[self.A1_r <= self.A1_R_layer[1]])
-            self.T_2   = T_rho(self.rho_1, self.A1_T_rho_type_id[1],
-                               self.A1_T_rho_args[1], self.A1_mat_id_layer[1])
-
-            profile_e, profile_p = \
-                L3_spin.spin3layer(self.num_attempt, self.A1_r_equator, self.A1_r_pole,
-                           self.A1_r, self.A1_rho, self.Tw,
-                           P_c, P_boundary_12, P_boundary_23, P_s,
-                           rho_c, rho_s,
-                           self.A1_mat_id_layer[0], self.A1_T_rho_type_id[0], self.A1_T_rho_args[0],
-                           self.A1_mat_id_layer[1], self.A1_T_rho_type_id[1], self.A1_T_rho_args[1],
-                           self.A1_mat_id_layer[2], self.A1_T_rho_type_id[2], self.A1_T_rho_args[2]
-                           )
-
-        print("\nDone!")
-
-        # Save profile
-        self.A1_rho_equator   = profile_e[-1]
-        self.A1_rho_pole      = profile_p[-1]
-        
         self.update_attributes()
-        self.print_info()
         
-        #def spin_fixed_M(self):
+        if print_info:
+            self.print_info()
+
+def L1_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
+                num_prof=1000, max_iter_1=20):
+    
+    assert planet.num_layer == 1
+    
+    tol   = 0.001
+    f_min = 0.
+    f_max = 1.
+    
+    for i in tqdm(range(max_iter_1), desc="Computing spinning profile", 
+                  disable = False):
+        
+        f = np.mean([f_min, f_max])
+        
+        # create copy of planet
+        new_planet = copy.deepcopy(planet)
+        
+        # shrink it
+        new_planet.A1_R_layer = f*new_planet.A1_R_layer
+        new_planet.R          = f*new_planet.R
+        
+        # make new profile
+        new_planet.M_max = new_planet.M
+        new_planet.gen_prof_L1_find_M_given_R(print_info=False)
             
-            #assert self.M is not None
+        spin_planet = SpinPlanet(
+                planet=new_planet,
+                Tw=Tw,
+                R_e_max=R_e_max,
+                R_p_max=R_p_max)
+        
+        spin_planet.spin(print_info=False)
+        
+        criteria = np.abs(planet.M - spin_planet.M)/planet.M < tol
+        #print(np.abs(planet.M - spin_planet.M)/planet.M)
+        
+        if criteria:
+            break
+        
+        if spin_planet.M > planet.M:
+            f_max = f
+        else:
+            f_min = f
+        
+    spin_planet.print_info()
+    
+    return spin_planet
+
+
+def L2_spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
+                num_prof=1000, max_iter_1=20, max_iter_2=5):
+    
+    assert planet.num_layer == 2
+    
+    tol      = 0.01
+    M        = planet.M
+    
+    f_M_core = planet.A1_M_layer[0]/M
+    
+    new_planet = copy.deepcopy(planet)
+    
+    spin_planet = SpinPlanet(
+                    planet=new_planet,
+                    Tw=Tw,
+                    num_prof=num_prof,
+                    R_e_max=R_e_max,
+                    R_p_max=R_p_max)
+            
+    spin_planet.spin(print_info=False)
+    
+    for k in tqdm(range(max_iter_2), desc="Computing spinning profile"):
+        
+        #print("iteration ------------", k, "--------")
+        if spin_planet.M > M:
+            R_mantle_min = new_planet.A1_R_layer[0]
+            R_mantle_max = new_planet.A1_R_layer[1]
+        else:
+            R_mantle_min = new_planet.A1_R_layer[1]
+            R_mantle_max = 1.1*new_planet.A1_R_layer[1]
+        
+        for i in tqdm(range(max_iter_1), desc="Adjusting outer edge", 
+                      disable = False):
+            
+            #R_core   = np.mean([R_core_min, R_core_max])
+            R_mantle = np.mean([R_mantle_min, R_mantle_max])
+            
+            # create copy of planet
+            new_planet = copy.deepcopy(planet)
+            
+            # modify boundaries
+            new_planet.A1_R_layer[1] = R_mantle
+            new_planet.R             = R_mantle
+            
+            # make new profile
+            new_planet.M_max = 1.05*planet.M
+            new_planet.gen_prof_L2_find_M_given_R1_R(print_info=False)
+                
+            spin_planet = SpinPlanet(
+                    planet=new_planet,
+                    Tw=Tw,
+                    num_prof=num_prof,
+                    R_e_max=R_e_max,
+                    R_p_max=R_p_max)
+            
+            spin_planet.spin(print_info=False)
+            
+            criteria_1 = np.abs(planet.M - spin_planet.M)/planet.M < tol
+            criteria_2 = np.abs(planet.A1_M_layer[0]/planet.M - \
+                                spin_planet.A1_M_layer[0]/spin_planet.M) < tol
+                                
+            if criteria_1 and criteria_2:
+                return spin_planet
+            
+            #print("Relative mass diff:")
+            #print(np.abs(planet.M - spin_planet.M)/planet.M)
+            #print("Relative core fraction diff:")
+            #print(np.abs(planet.A1_M_layer[0]/planet.M - \
+            #                    spin_planet.A1_M_layer[0]/spin_planet.M))
+            
+            if criteria_1:
+                break
+            
+            if spin_planet.M > planet.M:
+                R_mantle_max = R_mantle
+            else:
+                R_mantle_min = R_mantle
+                
+        
+        if spin_planet.A1_M_layer[0]/spin_planet.M > f_M_core:
+            R_core_min   = 0
+            R_core_max   = new_planet.A1_R_layer[0]
+        else:
+            R_core_min   = new_planet.A1_R_layer[0]
+            R_core_max   = new_planet.A1_R_layer[1]
+                
+        for i in tqdm(range(max_iter_1), desc="Adjusting core-mantle boundary", 
+                  disable = False):
+            
+            R_core   = np.mean([R_core_min, R_core_max])
+            #R_mantle = np.mean([R_mantle_min, R_mantle_max])
+            
+            # create copy of planet
+            new_planet = copy.deepcopy(planet)
+            
+            # modify boundaries
+            new_planet.A1_R_layer[0] = R_core
+            new_planet.A1_R_layer[1] = R_mantle
+            new_planet.R             = R_mantle
+            
+            # make new profile
+            new_planet.M_max = 1.05*planet.M
+            new_planet.gen_prof_L2_find_M_given_R1_R(print_info=False)
+                
+            spin_planet = SpinPlanet(
+                    planet=new_planet,
+                    Tw=Tw,
+                    num_prof=num_prof,
+                    R_e_max=R_e_max,
+                    R_p_max=R_p_max)
+            
+            spin_planet.spin(print_info=False)
+            
+            criteria_1 = np.abs(planet.M - spin_planet.M)/planet.M < tol
+            criteria_2 = np.abs(planet.A1_M_layer[0]/planet.M - \
+                                spin_planet.A1_M_layer[0]/spin_planet.M) < tol
+            
+            #print("Relative mass diff:")
+            #print((planet.M - spin_planet.M)/planet.M)
+            #print("Relative core fraction diff:")
+            #print((planet.A1_M_layer[0]/planet.M - \
+            #                    spin_planet.A1_M_layer[0]/spin_planet.M))
+            
+            if criteria_1 and criteria_2:
+                return spin_planet
+            
+            if criteria_2:
+                break
+            
+            new_f_M_core = spin_planet.A1_M_layer[0]/spin_planet.M
+            
+            if new_f_M_core > f_M_core:
+                R_core_max = R_core
+            else:
+                R_core_min = R_core
+            
+    spin_planet.print_info()
+    
+    return spin_planet
+
+def spin_planet_fix_M(planet, Tw, R_e_max=4*gv.R_earth, R_p_max=2*gv.R_earth,
+                num_prof=1000, max_iter_1=20, max_iter_2=5):
+    
+    if planet.num_layer == 1:
+        
+        spin_planet = L1_spin_planet_fix_M(planet, Tw,
+                                           R_e_max, R_p_max,
+                                           num_prof, max_iter_1)
+        
+    elif planet.num_layer == 2:
+        
+        spin_planet = L2_spin_planet_fix_M(planet, Tw,
+                                           R_e_max, R_p_max,
+                                           num_prof, max_iter_1,
+                                           max_iter_2)
+        
+    elif planet.num_layer == 3:
+        
+        raise ValueError("Not implemented yet")
+        
+    else:
+        
+        raise ValueError("Number of layers in your planet is incorrect. \
+                         It should be 1, 2, or 3")
+        
+    return spin_planet
+        
 
 class GenSpheroid():
 

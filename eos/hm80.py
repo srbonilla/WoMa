@@ -71,6 +71,11 @@ def load_table_HM80(Fp_table):
     
     log_rho_step    = (log_rho_max - log_rho_min) / (num_rho - 1)
     log_u_step      = (log_u_max - log_u_min) / (num_u - 1)
+    
+    # change values equal to 0
+    small           = 1e-10
+    A2_P[A2_P == 0] = small
+    A2_T[A2_T == 0] = small
 
     return (log_rho_min, log_rho_max, num_rho, log_rho_step, log_u_min, 
             log_u_max, num_u, log_u_step, np.log(A2_P), np.log(A2_T))

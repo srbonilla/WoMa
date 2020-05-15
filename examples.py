@@ -43,8 +43,9 @@ def plot_planet_profiles(planet):
     
     plt.tight_layout()
 
-def plot_planet_profiles_alternate(planet):
-    fig, ax = plt.subplots(2, 2, figsize=(7, 7))
+def plot_planet_profiles_alternate(planet, fig=None, ax=None):
+    if fig == None:
+        fig, ax = plt.subplots(2, 2, figsize=(7, 7))
     
     ax[0,0].plot(planet.A1_r/R_earth, planet.A1_rho)
     ax[0,0].set_xlabel(r"Radius $[R_\oplus]$")
@@ -69,6 +70,8 @@ def plot_planet_profiles_alternate(planet):
     ax[1,1].set_ylabel(r"ln( Temperature [K] )")
     
     plt.tight_layout()
+    
+    return fig, ax
 
 # ============================================================================ #
 
@@ -121,7 +124,22 @@ def demo_gen_prof_L2_find_R1_given_R_M():
 
     planet.gen_prof_L2_find_R1_given_R_M()
 
-    plot_planet_profiles(planet)
+    fig, ax = plot_planet_profiles_alternate(planet)
+    
+    planet_2 = woma.Planet(
+        name            = "planet",
+        A1_mat_layer    = ["Til_iron", "Til_basalt"],
+        A1_T_rho_type   = ["power", "power"],
+        A1_T_rho_args   = [[None, 0.], [None, 0.]],
+        A1_R_layer      = [None, R_earth],
+        M               = M_earth,
+        P_s             = 0,
+        T_s             = 300,
+        )
+
+    planet_2.gen_prof_L2_find_R1_given_R_M()
+
+    plot_planet_profiles_alternate(planet_2, fig, ax)
 
 def demo_gen_prof_L2_find_R_given_M_R1():
     planet = woma.Planet(
