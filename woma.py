@@ -1684,20 +1684,23 @@ class SpinPlanet():
         
         self.Tw_min = Tw_min
 
-    def spin(self, max_iter=20, print_info=True, tol=0.001):
+    def spin(self, max_iter=20, print_info=True, tol=0.001, check_Tw_min=True):
         # Check for necessary input
         self._check_input()
         
         for i in tqdm(range(max_iter), desc="Computing spinning profile",
                       disable = not print_info):
             # compute Tw_min
-            self.find_Tw_min(print_info=False)
-            
-            # select Tw for this iteration
-            if self.Tw >= self.Tw_min:
-                Tw_iter = self.Tw
+            if check_Tw_min:
+                self.find_Tw_min(print_info=False)
+                
+                # select Tw for this iteration
+                if self.Tw >= self.Tw_min:
+                    Tw_iter = self.Tw
+                else:
+                    Tw_iter = self.Tw_min
             else:
-                Tw_iter = self.Tw_min
+                Tw_iter = self.Tw
                 
             # compute profile
             A1_rho_equator, A1_rho_pole = us.spin_iteration(
