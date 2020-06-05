@@ -164,6 +164,11 @@ def load_table_SESAME(Fp_table):
  A1_log_T_SESAME_CO2, A2_log_u_SESAME_CO2
  )  = load_table_SESAME(gv.Fp_SESAME_CO2)
 
+# load ANEOS
+(A2_u_ANEOS_forsterite, A2_P_ANEOS_forsterite, A2_s_ANEOS_forsterite, A1_log_rho_ANEOS_forsterite,
+ A1_log_T_ANEOS_forsterite, A2_log_u_ANEOS_forsterite
+ )  = load_table_SESAME(gv.Fp_ANEOS_forsterite)
+
 @njit
 def round_to_n(x, n):
     return round(x, -int(np.floor(np.sign(x) * np.log10(abs(x)))) + n)
@@ -218,6 +223,10 @@ def P_u_rho(u, rho, mat_id):
     elif (mat_id == gv.id_SESAME_CO2):
         A2_P, A1_log_rho, A2_log_u = (
             A2_P_SESAME_CO2, A1_log_rho_SESAME_CO2, A2_log_u_SESAME_CO2
+            )
+    elif (mat_id == gv.id_ANEOS_forsterite):
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_forsterite, A1_log_rho_ANEOS_forsterite, A2_log_u_ANEOS_forsterite
             )
     else:
        raise ValueError("Invalid material ID")
@@ -343,6 +352,10 @@ def u_rho_T(rho, T, mat_id):
         A2_u, A1_log_rho, A1_log_T = (
             A2_u_SESAME_CO2, A1_log_rho_SESAME_CO2, A1_log_T_SESAME_CO2
             )
+    elif (mat_id == gv.id_ANEOS_forsterite):
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_ANEOS_forsterite, A1_log_rho_ANEOS_forsterite, A1_log_T_ANEOS_forsterite
+            )
     else:
        raise ValueError("Invalid material ID")
 
@@ -461,6 +474,10 @@ def s_rho_T(rho, T, mat_id):
         A2_s, A1_log_rho, A1_log_T = (
             A2_s_SESAME_CO2, A1_log_rho_SESAME_CO2, A1_log_T_SESAME_CO2
             )
+    elif (mat_id == gv.id_ANEOS_forsterite):
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_ANEOS_forsterite, A1_log_rho_ANEOS_forsterite, A1_log_T_ANEOS_forsterite
+            )
     else:
        raise ValueError("Invalid material ID")
 
@@ -568,6 +585,10 @@ def T_rho_s(rho, s, mat_id):
     elif (mat_id == gv.id_SESAME_CO2):
         A1_log_T, A1_log_rho, A2_s  = (
             A1_log_T_SESAME_CO2, A1_log_rho_SESAME_CO2, A2_s_SESAME_CO2
+            )
+    elif (mat_id == gv.id_ANEOS_forsterite):
+        A1_log_T, A1_log_rho, A2_s  = (
+            A1_log_T_ANEOS_forsterite, A1_log_rho_ANEOS_forsterite, A2_s_ANEOS_forsterite
             )
     else:
        raise ValueError("Invalid material ID")

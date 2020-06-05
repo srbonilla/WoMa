@@ -893,7 +893,6 @@ class Planet():
             )
 
         # Integrate outwards until the minimum density (or zero pressure)
-        step = 1
         while A1_rho[-1] > self.rho_min:
             A1_r.append(A1_r[-1] + dr)
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
@@ -922,11 +921,6 @@ class Planet():
                 ))
             A1_u.append(eos.u_rho_T(rho, A1_T[-1], mat_id_L2))
             A1_mat_id.append(mat_id_L2)
-
-            step += 1
-            if step >= self.num_prof:
-                print("Layer 2 goes out too far!")
-                break
 
         # Apppend the new layer to the profiles, removing the final too-low 
         # density or non-positive pressure step
@@ -1417,7 +1411,6 @@ class Planet():
             )
 
         # Integrate outwards until the minimum density (or zero pressure)
-        step = 1
         while A1_rho[-1] > self.rho_min:
             A1_r.append(A1_r[-1] + dr)
             A1_m_enc.append(A1_m_enc[-1] + 4*np.pi*A1_r[-1]*A1_r[-1]*A1_rho[-1]*dr)
@@ -1445,11 +1438,6 @@ class Planet():
                                    self.A1_T_rho_args[2], mat_id_L3))
             A1_u.append(eos.u_rho_T(rho, A1_T[-1], mat_id_L3))
             A1_mat_id.append(mat_id_L3)
-
-            step += 1
-            if step >= self.num_prof:
-                print("Layer 3 goes out too far!")
-                break
 
         # Apppend the new layer to the profiles, removing the final too-low 
         # density or non-positive pressure step
