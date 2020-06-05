@@ -1957,15 +1957,16 @@ class SpinPlanet():
         
         self.Tw_min = Tw_min
 
-    def spin(self, max_iter=20, print_info=True, tol=0.001, check_Tw_min=True):
+    def spin(self, max_iter_1=20, max_iter_2=20, print_info=True,
+             tol=0.001, check_Tw_min=True):
         # Check for necessary input
         self._check_input()
         
-        for i in tqdm(range(max_iter), desc="Computing spinning profile",
+        for i in tqdm(range(max_iter_1), desc="Computing spinning profile",
                       disable = not print_info):
             # compute Tw_min
             if check_Tw_min:
-                self.find_Tw_min(print_info=False)
+                self.find_Tw_min(print_info=False, max_iter=max_iter_2)
                 
                 # select Tw for this iteration
                 if self.Tw >= self.Tw_min:
