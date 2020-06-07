@@ -9,13 +9,18 @@ import os
 
 
 def load_u_cold_array(mat_id):
-    """ Load precomputed values of cold internal energy for a given material.
+    """ Load precomputed values of cold internal energy.
+    
+    Parameters
+    ----------
+    mat_id : int
+        Material id.
 
     Returns
     -------
     u_cold_array : [float]
-        Precomputed values of cold internal energy
-        with function _create_u_cold_array() (SI).
+        Precomputed values of cold internal energy from function 
+        _create_u_cold_array() (J kg^-1).
     """
     if mat_id == gv.id_Til_iron:
         u_cold_array = np.load(gv.Fp_u_cold_Til_iron)
@@ -31,7 +36,7 @@ def load_u_cold_array(mat_id):
     return u_cold_array
 
 
-# load u cold arrays
+# Load precomputed values of cold internal energy
 if os.path.isfile(gv.Fp_u_cold_Til_iron):
     A1_u_cold_iron = load_u_cold_array(gv.id_Til_iron)
 if os.path.isfile(gv.Fp_u_cold_Til_granite):
@@ -44,7 +49,7 @@ if os.path.isfile(gv.Fp_u_cold_Til_water):
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure for Tillotson EoS.
+    """ Compute the pressure from the internal energy and density.
 
     Parameters
     ----------
@@ -64,7 +69,7 @@ def P_u_rho(u, rho, mat_id):
     """
 
     # Material constants for Tillotson EoS (SI)
-    # mat_id, rho0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
+    # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
     iron = np.array(
         [
             gv.id_Til_iron,
@@ -149,21 +154,24 @@ def P_u_rho(u, rho, mat_id):
     else:
         raise ValueError("Invalid material ID")
 
-    rho0 = material[1]
-    a = material[2]
-    b = material[3]
-    A = material[4]
-    B = material[5]
-    u_0 = material[6]
-    u_iv = material[7]
-    u_cv = material[8]
-    alpha = material[9]
-    beta = material[10]
-    eta_min = material[11]
-    P_min = material[12]
-    eta_zero = material[13]
+    # Unpack the parameters
+    (
+        rho_0,
+        a,
+        b,
+        A,
+        B,
+        u_0,
+        u_iv,
+        u_cv,
+        alpha,
+        beta,
+        eta_min,
+        P_min,
+        eta_zero,
+    ) = material[1:]
 
-    eta = rho / rho0
+    eta = rho / rho_0
     eta_sq = eta * eta
     mu = eta - 1.0
     nu = 1.0 / eta - 1.0
@@ -207,8 +215,8 @@ def P_u_rho(u, rho, mat_id):
 
 
 @njit
-def Til_C_V(mat_id):
-    """ Returns specific heat capacity for a given material id (SI)
+def C_V_Til(mat_id):
+    """ Return the specific heat capacity.
 
     Parameters
     ----------
@@ -218,7 +226,7 @@ def Til_C_V(mat_id):
     Returns
     -------
     C_V : float
-        Specific heat capacity (SI).
+        Specific heat capacity (J kg^-1 K^-1).
     """
     if mat_id == gv.id_Til_iron:
         return 449.0
@@ -233,18 +241,18 @@ def Til_C_V(mat_id):
 
 
 @njit
-def _rho_0_material(mat_id):
-    """ Returns rho0 for a given material id. u_{cold}(rho0) = 0
+def _rho_0(mat_id):
+    """ Return the density for which the cold internal energy is zero.
 
-        Parameters
-        ----------
-        mat_id : int
-            Material id.
+    Parameters
+    ----------
+    mat_id : int
+        Material id.
 
-        Returns
-        -------
-        rho0 : float
-            Density (kg m^-3).
+    Returns
+    -------
+    rho_0 : float
+        Density (kg m^-3).
     """
     if mat_id == gv.id_Til_iron:
         return 7800.0
@@ -260,7 +268,7 @@ def _rho_0_material(mat_id):
 
 @njit
 def u_cold(rho, mat_id, N):
-    """ Compute the internal energy cold.
+    """ Compute the cold internal energy from the density.
 
     Parameters
     ----------
@@ -276,14 +284,14 @@ def u_cold(rho, mat_id, N):
     Returns
     -------
     u_cold : float
-        Cold Specific internal energy (J kg^-1).
+        Cold specific internal energy (J kg^-1).
     """
     assert rho >= 0
     mat_type = mat_id // gv.type_factor
     if mat_type == gv.type_Til:
-        rho0 = _rho_0_material(mat_id)
-        drho = (rho - rho0) / N
-        x = rho0
+        rho_0 = _rho_0(mat_id)
+        drho = (rho - rho_0) / N
+        x = rho_0
         u_cold = 1e-9
 
         for j in range(N):
@@ -298,9 +306,9 @@ def u_cold(rho, mat_id, N):
 
 @njit
 def _create_u_cold_array(mat_id):
-    """ Compute the values of the cold internal energy and stores it to save
-        computation time in future calculations.
-        It ranges from density = 100 kg/m^3 to 100000 kg/m^3
+    """ Compute tabulated values of the cold internal energy.
+    
+    Ranges from density = 100 to 100000 kg/m^3
 
     Parameters
     ----------
@@ -310,6 +318,7 @@ def _create_u_cold_array(mat_id):
     Returns
     -------
     u_cold_array : [float]
+        Array of cold specific internal energies (J kg^-1).
     """
     N_row = 10000
     u_cold_array = np.zeros((N_row,))
@@ -329,8 +338,7 @@ def _create_u_cold_array(mat_id):
 
 @njit
 def u_cold_tab(rho, mat_id):
-    """ Fast computation of cold internal energy using the table previously
-        computed.
+    """ Compute the cold internal energy using premade tabulated values.
 
     Parameters
     ----------
@@ -342,8 +350,8 @@ def u_cold_tab(rho, mat_id):
 
     Returns
     -------
-    interpolation : float
-        cold Specific internal energy (J kg^-1).
+    u_cold : float
+        Cold specific internal energy (J kg^-1).
     """
 
     if mat_id == gv.id_Til_iron:
@@ -367,28 +375,47 @@ def u_cold_tab(rho, mat_id):
     b = a + 1
 
     if a >= 0 and a < (N_row - 1):
-        interpolation = u_cold_array[a]
-        interpolation += ((u_cold_array[b] - u_cold_array[a]) / drho) * (
+        u_cold = u_cold_array[a]
+        u_cold += ((u_cold_array[b] - u_cold_array[a]) / drho) * (
             rho - rho_min - a * drho
         )
 
     elif rho < rho_min:
-        interpolation = u_cold_array[0]
+        u_cold = u_cold_array[0]
     else:
-        interpolation = u_cold_array[int(N_row - 1)]
-        interpolation += (
+        u_cold = u_cold_array[int(N_row - 1)]
+        u_cold += (
             (u_cold_array[int(N_row - 1)] - u_cold_array[int(N_row) - 2]) / drho
         ) * (rho - rho_max)
 
-    return interpolation
+    return u_cold
 
 
 @njit
 def u_rho_T(rho, T, mat_id):
+    """ Compute the internal energy from the density and temperature.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+        
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    u : float
+        Specific internal energy (J kg^-1).
+    """
+
     mat_type = mat_id // gv.type_factor
 
     if mat_type == gv.type_Til:
-        cv = Til_C_V(mat_id)
+        cv = C_V_Til(mat_id)
 
         u = u_cold_tab(rho, mat_id) + cv * T
 

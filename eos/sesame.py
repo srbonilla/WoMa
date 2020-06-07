@@ -5,16 +5,7 @@ WoMa SESAME equations of state
 import numpy as np
 from numba import njit
 import glob_vars as gv
-
-# Utilities
-def check_end(string, end):
-    """ Check that a string ends with the required characters and append them
-        if not.
-    """
-    if string[-len(end) :] != end:
-        string += end
-
-    return string
+import utils as ut
 
 
 @njit
@@ -23,14 +14,16 @@ def find_index_and_interp(x, A1_x):
 
    Allows x outside A1_x. If so then intp will be < 0 or > 1.
 
-   Args:
+   Parameters
+   ----------
    x : float
        The value to find.
 
    A1_x : [float]
        The array to search.
 
-   Returns:
+   Returns
+   -------
    idx : int
        The index of the last array element smaller than the value.
 
@@ -111,7 +104,7 @@ def load_table_SESAME(Fp_table):
         pressure (Pa), sound speed (m s^-1).
     """
     # Load
-    Fp_table = check_end(Fp_table, ".txt")
+    Fp_table = ut.check_end(Fp_table, ".txt")
     with open(Fp_table) as f:
         for i in range(5):
             f.readline()
@@ -208,7 +201,7 @@ def load_table_SESAME(Fp_table):
     A2_log_u_SESAME_CO2,
 ) = load_table_SESAME(gv.Fp_SESAME_CO2)
 
-# load ANEOS
+# Load ANEOS as SESAME-style tables
 (
     A2_u_ANEOS_forsterite,
     A2_P_ANEOS_forsterite,
@@ -220,13 +213,8 @@ def load_table_SESAME(Fp_table):
 
 
 @njit
-def round_to_n(x, n):
-    return round(x, -int(np.floor(np.sign(x) * np.log10(abs(x)))) + n)
-
-
-@njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure for the SESAME EoS.
+    """ Compute the pressure from the internal energy and density.
 
     Parameters
     ----------
@@ -244,7 +232,7 @@ def P_u_rho(u, rho, mat_id):
     P : float
         Pressure (Pa).
     """
-    # Choose the arrays from the global variables
+    # Unpack the parameters
     if mat_id == gv.id_SESAME_iron:
         A2_P, A1_log_rho, A2_log_u = (
             A2_P_SESAME_iron,
@@ -372,16 +360,15 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Calculate the specific internal energy as a function of density and
-        temperature for the SESAME EoS.
+    """ Compute the internal energy from the density and temperature.
 
     Parameters
     ----------
-    T : float
-        Temperature (K).
-
     rho : float
         Density (kg m^-3).
+        
+    T : float
+        Temperature (K).
 
     mat_id : int
         Material id.
@@ -391,7 +378,7 @@ def u_rho_T(rho, T, mat_id):
     u : float
         Specific internal energy (J kg^-1).
     """
-    # Choose the arrays from the global variables
+    # Unpack the parameters
     if mat_id == gv.id_SESAME_iron:
         A2_u, A1_log_rho, A1_log_T = (
             A2_u_SESAME_iron,
@@ -513,14 +500,13 @@ def u_rho_T(rho, T, mat_id):
 
 @njit
 def s_rho_T(rho, T, mat_id):
-    """ Calculate the specific entropy as a function of density and
-        temperature for the SESAME EoS.
+    """ Compute the specific entropy from the density and temperature.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-
+        
     T : float
         Temperature (K).
 
@@ -530,9 +516,9 @@ def s_rho_T(rho, T, mat_id):
     Returns
     -------
     s : float
-        Specific internal energy (J kg^-1).
+        Specific entropy (J kg^-1 K^-1).
     """
-    # Choose the arrays from the global variables
+    # Unpack the parameters
     if mat_id == gv.id_SESAME_iron:
         A2_s, A1_log_rho, A1_log_T = (
             A2_s_SESAME_iron,
@@ -647,16 +633,15 @@ def s_rho_T(rho, T, mat_id):
 
 @njit
 def T_rho_s(rho, s, mat_id):
-    """ Calculate the temperature as a function of density and
-        specific entropy for the SESAME EoS.
+    """ Compute the temperature from the the density and specific entropy.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-
+        
     s : float
-        Specific entropy (SI).
+        Specific entropy (J kg^-1 K^-1).
 
     mat_id : int
         Material id.
@@ -666,7 +651,7 @@ def T_rho_s(rho, s, mat_id):
     T : float
         Temperature (K).
     """
-    # Choose the arrays from the global variables
+    # Unpack the parameters
     if mat_id == gv.id_SESAME_iron:
         A1_log_T, A1_log_rho, A2_s = (
             A1_log_T_SESAME_iron,

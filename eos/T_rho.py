@@ -13,7 +13,7 @@ import sesame
 
 @njit
 def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
-    """ Compute the temperature given density (T = f(rho)).
+    """ Compute the temperature from the density using the chosen relation.
 
     Parameters
     ----------
@@ -31,7 +31,8 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
 
     Returns
     -------
-    Temperature (K)
+    T : float
+        Temperature (K)
     """
     mat_type = mat_id // gv.type_factor
 

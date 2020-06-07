@@ -9,13 +9,18 @@ import os
 
 
 def load_u_cold_array(mat_id):
-    """ Load precomputed values of cold internal energy for a given material.
+    """ Load precomputed values of cold internal energy.
+    
+    Parameters
+    ----------
+    mat_id : int
+        Material id.
 
     Returns
     -------
     u_cold_array : [float]
-        Precomputed values of cold internal energy
-        with function _create_u_cold_array() (SI).
+        Precomputed values of cold internal energy from function 
+        _create_u_cold_array() (J kg^-1).
     """
     if mat_id == gv.id_HM80_ice:
         u_cold_array = np.load(gv.Fp_u_cold_HM80_ice)
@@ -27,7 +32,7 @@ def load_u_cold_array(mat_id):
     return u_cold_array
 
 
-# load u cold arrays
+# Load precomputed values of cold internal energy
 if os.path.isfile(gv.Fp_u_cold_HM80_ice):
     A1_u_cold_HM80_ice = load_u_cold_array(gv.id_HM80_ice)
 if os.path.isfile(gv.Fp_u_cold_HM80_rock):
@@ -48,12 +53,16 @@ def load_table_HM80(Fp_table):
     ...     ...     ...     ...
     T_num_rho_0     ...     T_num_rho_num_u
 
+    Parameters
+    ----------
+    Fp_table : str 
+        The table file path.
+
     Returns
     -------
     ###update
-    A2_log_P, A2_log_T ([[float]])
-        2D arrays of natural logarithms of pressure (Pa) and
-        temperature (K).
+    A2_log_P, A2_log_T : [[float]]
+        2D arrays of natural logarithms of pressure (Pa) and temperature (K).
     """
     # Parameters
     log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(
@@ -138,16 +147,15 @@ m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Return the HM80 equation of state pressure as a function of density and 
-        sp. int. energy.
+    """ Compute the pressure from the internal energy and density.
 
     Parameters
     ----------
-    rho : float
-        Density (kg m^-3).
-
     u : float
         Specific internal energy (J kg^-1).
+
+    rho : float
+        Density (kg m^-3).
 
     mat_id : int
         Material id.
@@ -231,26 +239,25 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def T_u_rho(u, rho, mat_id):
-    """ Return the HM80 equation of state temperature as a function of density and 
-        sp. int. energy.
+    """ Compute the temperature from the internal energy and density.
 
     Parameters
     ----------
-    rho : float
-        Density (kg m^-3).
-
     u : float
         Specific internal energy (J kg^-1).
+    
+    rho : float
+        Density (kg m^-3).
 
     mat_id : int
         Material id.
 
     Returns
     -------
-    P : float
-        Pressure (Pa).
+    T : float
+        Temperature (K).
     """
-    # Choose the arrays from the global variables
+    # Unpack the parameters
     if mat_id == gv.id_HM80_HHe:
         (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, A2_log_T) = (
             log_rho_min_HM80_HHe,
@@ -323,8 +330,8 @@ def T_u_rho(u, rho, mat_id):
 
 
 @njit
-def _rho_0_material(mat_id):
-    """ Returns rho0 for a given material id. u_{cold}(rho0) = 0
+def _rho_0(mat_id):
+    """ Return the density for which the cold internal energy is zero.
 
     Parameters
     ----------
@@ -333,7 +340,7 @@ def _rho_0_material(mat_id):
 
     Returns
     -------
-    rho0 : float
+    rho_0 : float
         Density (kg m^-3).
     """
     if mat_id == gv.id_HM80_HHe:
@@ -348,7 +355,7 @@ def _rho_0_material(mat_id):
 
 @njit
 def u_cold(rho, mat_id, N):
-    """ Compute the internal energy cold.
+    """ Compute the cold internal energy from the density.
 
     Parameters
     ----------
@@ -364,7 +371,7 @@ def u_cold(rho, mat_id, N):
     Returns
     -------
     u_cold : float
-        Cold Specific internal energy (J kg^-1).
+        Cold specific internal energy (J kg^-1).
     """
     assert rho >= 0
     if mat_id == gv.id_HM80_HHe:
@@ -372,9 +379,9 @@ def u_cold(rho, mat_id, N):
 
     mat_type = mat_id // gv.type_factor
     if mat_type == gv.type_HM80:
-        rho0 = _rho_0_material(mat_id)
-        drho = (rho - rho0) / N
-        x = rho0
+        rho_0 = _rho_0(mat_id)
+        drho = (rho - rho_0) / N
+        x = rho_0
         u_cold = 1e-10
 
         for j in range(N):
@@ -389,9 +396,9 @@ def u_cold(rho, mat_id, N):
 
 @njit
 def _create_u_cold_array(mat_id):
-    """ Compute the values of the cold internal energy and stores it to save
-        computation time in future calculations.
-        It ranges from density = 100 kg/m^3 to 100000 kg/m^3
+    """ Compute tabulated values of the cold internal energy.
+    
+    Ranges from density = 100 to 100000 kg/m^3
 
     Parameters
     ----------
@@ -401,6 +408,7 @@ def _create_u_cold_array(mat_id):
     Returns
     -------
     u_cold_array : [float]
+        Array of cold specific internal energies (J kg^-1).
     """
     N_row = 10000
     u_cold_array = np.zeros((N_row,))
@@ -420,8 +428,7 @@ def _create_u_cold_array(mat_id):
 
 @njit
 def u_cold_tab(rho, mat_id):
-    """ Fast computation of cold internal energy using the table previously
-        computed.
+    """ Compute the cold internal energy using premade tabulated values.
 
     Parameters
     ----------
@@ -433,8 +440,8 @@ def u_cold_tab(rho, mat_id):
 
     Returns
     -------
-    interpolation : float
-        cold Specific internal energy (J kg^-1).
+    u_cold : float
+        Cold specific internal energy (J kg^-1).
     """
 
     if mat_id == gv.id_HM80_HHe:
@@ -456,26 +463,25 @@ def u_cold_tab(rho, mat_id):
     b = a + 1
 
     if a >= 0 and a < (N_row - 1):
-        interpolation = u_cold_array[a]
-        interpolation += ((u_cold_array[b] - u_cold_array[a]) / drho) * (
+        u_cold = u_cold_array[a]
+        u_cold += ((u_cold_array[b] - u_cold_array[a]) / drho) * (
             rho - rho_min - a * drho
         )
 
     elif rho < rho_min:
-        interpolation = u_cold_array[0]
+        u_cold = u_cold_array[0]
     else:
-        interpolation = u_cold_array[int(N_row - 1)]
-        interpolation += (
+        u_cold = u_cold_array[int(N_row - 1)]
+        u_cold += (
             (u_cold_array[int(N_row - 1)] - u_cold_array[int(N_row) - 2]) / drho
         ) * (rho - rho_max)
 
-    return interpolation
+    return u_cold
 
 
 @njit
 def C_V_HM80(rho, T, mat_id):
-    """ Return the HM80 hydrogen-helium sp. heat capacity as a function of 
-        density and temperature.
+    """ Return the specific heat capacity from the density and temperature.
 
     Parameters
     ----------
@@ -484,6 +490,9 @@ def C_V_HM80(rho, T, mat_id):
 
     T : float
         Temperature (K).
+        
+    mat_id : int
+        Material id.
 
     Returns
     -------
@@ -539,6 +548,24 @@ def C_V_HM80(rho, T, mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
+    """ Compute the internal energy from the density and temperature.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+        
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    u : float
+        Specific internal energy (J kg^-1).
+    """
     mat_type = mat_id // gv.type_factor
 
     if mat_type == gv.type_HM80:
@@ -553,8 +580,7 @@ def u_rho_T(rho, T, mat_id):
 
 @njit
 def T_rho_HM80_HHe(rho, rho_prv, T_prv):
-    """ Return the HM80 equation of state temperature as a function of density
-        for the hydrogen-helium atmosphere.
+    """ Compute the temperature as a function of density for the H-He atmosphere.
 
     Parameters
     ----------
