@@ -1,17 +1,25 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 25 16:12:01 2019
-
-@author: sergio
+""" 
+WoMa ideal gas equations of state
 """
 
 from numba import njit
 import glob_vars as gv
 
+
 @njit
 def idg_gamma(mat_id):
-    """ Return the adiabatic index gamma for an ideal gas. """
+    """ Return the adiabatic index gamma for an ideal gas. 
+    
+    Parameters
+    ----------
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    gamma : float
+        Adiabatic index.
+    """
     if mat_id == gv.id_idg_HHe:
         return 1.4
     elif mat_id == gv.id_idg_N2:
@@ -21,43 +29,48 @@ def idg_gamma(mat_id):
     else:
         raise ValueError("Invalid material ID")
 
+
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Computes pressure for the ideal gas EoS.
+    """ Compute the pressure from the internal energy and density.
 
-        Args:
-            u (double)
-                Specific internal energy (SI).
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
 
-            rho (double)
-                Density (SI).
+    rho : float
+        Density (kg m^-3).
 
-            mat_id (int)
-                Material id.
+    mat_id : int
+        Material id.
 
-        Returns:
-            P (double)
-                Pressure (SI).
+    Returns
+    -------
+    P : float
+        Pressure (Pa).
     """
     # Adiabatic constant
-    gamma    = idg_gamma(mat_id)
+    gamma = idg_gamma(mat_id)
 
-    P = (gamma - 1)*u*rho
+    P = (gamma - 1) * u * rho
 
     return P
-    
+
+
 @njit
-def idg_C_V(mat_id):
-    """ Returns specific heat capacity for a given material id (SI)
+def C_V_idg(mat_id):
+    """ Return the specific heat capacity.
 
-        Args:
-            mat_id (int)
-                Material id.
+    Parameters
+    ----------
+    mat_id : int
+        Material id.
 
-        Returns:
-            C_V (double)
-                Specific heat capacity (SI).
-
+    Returns
+    -------
+    C_V : float
+        Specific heat capacity (J kg^-1 K^-1).
     """
     if mat_id == gv.id_idg_HHe:
         return 9093.98
@@ -67,11 +80,30 @@ def idg_C_V(mat_id):
         return 661.38
     else:
         raise ValueError("Invalid material ID")
-        
+
+
 @njit
 def u_rho_T(rho, T, mat_id):
-    mat_type    = mat_id // gv.type_factor
-    if (mat_type == gv.type_idg):
-        return idg_C_V(mat_id)*T
+    """ Compute the internal energy from the density and temperature.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+        
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    u : float
+        Specific internal energy (J kg^-1).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type == gv.type_idg:
+        return C_V_idg(mat_id) * T
     else:
         raise ValueError("Invalid material ID")

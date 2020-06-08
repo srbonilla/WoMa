@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 25 16:22:03 2019
-
-@author: sergio
+""" 
+WoMa equations of state (EoS)
 """
 
 from numba import njit
@@ -16,129 +12,133 @@ import hm80
 from T_rho import T_rho
 import matplotlib.pyplot as plt
 
+
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Computes pressure for any EoS.
+    """ Compute the pressure from the internal energy and density, for any EoS.
 
-        Args:
-            u (double)
-                Specific internal energy (SI).
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
 
-            rho (double)
-                Density (SI).
+    rho : float
+        Density (kg m^-3).
 
-            mat_id (int)
-                Material id.
+    mat_id : int
+        Material id.
 
-        Returns:
-            P (double)
-                Pressure (SI).
+    Returns
+    -------
+    P : float
+        Pressure (Pa).
     """
-    mat_type    = mat_id // gv.type_factor
+    mat_type = mat_id // gv.type_factor
     if mat_type == gv.type_idg:
         P = idg.P_u_rho(u, rho, mat_id)
     elif mat_type == gv.type_Til:
         P = tillotson.P_u_rho(u, rho, mat_id)
     elif mat_type == gv.type_HM80:
         P = hm80.P_u_rho(u, rho, mat_id)
-        if np.isnan(P): P = 0.
+        if np.isnan(P):
+            P = 0.0
     elif mat_type == gv.type_SESAME or mat_type == gv.type_ANEOS:
         P = sesame.P_u_rho(u, rho, mat_id)
-        if np.isnan(P): P = 0.
+        if np.isnan(P):
+            P = 0.0
     else:
         raise ValueError("Invalid material ID")
     return P
+
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Computes internal energy for any EoS.
+    """ Compute the internal energy from the density and temperature, for any EoS.
 
-        Args:
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+        
+    T : float
+        Temperature (K).
 
-            rho (double)
-                Density (SI).
-                
-            T (double)
-                Temperature (SI).
+    mat_id : int
+        Material id.
 
-            mat_id (int)
-                Material id.
-
-        Returns:
-            u (double)
-                Internal energy (SI).
+    Returns
+    -------
+    u : float
+        Specific internal energy (J kg^-1).
     """
-    mat_type    = mat_id // gv.type_factor
+    mat_type = mat_id // gv.type_factor
     if mat_type == gv.type_idg:
-        P = idg.u_rho_T(rho, T, mat_id)
+        u = idg.u_rho_T(rho, T, mat_id)
     elif mat_type == gv.type_Til:
-        P = tillotson.u_rho_T(rho, T, mat_id)
+        u = tillotson.u_rho_T(rho, T, mat_id)
     elif mat_type == gv.type_HM80:
-        P = hm80.u_rho_T(rho, T, mat_id)
+        u = hm80.u_rho_T(rho, T, mat_id)
     elif mat_type == gv.type_SESAME or mat_type == gv.type_ANEOS:
-        P = sesame.u_rho_T(rho, T, mat_id)
+        u = sesame.u_rho_T(rho, T, mat_id)
     else:
         raise ValueError("Invalid material ID")
-    return P
+    return u
+
 
 @njit
-def find_rho(P, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
-    """ Root finder of the density for EoS using
-        tabulated values of cold internal energy
+def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
+    """ Find the density that satisfies P(u(rho), rho) = P_des, for any EoS.
 
-        Args:
-            P (float):
-                Pressure (SI).
+    Parameters
+    ----------
+    P_des : float
+        The required pressure (Pa).
 
-            mat_id (int):
-                Material id.
+    mat_id : int
+        Material id.
 
-            T_rho_type (int)
-                Relation between T and rho to be used.
+    T_rho_type : int
+        Relation between T and rho to be used.
 
-            T_rho_args (list):
-                Extra arguments to determine the relation.
+    T_rho_args : [?]
+        Extra arguments to determine the relation.
 
-            rho_min (float):
-                Lower bound for where to look the root (SI).
+    rho_min : float
+        Lower bound for where to look the root (SI).
 
-            rho_max (float):
-                Upper bound for where to look the root (SI).
+    rho_max : float
+        Upper bound for where to look the root (SI).
 
-            u_cold_array ([float])
-                Precomputed values of cold internal energy
-                with function _create_u_cold_array() (SI).
-
-        Returns:
-            rho_mid (float):
-                Value of the density which satisfies P(u(rho), rho) = 0
-                (SI).
+    Returns
+    -------
+    rho_mid : float
+        The density which satisfies P(u(rho), rho) = P_des (kg m^-3).
     """
-    
+
     assert rho_min > 0
-    assert P >= 0
+    assert P_des >= 0
     assert rho_min < rho_max
-    
-    tolerance = 1E-5
 
-    T_min   = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
-    u_min   = u_rho_T(rho_min, T_min, mat_id)
-    P_min   = P_u_rho(u_min, rho_min, mat_id)
-    T_max   = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
-    u_max   = u_rho_T(rho_max, T_max, mat_id)
-    P_max   = P_u_rho(u_max, rho_max, mat_id)
-    rho_mid = (rho_min + rho_max)/2.
-    T_mid   = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
-    u_mid   = u_rho_T(rho_mid, T_mid, mat_id)
-    P_mid   = P_u_rho(u_mid, rho_mid, mat_id)    
+    tolerance = 1e-5
+
+    T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
+    u_min = u_rho_T(rho_min, T_min, mat_id)
+    P_min = P_u_rho(u_min, rho_min, mat_id)
+    T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
+    u_max = u_rho_T(rho_max, T_max, mat_id)
+    P_max = P_u_rho(u_max, rho_max, mat_id)
+    rho_mid = (rho_min + rho_max) / 2.0
+    T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
+    u_mid = u_rho_T(rho_mid, T_mid, mat_id)
+    P_mid = P_u_rho(u_mid, rho_mid, mat_id)
     rho_aux = rho_min + 1e-6
-    T_aux   = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
-    u_aux   = u_rho_T(rho_aux, T_aux, mat_id)
-    P_aux   = P_u_rho(u_aux, rho_aux, mat_id)
+    T_aux = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
+    u_aux = u_rho_T(rho_aux, T_aux, mat_id)
+    P_aux = P_u_rho(u_aux, rho_aux, mat_id)
 
-    if ((P_min < P and P < P_max) or (P_min > P and P > P_max)):
+    if (P_min < P_des and P_des < P_max) or (P_min > P_des and P_des > P_max):
         max_counter = 200
-        counter     = 0
+        counter = 0
         while np.abs(rho_max - rho_min) > tolerance and counter < max_counter:
             T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
             u_min = u_rho_T(rho_min, T_min, mat_id)
@@ -149,77 +149,105 @@ def find_rho(P, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
             T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
             u_mid = u_rho_T(rho_mid, T_mid, mat_id)
             P_mid = P_u_rho(u_mid, rho_mid, mat_id)
-            
-            #if np.isnan(P_min): P_min = 0.
 
-            f0 = P - P_min
-            f2 = P - P_mid
+            # if np.isnan(P_min): P_min = 0.
 
-            if f0*f2 > 0:
+            f0 = P_des - P_min
+            f2 = P_des - P_mid
+
+            if f0 * f2 > 0:
                 rho_min = rho_mid
             else:
                 rho_max = rho_mid
 
-            rho_mid     = (rho_min + rho_max)/2.
+            rho_mid = (rho_min + rho_max) / 2.0
             counter += 1
 
         return rho_mid
 
-    elif (P_min == P and P_aux == P and P_max != P and P_min < P_max):
+    elif P_min == P_des and P_aux == P_des and P_max != P_des and P_min < P_max:
         while np.abs(rho_max - rho_min) > tolerance:
-            rho_mid = (rho_min + rho_max)/2.
+            rho_mid = (rho_min + rho_max) / 2.0
             T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
             u_min = u_rho_T(rho_min, T_min, mat_id)
             P_min = P_u_rho(u_min, rho_min, mat_id)
             T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
             u_max = u_rho_T(rho_max, T_max, mat_id)
             P_max = P_u_rho(u_max, rho_max, mat_id)
-            rho_mid = (rho_min + rho_max)/2.
+            rho_mid = (rho_min + rho_max) / 2.0
             T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
             u_mid = u_rho_T(rho_mid, T_mid, mat_id)
             P_mid = P_u_rho(u_mid, rho_mid, mat_id)
 
-            if P_mid == P:
+            if P_mid == P_des:
                 rho_min = rho_mid
             else:
                 rho_max = rho_mid
 
-            rho_mid = rho_mid = (rho_min + rho_max)/2.
+            rho_mid = rho_mid = (rho_min + rho_max) / 2.0
 
         return rho_mid
 
-    elif P < P_min and P_min < P_max:
+    elif P_des < P_min and P_min < P_max:
         return rho_min
-    elif P > P_max and P_min < P_max:
-        return rho_max   
-    elif P > P_min and P_min > P_max:
+    elif P_des > P_max and P_min < P_max:
+        return rho_max
+    elif P_des > P_min and P_min > P_max:
         return rho_min
-    elif P < P_max and P_min > P_max:
+    elif P_des < P_max and P_min > P_max:
         return rho_max
     else:
-# =============================================================================
-#         e = "Critical error in find rho.\n" + \
-#             "Material: " + str(mat_id) + \
-#             "P: " + str(P) + \
-#             "T_rho_type: {:d}\n".format(T_rho_type) + \
-#             "T_rho_args: " + str(T_rho_args) + "\n" + \
-#             "rho_min: {:f}\n".format(rho_min) + \
-#             "rho_max: {:f}\n".format(rho_max) + \
-#             "Please report this message to the developers. Thank you!\n"
-# =============================================================================
         e = "Critical error in find_rho."
-            
+
         raise ValueError(e)
+
 
 @njit
 def P_T_rho(T, rho, mat_id):
+    """ Compute the pressure from the temperature and density, for any EoS.
+
+    Parameters
+    ----------
+    T : float
+        Temperature (K).
+
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    P : float
+        Pressure (Pa).
+    """
     u = u_rho_T(rho, T, mat_id)
     P = P_u_rho(u, rho, mat_id)
     return P
 
+
 @njit
 def rho_P_T(P, T, mat_id):
-    mat_type    = mat_id // gv.type_factor
+    """ Compute the density from the pressure and temperature, for any EoS.
+
+    Parameters
+    ----------
+    P : float
+        Pressure (Pa).
+        
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    rho : float
+        Density (kg m^-3).
+    """
+    mat_type = mat_id // gv.type_factor
     if mat_type == gv.type_idg:
         assert T > 0
         rho_min = 1e-10
@@ -241,24 +269,33 @@ def rho_P_T(P, T, mat_id):
     elif mat_type == gv.type_SESAME or mat_type == gv.type_ANEOS:
         assert T > 0
         assert P > 0
-        
+
         rho_min = 1e-9
         rho_max = 1e5
     else:
         raise ValueError("Invalid material ID")
-    return find_rho(P, mat_id, 1, [float(T), 0.], rho_min, rho_max)
+
+    return find_rho(P, mat_id, 1, [float(T), 0.0], rho_min, rho_max)
+
 
 # Visualize EoS
-def plot_EoS_P_rho_fixed_T(mat_id_1, mat_id_2, T,
-                           P_min=0.1, P_max=1e11, rho_min=100, rho_max=15000):
-    
+def plot_EoS_P_rho_fixed_T(
+    mat_id_1, mat_id_2, T, P_min=0.1, P_max=1e11, rho_min=100, rho_max=15000
+):
+    """ Plot the EoS pressure as a function of density for various temperatures.
+
+    Parameters
+    ----------
+    ...
+    """
+
     rho = np.linspace(rho_min, rho_max, 1000)
     P_1 = np.zeros_like(rho)
     P_2 = np.zeros_like(rho)
     for i, rho_i in enumerate(rho):
         P_1[i] = P_T_rho(T, rho_i, mat_id_1)
         P_2[i] = P_T_rho(T, rho_i, mat_id_2)
-    
+
     plt.figure()
     plt.scatter(rho, P_1, label=str(mat_id_1))
     plt.scatter(rho, P_2, label=str(mat_id_2))
@@ -266,5 +303,3 @@ def plot_EoS_P_rho_fixed_T(mat_id_1, mat_id_2, T,
     plt.xlabel(r"$\rho$ [kg m$^{-3}$]")
     plt.ylabel(r"$P$ [Pa]")
     plt.show()
-    
-    

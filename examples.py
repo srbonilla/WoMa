@@ -1,9 +1,6 @@
-""" WoMa Examples
+""" 
+WoMa examples
 """
-
-# ============================================================================ #
-# ===================== Libraries and constants ============================== #
-# ============================================================================ #
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,68 +9,77 @@ import woma
 R_earth = 6.371e6 # m
 M_earth = 5.972e24 # kg
 
+
 # ============================================================================ #
+#                       Plotting functions                                     #
+# ============================================================================ #
+
 
 def plot_planet_profiles(planet):
     fig, ax = plt.subplots(2, 2, figsize=(7, 7))
     
-    ax[0,0].plot(planet.A1_r/R_earth, planet.A1_rho)
-    ax[0,0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0,0].set_ylabel(r"Density [kg m$^{-3}$]")
-    ax[0,0].set_yscale("log")
-    ax[0,0].set_xlim(0, None)
+    ax[0, 0].plot(planet.A1_r/R_earth, planet.A1_rho)
+    ax[0, 0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0, 0].set_ylabel(r"Density [kg m$^{-3}$]")
+    ax[0, 0].set_yscale("log")
+    ax[0, 0].set_xlim(0, None)
     
-    ax[1,0].plot(planet.A1_r/R_earth, planet.A1_m_enc/M_earth)
-    ax[1,0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[1,0].set_ylabel(r"Enclosed Mass $[M_\oplus]$")
-    ax[1,0].set_xlim(0, None)
-    ax[1,0].set_ylim(0, None)
+    ax[1, 0].plot(planet.A1_r/R_earth, planet.A1_m_enc/M_earth)
+    ax[1, 0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[1, 0].set_ylabel(r"Enclosed Mass $[M_\oplus]$")
+    ax[1, 0].set_xlim(0, None)
+    ax[1, 0].set_ylim(0, None)
         
-    ax[0,1].plot(planet.A1_r/R_earth, planet.A1_P)
-    ax[0,1].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0,1].set_ylabel(r"Pressure [Pa]")
-    ax[0,1].set_yscale("log")
-    ax[0,1].set_xlim(0, None)
+    ax[0, 1].plot(planet.A1_r/R_earth, planet.A1_P)
+    ax[0, 1].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0, 1].set_ylabel(r"Pressure [Pa]")
+    ax[0, 1].set_yscale("log")
+    ax[0, 1].set_xlim(0, None)
     
-    ax[1,1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
-    ax[1,1].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[1,1].set_ylabel(r"Temperature [$10^3$ K]")
-    ax[1,1].set_xlim(0, None)
-    ax[1,1].set_ylim(0, None)
+    ax[1, 1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
+    ax[1, 1].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[1, 1].set_ylabel(r"Temperature [$10^3$ K]")
+    ax[1, 1].set_xlim(0, None)
+    ax[1, 1].set_ylim(0, None)
     
     plt.tight_layout()
+
 
 def plot_planet_profiles_alternate(planet, fig=None, ax=None):
     if fig == None:
         fig, ax = plt.subplots(2, 2, figsize=(7, 7))
     
-    ax[0,0].plot(planet.A1_r/R_earth, planet.A1_rho)
-    ax[0,0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0,0].set_ylabel(r"Density [kg m$^{-3}$]")
-    ax[0,0].set_yscale("log")
-    ax[0,0].set_xlim(0, None)
+    ax[0, 0].plot(planet.A1_r/R_earth, planet.A1_rho)
+    ax[0, 0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0, 0].set_ylabel(r"Density [kg m$^{-3}$]")
+    ax[0, 0].set_yscale("log")
+    ax[0, 0].set_xlim(0, None)
             
-    ax[1,0].plot(planet.A1_r/R_earth, planet.A1_P)
-    ax[1,0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[1,0].set_ylabel(r"Pressure [Pa]")
-    ax[1,0].set_yscale("log")
-    ax[1,0].set_xlim(0, None)
+    ax[1, 0].plot(planet.A1_r/R_earth, planet.A1_P)
+    ax[1, 0].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[1, 0].set_ylabel(r"Pressure [Pa]")
+    ax[1, 0].set_yscale("log")
+    ax[1, 0].set_xlim(0, None)
     
-    ax[0,1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
-    ax[0,1].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0,1].set_ylabel(r"Temperature [$10^3$ K]")
-    ax[0,1].set_xlim(0, None)
-    ax[0,1].set_ylim(0, None)
+    ax[0, 1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
+    ax[0, 1].set_xlabel(r"Radius $[R_\oplus]$")
+    ax[0, 1].set_ylabel(r"Temperature [$10^3$ K]")
+    ax[0, 1].set_xlim(0, None)
+    ax[0, 1].set_ylim(0, None)
     
-    ax[1,1].plot(np.log(planet.A1_rho/5), np.log(planet.A1_T))
-    ax[1,1].set_xlabel(r"ln( $\rho / 5$ kg m$^{-3}$ )")
-    ax[1,1].set_ylabel(r"ln( Temperature [K] )")
+    ax[1, 1].plot(np.log(planet.A1_rho/5), np.log(planet.A1_T))
+    ax[1, 1].set_xlabel(r"ln( $\rho / 5$ kg m$^{-3}$ )")
+    ax[1, 1].set_ylabel(r"ln( Temperature [K] )")
     
     plt.tight_layout()
     
     return fig, ax
 
+
 # ============================================================================ #
+#                       Spherical profile examples                             #
+# ============================================================================ #
+
 
 def demo_gen_prof_L1_find_R_given_M():
     planet = woma.Planet(
@@ -93,6 +99,7 @@ def demo_gen_prof_L1_find_R_given_M():
 
     plot_planet_profiles(planet)
 
+
 def demo_gen_prof_L1_find_M_given_R():
     planet = woma.Planet(
         name            = "planet",
@@ -109,6 +116,7 @@ def demo_gen_prof_L1_find_M_given_R():
     planet.gen_prof_L1_find_M_given_R()
 
     plot_planet_profiles(planet)
+
 
 def demo_gen_prof_L2_find_R1_given_R_M():
     planet = woma.Planet(
@@ -141,6 +149,7 @@ def demo_gen_prof_L2_find_R1_given_R_M():
 
     plot_planet_profiles_alternate(planet_2, fig, ax)
 
+
 def demo_gen_prof_L2_find_R_given_M_R1():
     planet = woma.Planet(
         name            = "planet",
@@ -158,6 +167,7 @@ def demo_gen_prof_L2_find_R_given_M_R1():
 
     plot_planet_profiles(planet)
 
+
 def demo_gen_prof_L2_find_M_given_R1_R():
     planet = woma.Planet(
         name            = "planet",
@@ -173,6 +183,7 @@ def demo_gen_prof_L2_find_M_given_R1_R():
     planet.gen_prof_L2_find_M_given_R1_R()
 
     plot_planet_profiles(planet)
+
 
 def demo_gen_prof_L3_given_prof_L2():
     planet = woma.Planet(
@@ -202,6 +213,7 @@ def demo_gen_prof_L3_given_prof_L2():
 
     plot_planet_profiles(planet)
 
+
 def demo_gen_prof_L3_find_R1_R2_given_R_M_I():
     planet = woma.Planet(
         name            = "planet",
@@ -221,6 +233,7 @@ def demo_gen_prof_L3_find_R1_R2_given_R_M_I():
 
     plot_planet_profiles(planet)
 
+
 def demo_gen_prof_L3_find_R2_given_R_M_R1():
     planet = woma.Planet(
         name            = "planet",
@@ -236,6 +249,7 @@ def demo_gen_prof_L3_find_R2_given_R_M_R1():
     planet.gen_prof_L3_find_R2_given_R_M_R1()
 
     plot_planet_profiles(planet)
+
 
 def demo_gen_prof_L3_find_R1_given_R_M_R2():
     planet = woma.Planet(
@@ -253,6 +267,7 @@ def demo_gen_prof_L3_find_R1_given_R_M_R2():
 
     plot_planet_profiles(planet)
 
+
 def demo_gen_prof_L3_find_M_given_R_R1_R2():
     planet = woma.Planet(
         name            = "planet",
@@ -268,6 +283,7 @@ def demo_gen_prof_L3_find_M_given_R_R1_R2():
     planet.gen_prof_L3_find_M_given_R_R1_R2()
 
     plot_planet_profiles(planet)
+
 
 def demo_gen_prof_L3_find_R_given_M_R1_R2():
     planet = woma.Planet(
@@ -286,7 +302,6 @@ def demo_gen_prof_L3_find_R_given_M_R1_R2():
 
     plot_planet_profiles(planet)
 
-# ============================================================================ #
 
 def demo_gen_uranus_prof():
     
@@ -306,7 +321,9 @@ def demo_gen_uranus_prof():
 
     plot_planet_profiles_alternate(planet)
 
+
 # ============================================================================ #
+
 
 if __name__ == "__main__":    
     # Run an example
