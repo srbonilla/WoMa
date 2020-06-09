@@ -136,7 +136,7 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     u_aux = u_rho_T(rho_aux, T_aux, mat_id)
     P_aux = P_u_rho(u_aux, rho_aux, mat_id)
 
-    if (P_min < P_des and P_des < P_max) or (P_min > P_des and P_des > P_max):
+    if (P_min < P_des < P_max) or (P_min > P_des > P_max):
         max_counter = 200
         counter = 0
         while np.abs(rho_max - rho_min) > tolerance and counter < max_counter:
@@ -165,7 +165,7 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
 
         return rho_mid
 
-    elif P_min == P_des and P_aux == P_des and P_max != P_des and P_min < P_max:
+    elif P_min == P_des == P_aux != P_max and P_min < P_max:
         while np.abs(rho_max - rho_min) > tolerance:
             rho_mid = (rho_min + rho_max) / 2.0
             T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
@@ -188,13 +188,13 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
 
         return rho_mid
 
-    elif P_des < P_min and P_min < P_max:
+    elif P_des < P_min < P_max:
         return rho_min
-    elif P_des > P_max and P_min < P_max:
+    elif P_des > P_max > P_min:
         return rho_max
-    elif P_des > P_min and P_min > P_max:
+    elif P_des > P_min > P_max:
         return rho_min
-    elif P_des < P_max and P_min > P_max:
+    elif P_des < P_max < P_min:
         return rho_max
     else:
         e = "Critical error in find_rho."
