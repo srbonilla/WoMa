@@ -128,9 +128,9 @@ def load_table_SESAME(Fp_table):
 
     # change values equal to 0
     small = 1e-10
-    A1_rho[A1_rho == 0] = small
-    A1_T[A1_T == 0] = small
-    A2_u[A2_u == 0] = small
+    A1_rho[A1_rho <= 0] = small
+    A1_T[A1_T <= 0] = small
+    A2_u[A2_u <= 0] = small
 
     return A2_u, A2_P, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
 
@@ -575,6 +575,10 @@ def s_rho_T(rho, T, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
+
+    # Check this material has entropy values
+    if (A2_s == 0).all():
+        raise ValueError("No entropy values for this material")
 
     # Ignore the first elements of rho = 0, T = 0
     A2_s = A2_s[1:, 1:]

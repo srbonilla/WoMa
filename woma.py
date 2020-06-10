@@ -44,8 +44,7 @@ import glob_vars as gv
 import eos
 import utils
 import utils_spin as us
-from T_rho import set_T_rho_args
-from T_rho import T_rho
+from T_rho import set_T_rho_args, T_rho
 from scipy.interpolate import interp1d
 from tqdm import tqdm
 
@@ -2265,6 +2264,7 @@ class SpinPlanet:
     ----------
     ...
     """
+
     def __init__(
         self,
         name=None,
@@ -3133,6 +3133,7 @@ class GenSpheroid:
     ----------
     ...
     """
+
     def __init__(
         self,
         name=None,
