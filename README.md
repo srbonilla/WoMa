@@ -12,7 +12,7 @@ Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS
 487:4) with modifications for spinning planets.
 
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
-Jacob Kegerreis
+Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
 
 <!-- Visit https://github.com/.../woma to download the code including examples
 and for support. -->
@@ -25,7 +25,7 @@ let us know!
 Contents
 --------
 + `woma.py` The main program classes and functions.
-+ `tutorial.ipynb` Jupyter notebookto demonstrate how to use the WoMa module.
++ `tutorial.ipynb` Jupyter notebook to demonstrate how to use the WoMa module.
 + `examples.py` Other examples.
 + `data/` Data folder for equation of state (EoS) tables. 
 + `eos/` EoS and temperature-density relations.
@@ -48,16 +48,24 @@ Requirements
 
 Notation etc.
 -------------
-+ PEP8 is followed in most cases apart from some indentation alignment.
++ Formatted with [black](https://github.com/psf/black).
++ Particle is abbreviated to `picle`.
 + Arrays are explicitly labelled with a prefix `A1_`, or `An_` for an
     `n`-dimensional array.
-+ Particle is abbreviated to `picle`.
 
 
-To Do:
----------------------------------------
+Dev Notes
+---------
++ Format all files with black (except the examples):  
+    `black woma.py eos/ misc/ spin_funcs/ spherical_funcs/`
++ Comment out numba for debugging:  
+    `find ./ -type f -name "*.py" -exec sed -i "s/@njit/#@njit/g" {} \;`  
+    Revert: `find ./ -type f -name "*.py" -exec sed -i "s/#@njit/@njit/g" {} \;`
+
+
+To Do
+-----
 + Change the iterations to be for some tolerance not a number of iterations
 + Move the add-L3 function out of the class, like the others
 + Make into a PyPI package
 + Add all output variables to the hdf5 file
-
