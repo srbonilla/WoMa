@@ -36,7 +36,7 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
     """
     mat_type = mat_id // gv.type_factor
 
-    # T = K*rho**alpha, T_rho_args = [K, alpha]
+    # Power law, T = K*rho**alpha, T_rho_args = [K, alpha]
     if T_rho_type_id == gv.type_rho_pow:
         K = T_rho_args[0]
         alpha = T_rho_args[1]
@@ -51,10 +51,10 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
             return T_rho_args[0] * rho ** (gamma - 1)
         elif mat_id == gv.id_HM80_HHe:
             return hm80.T_rho_HM80_HHe(rho, T_rho_args[0], T_rho_args[1])
-        # elif mat_type == gv.type_SESAME:
-        #     return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
-        elif mat_type == gv.type_Til:
-            raise ValueError("Entropy not implemented for this material type")
+        elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+            return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
+        else:
+            raise ValueError("Adiabatic not implemented for this material type")
     else:
         raise ValueError("T_rho_type_id not implemented")
 
@@ -103,10 +103,9 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
             T_rho_args[0] = rho
             T_rho_args[1] = T
 
-        elif mat_type == gv.type_SESAME:
+        elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
             # T_rho_args = [s_adb,]
-            # T_rho_args[0]   = s_rho_T(rho, T, mat_id)
-            raise ValueError("Relation not implemented for SESAME materials")
+            T_rho_args[0] = sesame.s_rho_T(rho, T, mat_id)
 
     else:
         raise ValueError("T-rho relation not implemented")

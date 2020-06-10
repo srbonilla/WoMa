@@ -2,10 +2,10 @@
 WoMa global variables
 """
 
-G = 6.67408e-11     # m^3 kg^-1 s^-2
-R_earth = 6371000   # m
-M_earth = 5.9724e24 # kg
-R_gas = 8.3145      # Gas constant (J K^-1 mol^-1)
+G = 6.67408e-11  # m^3 kg^-1 s^-2
+R_earth = 6371000  # m
+M_earth = 5.9724e24  # kg
+R_gas = 8.3145  # Gas constant (J K^-1 mol^-1)
 
 # Material IDs, same as SWIFT ( = type_id * type_factor + unit_id)
 type_factor = 100

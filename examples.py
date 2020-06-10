@@ -132,22 +132,7 @@ def demo_gen_prof_L2_find_R1_given_R_M():
 
     planet.gen_prof_L2_find_R1_given_R_M()
 
-    fig, ax = plot_planet_profiles_alternate(planet)
-    
-    planet_2 = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_basalt"],
-        A1_T_rho_type   = ["power", "power"],
-        A1_T_rho_args   = [[None, 0.], [None, 0.]],
-        A1_R_layer      = [None, R_earth],
-        M               = M_earth,
-        P_s             = 0,
-        T_s             = 300,
-        )
-
-    planet_2.gen_prof_L2_find_R1_given_R_M()
-
-    plot_planet_profiles_alternate(planet_2, fig, ax)
+    plot_planet_profiles_alternate(planet)
 
 
 def demo_gen_prof_L2_find_R_given_M_R1():
@@ -321,6 +306,24 @@ def demo_gen_uranus_prof():
 
     plot_planet_profiles_alternate(planet)
 
+
+def demo_gen_earth_adiabatic():
+
+    planet = woma.Planet(
+        name            = "Earth",
+        A1_mat_layer    = ["Til_iron", "ANEOS_forsterite"],
+        A1_T_rho_type   = ["power", "adiabatic"],
+        A1_T_rho_args   = [[None, 2], [None, None]],
+        A1_R_layer      = [None, R_earth],
+        M               = M_earth,
+        P_s             = 1e5,
+        T_s             = 500,
+        )
+    
+    planet.gen_prof_L2_find_R1_given_R_M()
+    
+    plot_planet_profiles_alternate(planet)
+    
 
 # ============================================================================ #
 

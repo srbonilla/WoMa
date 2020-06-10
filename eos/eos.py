@@ -42,7 +42,7 @@ def P_u_rho(u, rho, mat_id):
         P = hm80.P_u_rho(u, rho, mat_id)
         if np.isnan(P):
             P = 0.0
-    elif mat_type == gv.type_SESAME or mat_type == gv.type_ANEOS:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
         P = sesame.P_u_rho(u, rho, mat_id)
         if np.isnan(P):
             P = 0.0
@@ -78,7 +78,7 @@ def u_rho_T(rho, T, mat_id):
         u = tillotson.u_rho_T(rho, T, mat_id)
     elif mat_type == gv.type_HM80:
         u = hm80.u_rho_T(rho, T, mat_id)
-    elif mat_type == gv.type_SESAME or mat_type == gv.type_ANEOS:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
         u = sesame.u_rho_T(rho, T, mat_id)
     else:
         raise ValueError("Invalid material ID")
@@ -266,7 +266,7 @@ def rho_P_T(P, T, mat_id):
         elif mat_id == gv.id_HM80_rock:
             rho_min = 1e0
             rho_max = 40000
-    elif mat_type == gv.type_SESAME or mat_type == gv.type_ANEOS:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
         assert T > 0
         assert P > 0
 
