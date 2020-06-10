@@ -85,8 +85,7 @@ def demo_gen_prof_L1_find_R_given_M():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_granite"],
-        A1_T_rho_type   = ["power"],
-        A1_T_rho_args   = [[None, 0.]],
+        A1_T_rho_type   = ["power=0."],
         A1_R_layer      = [0.988 * R_earth],
         M               = 0.8*M_earth,
         P_s             = 0,

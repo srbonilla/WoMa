@@ -111,3 +111,44 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
         raise ValueError("T-rho relation not implemented")
 
     return T_rho_args
+
+def compute_A1_T_rho_id_and_args_from_type(A1_T_rho_type):
+    """ Computes A1_T_rho_id and A1_T_rho_args arrays from A1_T_rho_type.
+    Example: ['power=2.4', 'adiabatic'] -> [1, 2], [[None, 2.4], [None, None]]
+
+    Parameters
+    ----------
+    A1_T_rho_type : [string]
+        List of relations T=T(rho). See tutorial.ipynb and glob_vars.py for more info
+
+    Returns
+    -------
+    A1_T_rho_id : [int]
+        List od T_rho relation ids. See glob_vars.py
+        
+    A1_T_rho_args : [[float]]
+        List od T_rho arguments ids. See glob_vars.py
+    """
+    
+    # A1_T_rho_id
+    A1_T_rho_type_str = np.copy(A1_T_rho_type)
+    
+    for i, string in enumerate(A1_T_rho_type_str):
+        A1_T_rho_type_str[i] = string.split('=')[0]
+        
+    A1_T_rho_type_id = [
+                gv.Di_T_rho_id[T_rho_id] for T_rho_id in A1_T_rho_type_str
+            ]
+        
+    # A1_T_rho_args
+    A1_T_rho_args = []
+    
+    for i, string in enumerate(A1_T_rho_type):
+        T_rho_args = [None, None]
+        if string.split('=')[0] == 'power':
+            T_rho_args[1] = float(string.split('=')[1])
+        A1_T_rho_args.append(T_rho_args)
+        
+    return A1_T_rho_type_id, A1_T_rho_args
+    
+
