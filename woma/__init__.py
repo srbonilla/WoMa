@@ -1,7 +1,7 @@
 from woma.main import (
-    Planet, 
-    SpinPlanet, 
-    ParticleSet, 
+    Planet,
+    SpinPlanet,
+    ParticleSet,
     get_planet_data,
     multi_get_planet_data,
     load_planet,

@@ -57,7 +57,7 @@ Notation etc.
 Dev Notes
 ---------
 + Format all files with black (except the examples):  
-    `black woma.py eos/ misc/ spin_funcs/ spherical_funcs/`
+    `black woma/`
 + Comment out numba for debugging:  
     `find ./ -type f -name "*.py" -exec sed -i "s/@njit/#@njit/g" {} \;`  
     Revert: `find ./ -type f -name "*.py" -exec sed -i "s/#@njit/@njit/g" {} \;`

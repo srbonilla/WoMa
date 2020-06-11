@@ -352,7 +352,7 @@ class Planet:
         self.num_attempt_2 = num_attempt_2
 
         # Derived or default attributes
-        
+
         # Number of layers
         if self.A1_mat_layer is not None:
             self.num_layer = len(self.A1_mat_layer)
@@ -360,18 +360,20 @@ class Planet:
         else:
             # Placeholder
             self.num_layer = 1
-            
+
         # P and T, or rho and T must be provided at the surface to calculate the
         # third. If all three are provided then rho is overwritten.
         if self.P_s is not None and self.T_s is not None:
             self.rho_s = eos.rho_P_T(self.P_s, self.T_s, self.A1_mat_id_layer[-1])
         elif self.rho_s is not None and self.T_s is not None:
             self.P_s = eos.P_T_rho(self.T_s, self.rho_s, self.A1_mat_id_layer[-1])
-            
+
         # A1_T_rho_args, A1_T_rho_args
         if self.A1_T_rho_type is not None:
-            self.A1_T_rho_type_id, self.A1_T_rho_args = \
-            compute_A1_T_rho_id_and_args_from_type(self.A1_T_rho_type)
+            (
+                self.A1_T_rho_type_id,
+                self.A1_T_rho_args,
+            ) = compute_A1_T_rho_id_and_args_from_type(self.A1_T_rho_type)
 
         # Fp_planet, A1_R_layer, A1_M_layer
         if self.Fp_planet is None:
@@ -389,7 +391,7 @@ class Planet:
             self.A1_T_rho_args = np.array(self.A1_T_rho_args, dtype="float")
 
         ### default M_max and R_max?
-        
+
         # Help info ###todo, maybe not necesary?
         if not True:
             if self.num_layer == 1:
@@ -3133,23 +3135,19 @@ class ParticleSet:
     """
 
     def __init__(
-        self,
-        planet=None,
-        N_particles=None,
-        N_neig=48,
+        self, planet=None, N_particles=None, N_neig=48,
     ):
         self.N_particles = N_particles
-        self.N_neig      = N_neig
-        
+        self.N_neig = N_neig
+
         assert isinstance(planet, Planet) or isinstance(planet, SpinPlanet)
         assert self.N_particles is not None
-        
+
         if isinstance(planet, Planet):
-            particles = seagen.GenSphere(self.N_particles,
-                                         planet.A1_r[1:],
-                                         planet.A1_rho[1:],
-                                         verb=0)
-            
+            particles = seagen.GenSphere(
+                self.N_particles, planet.A1_r[1:], planet.A1_rho[1:], verb=0
+            )
+
             self.A1_x = particles.A1_x
             self.A1_y = particles.A1_y
             self.A1_z = particles.A1_z
@@ -3158,21 +3156,19 @@ class ParticleSet:
             self.A1_vz = np.zeros_like(particles.A1_x)
             self.A1_m = particles.A1_m
             self.A1_rho = particles.A1_rho
-            
-            # need to complete these
-            #self.A1_u = u
-            #self.A1_P = P
-            #self.A1_h = h
-            #self.A1_mat_id = mat_id
-            #self.A1_id = picle_id
-            
-            self.N_particles = particles.A1_x.shape[0]
-            
 
+            # need to complete these
+            # self.A1_u = u
+            # self.A1_P = P
+            # self.A1_h = h
+            # self.A1_mat_id = mat_id
+            # self.A1_id = picle_id
+
+            self.N_particles = particles.A1_x.shape[0]
 
         if isinstance(planet, SpinPlanet):
             if self.num_layer == 1:
-    
+
                 (
                     x,
                     y,
@@ -3199,7 +3195,7 @@ class ParticleSet:
                     planet.A1_T_rho_args[0],
                     self.N_neig,
                 )
-    
+
                 self.A1_x = x
                 self.A1_y = y
                 self.A1_z = z
@@ -3214,12 +3210,12 @@ class ParticleSet:
                 self.A1_mat_id = mat_id
                 self.A1_id = picle_id
                 self.N_particles = x.shape[0]
-    
+
             elif self.num_layer == 2:
-    
+
                 rho_P_model = interp1d(planet.A1_P, planet.A1_rho)
                 rho_1 = rho_P_model(planet.P_1)
-    
+
                 (
                     x,
                     y,
@@ -3250,7 +3246,7 @@ class ParticleSet:
                     planet.A1_T_rho_args[1],
                     self.N_neig,
                 )
-    
+
                 self.A1_x = x
                 self.A1_y = y
                 self.A1_z = z
@@ -3265,13 +3261,13 @@ class ParticleSet:
                 self.A1_mat_id = mat_id
                 self.A1_id = picle_id
                 self.N_particles = x.shape[0]
-    
+
             elif self.num_layer == 3:
-    
+
                 rho_P_model = interp1d(planet.A1_P, planet.A1_rho)
                 rho_1 = rho_P_model(planet.P_1)
                 rho_2 = rho_P_model(planet.P_2)
-    
+
                 (
                     x,
                     y,
@@ -3306,7 +3302,7 @@ class ParticleSet:
                     planet.A1_T_rho_args[2],
                     self.N_neig,
                 )
-    
+
                 self.A1_x = x
                 self.A1_y = y
                 self.A1_z = z
