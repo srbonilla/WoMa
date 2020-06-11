@@ -8,17 +8,16 @@ Created on Mon Jul 29 10:08:06 2019
 
 import numpy as np
 from numba import njit
-import eos
 from tqdm import tqdm
-from T_rho import T_rho
-from T_rho import set_T_rho_args
-import glob_vars as gv
-import L2_spherical
-import utils
-
 import warnings
-
 warnings.filterwarnings("ignore")
+
+from woma.misc import glob_vars as gv
+from woma.misc import utils
+from woma.spherical_funcs import L2_spherical
+from woma.eos import eos
+from woma.eos.T_rho import T_rho, set_T_rho_args
+
 
 
 @njit

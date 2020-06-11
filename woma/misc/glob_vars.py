@@ -2,6 +2,8 @@
 WoMa global variables
 """
 
+import os
+
 G = 6.67408e-11  # m^3 kg^-1 s^-2
 R_earth = 6371000  # m
 M_earth = 5.9724e24  # kg
@@ -79,7 +81,8 @@ type_adb = 2
 Di_T_rho_id = {"power": type_rho_pow, "adiabatic": type_adb}
 
 # Local data files
-dir_data = "data/"
+this_dir, this_file = os.path.split(__file__)
+dir_data = os.path.join(this_dir, "../data/")
 # Tillotson cold curves
 Fp_u_cold_Til_iron = dir_data + "u_cold_array_Til_iron.npy"
 Fp_u_cold_Til_granite = dir_data + "u_cold_array_Til_granite.npy"

@@ -4,13 +4,11 @@ WoMa equations of state (EoS)
 
 from numba import njit
 import numpy as np
-import glob_vars as gv
-import tillotson
-import sesame
-import idg
-import hm80
-from T_rho import T_rho
 import matplotlib.pyplot as plt
+
+from woma.misc import glob_vars as gv
+from woma.eos import tillotson, sesame, idg, hm80
+from woma.eos.T_rho import T_rho
 
 
 @njit

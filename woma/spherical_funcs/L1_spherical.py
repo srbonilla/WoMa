@@ -8,11 +8,10 @@ Created on Thu Jul 25 19:15:44 2019
 
 import numpy as np
 from numba import njit
-import eos
 from tqdm import tqdm
-from T_rho import T_rho
-from T_rho import set_T_rho_args
-import glob_vars as gv
+from woma.misc import glob_vars as gv
+from woma.eos import eos
+from woma.eos.T_rho import T_rho, set_T_rho_args
 
 import warnings
 

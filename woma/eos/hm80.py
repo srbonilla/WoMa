@@ -4,8 +4,9 @@ WoMa Hubbard & MacFarlane (1980) equations of state
 
 import numpy as np
 from numba import njit
-import glob_vars as gv
 import os
+
+from woma.misc import glob_vars as gv
 
 
 def load_u_cold_array(mat_id):

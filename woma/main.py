@@ -13,43 +13,26 @@ Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS
 487:4) with modifications for spinning planets.
 
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
-Jacob Kegerreis
+Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
 
 Visit https://github.com/.../woma to download the code including examples and
 for support.
 """
 
-import sys
-import os
-
-# Go to the WoMa directory
-cwd = os.getcwd()
-dir = os.path.dirname(os.path.realpath(__file__))
-os.chdir(dir)
-sys.path.append(dir + "/eos")
-sys.path.append(dir + "/spherical_funcs")
-sys.path.append(dir + "/spin_funcs")
-sys.path.append(dir + "/misc")
-
 import numpy as np
 import copy
 import h5py
-import L1_spherical
-import L2_spherical
-import L3_spherical
-import L1_spin
-import L2_spin
-import L3_spin
-import glob_vars as gv
-import eos
-import utils
-import utils_spin as us
-import seagen
-from T_rho import set_T_rho_args, T_rho, compute_A1_T_rho_id_and_args_from_type
 from scipy.interpolate import interp1d
 from tqdm import tqdm
+import seagen
 
-os.chdir(cwd)
+from woma.spherical_funcs import L1_spherical, L2_spherical, L3_spherical
+from woma.spin_funcs import L1_spin, L2_spin, L3_spin
+import woma.spin_funcs.utils_spin as us
+from woma.misc import glob_vars as gv
+from woma.eos import eos
+from woma.misc import utils
+from woma.eos.T_rho import T_rho, set_T_rho_args, compute_A1_T_rho_id_and_args_from_type
 
 # Output
 Di_hdf5_planet_label = {

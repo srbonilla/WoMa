@@ -3,12 +3,10 @@ WoMa temperature--density relations
 """
 
 from numba import njit
-import glob_vars as gv
 import numpy as np
-import idg
-import hm80
-import tillotson
-import sesame
+
+from woma.misc import glob_vars as gv
+from woma.eos import tillotson, sesame, idg, hm80
 
 
 @njit

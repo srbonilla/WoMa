@@ -8,14 +8,13 @@ Created on Mon Jul 29 11:10:28 2019
 
 import numpy as np
 from numba import njit, jit
-import glob_vars as gv
 from scipy.interpolate import interp1d
-import seagen
 import scipy.integrate as integrate
 from tqdm import tqdm
-import L1_spin
-import L2_spin
-import L3_spin
+import seagen
+
+from woma.misc import glob_vars as gv
+from woma.spin_funcs import L1_spin, L2_spin, L3_spin
 
 # Spining model functions
 @njit
