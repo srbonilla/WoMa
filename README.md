@@ -24,20 +24,21 @@ let us know!
 
 Contents
 --------
-+ `woma.py` The main program classes and functions.
++ `woma/` Code directory.
+    + `main.py` The main program classes and functions.
+    + `data/` Data folder for equation of state (EoS) tables. 
+    + `eos/` EoS and temperature-density relations.
+    + `spherical_funcs/` Functions for spherical planets.
+    + `spin_funcs/` Functions for spinning planets.
+    + `misc/` Miscellaneous functions.
 + `tutorial.ipynb` Jupyter notebook to demonstrate how to use the WoMa module.
 + `examples.py` Other examples.
-+ `data/` Data folder for equation of state (EoS) tables. 
-+ `eos/` EoS and temperature-density relations.
-+ `spherical_funcs/` Functions for spherical planets.
-+ `spin_funcs/` Functions for spinning planets.
-+ `misc/` Miscellaneous functions.
 + `LICENSE.txt` GNU general public license v3+.
 
 
 Basic Usage
 -----------
-+ See the doc strings in `woma.py` and `eos.py` for all the details.
++ See the doc strings in `main.py` and `eos/eos.py` for all the details.
 + See `tutorial.ipynb` and `examples.py` for full working examples.
 
 
