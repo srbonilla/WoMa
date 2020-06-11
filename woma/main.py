@@ -15,7 +15,7 @@ Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
 Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
 
-Visit https://github.com/.../woma to download the code including examples and
+Visit https://github.com/srbonilla/woma to download the code including examples and
 for support.
 """
 
@@ -25,6 +25,7 @@ import h5py
 from scipy.interpolate import interp1d
 from tqdm import tqdm
 import seagen
+import sys
 
 from woma.spherical_funcs import L1_spherical, L2_spherical, L3_spherical
 from woma.spin_funcs import L1_spin, L2_spin, L3_spin
@@ -3081,14 +3082,14 @@ class ParticleSet:
 
     Parameters
     ----------
-    planet : instance of Planet or SpinPlanet
-        The opened hdf5 data file (with "r").
+    planet : obj
+        Instance of Planet or SpinPlanet
 
     N_particles : str
         List of the arrays or attributes to get. See Di_hdf5_planet_label for
         details.
         
-    N_neig : int
+    N_ngb : int
         Number of nearest neighbours used to compute SPH density
 
     Attributes (in addition to the input parameters)
@@ -3135,17 +3136,24 @@ class ParticleSet:
     """
 
     def __init__(
-        self, planet=None, N_particles=None, N_neig=48,
+        self, planet=None, N_particles=None, N_ngb=48,
     ):
         self.N_particles = N_particles
-        self.N_neig = N_neig
+        self.N_ngb = N_ngb
 
         assert isinstance(planet, Planet) or isinstance(planet, SpinPlanet)
         assert self.N_particles is not None
 
         if isinstance(planet, Planet):
             particles = seagen.GenSphere(
-                self.N_particles, planet.A1_r[1:], planet.A1_rho[1:], verb=0
+                self.N_particles,
+                planet.A1_r[1:],
+                planet.A1_rho[1:],
+                planet.A1_mat_id[1:],
+                planet.A1_u[1:],
+                planet.A1_T[1:],
+                planet.A1_P[1:],
+                verb=0,
             )
 
             self.A1_x = particles.A1_x
@@ -3156,13 +3164,16 @@ class ParticleSet:
             self.A1_vz = np.zeros_like(particles.A1_x)
             self.A1_m = particles.A1_m
             self.A1_rho = particles.A1_rho
+            self.A1_u = particles.A1_u
+            self.A1_P = particles.A1_P
+            self.A1_mat_id = particles.A1_mat
+            self.A1_id = np.arange(self.A1_m.shape[0])
 
-            # need to complete these
-            # self.A1_u = u
-            # self.A1_P = P
-            # self.A1_h = h
-            # self.A1_mat_id = mat_id
-            # self.A1_id = picle_id
+            # Smoothing lengths, crudely estimated from the densities
+            w_edge = 2  # r/h at which the kernel goes to zero
+            self.A1_h = (
+                np.cbrt(self.N_ngb * self.A1_m / (4 / 3 * np.pi * self.A1_rho)) / w_edge
+            )
 
             self.N_particles = particles.A1_x.shape[0]
 
@@ -3170,19 +3181,19 @@ class ParticleSet:
             if self.num_layer == 1:
 
                 (
-                    x,
-                    y,
-                    z,
-                    vx,
-                    vy,
-                    vz,
-                    m,
-                    rho,
-                    u,
-                    P,
-                    h,
-                    mat_id,
-                    picle_id,
+                    self.A1_x,
+                    self.A1_y,
+                    self.A1_z,
+                    self.A1_vx,
+                    self.A1_vy,
+                    self.A1_vz,
+                    self.A1_m,
+                    self.A1_rho,
+                    self.A1_u,
+                    self.A1_P,
+                    self.A1_h,
+                    self.A1_mat_id,
+                    self.A1_id,
                 ) = L1_spin.picle_placement_L1(
                     planet.A1_r_equator,
                     planet.A1_rho_equator,
@@ -3193,23 +3204,10 @@ class ParticleSet:
                     planet.A1_mat_id_layer[0],
                     planet.A1_T_rho_type_id[0],
                     planet.A1_T_rho_args[0],
-                    self.N_neig,
+                    self.N_ngb,
                 )
 
-                self.A1_x = x
-                self.A1_y = y
-                self.A1_z = z
-                self.A1_vx = vx
-                self.A1_vy = vy
-                self.A1_vz = vz
-                self.A1_m = m
-                self.A1_rho = rho
-                self.A1_u = u
-                self.A1_P = P
-                self.A1_h = h
-                self.A1_mat_id = mat_id
-                self.A1_id = picle_id
-                self.N_particles = x.shape[0]
+                self.N_particles = self.A1_x.shape[0]
 
             elif self.num_layer == 2:
 
@@ -3217,19 +3215,19 @@ class ParticleSet:
                 rho_1 = rho_P_model(planet.P_1)
 
                 (
-                    x,
-                    y,
-                    z,
-                    vx,
-                    vy,
-                    vz,
-                    m,
-                    rho,
-                    u,
-                    P,
-                    h,
-                    mat_id,
-                    picle_id,
+                    self.A1_x,
+                    self.A1_y,
+                    self.A1_z,
+                    self.A1_vx,
+                    self.A1_vy,
+                    self.A1_vz,
+                    self.A1_m,
+                    self.A1_rho,
+                    self.A1_u,
+                    self.A1_P,
+                    self.A1_h,
+                    self.A1_mat_id,
+                    self.A1_id,
                 ) = L2_spin.picle_placement_L2(
                     planet.A1_r_equator,
                     planet.A1_rho_equator,
@@ -3244,23 +3242,10 @@ class ParticleSet:
                     planet.A1_mat_id_layer[1],
                     planet.A1_T_rho_type_id[1],
                     planet.A1_T_rho_args[1],
-                    self.N_neig,
+                    self.N_ngb,
                 )
 
-                self.A1_x = x
-                self.A1_y = y
-                self.A1_z = z
-                self.A1_vx = vx
-                self.A1_vy = vy
-                self.A1_vz = vz
-                self.A1_m = m
-                self.A1_rho = rho
-                self.A1_u = u
-                self.A1_P = P
-                self.A1_h = h
-                self.A1_mat_id = mat_id
-                self.A1_id = picle_id
-                self.N_particles = x.shape[0]
+                self.N_particles = self.A1_x.shape[0]
 
             elif self.num_layer == 3:
 
@@ -3269,19 +3254,19 @@ class ParticleSet:
                 rho_2 = rho_P_model(planet.P_2)
 
                 (
-                    x,
-                    y,
-                    z,
-                    vx,
-                    vy,
-                    vz,
-                    m,
-                    rho,
-                    u,
-                    P,
-                    h,
-                    mat_id,
-                    picle_id,
+                    self.A1_x,
+                    self.A1_y,
+                    self.A1_z,
+                    self.A1_vx,
+                    self.A1_vy,
+                    self.A1_vz,
+                    self.A1_m,
+                    self.A1_rho,
+                    self.A1_u,
+                    self.A1_P,
+                    self.A1_h,
+                    self.A1_mat_id,
+                    self.A1_id,
                 ) = L3_spin.picle_placement_L3(
                     planet.A1_r_equator,
                     planet.A1_rho_equator,
@@ -3300,20 +3285,7 @@ class ParticleSet:
                     planet.A1_mat_id_layer[2],
                     planet.A1_T_rho_type_id[2],
                     planet.A1_T_rho_args[2],
-                    self.N_neig,
+                    self.N_ngb,
                 )
 
-                self.A1_x = x
-                self.A1_y = y
-                self.A1_z = z
-                self.A1_vx = vx
-                self.A1_vy = vy
-                self.A1_vz = vz
-                self.A1_m = m
-                self.A1_rho = rho
-                self.A1_u = u
-                self.A1_P = P
-                self.A1_h = h
-                self.A1_mat_id = mat_id
-                self.A1_id = picle_id
-                self.N_particles = x.shape[0]
+                self.N_particles = self.A1_x.shape[0]
