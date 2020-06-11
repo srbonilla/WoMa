@@ -6,8 +6,8 @@ import os
 import numpy as np
 import sys
 
-import glob_vars as gv
-import tillotson
+from woma.misc import glob_vars as gv
+from woma.eos import tillotson
 
 # Set up equation of state data
 def set_up():

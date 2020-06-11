@@ -4,8 +4,9 @@ WoMa SESAME equations of state
 
 import numpy as np
 from numba import njit
-import glob_vars as gv
-import utils as ut
+
+from woma.misc import glob_vars as gv
+from woma.misc import utils as ut
 
 
 @njit

@@ -7,13 +7,14 @@ Created on Mon Jul 29 11:32:55 2019
 """
 
 import numpy as np
-import utils_spin as us
 from scipy.interpolate import interp1d
 from numba import njit
-import eos
 from tqdm import tqdm
-from T_rho import T_rho
-import L1_spin
+
+from woma.spin_funcs import L1_spin
+from woma.spin_funcs import utils_spin as us
+from woma.eos import eos
+from woma.eos.T_rho import T_rho
 
 
 @njit

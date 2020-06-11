@@ -3,7 +3,8 @@ WoMa ideal gas equations of state
 """
 
 from numba import njit
-import glob_vars as gv
+
+from woma.misc import glob_vars as gv
 
 
 @njit
