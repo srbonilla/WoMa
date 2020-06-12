@@ -186,7 +186,7 @@ def spin2layer(
     A1_rho_equator,
     A1_r_pole,
     A1_rho_pole,
-    Tw,
+    period,
     P_c,
     P_i,
     P_s,
@@ -219,7 +219,7 @@ def spin2layer(
             A1_rho_pole ([float]):
                 Densitity values at corresponding A1_r_pole points (SI).
 
-            Tw (float):
+            period (float):
                 Period of the planet (hours).
 
             P_c (float):
@@ -279,7 +279,7 @@ def spin2layer(
         range(num_attempt), desc="Solving spining profile", disable=(not verbose >= 1)
     ):
         V_e, V_p = L1_spin._fillV(
-            A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, Tw
+            A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, period
         )
         A1_rho_equator, A1_rho_pole = _fillrho2(
             A1_r_equator,
@@ -309,7 +309,7 @@ def picle_placement_L2(
     A1_rho_equator,
     A1_r_pole,
     A1_rho_pole,
-    Tw,
+    period,
     N,
     rho_i,
     mat_id_L1,
@@ -335,7 +335,7 @@ def picle_placement_L2(
             A1_rho_pole ([float]):
                 Polar profile of densities (SI).
 
-            Tw (float):
+            period (float):
                 Period of the planet (hours).
 
             N (int):
@@ -418,7 +418,7 @@ def picle_placement_L2(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.picle_placement(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, Tw)
+    ) = us.picle_placement(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, period)
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))
