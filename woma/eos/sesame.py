@@ -212,6 +212,24 @@ def load_table_SESAME(Fp_table):
     A2_log_u_ANEOS_forsterite,
 ) = load_table_SESAME(gv.Fp_ANEOS_forsterite)
 
+(
+    A2_u_ANEOS_iron,
+    A2_P_ANEOS_iron,
+    A2_s_ANEOS_iron,
+    A1_log_rho_ANEOS_iron,
+    A1_log_T_ANEOS_iron,
+    A2_log_u_ANEOS_iron,
+) = load_table_SESAME(gv.Fp_ANEOS_iron)
+
+(
+    A2_u_ANEOS_Fe85Si15,
+    A2_P_ANEOS_Fe85Si15,
+    A2_s_ANEOS_Fe85Si15,
+    A1_log_rho_ANEOS_Fe85Si15,
+    A1_log_T_ANEOS_Fe85Si15,
+    A2_log_u_ANEOS_Fe85Si15,
+) = load_table_SESAME(gv.Fp_ANEOS_Fe85Si15)
+
 
 @njit
 def P_u_rho(u, rho, mat_id):
@@ -287,6 +305,18 @@ def P_u_rho(u, rho, mat_id):
             A2_P_ANEOS_forsterite,
             A1_log_rho_ANEOS_forsterite,
             A2_log_u_ANEOS_forsterite,
+        )
+    elif mat_id == gv.id_ANEOS_iron:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_iron,
+            A1_log_rho_ANEOS_iron,
+            A2_log_u_ANEOS_iron,
+        )
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_Fe85Si15,
+            A1_log_rho_ANEOS_Fe85Si15,
+            A2_log_u_ANEOS_Fe85Si15,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -434,6 +464,18 @@ def u_rho_T(rho, T, mat_id):
             A1_log_rho_ANEOS_forsterite,
             A1_log_T_ANEOS_forsterite,
         )
+    elif mat_id == gv.id_ANEOS_iron:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_ANEOS_iron,
+            A1_log_rho_ANEOS_iron,
+            A1_log_T_ANEOS_iron,
+        )
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_ANEOS_Fe85Si15,
+            A1_log_rho_ANEOS_Fe85Si15,
+            A1_log_T_ANEOS_Fe85Si15,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -574,6 +616,18 @@ def s_rho_T(rho, T, mat_id):
             A1_log_rho_ANEOS_forsterite,
             A1_log_T_ANEOS_forsterite,
         )
+    elif mat_id == gv.id_ANEOS_iron:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_ANEOS_iron,
+            A1_log_rho_ANEOS_iron,
+            A1_log_T_ANEOS_iron,
+        )
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_ANEOS_Fe85Si15,
+            A1_log_rho_ANEOS_Fe85Si15,
+            A1_log_T_ANEOS_Fe85Si15,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -710,6 +764,18 @@ def T_rho_s(rho, s, mat_id):
             A1_log_T_ANEOS_forsterite,
             A1_log_rho_ANEOS_forsterite,
             A2_s_ANEOS_forsterite,
+        )
+    elif mat_id == gv.id_ANEOS_iron:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_ANEOS_iron,
+            A1_log_rho_ANEOS_iron,
+            A2_s_ANEOS_iron,
+        )
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_ANEOS_Fe85Si15,
+            A1_log_rho_ANEOS_Fe85Si15,
+            A2_s_ANEOS_Fe85Si15,
         )
     else:
         raise ValueError("Invalid material ID")

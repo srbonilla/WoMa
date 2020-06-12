@@ -43,6 +43,8 @@ Di_mat_id = {
     "SESAME_CO2": Di_mat_type["SESAME"] * type_factor + 7,  # 5212
     # ANEOS
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
+    "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
+    "ANEOS_Fe85Si15": Di_mat_type["ANEOS"] * type_factor + 2,  # Stewart (2020)
 }
 # Invert so the ID are the keys
 Di_id_mat = {mat_id: mat for mat, mat_id in Di_mat_id.items()}
@@ -74,6 +76,8 @@ id_SESAME_N2 = Di_mat_id["SESAME_N2"]
 id_SESAME_steam = Di_mat_id["SESAME_steam"]
 id_SESAME_CO2 = Di_mat_id["SESAME_CO2"]
 id_ANEOS_forsterite = Di_mat_id["ANEOS_forsterite"]
+id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
+id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
 
 # T-rho relation types
 type_rho_pow = 1
@@ -106,3 +110,5 @@ Fp_SESAME_steam = dir_data + "SESAME_steam_7152.txt"
 Fp_SESAME_CO2 = dir_data + "SESAME_CO2_5212.txt"
 # ANEOS tables
 Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.txt"
+Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.txt"
+Fp_ANEOS_Fe85Si15 = dir_data + "ANEOS_Fe85Si15_S20.txt"
