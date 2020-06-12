@@ -490,7 +490,9 @@ def picle_placement_L3(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.picle_placement(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, period)
+    ) = us.picle_placement(
+        A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, period
+    )
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))

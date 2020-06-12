@@ -130,7 +130,7 @@ def simple_basalt_earth():
     # spin planet
     spin_basalt_earth = woma.spin_planet_fix_M(
         planet     = basalt_earth,
-        Tw         = 24,
+        period     = 24,
     )
     
     # plot results
@@ -177,7 +177,7 @@ def aneos_earth():
     # spin planet
     spin_aneos_earth = woma.spin_planet_fix_M(
         planet     = aneos_earth,
-        Tw         = 5,
+        period     = 5,
     )
     
     # plot results
@@ -220,7 +220,7 @@ def uranus():
     # spin planet
     spin_uranus = woma.spin_planet_fix_M(
         planet     = uranus,
-        Tw         = 17.,
+        period     = 17.,
     )
     
     # plot results
@@ -266,7 +266,7 @@ def super_earth():
     # spin planet
     spin_super_earth = woma.spin_planet_fix_M(
         planet     = super_earth,
-        Tw         = 5,
+        period     = 5,
     )
     
     # plot results

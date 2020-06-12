@@ -845,7 +845,9 @@ def find_min_period(
     min_period = 0.0001
     tol = 0.00001
 
-    for k in tqdm(range(max_iter), desc="Finding minimum period", disable=not print_info):
+    for k in tqdm(
+        range(max_iter), desc="Finding minimum period", disable=not print_info
+    ):
 
         try_period = np.mean([min_period, max_period])
 
