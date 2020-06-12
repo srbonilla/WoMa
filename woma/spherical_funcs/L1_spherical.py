@@ -9,13 +9,13 @@ Created on Thu Jul 25 19:15:44 2019
 import numpy as np
 from numba import njit
 from tqdm import tqdm
-from woma.misc import glob_vars as gv
-from woma.eos import eos
-from woma.eos.T_rho import T_rho, set_T_rho_args
-
 import warnings
 
 warnings.filterwarnings("ignore")
+
+from woma.misc import glob_vars as gv
+from woma.eos import eos
+from woma.eos.T_rho import T_rho, set_T_rho_args
 
 
 @njit
