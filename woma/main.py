@@ -3044,12 +3044,18 @@ def L2_spin_planet_fix_M(
 def spin_planet_fix_M(
     planet,
     Tw,
-    R_e_max=4 * gv.R_earth,
-    R_p_max=2 * gv.R_earth,
     num_prof=1000,
+    R_e_max=None,
+    R_p_max=None,
     max_iter_1=20,
     max_iter_2=5,
 ):
+    
+    if R_e_max is None:
+        R_e_max = 4*planet.R
+        
+    if R_p_max is None:
+        R_p_max = 2*planet.R
 
     if planet.num_layer == 1:
 
