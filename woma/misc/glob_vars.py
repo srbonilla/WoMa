@@ -43,8 +43,8 @@ Di_mat_id = {
     "SESAME_CO2": Di_mat_type["SESAME"] * type_factor + 7,  # 5212
     # ANEOS
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
-    "ANEOS_iron"      : Di_mat_type["ANEOS"]*type_factor + 1, # Stewart (2020)
-    "ANEOS_Fe85Si15"  : Di_mat_type["ANEOS"]*type_factor + 2, # Stewart (2020)
+    "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
+    "ANEOS_Fe85Si15": Di_mat_type["ANEOS"] * type_factor + 2,  # Stewart (2020)
 }
 # Invert so the ID are the keys
 Di_id_mat = {mat_id: mat for mat, mat_id in Di_mat_id.items()}
