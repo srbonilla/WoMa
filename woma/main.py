@@ -2267,7 +2267,7 @@ class SpinPlanet:
         self,
         name=None,
         planet=None,
-        Tw=None,
+        period=None,
         num_prof=1000,
         R_e_max=None,
         R_p_max=None,
@@ -2276,7 +2276,7 @@ class SpinPlanet:
         self.num_prof = num_prof
         self.R_e_max = R_e_max
         self.R_p_max = R_p_max
-        self.Tw = Tw
+        self.period = period
         self.P_1 = None
         self.P_2 = None
         self.M = None
@@ -2401,7 +2401,7 @@ class SpinPlanet:
             self.A1_rho_equator,
             self.A1_r_pole,
             self.A1_rho_pole,
-            self.Tw,
+            self.period,
         )
 
         self.v_escape_pole = v_esc_p
@@ -2748,9 +2748,9 @@ class SpinPlanet:
             "    %s = %.5g kg/m^3", (utils.add_whitespace("rho_0", space), self.rho_0)
         )
 
-    def find_Tw_min(self, Tw_max=10, max_iter=20, print_info=True):
+    def find_min_period(self, max_period=10, max_iter=20, print_info=True):
 
-        Tw_min = us.find_Tw_min(
+        min_period = us.find_min_period(
             self.num_layer,
             self.A1_r_equator,
             self.A1_rho_equator,
@@ -2765,12 +2765,12 @@ class SpinPlanet:
             self.A1_T_rho_args,
             self.P_1,
             self.P_2,
-            Tw_max,
+            max_period,
             max_iter,
             print_info,
         )
 
-        self.Tw_min = Tw_min
+        self.min_period = min_period
 
     def spin(
         self,
@@ -2778,7 +2778,7 @@ class SpinPlanet:
         max_iter_2=20,
         print_info=True,
         tol=0.001,
-        check_Tw_min=True,
+        check_min_period=True,
     ):
         # Check for necessary input
         self._check_input()
@@ -2786,21 +2786,21 @@ class SpinPlanet:
         for i in tqdm(
             range(max_iter_1), desc="Computing spinning profile", disable=not print_info
         ):
-            # compute Tw_min
-            if check_Tw_min:
-                self.find_Tw_min(print_info=False, max_iter=max_iter_2)
+            # compute min_period
+            if check_min_period:
+                self.find_min_period(print_info=False, max_iter=max_iter_2)
 
-                # select Tw for this iteration
-                if self.Tw >= self.Tw_min:
-                    Tw_iter = self.Tw
+                # select period for this iteration
+                if self.period >= self.min_period:
+                    period_iter = self.period
                 else:
-                    Tw_iter = self.Tw_min
+                    period_iter = self.min_period
             else:
-                Tw_iter = self.Tw
+                period_iter = self.period
 
             # compute profile
             A1_rho_equator, A1_rho_pole = us.spin_iteration(
-                Tw_iter,
+                period_iter,
                 self.num_layer,
                 self.A1_r_equator,
                 self.A1_rho_equator,
@@ -2833,11 +2833,11 @@ class SpinPlanet:
                     print("Convergence criteria reached.")
                 break
 
-        if self.Tw < Tw_iter:
+        if self.period < period_iter:
             if print_info:
                 print("")
-                print("Minimum period found at", Tw_iter, "h")
-            self.Tw = Tw_iter
+                print("Minimum period found at", period_iter, "h")
+            self.period = period_iter
 
         self.update_attributes()
 
@@ -2847,17 +2847,54 @@ class SpinPlanet:
 
 def L1_spin_planet_fix_M(
     planet,
-    Tw,
+    period,
+    num_prof=1000,
     R_e_max=4 * gv.R_earth,
     R_p_max=2 * gv.R_earth,
-    num_prof=1000,
+    check_min_period=False,
     max_iter_1=20,
+    tol=0.001,
 ):
+    """ Compute the SpinPlanet object such that the mass of each layer is equal to
+    the one provided in a Planet obj. For a 1 layer planet.
+
+    Parameters
+    ----------
+    planet : onj
+        Instance of Planet class. Must be 1 layer
+
+    period : float
+        Period (h).
+        
+    num_prof : int
+        Number of grid points used in the 1D equatorial and polar profiles.
+
+    R_e_max : float
+        Maximum equatorial radius (m).
+        
+    R_p_max : float
+        Maximum polar radius (m).
+        
+    check_min_period : bool
+        Checks if period provided is lees than the minimum physically allowed.
+        Use True only for extreme high spin.
+        
+    max_iter_1: int
+        Maximum number of iterations allowed.
+        
+    tol : int
+        Tolerance level. The iterative search will end
+        when np.abs(planet.M - spin_planet.M) / planet.M < tol
+
+    Returns
+    -------
+    spin_planet : obj
+        Instance of SpinPlanet class.
+    """
 
     assert isinstance(planet, Planet)
     assert planet.num_layer == 1
 
-    tol = 0.001
     f_min = 0.0
     f_max = 1.0
 
@@ -2877,10 +2914,10 @@ def L1_spin_planet_fix_M(
         new_planet.gen_prof_L1_find_M_given_R(print_info=False)
 
         spin_planet = SpinPlanet(
-            planet=new_planet, Tw=Tw, R_e_max=R_e_max, R_p_max=R_p_max
+            planet=new_planet, period=period, R_e_max=R_e_max, R_p_max=R_p_max
         )
 
-        spin_planet.spin(print_info=False)
+        spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
         criteria = np.abs(planet.M - spin_planet.M) / planet.M < tol
         # print(np.abs(planet.M - spin_planet.M)/planet.M)
@@ -2900,18 +2937,59 @@ def L1_spin_planet_fix_M(
 
 def L2_spin_planet_fix_M(
     planet,
-    Tw,
-    R_e_max=4 * gv.R_earth,
-    R_p_max=2 * gv.R_earth,
+    period,
     num_prof=1000,
+    R_e_max=2 * gv.R_earth,
+    R_p_max=1.2 * gv.R_earth,
+    check_min_period=False,
     max_iter_1=20,
     max_iter_2=5,
+    tol=0.01,
 ):
+    """ Compute the SpinPlanet object such that the mass of each layer is equal to
+    the one provided in a Planet obj. For a 2 layer planet.
+
+    Parameters
+    ----------
+    planet : onj
+        Instance of Planet class. Must be 1 layer
+
+    period : float
+        Period (h).
+        
+    num_prof : int
+        Number of grid points used in the 1D equatorial and polar profiles.
+
+    R_e_max : float
+        Maximum equatorial radius (m).
+        
+    R_p_max : float
+        Maximum polar radius (m).
+        
+    check_min_period : bool
+        Checks if period provided is lees than the minimum physically allowed.
+        Use True only for extreme high spin.
+        
+    max_iter_1: int
+        Maximum number of iterations allowed. Inner loop.
+        
+    max_iter_2: int
+        Maximum number of iterations allowed. Outer loop.
+        
+    tol : int
+        Tolerance level. The iterative search will end
+        when the relative difference in total mass and in core mass
+        fraction is less than tol.
+
+    Returns
+    -------
+    spin_planet : obj
+        Instance of SpinPlanet class.
+    """
 
     assert isinstance(planet, Planet)
     assert planet.num_layer == 2
 
-    tol = 0.01
     M = planet.M
 
     f_M_core = planet.A1_M_layer[0] / M
@@ -2919,10 +2997,14 @@ def L2_spin_planet_fix_M(
     new_planet = copy.deepcopy(planet)
 
     spin_planet = SpinPlanet(
-        planet=new_planet, Tw=Tw, num_prof=num_prof, R_e_max=R_e_max, R_p_max=R_p_max
+        planet=new_planet,
+        period=period,
+        num_prof=num_prof,
+        R_e_max=R_e_max,
+        R_p_max=R_p_max,
     )
 
-    spin_planet.spin(print_info=False)
+    spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
     for k in tqdm(range(max_iter_2), desc="Computing spinning profile"):
 
@@ -2951,13 +3033,13 @@ def L2_spin_planet_fix_M(
 
             spin_planet = SpinPlanet(
                 planet=new_planet,
-                Tw=Tw,
+                period=period,
                 num_prof=num_prof,
                 R_e_max=R_e_max,
                 R_p_max=R_p_max,
             )
 
-            spin_planet.spin(print_info=False)
+            spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
             criteria_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
             criteria_2 = (
@@ -3006,13 +3088,13 @@ def L2_spin_planet_fix_M(
 
             spin_planet = SpinPlanet(
                 planet=new_planet,
-                Tw=Tw,
+                period=period,
                 num_prof=num_prof,
                 R_e_max=R_e_max,
                 R_p_max=R_p_max,
             )
 
-            spin_planet.spin(print_info=False)
+            spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
             criteria_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
             criteria_2 = (
@@ -3043,24 +3125,87 @@ def L2_spin_planet_fix_M(
 
 def spin_planet_fix_M(
     planet,
-    Tw,
-    R_e_max=4 * gv.R_earth,
-    R_p_max=2 * gv.R_earth,
+    period,
     num_prof=1000,
+    R_e_max=None,
+    R_p_max=None,
+    check_min_period=False,
     max_iter_1=20,
     max_iter_2=5,
+    tol=0.01,
 ):
+    """ Compute the SpinPlanet object such that the mass of each layer is equal to
+    the one provided in a Planet obj input.
+
+    Parameters
+    ----------
+    planet : onj
+        Instance of Planet class. Must be 1 layer
+
+    period : float
+        Period (h).
+        
+    num_prof : int
+        Number of grid points used in the 1D equatorial and polar profiles.
+
+    R_e_max : float
+        Maximum equatorial radius (m).
+        
+    R_p_max : float
+        Maximum polar radius (m).
+        
+    check_min_period : bool
+        Checks if period provided is lees than the minimum physically allowed.
+        Use True only for extreme high spin.
+        
+    max_iter_1: int
+        Maximum number of iterations allowed. Inner loop.
+        
+    max_iter_2: int
+        Maximum number of iterations allowed. Outer loop.
+        
+    tol : int
+        Tolerance level. The iterative search will end
+        when the relative difference in total mass and in core mass
+        fraction is less than tol.
+
+    Returns
+    -------
+    spin_planet : obj
+        Instance of SpinPlanet class.
+    """
+
+    if R_e_max is None:
+        R_e_max = 2 * planet.R
+
+    if R_p_max is None:
+        R_p_max = 1.2 * planet.R
 
     if planet.num_layer == 1:
 
         spin_planet = L1_spin_planet_fix_M(
-            planet, Tw, R_e_max, R_p_max, num_prof, max_iter_1
+            planet,
+            period,
+            num_prof,
+            R_e_max,
+            R_p_max,
+            check_min_period,
+            max_iter_1,
+            tol,
         )
 
     elif planet.num_layer == 2:
 
         spin_planet = L2_spin_planet_fix_M(
-            planet, Tw, R_e_max, R_p_max, num_prof, max_iter_1, max_iter_2
+            planet,
+            period,
+            num_prof,
+            R_e_max,
+            R_p_max,
+            check_min_period,
+            max_iter_1,
+            max_iter_2,
+            tol,
         )
 
     elif planet.num_layer == 3:
@@ -3199,7 +3344,7 @@ class ParticleSet:
                     planet.A1_rho_equator,
                     planet.A1_r_pole,
                     planet.A1_rho_pole,
-                    planet.Tw,
+                    planet.period,
                     self.N_particles,
                     planet.A1_mat_id_layer[0],
                     planet.A1_T_rho_type_id[0],
@@ -3233,7 +3378,7 @@ class ParticleSet:
                     planet.A1_rho_equator,
                     planet.A1_r_pole,
                     planet.A1_rho_pole,
-                    planet.Tw,
+                    planet.period,
                     self.N_particles,
                     rho_1,
                     planet.A1_mat_id_layer[0],
@@ -3272,7 +3417,7 @@ class ParticleSet:
                     planet.A1_rho_equator,
                     planet.A1_r_pole,
                     planet.A1_rho_pole,
-                    planet.Tw,
+                    planet.period,
                     planet.N_particles,
                     rho_1,
                     rho_2,

@@ -13,7 +13,8 @@ from woma.eos.T_rho import T_rho
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure from the internal energy and density, for any EoS.
+    """ Compute the pressure from the specific internal energy
+    and density, for any EoS.
 
     Parameters
     ----------
@@ -51,7 +52,7 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Compute the internal energy from the density and temperature, for any EoS.
+    """ Compute the specific internal energy from the density and temperature, for any EoS.
 
     Parameters
     ----------
@@ -102,10 +103,10 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
         Extra arguments to determine the relation.
 
     rho_min : float
-        Lower bound for where to look the root (SI).
+        Lower bound for where to look the root (kg m^-3).
 
     rho_max : float
-        Upper bound for where to look the root (SI).
+        Upper bound for where to look the root (kg m^-3).
 
     Returns
     -------
@@ -284,7 +285,26 @@ def plot_EoS_P_rho_fixed_T(
 
     Parameters
     ----------
-    ...
+    mat_id_1 : int
+        Material id for the first material.
+    
+    mat_id_2 : int
+        Material id for the second material.
+        
+    T : float
+        Fixed temperature (K).
+        
+    P_min : float
+        Minimum pressure (Pa) to consider.
+        
+    P_max : float
+        Maximum pressure (Pa) to consider.
+        
+    rho_min : float
+        Minimum density (kg m^-3) to consider.
+        
+    rho_min : float
+        Maximum density (kg m^-3) to consider.
     """
 
     rho = np.linspace(rho_min, rho_max, 1000)

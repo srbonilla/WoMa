@@ -61,9 +61,33 @@ def load_table_HM80(Fp_table):
 
     Returns
     -------
-    ###update
-    A2_log_P, A2_log_T : [[float]]
-        2D arrays of natural logarithms of pressure (Pa) and temperature (K).
+    log_rho_min : float
+        Natural log of the minimum density (kg m^-3).
+        
+    log_rho_max : float
+        Natural log of the maximum density (kg m^-3).
+    
+    num_rho : int
+        Number of different density values tabulated.
+    
+    log_rho_step : float
+        Step between consecutive tabulated density values.
+    
+    log_u_min : float
+        Natural log of the minimum specific internal energy (J kg^-1).
+        
+    log_u_max : float
+        Natural log of the maximum specific internal energy (J kg^-1).
+    
+    num_u : int
+        Number of different specific internal energy values tabulated.
+    
+    log_u_step : float
+        Step between consecutive tabulated specific internal energy values.
+    
+    A2_log_P, A2_log_T : [float]
+        2D arrays of natural logs of pressure (Pa), and temperature (K).
+    
     """
     # Parameters
     log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(

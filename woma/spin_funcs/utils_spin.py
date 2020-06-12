@@ -453,7 +453,7 @@ def compute_M_shell(R_shell, r_array, rho_e, z_array, rho_p):
 
 
 # main function
-def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
+def picle_placement(r_array, rho_e, z_array, rho_p, N, period):
 
     """ Particle placement for a spining profile.
 
@@ -474,7 +474,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
             N (int):
                 Number of particles.
                 
-            Tw (float):
+            period (float):
                 Period of the planet (hours).
 
         Returns:
@@ -675,7 +675,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     A1_vz = np.zeros(A1_m.shape[0])
 
     hour_to_s = 3600
-    wz = 2 * np.pi / Tw / hour_to_s
+    wz = 2 * np.pi / period / hour_to_s
 
     A1_vx = -A1_y * wz
     A1_vy = A1_x * wz
@@ -683,7 +683,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, Tw):
     return A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_R, A1_Z
 
 
-def spin_escape_vel(r_array, rho_e, z_array, rho_p, Tw):
+def spin_escape_vel(r_array, rho_e, z_array, rho_p, period):
     """
         Computes the escape velocity for a spining planet.
         
@@ -701,7 +701,7 @@ def spin_escape_vel(r_array, rho_e, z_array, rho_p, Tw):
             rho_p ([float]):
                 Polar profile of densities (SI).
                 
-            Tw (float):
+            period (float):
                 Period of the planet (hours).
 
         Returns:
@@ -714,14 +714,14 @@ def spin_escape_vel(r_array, rho_e, z_array, rho_p, Tw):
 
         
     """
-    V_e, V_p = L1_spin._fillV(r_array, rho_e, z_array, rho_p, Tw)
+    V_e, V_p = L1_spin._fillV(r_array, rho_e, z_array, rho_p, period)
 
     i_equator = min(np.where(rho_e == 0)[0]) - 1
     i_pole = min(np.where(rho_p == 0)[0]) - 1
     V_equator = V_e[i_equator]
     V_pole = V_p[i_pole]
     v_escape_pole = np.sqrt(-2 * V_pole)
-    w = 2 * np.pi / Tw / 60 / 60
+    w = 2 * np.pi / period / 60 / 60
     R_e = r_array[i_equator]
     v_escape_equator = np.sqrt(-2 * V_equator - (w * R_e) ** 2)
 
@@ -729,7 +729,7 @@ def spin_escape_vel(r_array, rho_e, z_array, rho_p, Tw):
 
 
 def spin_iteration(
-    Tw,
+    period,
     num_layer,
     A1_r_equator,
     A1_rho_equator,
@@ -755,7 +755,7 @@ def spin_iteration(
             A1_rho_equator,
             A1_r_pole,
             A1_rho_pole,
-            Tw,
+            period,
             P_0,
             P_s,
             rho_0,
@@ -774,7 +774,7 @@ def spin_iteration(
             A1_rho_equator,
             A1_r_pole,
             A1_rho_pole,
-            Tw,
+            period,
             P_0,
             P_1,
             P_s,
@@ -797,7 +797,7 @@ def spin_iteration(
             A1_rho_equator,
             A1_r_pole,
             A1_rho_pole,
-            Tw,
+            period,
             P_0,
             P_1,
             P_2,
@@ -822,7 +822,7 @@ def spin_iteration(
     return A1_rho_equator, A1_rho_pole
 
 
-def find_Tw_min(
+def find_min_period(
     num_layer,
     A1_r_equator,
     A1_rho_equator,
@@ -837,20 +837,22 @@ def find_Tw_min(
     A1_T_rho_args,
     P_1=None,
     P_2=None,
-    Tw_max=10,
+    max_period=10,
     max_iter=30,
     print_info=False,
 ):
 
-    Tw_min = 0.0001
+    min_period = 0.0001
     tol = 0.00001
 
-    for k in tqdm(range(max_iter), desc="Finding Tw min", disable=not print_info):
+    for k in tqdm(
+        range(max_iter), desc="Finding minimum period", disable=not print_info
+    ):
 
-        Tw_try = np.mean([Tw_min, Tw_max])
+        try_period = np.mean([min_period, max_period])
 
         profile_e, _ = spin_iteration(
-            Tw_try,
+            try_period,
             num_layer,
             A1_r_equator,
             A1_rho_equator,
@@ -868,16 +870,16 @@ def find_Tw_min(
         )
 
         if profile_e[-1] > 0:
-            Tw_min = Tw_try
+            min_period = try_period
         else:
-            Tw_max = Tw_try
+            max_period = try_period
 
-        if np.abs(Tw_max - Tw_min) / Tw_min < tol:
+        if np.abs(max_period - min_period) / min_period < tol:
             break
 
-    Tw_min = Tw_max
+    min_period = max_period
 
     if print_info:
-        print("Minimum period: %.3f hours" % (Tw_min))
+        print("Minimum period: %.3f hours" % (min_period))
 
-    return Tw_min
+    return min_period

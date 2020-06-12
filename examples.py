@@ -5,319 +5,283 @@ WoMa examples
 import numpy as np
 import matplotlib.pyplot as plt
 import woma
+import woma.spin_funcs.utils_spin as us
 
 R_earth = 6.371e6 # m
 M_earth = 5.972e24 # kg
 
 
-# ============================================================================ #
-#                       Plotting functions                                     #
-# ============================================================================ #
-
-
-def plot_planet_profiles(planet):
-    fig, ax = plt.subplots(2, 2, figsize=(7, 7))
+def plot_planet_profile(planet):
     
-    ax[0, 0].plot(planet.A1_r/R_earth, planet.A1_rho)
-    ax[0, 0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0, 0].set_ylabel(r"Density [kg m$^{-3}$]")
-    ax[0, 0].set_yscale("log")
-    ax[0, 0].set_xlim(0, None)
-    
-    ax[1, 0].plot(planet.A1_r/R_earth, planet.A1_m_enc/M_earth)
-    ax[1, 0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[1, 0].set_ylabel(r"Enclosed Mass $[M_\oplus]$")
-    ax[1, 0].set_xlim(0, None)
-    ax[1, 0].set_ylim(0, None)
-        
-    ax[0, 1].plot(planet.A1_r/R_earth, planet.A1_P)
-    ax[0, 1].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0, 1].set_ylabel(r"Pressure [Pa]")
-    ax[0, 1].set_yscale("log")
-    ax[0, 1].set_xlim(0, None)
-    
-    ax[1, 1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
-    ax[1, 1].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[1, 1].set_ylabel(r"Temperature [$10^3$ K]")
-    ax[1, 1].set_xlim(0, None)
-    ax[1, 1].set_ylim(0, None)
-    
-    plt.tight_layout()
-
-
-def plot_planet_profiles_alternate(planet, fig=None, ax=None):
-    if fig == None:
+    if isinstance(planet, woma.Planet):
         fig, ax = plt.subplots(2, 2, figsize=(7, 7))
-    
-    ax[0, 0].plot(planet.A1_r/R_earth, planet.A1_rho)
-    ax[0, 0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0, 0].set_ylabel(r"Density [kg m$^{-3}$]")
-    ax[0, 0].set_yscale("log")
-    ax[0, 0].set_xlim(0, None)
+        
+        ax[0, 0].plot(planet.A1_r/R_earth, planet.A1_rho)
+        ax[0, 0].set_xlabel(r"Radius $[R_\oplus]$")
+        ax[0, 0].set_ylabel(r"Density [kg m$^{-3}$]")
+        ax[0, 0].set_yscale("log")
+        ax[0, 0].set_xlim(0, None)
+        
+        ax[1, 0].plot(planet.A1_r/R_earth, planet.A1_m_enc/M_earth)
+        ax[1, 0].set_xlabel(r"Radius $[R_\oplus]$")
+        ax[1, 0].set_ylabel(r"Enclosed Mass $[M_\oplus]$")
+        ax[1, 0].set_xlim(0, None)
+        ax[1, 0].set_ylim(0, None)
             
-    ax[1, 0].plot(planet.A1_r/R_earth, planet.A1_P)
-    ax[1, 0].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[1, 0].set_ylabel(r"Pressure [Pa]")
-    ax[1, 0].set_yscale("log")
-    ax[1, 0].set_xlim(0, None)
+        ax[0, 1].plot(planet.A1_r/R_earth, planet.A1_P)
+        ax[0, 1].set_xlabel(r"Radius $[R_\oplus]$")
+        ax[0, 1].set_ylabel(r"Pressure [Pa]")
+        ax[0, 1].set_yscale("log")
+        ax[0, 1].set_xlim(0, None)
+        
+        ax[1, 1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
+        ax[1, 1].set_xlabel(r"Radius $[R_\oplus]$")
+        ax[1, 1].set_ylabel(r"Temperature [$10^3$ K]")
+        ax[1, 1].set_xlim(0, None)
+        ax[1, 1].set_ylim(0, None)
+        
+        plt.tight_layout()
+        
+    if isinstance(planet, woma.SpinPlanet):
+        sp = planet
     
-    ax[0, 1].plot(planet.A1_r/R_earth, planet.A1_T*1e-3)
-    ax[0, 1].set_xlabel(r"Radius $[R_\oplus]$")
-    ax[0, 1].set_ylabel(r"Temperature [$10^3$ K]")
-    ax[0, 1].set_xlim(0, None)
-    ax[0, 1].set_ylim(0, None)
-    
-    ax[1, 1].plot(np.log(planet.A1_rho/5), np.log(planet.A1_T))
-    ax[1, 1].set_xlabel(r"ln( $\rho / 5$ kg m$^{-3}$ )")
-    ax[1, 1].set_ylabel(r"ln( Temperature [K] )")
-    
-    plt.tight_layout()
-    
-    return fig, ax
+        fig, ax = plt.subplots(1,2, figsize=(12,6))
+        ax[0].scatter(sp.A1_r/R_earth, sp.A1_rho, label = 'original', s = 0.5)
+        ax[0].scatter(sp.A1_r_equator/R_earth, sp.A1_rho_equator, label = 'equatorial profile', s = 1)
+        ax[0].scatter(sp.A1_r_pole/R_earth, sp.A1_rho_pole, label = 'polar profile', s = 1)
+        ax[0].set_xlabel(r"$r$ [$R_{earth}$]")
+        ax[0].set_ylabel(r"$\rho$ [$kg/m^3$]")
+        ax[0].legend()
+        
+        
+        r_array_coarse = np.linspace(0, np.max(sp.A1_r_equator), 100)
+        z_array_coarse = np.linspace(0, np.max(sp.A1_r_pole), 100)
+        rho_grid = np.zeros((r_array_coarse.shape[0], z_array_coarse.shape[0]))
+        for i in range(rho_grid.shape[0]):
+            radius = r_array_coarse[i]
+            for j in range(rho_grid.shape[1]):
+                z = z_array_coarse[j]
+                rho_grid[i,j] = us.rho_rz(radius, z,
+                                          sp.A1_r_equator, sp.A1_rho_equator,
+                                          sp.A1_r_pole, sp.A1_rho_pole)
+        
+        X, Y = np.meshgrid(r_array_coarse/R_earth, z_array_coarse/R_earth)
+        Z = rho_grid.T
+        levels = np.arange(1000, 15000, 1000)
+        ax[1].set_aspect('equal')
+        CS = plt.contour(X, Y, Z, levels = levels)
+        ax[1].clabel(CS, inline=1, fontsize=10)
+        ax[1].set_xlabel(r"$r$ [$R_{earth}$]")
+        ax[1].set_ylabel(r"$z$ [$R_{earth}$]")
+        ax[1].set_title('Density (Kg/m^3)')
+            
+        plt.tight_layout()
+        
+    plt.show()
 
 
 # ============================================================================ #
-#                       Spherical profile examples                             #
+#                       Simple examples                                        #
 # ============================================================================ #
 
 
-def demo_gen_prof_L1_find_R_given_M():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_granite"],
-        A1_T_rho_type   = ["power=0."],
-        A1_R_layer      = [0.988 * R_earth],
-        M               = 0.8*M_earth,
-        P_s             = 0,
-        T_s             = 300
-        )
-
-    planet.R_max = R_earth
-
-    planet.gen_prof_L1_find_R_given_M()
-
-    plot_planet_profiles(planet)
 
 
-def demo_gen_prof_L1_find_M_given_R():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_granite"],
-        A1_T_rho_type   = ["power=0."],
-        A1_R_layer      = [R_earth],
-        P_s             = 0,
-        T_s             = 300,
-        )
+# ============================================================================ #
+#                       Full examples                                          #
+# ============================================================================ #
+# Each example here demonstrates:
+#   1. Building a spherical planet profile 
+#   2. Placing particles to model the spherical planet
+#   3. Creating a spinning planet profile 
+#   4. Placing particles to model the spinning planet 
+# 
+# These cover both a wide variety of planets and a wide range of input options,
+# as described in the comments of each example function.
 
-    planet.M_max = M_earth
-
-    planet.gen_prof_L1_find_M_given_R()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L2_find_R1_given_R_M():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = ["power=0.", "power=0."],
-        A1_R_layer      = [None, R_earth],
-        M               = M_earth,
-        P_s             = 0,
-        T_s             = 300,
-        )
-
-    planet.gen_prof_L2_find_R1_given_R_M()
-
-    plot_planet_profiles_alternate(planet)
-
-
-def demo_gen_prof_L2_find_R_given_M_R1():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = ["power=0.", "power=0."],
-        A1_R_layer      = [0.40*R_earth, R_earth],
-        M               = M_earth,
-        P_s             = 0,
-        T_s             = 300,
-        )
-
-    planet.R_max = 2*R_earth
-    planet.gen_prof_L2_find_R_given_M_R1()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L2_find_M_given_R1_R():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = ["power=0.", "power=0."],
-        A1_T_rho_args   = [[None, 0.], [None, 0.]],
-        A1_R_layer      = [0.40*R_earth, R_earth],
-        P_s             = 0,
-        T_s             = 300,
-        )
-
-    planet.M_max = 2*M_earth
-    planet.gen_prof_L2_find_M_given_R1_R()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L3_given_prof_L2():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite"],
-        A1_T_rho_type   = ["power=0.", "power=0."],
-        A1_R_layer      = [None, R_earth],
-        M               = 0.887*M_earth,
-        P_s             = 1e5,
-        T_s             = 2000,
-        num_attempt     = 10
-        )
-
-    planet.gen_prof_L2_find_R1_given_R_M()
-
-    mat_id_atm = "idg_N2"
-    T_rho_type_atm = woma.gv.type_rho_pow
-    T_rho_args_atm = [None, 0]
-
-    planet.gen_prof_L3_given_prof_L2(
-        mat_id_atm,
-        T_rho_type_atm,
-        T_rho_args_atm,
-        rho_min=1e-6
-        )
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L3_find_R1_R2_given_R_M_I():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
-        A1_R_layer      = [None, None, R_earth],
-        P_s             = 0,
-        T_s             = 300,
-        I_MR2           = 0.3*M_earth*R_earth**2,
-        M               = M_earth,
-        num_attempt     = 5,
-        num_attempt_2   = 5
-        )
-
-    planet.gen_prof_L3_find_R1_R2_given_R_M_I()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L3_find_R2_given_R_M_R1():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "SESAME_steam"],
-        A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
-        A1_R_layer      = [0.55*R_earth, None, R_earth],
-        P_s             = 1e5,
-        T_s             = 300,
-        M               = M_earth
-        )
-
-    planet.gen_prof_L3_find_R2_given_R_M_R1()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L3_find_R1_given_R_M_R2():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
-        A1_R_layer      = [None, 0.9*R_earth, R_earth],
-        P_s             = 0,
-        T_s             = 300,
-        M               = M_earth
-        )
-
-    planet.gen_prof_L3_find_R1_given_R_M_R2()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L3_find_M_given_R_R1_R2():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
-        A1_R_layer      = [0.5*R_earth, 0.9*R_earth, R_earth],
-        P_s             = 0,
-        T_s             = 300,
-        M_max           = 2*M_earth
-        )
-
-    planet.gen_prof_L3_find_M_given_R_R1_R2()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L3_find_R_given_M_R1_R2():
-    planet = woma.Planet(
-        name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
-        A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
-        A1_R_layer      = [0.5*R_earth, 0.9*R_earth, None],
-        P_s             = 0,
-        T_s             = 300,
-        M               = M_earth,
-        R_max           = 2*R_earth
-        )
-
-    planet.gen_prof_L3_find_R_given_M_R1_R2()
-
-    plot_planet_profiles(planet)
-
-
-def demo_gen_uranus_prof():
+def simple_basalt_earth():
+    # Create a basalt somewhat Earth-like planet.
+    # Spherical profile:
+    #   Choose the mass, let woma find the radius.
+    #   Tillotson basalt, isothermal
     
-    planet = woma.Planet(
+    basalt_earth = woma.Planet(
+        name            = "basalt_earth",
+        A1_mat_layer    = ["Til_basalt"],
+        A1_T_rho_type   = ["power=0."],
+        M               = M_earth,
+        T_s             = 500,
+        P_s             = 1e5,
+        R_max           = 2*R_earth,
+    )
+    
+    # determine profile
+    basalt_earth.gen_prof_L1_find_R_given_M()
+
+    # plot results
+    plot_planet_profile(basalt_earth)
+    
+    # particle placement
+    particles = woma.ParticleSet(basalt_earth, 1e6)
+    
+    # save particles
+    # particles.save("basalt_earth.hdf5")
+    
+    # spin planet
+    spin_basalt_earth = woma.spin_planet_fix_M(
+        planet     = basalt_earth,
+        period     = 24,
+    )
+    
+    # plot results
+    plot_planet_profile(spin_basalt_earth)
+    
+    # particle placement
+    particles = woma.ParticleSet(spin_basalt_earth, 1e6)
+    
+    # save particles
+    # particles.save("spin_basalt_earth.hdf5")
+    
+def aneos_earth():
+    # Create a Earth-like planet using ANEOS EoS.
+    # Spherical profile:
+    #   Choose the mass, let woma find the radius.
+    #   Tillotson basalt, isothermal
+    
+    aneos_earth = woma.Planet(
+        name            = "aneos_earth",
+        A1_mat_layer    = ["ANEOS_Fe85Si15", "ANEOS_forsterite"],
+        A1_T_rho_type   = ["adiabatic", "adiabatic"],
+        M               = M_earth,
+        A1_R_layer      = [None, R_earth],
+        T_s             = 500,
+        P_s             = 1e5,
+        
+    )
+    
+    # determine profile
+    aneos_earth.gen_prof_L2_find_R1_given_R_M()
+    
+    # print boundary radius
+    print("Boundary at", aneos_earth.A1_R_layer[0] / R_earth, "R_earth")
+
+    # plot results
+    plot_planet_profile(aneos_earth)
+    
+    # particle placement
+    particles = woma.ParticleSet(aneos_earth, 1e7)
+    
+    # save particles
+    # particles.save("basalt_earth.hdf5")
+    
+    # spin planet
+    spin_aneos_earth = woma.spin_planet_fix_M(
+        planet     = aneos_earth,
+        period     = 5,
+    )
+    
+    # plot results
+    plot_planet_profile(spin_aneos_earth)
+    
+    # particle placement
+    particles = woma.ParticleSet(spin_basalt_earth, 1e7)
+    
+    # save particles
+    # particles.save("spin_basalt_earth.hdf5")
+    
+def uranus():
+    # Create a Uranus-like planet.
+    # Spherical profile:
+    #   Choose the mass, let woma find the radius.
+    #   Tillotson basalt, isothermal
+    
+    uranus = woma.Planet(
         name            = "Uranus",
         A1_mat_layer    = ["HM80_rock", "HM80_ice", "HM80_HHe"],
         A1_T_rho_type   = ["power=0.", "power=0.9", "adiabatic"],
-        # M               = 14.536 * M_earth,
-        M_max           = 14.7 * M_earth,
-        A1_R_layer      = [1.0 * R_earth, 3.1 * R_earth, 3.98 * R_earth],
+        A1_M_layer      = np.array([2.02, 11.68, 0.84]) * M_earth,
+        R_max           = 5 * R_earth,
         P_s             = 1e5,
         T_s             = 60,
         )
 
-    planet.gen_prof_L3_find_M_given_R_R1_R2()
+    # determine profile
+    uranus.gen_prof_L3_find_R_R1_R2_given_M_M1_M2() # todo
+    
+    # plot results
+    plot_planet_profile(uranus)
+    
+    # particle placement
+    particles = woma.ParticleSet(uranus, 1e7)
+    
+    # save particles
+    # particles.save("basalt_earth.hdf5")
+    
+    # spin planet
+    spin_uranus = woma.spin_planet_fix_M(
+        planet     = uranus,
+        period     = 17.,
+    )
+    
+    # plot results
+    plot_planet_profile(spin_uranus)
+    
+    # particle placement
+    particles = woma.ParticleSet(spin_uranus, 1e7)
+    
+    # save particles
+    # particles.save("spin_basalt_earth.hdf5")
 
-    plot_planet_profiles_alternate(planet)
-
-
-def demo_gen_earth_adiabatic():
-
-    planet = woma.Planet(
-        name            = "Earth",
-        A1_mat_layer    = ["Til_iron", "ANEOS_forsterite"],
-        A1_T_rho_type   = ["power=2.", "adiabatic"],
-        A1_R_layer      = [None, R_earth],
-        M               = M_earth,
+def super_earth():
+    # Create a super Earth-like planet.
+    # Spherical profile:
+    #   Choose the mass, let woma find the radius.
+    #   Tillotson basalt, isothermal
+    
+    super_earth = woma.Planet(
+        name            = "super_earth",
+        A1_mat_layer    = ["Til_iron", "SESAME_basalt", "HM80_HHe"],
+        A1_T_rho_type   = ["power=0.", "adiabatic", "adiabatic"],
+        A1_M_layer      = np.array([0.3, 0.7, 0.1]) * 2 * M_earth,
+        R_max           = 8 * R_earth,
         P_s             = 1e5,
-        T_s             = 500,
-        )
+        T_s             = 1000,
+    )
     
-    planet.gen_prof_L2_find_R1_given_R_M()
+    # determine profile
+    super_earth.gen_prof_L3_find_R_R1_R2_given_M_M1_M2()
     
-    plot_planet_profiles_alternate(planet)
+    # print boundary radius
+    print("Boundary at", super_earth.A1_R_layer[0] / R_earth, "R_earth")
+
+    # plot results
+    plot_planet_profile(super_earth)
     
+    # particle placement
+    particles = woma.ParticleSet(super_earth, 1e7)
+    
+    # save particles
+    # particles.save("basalt_earth.hdf5")
+    
+    # spin planet
+    spin_super_earth = woma.spin_planet_fix_M(
+        planet     = super_earth,
+        period     = 5,
+    )
+    
+    # plot results
+    plot_planet_profile(spin_super_earth)
+    
+    # particle placement
+    particles = woma.ParticleSet(spin_super_earth, 1e7)
+    
+    # save particles
+    # particles.save("spin_basalt_earth.hdf5")
 
 # ============================================================================ #
 
 
 if __name__ == "__main__":
     # Run an example
-    demo_gen_prof_L2_find_R1_given_R_M()
     
     plt.show()

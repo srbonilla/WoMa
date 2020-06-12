@@ -17,7 +17,7 @@ from woma.eos.T_rho import T_rho
 
 
 @jit(nopython=False)
-def _fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, Tw):
+def _fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, period):
     """ Computes the potential at every point of the equatorial and polar profiles.
 
         Args:
@@ -34,7 +34,7 @@ def _fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, Tw):
             A1_rho_pole ([float]):
                 Polar profile of densities (SI).
 
-            Tw (float):
+            period (float):
                 Period of the planet (hours).
 
         Returns:
@@ -57,7 +57,7 @@ def _fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, Tw):
     V_e = np.zeros(A1_r_equator.shape)
     V_p = np.zeros(A1_r_pole.shape)
 
-    W = 2 * np.pi / Tw / 60 / 60
+    W = 2 * np.pi / period / 60 / 60
 
     for i in range(A1_rho_equator.shape[0] - 1):
 
@@ -208,7 +208,7 @@ def spin1layer(
     A1_rho_equator,
     A1_r_pole,
     A1_rho_pole,
-    Tw,
+    period,
     P_c,
     P_s,
     rho_c,
@@ -237,7 +237,7 @@ def spin1layer(
             A1_rho_pole ([float]):
                 Densitity values at corresponding A1_r_pole points (SI).
 
-            Tw (float):
+            period (float):
                 Period of the planet (hours).
 
             P_c (float):
@@ -283,7 +283,7 @@ def spin1layer(
     for i in tqdm(
         range(num_attempt), desc="Solving spining profile", disable=(not verbose >= 1)
     ):
-        V_e, V_p = _fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, Tw)
+        V_e, V_p = _fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, period)
         A1_rho_equator, A1_rho_pole = _fillrho1(
             A1_r_equator,
             V_e,
@@ -308,7 +308,7 @@ def picle_placement_L1(
     A1_rho_equator,
     A1_r_pole,
     A1_rho_pole,
-    Tw,
+    period,
     N,
     mat_id_L1,
     T_rho_type_id_L1,
@@ -330,7 +330,7 @@ def picle_placement_L1(
             A1_rho_pole ([float]):
                 Polar profile of densities (SI).
 
-            Tw (float):
+            period (float):
                 Period of the planet (hours).
 
             N (int):
@@ -401,7 +401,9 @@ def picle_placement_L1(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.picle_placement(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, Tw)
+    ) = us.picle_placement(
+        A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, period
+    )
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))
