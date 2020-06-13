@@ -2,10 +2,10 @@
 WoMa (World Maker)
 ====
 
-Create models of rotating (and non-rotating) planets by solving the differential 
-equations for hydrostatic equilibrium, and create initial conditions for 
-smoothed particle hydrodynamics (SPH) or other particle-based simulations by 
-placing particles to precisely match the planet's profiles.
+Create models of rotating (and non-rotating) planets (or stars etc.) by solving 
+the differential equations for hydrostatic equilibrium, and/or create initial 
+conditions for smoothed particle hydrodynamics (SPH) or any other particle-based 
+methods by placing particles to precisely match the planet's profiles.
 
 Presented in Ruiz-Bonilla et al. (2020), MNRAS..., https://doi.org/...
 
@@ -15,8 +15,8 @@ Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
 Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
 
-Visit https://github.com/srbonilla/woma to download the code including examples and
-for support.
+Visit https://github.com/srbonilla/woma to download the code including examples 
+and for support.
 """
 
 import numpy as np
@@ -31,161 +31,9 @@ from woma.spherical_funcs import L1_spherical, L2_spherical, L3_spherical
 from woma.spin_funcs import L1_spin, L2_spin, L3_spin
 import woma.spin_funcs.utils_spin as us
 from woma.misc import glob_vars as gv
+from woma.misc import utils, io
 from woma.eos import eos
-from woma.misc import utils
-from woma.eos.T_rho import T_rho, set_T_rho_args, compute_A1_T_rho_id_and_args_from_type
-
-# Output
-Di_hdf5_planet_label = {
-    "num_layer": "Number of Layers",
-    "mat_layer": "Layer Materials",
-    "mat_id_layer": "Layer Material IDs",
-    "T_rho_type": "Layer T-rho Type",
-    "T_rho_args": "Layer T-rho Args",
-    "R_layer": "Layer Boundary Radii",
-    "M_layer": "Mass in each Layer",
-    "M": "Total Mass",
-    "R": "Total Radius",
-    "idx_layer": "Outer Index of each Layer",
-    "P_s": "Surface Pressure",
-    "T_s": "Surface Temperature",
-    "rho_s": "Surface Density",
-    "r": "Profile Radii",
-    "m_enc": "Profile Enclosed Masses",
-    "rho": "Profile Densities",
-    "T": "Profile Temperatures",
-    "u": "Profile Specific Internal Energies",
-    "P": "Profile Pressures",
-    "mat_id": "Profile Material IDs",
-}
-
-
-def get_planet_data(f, param):
-    """ Load a planet attribute or array.
-
-    Parameters
-    ----------
-    f : h5py File
-        The opened hdf5 data file (with "r").
-
-    param : str
-        The array or attribute to get. See Di_hdf5_planet_label for details.
-
-    Returns
-    ----------
-    data : np.ndarray
-        The array or attribute (std units).
-    """
-    # Attributes
-    try:
-        return f["planet"].attrs[Di_hdf5_planet_label[param]]
-    # Datasets
-    except KeyError:
-        return f["planet/" + Di_hdf5_planet_label[param]][()]
-
-
-def multi_get_planet_data(f, A1_param):
-    """ Load multiple planet attributes or arrays.
-
-    Parameters
-    ----------
-    f : h5py File
-        The opened hdf5 data file (with "r").
-
-    A1_param : [str]
-        List of the arrays or attributes to get. See Di_hdf5_planet_label for
-        details.
-
-    Returns
-    ----------
-    A1_data : [np.ndarray]
-        The list of the arrays or attributes (std units).
-    """
-    A1_data = []
-    # Load each requested array
-    for param in A1_param:
-        A1_data.append(get_planet_data(f, param))
-
-    return A1_data
-
-
-def load_planet(name, Fp_planet):
-    """ Return a new Planet object loaded from a file.
-
-    Parameters
-    ----------
-    name : str
-        The name of the planet object.
-
-    Fp_planet : str
-        The file path.
-        
-    Returns
-    -------
-    p : Planet
-        The loaded planet object.
-    """
-    p = Planet(name=name, Fp_planet=Fp_planet)
-
-    Fp_planet = utils.check_end(p.Fp_planet, ".hdf5")
-
-    print('Loading "%s"... ' % Fp_planet[-60:], end="")
-    sys.stdout.flush()
-
-    with h5py.File(Fp_planet, "r") as f:
-        (
-            p.num_layer,
-            p.A1_mat_layer,
-            p.A1_mat_id_layer,
-            p.A1_T_rho_type,
-            p.A1_T_rho_args,
-            p.A1_R_layer,
-            p.A1_M_layer,
-            p.M,
-            p.R,
-            p.A1_idx_layer,
-            p.P_s,
-            p.T_s,
-            p.rho_s,
-            p.A1_r,
-            p.A1_m_enc,
-            p.A1_rho,
-            p.A1_T,
-            p.A1_P,
-            p.A1_u,
-            p.A1_mat_id,
-        ) = multi_get_planet_data(
-            f,
-            [
-                "num_layer",
-                "mat_layer",
-                "mat_id_layer",
-                "T_rho_type",
-                "T_rho_args",
-                "R_layer",
-                "M_layer",
-                "M",
-                "R",
-                "idx_layer",
-                "P_s",
-                "T_s",
-                "rho_s",
-                "r",
-                "m_enc",
-                "rho",
-                "T",
-                "P",
-                "u",
-                "mat_id",
-            ],
-        )
-
-    print("Done")
-
-    p.update_attributes()
-    p.print_info()
-
-    return p
+from woma.eos.T_rho import T_rho, set_T_rho_args, T_rho_id_and_args_from_type
 
 
 # ============================================================================ #
@@ -212,9 +60,10 @@ class Planet:
         The type of temperature-density relation in each layer, from the central 
         layer outwards. See Di_mat_id in `eos/eos.py`.
 
-        'power=alpha': T = K * rho^alpha, K is set internally using each layer's 
-                    outer temperature. Set alpha = 0 for isothermal.
-        'adiabatic':  Adiabatic, constant s_adb is set internally, if applicable.
+        "power=alpha"   T = K * rho^alpha. K is set internally at the start of 
+                        each layer. Set alpha = 0 for isothermal.
+        "adiabatic"     Adiabatic. constant entropy is set internally at the 
+                        start of each layer.
 
     A1_R_layer : [float]
         The outer radii of each layer, from the central layer outwards (m).
@@ -229,10 +78,6 @@ class Planet:
     P_s, T_s, rho_s : float
         The pressure, temperature, and density at the surface. Only two of the 
         three need be provided (Pa, K, kg m^-3).
-
-    P_0, P_1, ..., T_0, ..., rho_0, ... : float
-        The pressure, temperature, and density at each layer boundary,
-        from the centre (_0) up to the surface.
 
     I_MR2 : float
         The reduced moment of inertia (kg m^2).
@@ -261,6 +106,10 @@ class Planet:
     num_layer : int
         The number of planetary layers.
 
+    P_0, P_1, ... P_s; T_0, ..., T_s; rho_0, ..., rho_s: float
+        The pressure, temperature, and density (Pa, K, kg m^-3) at each layer 
+        boundary, from the centre (_0) up to the surface (_s).
+
     A1_mat_id_layer : [int]
         The ID of the material in each layer, from the central layer outwards.
 
@@ -271,23 +120,22 @@ class Planet:
         The profile radii, in increasing order (m).
 
     A1_P : [float]
-        The profile pressure with respect A1_r (Pa).
+        The pressure at each profile radius (Pa).
         
     A1_rho : [float]
-        The profile density with respect A1_r (kg m^-3).
+        The density at each profile radius (kg m^-3).
         
     A1_T : [float]
-        The profile temperature with respect A1_r (K).
+        The temperature at each profile radius (K).
         
     A1_u : [float]
-        The profile specific internal energy with respect A1_r (J kg^-1).
+        The specific internal energy at each profile radius (J kg^-1).
         
     A1_mat_id : [int]
-        Material id for each layer (core, mantle, atmosphere). See glob_vars.py for more details.
+        The ID of the material at each profile radius.
         
     I_MR2 : float
-        Moment of inertia (kg m^2).
-    
+        Moment of inertia (kg m^2).    
     """
 
     def __init__(
@@ -371,10 +219,9 @@ class Planet:
 
         # A1_T_rho_args, A1_T_rho_args
         if self.A1_T_rho_type is not None:
-            (
-                self.A1_T_rho_type_id,
-                self.A1_T_rho_args,
-            ) = compute_A1_T_rho_id_and_args_from_type(self.A1_T_rho_type)
+            (self.A1_T_rho_type_id, self.A1_T_rho_args,) = T_rho_id_and_args_from_type(
+                self.A1_T_rho_type
+            )
 
         # Fp_planet, A1_R_layer, A1_M_layer
         if self.Fp_planet is None:
@@ -390,32 +237,6 @@ class Planet:
             self.A1_R_layer = np.array(self.A1_R_layer, dtype="float")
         if self.A1_T_rho_args is not None:
             self.A1_T_rho_args = np.array(self.A1_T_rho_args, dtype="float")
-
-        ### default M_max and R_max?
-
-        # Help info ###todo, maybe not necesary?
-        if not True:
-            if self.num_layer == 1:
-                print("For a 1 layer planet, please specify:")
-                print("pressure, temperature and density at the surface of the planet,")
-                print(
-                    "material, relation between temperature and density with any desired aditional parameters,"
-                )
-                print("for layer 1 of the planet.")
-            elif self.num_layer == 2:
-                print("For a 2 layer planet, please specify:")
-                print("pressure, temperature and density at the surface of the planet,")
-                print(
-                    "materials, relations between temperature and density with any desired aditional parameters,"
-                )
-                print("for layer 1 and layer 2 of the planet.")
-            elif self.num_layer == 3:
-                print("For a 3 layer planet, please specify:")
-                print("pressure, temperature and density at the surface of the planet,")
-                print(
-                    "materials, relations between temperature and density with any desired aditional parameters,"
-                )
-                print("for layer 1, layer 2, and layer 3 of the planet.")
 
     # ========
     # General
@@ -477,7 +298,7 @@ class Planet:
         self.escape_velocity()
 
     def print_info(self):
-        """ Print the Planet objects's main properties. """
+        """ Print the main properties. """
         # Print and catch if any variables are None
         def print_try(string, variables):
             try:
@@ -488,11 +309,11 @@ class Planet:
         space = 12
         print_try('Planet "%s": ', self.name)
         print_try(
-            "    %s = %.5g kg = %.5g M_earth",
+            "    %s = %.5g  kg  = %.5g  M_earth",
             (utils.add_whitespace("M", space), self.M, self.M / gv.M_earth),
         )
         print_try(
-            "    %s = %.5g m = %.5g R_earth",
+            "    %s = %.5g  m  = %.5g  R_earth",
             (utils.add_whitespace("R", space), self.R, self.R / gv.R_earth),
         )
         print_try(
@@ -510,21 +331,28 @@ class Planet:
             ),
         )
         print_try(
-            "    %s = %s R_earth",
+            "    %s = %s ",
+            (
+                utils.add_whitespace("T_rho_type", space),
+                utils.format_array_string(self.A1_T_rho_type, "string"),
+            ),
+        )
+        print_try(
+            "    %s = %s  R_earth",
             (
                 utils.add_whitespace("R_layer", space),
                 utils.format_array_string(self.A1_R_layer / gv.R_earth, "%.5g"),
             ),
         )
         print_try(
-            "    %s = %s M_earth",
+            "    %s = %s  M_earth",
             (
                 utils.add_whitespace("M_layer", space),
                 utils.format_array_string(self.A1_M_layer / gv.M_earth, "%.5g"),
             ),
         )
         print_try(
-            "    %s = %s M_total",
+            "    %s = %s  M_tot",
             (
                 utils.add_whitespace("M_frac_layer", space),
                 utils.format_array_string(self.A1_M_layer / self.M, "%.5g"),
@@ -537,163 +365,45 @@ class Planet:
                 utils.format_array_string(self.A1_idx_layer, "%d"),
             ),
         )
-        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_s", space), self.P_s))
-        print_try("    %s = %.5g K", (utils.add_whitespace("T_s", space), self.T_s))
+        print_try("    %s = %.5g  Pa", (utils.add_whitespace("P_s", space), self.P_s))
+        print_try("    %s = %.5g  K", (utils.add_whitespace("T_s", space), self.T_s))
         print_try(
-            "    %s = %.5g kg/m^3", (utils.add_whitespace("rho_s", space), self.rho_s)
+            "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_s", space), self.rho_s)
         )
         if self.num_layer > 2:
             print_try(
-                "    %s = %.5g Pa", (utils.add_whitespace("P_2", space), self.P_2)
+                "    %s = %.5g  Pa", (utils.add_whitespace("P_2", space), self.P_2)
             )
-            print_try("    %s = %.5g K", (utils.add_whitespace("T_2", space), self.T_2))
             print_try(
-                "    %s = %.5g kg/m^3",
+                "    %s = %.5g  K", (utils.add_whitespace("T_2", space), self.T_2)
+            )
+            print_try(
+                "    %s = %.5g  kg m^-",
                 (utils.add_whitespace("rho_2", space), self.rho_2),
             )
         if self.num_layer > 1:
             print_try(
-                "    %s = %.5g Pa", (utils.add_whitespace("P_1", space), self.P_1)
+                "    %s = %.5g  Pa", (utils.add_whitespace("P_1", space), self.P_1)
             )
-            print_try("    %s = %.5g K", (utils.add_whitespace("T_1", space), self.T_1))
             print_try(
-                "    %s = %.5g kg/m^3",
+                "    %s = %.5g  K", (utils.add_whitespace("T_1", space), self.T_1)
+            )
+            print_try(
+                "    %s = %.5g  kg m^-3",
                 (utils.add_whitespace("rho_1", space), self.rho_1),
             )
-        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_0", space), self.P_0))
-        print_try("    %s = %.5g K", (utils.add_whitespace("T_0", space), self.T_0))
+        print_try("    %s = %.5g  Pa", (utils.add_whitespace("P_0", space), self.P_0))
+        print_try("    %s = %.5g  K", (utils.add_whitespace("T_0", space), self.T_0))
         print_try(
-            "    %s = %.5g kg/m^3", (utils.add_whitespace("rho_0", space), self.rho_0)
+            "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_0", space), self.rho_0)
         )
         print_try(
-            "    %s = %.5g M_tot*R_tot^2",
+            "    %s = %.5g  M_tot*R_tot^2",
             (
                 utils.add_whitespace("I_MR2", space),
                 self.I_MR2 / self.M / self.R / self.R,
             ),
         )
-
-    def print_declaration(self):
-        """ Print the Planet objects formatted as a declaration. """
-        space = 15
-        print("%s = Planet(" % self.name)
-        print('    %s = "%s",' % (utils.add_whitespace("name", space), self.name))
-        print(
-            '    %s = "%s",'
-            % (utils.add_whitespace("Fp_planet", space), self.Fp_planet)
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_mat_layer", space),
-                utils.format_array_string(self.A1_mat_layer, "string"),
-            )
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_T_rho_type_id", space),
-                utils.format_array_string(self.A1_T_rho_type_id, "%d"),
-            )
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_T_rho_args", space),
-                utils.format_array_string(self.A1_T_rho_args, "dorf"),
-            )
-        )
-        print(
-            "    %s = np.array(%s) * R_earth,"
-            % (
-                utils.add_whitespace("A1_R_layer", space),
-                utils.format_array_string(self.A1_R_layer / gv.R_earth, "%.5g"),
-            )
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_idx_layer", space),
-                utils.format_array_string(self.A1_idx_layer, "%d"),
-            )
-        )
-        print(
-            "    %s = np.array(%s) * M_earth,"
-            % (
-                utils.add_whitespace("A1_M_layer", space),
-                utils.format_array_string(self.A1_M_layer / gv.M_earth, "%.5g"),
-            )
-        )
-        print(
-            "    %s = %.5g * M_earth,"
-            % (utils.add_whitespace("M", space), self.M / gv.M_earth)
-        )
-        print("    %s = %.5g," % (utils.add_whitespace("P_s", space), self.P_s))
-        print("    %s = %.5g," % (utils.add_whitespace("T_s", space), self.T_s))
-        print("    %s = %.5g," % (utils.add_whitespace("rho_s", space), self.rho_s))
-        if self.num_layer > 2:
-            print("    %s = %.5g," % (utils.add_whitespace("P_2", space), self.P_2))
-            print("    %s = %.5g," % (utils.add_whitespace("T_2", space), self.T_2))
-            print("    %s = %.5g," % (utils.add_whitespace("rho_2", space), self.rho_2))
-        if self.num_layer > 1:
-            print("    %s = %.5g," % (utils.add_whitespace("P_1", space), self.P_1))
-            print("    %s = %.5g," % (utils.add_whitespace("T_1", space), self.T_1))
-            print("    %s = %.5g," % (utils.add_whitespace("rho_1", space), self.rho_1))
-        print("    %s = %.5g," % (utils.add_whitespace("P_0", space), self.P_0))
-        print("    %s = %.5g," % (utils.add_whitespace("T_0", space), self.T_0))
-        print("    %s = %.5g," % (utils.add_whitespace("rho_0", space), self.rho_0))
-        print(
-            "    %s = %.5g,"
-            % (
-                utils.add_whitespace("I_MR2", space),
-                self.I_MR2 / (self.M * self.R ** 2),
-            )
-        )
-        print("    )")
-
-    def save_planet(self):
-        Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
-
-        print('Saving "%s"... ' % Fp_planet[-60:], end="")
-        sys.stdout.flush()
-
-        with h5py.File(Fp_planet, "w") as f:
-            # Group
-            grp = f.create_group("/planet")
-
-            # Lists not numpy for attributes
-            if type(self.A1_mat_layer).__module__ == np.__name__:
-                self.A1_mat_layer = self.A1_mat_layer.tolist()
-
-            # Attributes
-            grp.attrs[Di_hdf5_planet_label["num_layer"]] = self.num_layer
-            grp.attrs[Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
-            grp.attrs[Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
-            grp.attrs[Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
-            grp.attrs[Di_hdf5_planet_label["T_rho_args"]] = self.A1_T_rho_args
-            grp.attrs[Di_hdf5_planet_label["R_layer"]] = self.A1_R_layer
-            grp.attrs[Di_hdf5_planet_label["M_layer"]] = self.A1_M_layer
-            grp.attrs[Di_hdf5_planet_label["M"]] = self.M
-            grp.attrs[Di_hdf5_planet_label["R"]] = self.R
-            grp.attrs[Di_hdf5_planet_label["idx_layer"]] = self.A1_idx_layer
-            grp.attrs[Di_hdf5_planet_label["P_s"]] = self.P_s
-            grp.attrs[Di_hdf5_planet_label["T_s"]] = self.T_s
-            grp.attrs[Di_hdf5_planet_label["rho_s"]] = self.rho_s
-
-            # Arrays
-            grp.create_dataset(Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
-            grp.create_dataset(
-                Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d"
-            )
-            grp.create_dataset(Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
-            grp.create_dataset(Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
-            grp.create_dataset(Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
-            grp.create_dataset(Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
-            grp.create_dataset(
-                Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
-            )
-
-        print("Done")
 
     def load_planet_profiles(self):
         """ Load the profiles arrays for an existing Planet object from a file. """
@@ -711,7 +421,9 @@ class Planet:
                 self.A1_P,
                 self.A1_u,
                 self.A1_mat_id,
-            ) = multi_get_planet_data(f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
+            ) = io.multi_get_planet_data(
+                f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"]
+            )
 
         print("Done")
 
@@ -2655,7 +2367,7 @@ class SpinPlanet:
         self.T_s = self.A1_T_equator[self.A1_T_equator > 0][-1]
 
     def print_info(self):
-        """ Print the Planet objects's main properties. """
+        """ Print the main properties. """
         # Print and catch if any variables are None
         def print_try(string, variables):
             try:
@@ -2666,15 +2378,15 @@ class SpinPlanet:
         space = 12
         print_try('Planet "%s": ', self.name)
         print_try(
-            "    %s = %.5g kg = %.5g M_earth",
+            "    %s = %.5g  kg  = %.5g  M_earth",
             (utils.add_whitespace("M", space), self.M, self.M / gv.M_earth),
         )
         print_try(
-            "    %s = %.5g m = %.5g R_earth",
+            "    %s = %.5g  m  = %.5g  R_earth",
             (utils.add_whitespace("R_equator", space), self.R_e, self.R_e / gv.R_earth),
         )
         print_try(
-            "    %s = %.5g m = %.5g R_earth",
+            "    %s = %.5g  m  = %.5g  R_earth",
             (utils.add_whitespace("R_pole", space), self.R_p, self.R_p / gv.R_earth),
         )
         print_try(
@@ -2692,60 +2404,64 @@ class SpinPlanet:
             ),
         )
         print_try(
-            "    %s = %s R_earth",
+            "    %s = %s  R_earth",
             (
                 utils.add_whitespace("R_layer_eq", space),
                 utils.format_array_string(self.A1_R_layer_equator / gv.R_earth, "%.5g"),
             ),
         )
         print_try(
-            "    %s = %s R_earth",
+            "    %s = %s  R_earth",
             (
                 utils.add_whitespace("R_layer_pole", space),
                 utils.format_array_string(self.A1_R_layer_pole / gv.R_earth, "%.5g"),
             ),
         )
         print_try(
-            "    %s = %s M_earth",
+            "    %s = %s  M_earth",
             (
                 utils.add_whitespace("M_layer", space),
                 utils.format_array_string(self.A1_M_layer / gv.M_earth, "%.5g"),
             ),
         )
         print_try(
-            "    %s = %s M_total",
+            "    %s = %s  M_tot",
             (
                 utils.add_whitespace("M_frac_layer", space),
                 utils.format_array_string(self.A1_M_layer / self.M, "%.5g"),
             ),
         )
-        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_s", space), self.P_s))
-        print_try("    %s = %.5g K", (utils.add_whitespace("T_s", space), self.T_s))
+        print_try("    %s = %.5g  Pa", (utils.add_whitespace("P_s", space), self.P_s))
+        print_try("    %s = %.5g  K", (utils.add_whitespace("T_s", space), self.T_s))
         print_try(
-            "    %s = %.5g kg/m^3", (utils.add_whitespace("rho_s", space), self.rho_s)
+            "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_s", space), self.rho_s)
         )
         if self.num_layer > 2:
             print_try(
-                "    %s = %.5g Pa", (utils.add_whitespace("P_2", space), self.P_2)
+                "    %s = %.5g  Pa", (utils.add_whitespace("P_2", space), self.P_2)
             )
-            print_try("    %s = %.5g K", (utils.add_whitespace("T_2", space), self.T_2))
             print_try(
-                "    %s = %.5g kg/m^3",
+                "    %s = %.5g  K", (utils.add_whitespace("T_2", space), self.T_2)
+            )
+            print_try(
+                "    %s = %.5g  kg m^-3",
                 (utils.add_whitespace("rho_2", space), self.rho_2),
             )
         if self.num_layer > 1:
             print_try(
-                "    %s = %.5g Pa", (utils.add_whitespace("P_1", space), self.P_1)
+                "    %s = %.5g  Pa", (utils.add_whitespace("P_1", space), self.P_1)
             )
-            print_try("    %s = %.5g K", (utils.add_whitespace("T_1", space), self.T_1))
             print_try(
-                "    %s = %.5g kg/m^3",
+                "    %s = %.5g  K", (utils.add_whitespace("T_1", space), self.T_1)
+            )
+            print_try(
+                "    %s = %.5g  kg m^-3",
                 (utils.add_whitespace("rho_1", space), self.rho_1),
             )
-        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_0", space), self.P_0))
-        print_try("    %s = %.5g K", (utils.add_whitespace("T_0", space), self.T_0))
+        print_try("    %s = %.5g  Pa", (utils.add_whitespace("P_0", space), self.P_0))
+        print_try("    %s = %.5g  K", (utils.add_whitespace("T_0", space), self.T_0))
         print_try(
-            "    %s = %.5g kg/m^3", (utils.add_whitespace("rho_0", space), self.rho_0)
+            "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_0", space), self.rho_0)
         )
 
     def find_min_period(self, max_period=10, max_iter=20, print_info=True):
@@ -2817,8 +2533,8 @@ class SpinPlanet:
                 self.P_2,
             )
 
-            # convergence criteria
-            criteria = np.mean(
+            # convergence criterion
+            criterion = np.mean(
                 np.abs(A1_rho_equator - self.A1_rho_equator) / self.rho_s
             )
 
@@ -2827,10 +2543,10 @@ class SpinPlanet:
             self.A1_rho_pole = A1_rho_pole
 
             # check if there is convergence
-            # print(criteria)
-            if criteria < tol:
+            # print(criterion)
+            if criterion < tol:
                 if print_info:
-                    print("Convergence criteria reached.")
+                    print("Convergence criterion reached.")
                 break
 
         if self.period < period_iter:
@@ -2845,23 +2561,24 @@ class SpinPlanet:
             self.print_info()
 
 
-def L1_spin_planet_fix_M(
+def _L1_spin_planet_fix_M(
     planet,
     period,
     num_prof=1000,
-    R_e_max=4 * gv.R_earth,
-    R_p_max=2 * gv.R_earth,
+    R_e_max=None,
+    R_p_max=None,
     check_min_period=False,
     max_iter_1=20,
     tol=0.001,
 ):
-    """ Compute the SpinPlanet object such that the mass of each layer is equal to
-    the one provided in a Planet obj. For a 1 layer planet.
+    """ Create a spinning planet from a spherical one, keeping the same layer masses.
+    
+    For a 1 layer planet.
 
     Parameters
     ----------
-    planet : onj
-        Instance of Planet class. Must be 1 layer
+    planet : woma.Planet
+        The spherical planet object. Must have 1 layer.
 
     period : float
         Period (h).
@@ -2870,10 +2587,10 @@ def L1_spin_planet_fix_M(
         Number of grid points used in the 1D equatorial and polar profiles.
 
     R_e_max : float
-        Maximum equatorial radius (m).
+        Maximum equatorial radius (m). Defaults to 4 times the spherical radius.
         
     R_p_max : float
-        Maximum polar radius (m).
+        Maximum polar radius (m). Defaults to 2 times the spherical radius.
         
     check_min_period : bool
         Checks if period provided is lees than the minimum physically allowed.
@@ -2883,17 +2600,24 @@ def L1_spin_planet_fix_M(
         Maximum number of iterations allowed.
         
     tol : int
-        Tolerance level. The iterative search will end
-        when np.abs(planet.M - spin_planet.M) / planet.M < tol
+        Tolerance level. The iterative search will end when the fractional 
+        difference between the mass of the spinning planet and the spherical one
+        is less than tol.
 
     Returns
     -------
-    spin_planet : obj
-        Instance of SpinPlanet class.
+    spin_planet : woma.SpinPlanet
+        The spinning planet object.
     """
 
     assert isinstance(planet, Planet)
     assert planet.num_layer == 1
+
+    # Default max radii
+    if R_e_max is None:
+        R_e_max = 4 * planet.R
+    if R_p_max is None:
+        R_p_max = 4 * planet.R
 
     f_min = 0.0
     f_max = 1.0
@@ -2919,10 +2643,10 @@ def L1_spin_planet_fix_M(
 
         spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
-        criteria = np.abs(planet.M - spin_planet.M) / planet.M < tol
+        criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol
         # print(np.abs(planet.M - spin_planet.M)/planet.M)
 
-        if criteria:
+        if criterion:
             break
 
         if spin_planet.M > planet.M:
@@ -2935,24 +2659,25 @@ def L1_spin_planet_fix_M(
     return spin_planet
 
 
-def L2_spin_planet_fix_M(
+def _L2_spin_planet_fix_M(
     planet,
     period,
     num_prof=1000,
-    R_e_max=2 * gv.R_earth,
-    R_p_max=1.2 * gv.R_earth,
+    R_e_max=None,
+    R_p_max=None,
     check_min_period=False,
     max_iter_1=20,
     max_iter_2=5,
     tol=0.01,
 ):
-    """ Compute the SpinPlanet object such that the mass of each layer is equal to
-    the one provided in a Planet obj. For a 2 layer planet.
+    """ Create a spinning planet from a spherical one, keeping the same layer masses.
+    
+    For a 2 layer planet.
 
     Parameters
     ----------
-    planet : onj
-        Instance of Planet class. Must be 1 layer
+    planet : woma.Planet
+        The spherical planet object. Must have 2 layers.
 
     period : float
         Period (h).
@@ -2961,10 +2686,10 @@ def L2_spin_planet_fix_M(
         Number of grid points used in the 1D equatorial and polar profiles.
 
     R_e_max : float
-        Maximum equatorial radius (m).
+        Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
         
     R_p_max : float
-        Maximum polar radius (m).
+        Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
         
     check_min_period : bool
         Checks if period provided is lees than the minimum physically allowed.
@@ -2977,18 +2702,24 @@ def L2_spin_planet_fix_M(
         Maximum number of iterations allowed. Outer loop.
         
     tol : int
-        Tolerance level. The iterative search will end
-        when the relative difference in total mass and in core mass
-        fraction is less than tol.
+        Tolerance level. The iterative search will end when the fractional 
+        differences between the layer masses of the spinning planet and the 
+        spherical one are less than tol.
 
     Returns
     -------
-    spin_planet : obj
-        Instance of SpinPlanet class.
+    spin_planet : woma.SpinPlanet
+        The spinning planet object.
     """
 
     assert isinstance(planet, Planet)
     assert planet.num_layer == 2
+
+    # Default max radii
+    if R_e_max is None:
+        R_e_max = 2 * planet.R
+    if R_p_max is None:
+        R_p_max = 1.2 * planet.R
 
     M = planet.M
 
@@ -3041,8 +2772,8 @@ def L2_spin_planet_fix_M(
 
             spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
-            criteria_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
-            criteria_2 = (
+            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
+            criterion_2 = (
                 np.abs(
                     planet.A1_M_layer[0] / planet.M
                     - spin_planet.A1_M_layer[0] / spin_planet.M
@@ -3050,10 +2781,10 @@ def L2_spin_planet_fix_M(
                 < tol
             )
 
-            if criteria_1 and criteria_2:
+            if criterion_1 and criterion_2:
                 return spin_planet
 
-            if criteria_1:
+            if criterion_1:
                 break
 
             if spin_planet.M > planet.M:
@@ -3096,8 +2827,8 @@ def L2_spin_planet_fix_M(
 
             spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
-            criteria_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
-            criteria_2 = (
+            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
+            criterion_2 = (
                 np.abs(
                     planet.A1_M_layer[0] / planet.M
                     - spin_planet.A1_M_layer[0] / spin_planet.M
@@ -3105,10 +2836,10 @@ def L2_spin_planet_fix_M(
                 < tol
             )
 
-            if criteria_1 and criteria_2:
+            if criterion_1 and criterion_2:
                 return spin_planet
 
-            if criteria_2:
+            if criterion_2:
                 break
 
             new_f_M_core = spin_planet.A1_M_layer[0] / spin_planet.M
@@ -3134,13 +2865,12 @@ def spin_planet_fix_M(
     max_iter_2=5,
     tol=0.01,
 ):
-    """ Compute the SpinPlanet object such that the mass of each layer is equal to
-    the one provided in a Planet obj input.
+    """ Create a spinning planet from a spherical one, keeping the same layer masses.
 
     Parameters
     ----------
-    planet : onj
-        Instance of Planet class. Must be 1 layer
+    planet : woma.Planet
+        The spherical planet object.
 
     period : float
         Period (h).
@@ -3149,10 +2879,10 @@ def spin_planet_fix_M(
         Number of grid points used in the 1D equatorial and polar profiles.
 
     R_e_max : float
-        Maximum equatorial radius (m).
+        Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
         
     R_p_max : float
-        Maximum polar radius (m).
+        Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
         
     check_min_period : bool
         Checks if period provided is lees than the minimum physically allowed.
@@ -3165,25 +2895,25 @@ def spin_planet_fix_M(
         Maximum number of iterations allowed. Outer loop.
         
     tol : int
-        Tolerance level. The iterative search will end
-        when the relative difference in total mass and in core mass
-        fraction is less than tol.
+        Tolerance level. The iterative search will end when the fractional 
+        differences between the layer masses of the spinning planet and the 
+        spherical one are less than tol.
 
     Returns
     -------
-    spin_planet : obj
-        Instance of SpinPlanet class.
+    spin_planet : woma.SpinPlanet
+        The spinning planet object.
     """
 
+    # Default max radii
     if R_e_max is None:
         R_e_max = 2 * planet.R
-
     if R_p_max is None:
         R_p_max = 1.2 * planet.R
 
     if planet.num_layer == 1:
 
-        spin_planet = L1_spin_planet_fix_M(
+        spin_planet = _L1_spin_planet_fix_M(
             planet,
             period,
             num_prof,
@@ -3196,7 +2926,7 @@ def spin_planet_fix_M(
 
     elif planet.num_layer == 2:
 
-        spin_planet = L2_spin_planet_fix_M(
+        spin_planet = _L2_spin_planet_fix_M(
             planet,
             period,
             num_prof,
@@ -3210,32 +2940,29 @@ def spin_planet_fix_M(
 
     elif planet.num_layer == 3:
 
-        raise ValueError("Not implemented yet")
+        raise ValueError("3 layers not implemented yet")
 
     else:
 
-        raise ValueError(
-            "Number of layers in your planet is incorrect. \
-                         It should be 1, 2, or 3"
-        )
+        raise ValueError("planet.num_layer must be 1, 2, or 3")
 
     return spin_planet
 
 
 class ParticleSet:
-    """ Particle generator class.
+    """ Arrange particles to precisely match a spinning or spherical planetary profile.
 
     Parameters
     ----------
-    planet : obj
-        Instance of Planet or SpinPlanet
+    planet : woma.Planet or woma.SpinPlanet
+        The planet profile object.
 
-    N_particles : str
-        List of the arrays or attributes to get. See Di_hdf5_planet_label for
-        details.
+    N_particles : int
+        The number of particles to place.
         
     N_ngb : int
-        Number of nearest neighbours used to compute SPH density
+        The number of neighbours used to estimate the SPH smoothing lengths and 
+        densities.
 
     Attributes (in addition to the input parameters)
     ----------
@@ -3276,8 +3003,7 @@ class ParticleSet:
         Array of material ids for all particles. See glob_vars.py
         
     A1_id : [int]
-        Array of ids for all particles.
-        
+        Array of ids for all particles.        
     """
 
     def __init__(
