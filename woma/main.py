@@ -33,7 +33,7 @@ import woma.spin_funcs.utils_spin as us
 from woma.misc import glob_vars as gv
 from woma.misc import utils, io
 from woma.eos import eos
-from woma.eos.T_rho import T_rho, set_T_rho_args, compute_A1_T_rho_id_and_args_from_type
+from woma.eos.T_rho import T_rho, set_T_rho_args, T_rho_id_and_args_from_type
 
 
 # ============================================================================ #
@@ -218,10 +218,9 @@ class Planet:
 
         # A1_T_rho_args, A1_T_rho_args
         if self.A1_T_rho_type is not None:
-            (
-                self.A1_T_rho_type_id,
-                self.A1_T_rho_args,
-            ) = compute_A1_T_rho_id_and_args_from_type(self.A1_T_rho_type)
+            (self.A1_T_rho_type_id, self.A1_T_rho_args,) = T_rho_id_and_args_from_type(
+                self.A1_T_rho_type
+            )
 
         # Fp_planet, A1_R_layer, A1_M_layer
         if self.Fp_planet is None:

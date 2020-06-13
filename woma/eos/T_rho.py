@@ -111,22 +111,24 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
     return T_rho_args
 
 
-def compute_A1_T_rho_id_and_args_from_type(A1_T_rho_type):
-    """ Computes A1_T_rho_id and A1_T_rho_args arrays from A1_T_rho_type.
-    Example: ['power=2.4', 'adiabatic'] -> [1, 2], [[None, 2.4], [None, None]]
+def T_rho_id_and_args_from_type(A1_T_rho_type):
+    """ Convert input T-rho types into the internal T-rho arrays.
+    
+    Example: ['power=2.4', 'adiabatic'] --> [1, 2], [[None, 2.4], [None, None]]
 
     Parameters
     ----------
     A1_T_rho_type : [string]
-        List of relations T=T(rho). See tutorial.ipynb and glob_vars.py for more info
+        Array of T-rho relations for each layer. See tutorial.ipynb and 
+        glob_vars.py for more info.
 
     Returns
     -------
     A1_T_rho_id : [int]
-        List od T_rho relation ids. See glob_vars.py
+        Array of T-rho relation ids for each layer. See glob_vars.py.
         
     A1_T_rho_args : [[float]]
-        List od T_rho arguments ids. See glob_vars.py
+        Array of T-rho arguments for each layer. See glob_vars.py.
     """
 
     # A1_T_rho_id
