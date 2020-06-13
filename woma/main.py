@@ -2,10 +2,10 @@
 WoMa (World Maker)
 ====
 
-Create models of rotating (and non-rotating) planets by solving the differential 
-equations for hydrostatic equilibrium, and create initial conditions for 
-smoothed particle hydrodynamics (SPH) or other particle-based simulations by 
-placing particles to precisely match the planet's profiles.
+Create models of rotating (and non-rotating) planets (or stars etc.) by solving 
+the differential equations for hydrostatic equilibrium, and/or create initial 
+conditions for smoothed particle hydrodynamics (SPH) or any other particle-based 
+methods by placing particles to precisely match the planet's profiles.
 
 Presented in Ruiz-Bonilla et al. (2020), MNRAS..., https://doi.org/...
 
@@ -134,8 +134,7 @@ class Planet:
         Material id for each layer (core, mantle, atmosphere). See glob_vars.py for more details.
         
     I_MR2 : float
-        Moment of inertia (kg m^2).
-    
+        Moment of inertia (kg m^2).    
     """
 
     def __init__(
@@ -238,7 +237,6 @@ class Planet:
             self.A1_R_layer = np.array(self.A1_R_layer, dtype="float")
         if self.A1_T_rho_args is not None:
             self.A1_T_rho_args = np.array(self.A1_T_rho_args, dtype="float")
-
 
     # ========
     # General
@@ -376,7 +374,9 @@ class Planet:
             print_try(
                 "    %s = %.5g  Pa", (utils.add_whitespace("P_2", space), self.P_2)
             )
-            print_try("    %s = %.5g  K", (utils.add_whitespace("T_2", space), self.T_2))
+            print_try(
+                "    %s = %.5g  K", (utils.add_whitespace("T_2", space), self.T_2)
+            )
             print_try(
                 "    %s = %.5g  kg m^-",
                 (utils.add_whitespace("rho_2", space), self.rho_2),
@@ -385,7 +385,9 @@ class Planet:
             print_try(
                 "    %s = %.5g  Pa", (utils.add_whitespace("P_1", space), self.P_1)
             )
-            print_try("    %s = %.5g  K", (utils.add_whitespace("T_1", space), self.T_1))
+            print_try(
+                "    %s = %.5g  K", (utils.add_whitespace("T_1", space), self.T_1)
+            )
             print_try(
                 "    %s = %.5g  kg m^-3",
                 (utils.add_whitespace("rho_1", space), self.rho_1),
@@ -403,49 +405,6 @@ class Planet:
             ),
         )
 
-    def save_planet(self):
-        Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
-
-        print('Saving "%s"... ' % Fp_planet[-60:], end="")
-        sys.stdout.flush()
-
-        with h5py.File(Fp_planet, "w") as f:
-            # Group
-            grp = f.create_group("/planet")
-
-            # Lists not numpy for attributes
-            if type(self.A1_mat_layer).__module__ == np.__name__:
-                self.A1_mat_layer = self.A1_mat_layer.tolist()
-
-            # Attributes
-            grp.attrs[io.Di_hdf5_planet_label["num_layer"]] = self.num_layer
-            grp.attrs[io.Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
-            grp.attrs[io.Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
-            grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
-            grp.attrs[io.Di_hdf5_planet_label["R_layer"]] = self.A1_R_layer
-            grp.attrs[io.Di_hdf5_planet_label["M_layer"]] = self.A1_M_layer
-            grp.attrs[io.Di_hdf5_planet_label["M"]] = self.M
-            grp.attrs[io.Di_hdf5_planet_label["R"]] = self.R
-            grp.attrs[io.Di_hdf5_planet_label["idx_layer"]] = self.A1_idx_layer
-            grp.attrs[io.Di_hdf5_planet_label["P_s"]] = self.P_s
-            grp.attrs[io.Di_hdf5_planet_label["T_s"]] = self.T_s
-            grp.attrs[io.Di_hdf5_planet_label["rho_s"]] = self.rho_s
-
-            # Arrays
-            grp.create_dataset(io.Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
-            grp.create_dataset(
-                io.Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d"
-            )
-            grp.create_dataset(io.Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
-            grp.create_dataset(io.Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
-            grp.create_dataset(io.Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
-            grp.create_dataset(io.Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
-            grp.create_dataset(
-                io.Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
-            )
-
-        print("Done")
-
     def load_planet_profiles(self):
         """ Load the profiles arrays for an existing Planet object from a file. """
         Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
@@ -462,7 +421,9 @@ class Planet:
                 self.A1_P,
                 self.A1_u,
                 self.A1_mat_id,
-            ) = io.multi_get_planet_data(f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
+            ) = io.multi_get_planet_data(
+                f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"]
+            )
 
         print("Done")
 
@@ -2612,7 +2573,7 @@ def L1_spin_planet_fix_M(
 
     Parameters
     ----------
-    planet : Planet
+    planet : woma.Planet
         The spherical planet object. Must have 1 layer.
 
     period : float
@@ -2641,7 +2602,7 @@ def L1_spin_planet_fix_M(
 
     Returns
     -------
-    spin_planet : SpinPlanet
+    spin_planet : woma.SpinPlanet
         The spinning planet object.
     """
 
@@ -2711,7 +2672,7 @@ def L2_spin_planet_fix_M(
 
     Parameters
     ----------
-    planet : Planet
+    planet : woma.Planet
         The spherical planet object. Must have 2 layers.
 
     period : float
@@ -2743,7 +2704,7 @@ def L2_spin_planet_fix_M(
 
     Returns
     -------
-    spin_planet : SpinPlanet
+    spin_planet : woma.SpinPlanet
         The spinning planet object.
     """
 
@@ -2904,7 +2865,7 @@ def spin_planet_fix_M(
 
     Parameters
     ----------
-    planet : Planet
+    planet : woma.Planet
         The spherical planet object.
 
     period : float
@@ -2936,7 +2897,7 @@ def spin_planet_fix_M(
 
     Returns
     -------
-    spin_planet : SpinPlanet
+    spin_planet : woma.SpinPlanet
         The spinning planet object.
     """
 
@@ -2989,7 +2950,7 @@ class ParticleSet:
 
     Parameters
     ----------
-    planet : Planet or SpinPlanet
+    planet : woma.Planet or woma.SpinPlanet
         The planet profile object.
 
     N_particles : int
