@@ -2817,8 +2817,8 @@ class SpinPlanet:
                 self.P_2,
             )
 
-            # convergence criteria
-            criteria = np.mean(
+            # convergence criterion
+            criterion = np.mean(
                 np.abs(A1_rho_equator - self.A1_rho_equator) / self.rho_s
             )
 
@@ -2827,10 +2827,10 @@ class SpinPlanet:
             self.A1_rho_pole = A1_rho_pole
 
             # check if there is convergence
-            # print(criteria)
-            if criteria < tol:
+            # print(criterion)
+            if criterion < tol:
                 if print_info:
-                    print("Convergence criteria reached.")
+                    print("Convergence criterion reached.")
                 break
 
         if self.period < period_iter:
@@ -2884,8 +2884,9 @@ def L1_spin_planet_fix_M(
         Maximum number of iterations allowed.
         
     tol : int
-        Tolerance level. The iterative search will end
-        when np.abs(planet.M - spin_planet.M) / planet.M < tol
+        Tolerance level. The iterative search will end when the fractional 
+        difference between the mass of the spinning planet and the spherical one
+        is less than tol.
 
     Returns
     -------
@@ -2926,10 +2927,10 @@ def L1_spin_planet_fix_M(
 
         spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
-        criteria = np.abs(planet.M - spin_planet.M) / planet.M < tol
+        criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol
         # print(np.abs(planet.M - spin_planet.M)/planet.M)
 
-        if criteria:
+        if criterion:
             break
 
         if spin_planet.M > planet.M:
@@ -2985,9 +2986,9 @@ def L2_spin_planet_fix_M(
         Maximum number of iterations allowed. Outer loop.
         
     tol : int
-        Tolerance level. The iterative search will end
-        when the relative difference in total mass and in core mass
-        fraction is less than tol.
+        Tolerance level. The iterative search will end when the fractional 
+        differences between the layer masses of the spinning planet and the 
+        spherical one are less than tol.
 
     Returns
     -------
@@ -3055,8 +3056,8 @@ def L2_spin_planet_fix_M(
 
             spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
-            criteria_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
-            criteria_2 = (
+            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
+            criterion_2 = (
                 np.abs(
                     planet.A1_M_layer[0] / planet.M
                     - spin_planet.A1_M_layer[0] / spin_planet.M
@@ -3064,10 +3065,10 @@ def L2_spin_planet_fix_M(
                 < tol
             )
 
-            if criteria_1 and criteria_2:
+            if criterion_1 and criterion_2:
                 return spin_planet
 
-            if criteria_1:
+            if criterion_1:
                 break
 
             if spin_planet.M > planet.M:
@@ -3110,8 +3111,8 @@ def L2_spin_planet_fix_M(
 
             spin_planet.spin(print_info=False, check_min_period=check_min_period)
 
-            criteria_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
-            criteria_2 = (
+            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
+            criterion_2 = (
                 np.abs(
                     planet.A1_M_layer[0] / planet.M
                     - spin_planet.A1_M_layer[0] / spin_planet.M
@@ -3119,10 +3120,10 @@ def L2_spin_planet_fix_M(
                 < tol
             )
 
-            if criteria_1 and criteria_2:
+            if criterion_1 and criterion_2:
                 return spin_planet
 
-            if criteria_2:
+            if criterion_2:
                 break
 
             new_f_M_core = spin_planet.A1_M_layer[0] / spin_planet.M
@@ -3178,9 +3179,9 @@ def spin_planet_fix_M(
         Maximum number of iterations allowed. Outer loop.
         
     tol : int
-        Tolerance level. The iterative search will end
-        when the relative difference in total mass and in core mass
-        fraction is less than tol.
+        Tolerance level. The iterative search will end when the fractional 
+        differences between the layer masses of the spinning planet and the 
+        spherical one are less than tol.
 
     Returns
     -------
@@ -3223,32 +3224,29 @@ def spin_planet_fix_M(
 
     elif planet.num_layer == 3:
 
-        raise ValueError("Not implemented yet")
+        raise ValueError("3 layers not implemented yet")
 
     else:
 
-        raise ValueError(
-            "Number of layers in your planet is incorrect. \
-                         It should be 1, 2, or 3"
-        )
+        raise ValueError("planet.num_layer must be 1, 2, or 3")
 
     return spin_planet
 
 
 class ParticleSet:
-    """ Particle generator class.
+    """ Arrange particles to precisely match a spinning or spherical planetary profile.
 
     Parameters
     ----------
-    planet : obj
-        Instance of Planet or SpinPlanet
+    planet : Planet or SpinPlanet
+        The planet profile object.
 
-    N_particles : str
-        List of the arrays or attributes to get. See Di_hdf5_planet_label for
-        details.
+    N_particles : int
+        The number of particles to place.
         
     N_ngb : int
-        Number of nearest neighbours used to compute SPH density
+        The number of neighbours used to estimate the SPH smoothing lengths and 
+        densities.
 
     Attributes (in addition to the input parameters)
     ----------
