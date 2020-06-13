@@ -177,7 +177,9 @@ def aneos_earth():
     # spin planet
     spin_aneos_earth = woma.spin_planet_fix_M(
         planet     = aneos_earth,
-        period     = 5,
+        period     = 3,
+        max_iter_1 = 10,
+        max_iter_2 = 10,
     )
     
     # plot results
