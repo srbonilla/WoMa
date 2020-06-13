@@ -31,161 +31,9 @@ from woma.spherical_funcs import L1_spherical, L2_spherical, L3_spherical
 from woma.spin_funcs import L1_spin, L2_spin, L3_spin
 import woma.spin_funcs.utils_spin as us
 from woma.misc import glob_vars as gv
+from woma.misc import utils, io
 from woma.eos import eos
-from woma.misc import utils
 from woma.eos.T_rho import T_rho, set_T_rho_args, compute_A1_T_rho_id_and_args_from_type
-
-# Output
-Di_hdf5_planet_label = {
-    "num_layer": "Number of Layers",
-    "mat_layer": "Layer Materials",
-    "mat_id_layer": "Layer Material IDs",
-    "T_rho_type": "Layer T-rho Type",
-    "T_rho_args": "Layer T-rho Args",
-    "R_layer": "Layer Boundary Radii",
-    "M_layer": "Mass in each Layer",
-    "M": "Total Mass",
-    "R": "Total Radius",
-    "idx_layer": "Outer Index of each Layer",
-    "P_s": "Surface Pressure",
-    "T_s": "Surface Temperature",
-    "rho_s": "Surface Density",
-    "r": "Profile Radii",
-    "m_enc": "Profile Enclosed Masses",
-    "rho": "Profile Densities",
-    "T": "Profile Temperatures",
-    "u": "Profile Specific Internal Energies",
-    "P": "Profile Pressures",
-    "mat_id": "Profile Material IDs",
-}
-
-
-def get_planet_data(f, param):
-    """ Load a planet attribute or array.
-
-    Parameters
-    ----------
-    f : h5py File
-        The opened hdf5 data file (with "r").
-
-    param : str
-        The array or attribute to get. See Di_hdf5_planet_label for details.
-
-    Returns
-    ----------
-    data : np.ndarray
-        The array or attribute (std units).
-    """
-    # Attributes
-    try:
-        return f["planet"].attrs[Di_hdf5_planet_label[param]]
-    # Datasets
-    except KeyError:
-        return f["planet/" + Di_hdf5_planet_label[param]][()]
-
-
-def multi_get_planet_data(f, A1_param):
-    """ Load multiple planet attributes or arrays.
-
-    Parameters
-    ----------
-    f : h5py File
-        The opened hdf5 data file (with "r").
-
-    A1_param : [str]
-        List of the arrays or attributes to get. See Di_hdf5_planet_label for
-        details.
-
-    Returns
-    ----------
-    A1_data : [np.ndarray]
-        The list of the arrays or attributes (std units).
-    """
-    A1_data = []
-    # Load each requested array
-    for param in A1_param:
-        A1_data.append(get_planet_data(f, param))
-
-    return A1_data
-
-
-def load_planet(name, Fp_planet):
-    """ Return a new Planet object loaded from a file.
-
-    Parameters
-    ----------
-    name : str
-        The name of the planet object.
-
-    Fp_planet : str
-        The file path.
-        
-    Returns
-    -------
-    p : Planet
-        The loaded planet object.
-    """
-    p = Planet(name=name, Fp_planet=Fp_planet)
-
-    Fp_planet = utils.check_end(p.Fp_planet, ".hdf5")
-
-    print('Loading "%s"... ' % Fp_planet[-60:], end="")
-    sys.stdout.flush()
-
-    with h5py.File(Fp_planet, "r") as f:
-        (
-            p.num_layer,
-            p.A1_mat_layer,
-            p.A1_mat_id_layer,
-            p.A1_T_rho_type,
-            p.A1_T_rho_args,
-            p.A1_R_layer,
-            p.A1_M_layer,
-            p.M,
-            p.R,
-            p.A1_idx_layer,
-            p.P_s,
-            p.T_s,
-            p.rho_s,
-            p.A1_r,
-            p.A1_m_enc,
-            p.A1_rho,
-            p.A1_T,
-            p.A1_P,
-            p.A1_u,
-            p.A1_mat_id,
-        ) = multi_get_planet_data(
-            f,
-            [
-                "num_layer",
-                "mat_layer",
-                "mat_id_layer",
-                "T_rho_type",
-                "T_rho_args",
-                "R_layer",
-                "M_layer",
-                "M",
-                "R",
-                "idx_layer",
-                "P_s",
-                "T_s",
-                "rho_s",
-                "r",
-                "m_enc",
-                "rho",
-                "T",
-                "P",
-                "u",
-                "mat_id",
-            ],
-        )
-
-    print("Done")
-
-    p.update_attributes()
-    p.print_info()
-
-    return p
 
 
 # ============================================================================ #
@@ -391,31 +239,6 @@ class Planet:
         if self.A1_T_rho_args is not None:
             self.A1_T_rho_args = np.array(self.A1_T_rho_args, dtype="float")
 
-        ### default M_max and R_max?
-
-        # Help info ###todo, maybe not necesary?
-        if not True:
-            if self.num_layer == 1:
-                print("For a 1 layer planet, please specify:")
-                print("pressure, temperature and density at the surface of the planet,")
-                print(
-                    "material, relation between temperature and density with any desired aditional parameters,"
-                )
-                print("for layer 1 of the planet.")
-            elif self.num_layer == 2:
-                print("For a 2 layer planet, please specify:")
-                print("pressure, temperature and density at the surface of the planet,")
-                print(
-                    "materials, relations between temperature and density with any desired aditional parameters,"
-                )
-                print("for layer 1 and layer 2 of the planet.")
-            elif self.num_layer == 3:
-                print("For a 3 layer planet, please specify:")
-                print("pressure, temperature and density at the surface of the planet,")
-                print(
-                    "materials, relations between temperature and density with any desired aditional parameters,"
-                )
-                print("for layer 1, layer 2, and layer 3 of the planet.")
 
     # ========
     # General
@@ -488,11 +311,11 @@ class Planet:
         space = 12
         print_try('Planet "%s": ', self.name)
         print_try(
-            "    %s = %.5g kg = %.5g M_earth",
+            "    %s = %.5g  kg  = %.5g  M_earth",
             (utils.add_whitespace("M", space), self.M, self.M / gv.M_earth),
         )
         print_try(
-            "    %s = %.5g m = %.5g R_earth",
+            "    %s = %.5g  m  = %.5g  R_earth",
             (utils.add_whitespace("R", space), self.R, self.R / gv.R_earth),
         )
         print_try(
@@ -510,21 +333,28 @@ class Planet:
             ),
         )
         print_try(
-            "    %s = %s R_earth",
+            "    %s = %s ",
+            (
+                utils.add_whitespace("T_rho_type", space),
+                utils.format_array_string(self.A1_T_rho_type, "string"),
+            ),
+        )
+        print_try(
+            "    %s = %s  R_earth",
             (
                 utils.add_whitespace("R_layer", space),
                 utils.format_array_string(self.A1_R_layer / gv.R_earth, "%.5g"),
             ),
         )
         print_try(
-            "    %s = %s M_earth",
+            "    %s = %s  M_earth",
             (
                 utils.add_whitespace("M_layer", space),
                 utils.format_array_string(self.A1_M_layer / gv.M_earth, "%.5g"),
             ),
         )
         print_try(
-            "    %s = %s M_total",
+            "    %s = %s  M_tot",
             (
                 utils.add_whitespace("M_frac_layer", space),
                 utils.format_array_string(self.A1_M_layer / self.M, "%.5g"),
@@ -537,119 +367,41 @@ class Planet:
                 utils.format_array_string(self.A1_idx_layer, "%d"),
             ),
         )
-        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_s", space), self.P_s))
-        print_try("    %s = %.5g K", (utils.add_whitespace("T_s", space), self.T_s))
+        print_try("    %s = %.5g  Pa", (utils.add_whitespace("P_s", space), self.P_s))
+        print_try("    %s = %.5g  K", (utils.add_whitespace("T_s", space), self.T_s))
         print_try(
-            "    %s = %.5g kg/m^3", (utils.add_whitespace("rho_s", space), self.rho_s)
+            "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_s", space), self.rho_s)
         )
         if self.num_layer > 2:
             print_try(
-                "    %s = %.5g Pa", (utils.add_whitespace("P_2", space), self.P_2)
+                "    %s = %.5g  Pa", (utils.add_whitespace("P_2", space), self.P_2)
             )
-            print_try("    %s = %.5g K", (utils.add_whitespace("T_2", space), self.T_2))
+            print_try("    %s = %.5g  K", (utils.add_whitespace("T_2", space), self.T_2))
             print_try(
-                "    %s = %.5g kg/m^3",
+                "    %s = %.5g  kg m^-",
                 (utils.add_whitespace("rho_2", space), self.rho_2),
             )
         if self.num_layer > 1:
             print_try(
-                "    %s = %.5g Pa", (utils.add_whitespace("P_1", space), self.P_1)
+                "    %s = %.5g  Pa", (utils.add_whitespace("P_1", space), self.P_1)
             )
-            print_try("    %s = %.5g K", (utils.add_whitespace("T_1", space), self.T_1))
+            print_try("    %s = %.5g  K", (utils.add_whitespace("T_1", space), self.T_1))
             print_try(
-                "    %s = %.5g kg/m^3",
+                "    %s = %.5g  kg m^-3",
                 (utils.add_whitespace("rho_1", space), self.rho_1),
             )
-        print_try("    %s = %.5g Pa", (utils.add_whitespace("P_0", space), self.P_0))
-        print_try("    %s = %.5g K", (utils.add_whitespace("T_0", space), self.T_0))
+        print_try("    %s = %.5g  Pa", (utils.add_whitespace("P_0", space), self.P_0))
+        print_try("    %s = %.5g  K", (utils.add_whitespace("T_0", space), self.T_0))
         print_try(
-            "    %s = %.5g kg/m^3", (utils.add_whitespace("rho_0", space), self.rho_0)
+            "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_0", space), self.rho_0)
         )
         print_try(
-            "    %s = %.5g M_tot*R_tot^2",
+            "    %s = %.5g  M_tot*R_tot^2",
             (
                 utils.add_whitespace("I_MR2", space),
                 self.I_MR2 / self.M / self.R / self.R,
             ),
         )
-
-    def print_declaration(self):
-        """ Print the Planet objects formatted as a declaration. """
-        space = 15
-        print("%s = Planet(" % self.name)
-        print('    %s = "%s",' % (utils.add_whitespace("name", space), self.name))
-        print(
-            '    %s = "%s",'
-            % (utils.add_whitespace("Fp_planet", space), self.Fp_planet)
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_mat_layer", space),
-                utils.format_array_string(self.A1_mat_layer, "string"),
-            )
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_T_rho_type_id", space),
-                utils.format_array_string(self.A1_T_rho_type_id, "%d"),
-            )
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_T_rho_args", space),
-                utils.format_array_string(self.A1_T_rho_args, "dorf"),
-            )
-        )
-        print(
-            "    %s = np.array(%s) * R_earth,"
-            % (
-                utils.add_whitespace("A1_R_layer", space),
-                utils.format_array_string(self.A1_R_layer / gv.R_earth, "%.5g"),
-            )
-        )
-        print(
-            "    %s = %s,"
-            % (
-                utils.add_whitespace("A1_idx_layer", space),
-                utils.format_array_string(self.A1_idx_layer, "%d"),
-            )
-        )
-        print(
-            "    %s = np.array(%s) * M_earth,"
-            % (
-                utils.add_whitespace("A1_M_layer", space),
-                utils.format_array_string(self.A1_M_layer / gv.M_earth, "%.5g"),
-            )
-        )
-        print(
-            "    %s = %.5g * M_earth,"
-            % (utils.add_whitespace("M", space), self.M / gv.M_earth)
-        )
-        print("    %s = %.5g," % (utils.add_whitespace("P_s", space), self.P_s))
-        print("    %s = %.5g," % (utils.add_whitespace("T_s", space), self.T_s))
-        print("    %s = %.5g," % (utils.add_whitespace("rho_s", space), self.rho_s))
-        if self.num_layer > 2:
-            print("    %s = %.5g," % (utils.add_whitespace("P_2", space), self.P_2))
-            print("    %s = %.5g," % (utils.add_whitespace("T_2", space), self.T_2))
-            print("    %s = %.5g," % (utils.add_whitespace("rho_2", space), self.rho_2))
-        if self.num_layer > 1:
-            print("    %s = %.5g," % (utils.add_whitespace("P_1", space), self.P_1))
-            print("    %s = %.5g," % (utils.add_whitespace("T_1", space), self.T_1))
-            print("    %s = %.5g," % (utils.add_whitespace("rho_1", space), self.rho_1))
-        print("    %s = %.5g," % (utils.add_whitespace("P_0", space), self.P_0))
-        print("    %s = %.5g," % (utils.add_whitespace("T_0", space), self.T_0))
-        print("    %s = %.5g," % (utils.add_whitespace("rho_0", space), self.rho_0))
-        print(
-            "    %s = %.5g,"
-            % (
-                utils.add_whitespace("I_MR2", space),
-                self.I_MR2 / (self.M * self.R ** 2),
-            )
-        )
-        print("    )")
 
     def save_planet(self):
         Fp_planet = utils.check_end(self.Fp_planet, ".hdf5")
@@ -666,31 +418,30 @@ class Planet:
                 self.A1_mat_layer = self.A1_mat_layer.tolist()
 
             # Attributes
-            grp.attrs[Di_hdf5_planet_label["num_layer"]] = self.num_layer
-            grp.attrs[Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
-            grp.attrs[Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
-            grp.attrs[Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
-            grp.attrs[Di_hdf5_planet_label["T_rho_args"]] = self.A1_T_rho_args
-            grp.attrs[Di_hdf5_planet_label["R_layer"]] = self.A1_R_layer
-            grp.attrs[Di_hdf5_planet_label["M_layer"]] = self.A1_M_layer
-            grp.attrs[Di_hdf5_planet_label["M"]] = self.M
-            grp.attrs[Di_hdf5_planet_label["R"]] = self.R
-            grp.attrs[Di_hdf5_planet_label["idx_layer"]] = self.A1_idx_layer
-            grp.attrs[Di_hdf5_planet_label["P_s"]] = self.P_s
-            grp.attrs[Di_hdf5_planet_label["T_s"]] = self.T_s
-            grp.attrs[Di_hdf5_planet_label["rho_s"]] = self.rho_s
+            grp.attrs[io.Di_hdf5_planet_label["num_layer"]] = self.num_layer
+            grp.attrs[io.Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
+            grp.attrs[io.Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
+            grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
+            grp.attrs[io.Di_hdf5_planet_label["R_layer"]] = self.A1_R_layer
+            grp.attrs[io.Di_hdf5_planet_label["M_layer"]] = self.A1_M_layer
+            grp.attrs[io.Di_hdf5_planet_label["M"]] = self.M
+            grp.attrs[io.Di_hdf5_planet_label["R"]] = self.R
+            grp.attrs[io.Di_hdf5_planet_label["idx_layer"]] = self.A1_idx_layer
+            grp.attrs[io.Di_hdf5_planet_label["P_s"]] = self.P_s
+            grp.attrs[io.Di_hdf5_planet_label["T_s"]] = self.T_s
+            grp.attrs[io.Di_hdf5_planet_label["rho_s"]] = self.rho_s
 
             # Arrays
-            grp.create_dataset(Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
             grp.create_dataset(
-                Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d"
+                io.Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d"
             )
-            grp.create_dataset(Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
-            grp.create_dataset(Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
-            grp.create_dataset(Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
-            grp.create_dataset(Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
             grp.create_dataset(
-                Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
+                io.Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
             )
 
         print("Done")
@@ -711,7 +462,7 @@ class Planet:
                 self.A1_P,
                 self.A1_u,
                 self.A1_mat_id,
-            ) = multi_get_planet_data(f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
+            ) = io.multi_get_planet_data(f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"])
 
         print("Done")
 
