@@ -2849,19 +2849,20 @@ def L1_spin_planet_fix_M(
     planet,
     period,
     num_prof=1000,
-    R_e_max=4 * gv.R_earth,
-    R_p_max=2 * gv.R_earth,
+    R_e_max=None,
+    R_p_max=None,
     check_min_period=False,
     max_iter_1=20,
     tol=0.001,
 ):
-    """ Compute the SpinPlanet object such that the mass of each layer is equal to
-    the one provided in a Planet obj. For a 1 layer planet.
+    """ Create a spinning planet from a spherical one, keeping the same layer masses.
+    
+    For a 1 layer planet.
 
     Parameters
     ----------
-    planet : onj
-        Instance of Planet class. Must be 1 layer
+    planet : Planet
+        The spherical planet object. Must have 1 layer.
 
     period : float
         Period (h).
@@ -2870,10 +2871,10 @@ def L1_spin_planet_fix_M(
         Number of grid points used in the 1D equatorial and polar profiles.
 
     R_e_max : float
-        Maximum equatorial radius (m).
+        Maximum equatorial radius (m). Defaults to 4 times the spherical radius.
         
     R_p_max : float
-        Maximum polar radius (m).
+        Maximum polar radius (m). Defaults to 2 times the spherical radius.
         
     check_min_period : bool
         Checks if period provided is lees than the minimum physically allowed.
@@ -2888,12 +2889,18 @@ def L1_spin_planet_fix_M(
 
     Returns
     -------
-    spin_planet : obj
-        Instance of SpinPlanet class.
+    spin_planet : SpinPlanet
+        The spinning planet object.
     """
 
     assert isinstance(planet, Planet)
     assert planet.num_layer == 1
+
+    # Default max radii
+    if R_e_max is None:
+        R_e_max = 4 * planet.R
+    if R_p_max is None:
+        R_p_max = 4 * planet.R
 
     f_min = 0.0
     f_max = 1.0
@@ -2939,20 +2946,21 @@ def L2_spin_planet_fix_M(
     planet,
     period,
     num_prof=1000,
-    R_e_max=2 * gv.R_earth,
-    R_p_max=1.2 * gv.R_earth,
+    R_e_max=None,
+    R_p_max=None,
     check_min_period=False,
     max_iter_1=20,
     max_iter_2=5,
     tol=0.01,
 ):
-    """ Compute the SpinPlanet object such that the mass of each layer is equal to
-    the one provided in a Planet obj. For a 2 layer planet.
+    """ Create a spinning planet from a spherical one, keeping the same layer masses.
+    
+    For a 2 layer planet.
 
     Parameters
     ----------
-    planet : onj
-        Instance of Planet class. Must be 1 layer
+    planet : Planet
+        The spherical planet object. Must have 2 layers.
 
     period : float
         Period (h).
@@ -2961,10 +2969,10 @@ def L2_spin_planet_fix_M(
         Number of grid points used in the 1D equatorial and polar profiles.
 
     R_e_max : float
-        Maximum equatorial radius (m).
+        Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
         
     R_p_max : float
-        Maximum polar radius (m).
+        Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
         
     check_min_period : bool
         Checks if period provided is lees than the minimum physically allowed.
@@ -2983,12 +2991,18 @@ def L2_spin_planet_fix_M(
 
     Returns
     -------
-    spin_planet : obj
-        Instance of SpinPlanet class.
+    spin_planet : SpinPlanet
+        The spinning planet object.
     """
 
     assert isinstance(planet, Planet)
     assert planet.num_layer == 2
+
+    # Default max radii
+    if R_e_max is None:
+        R_e_max = 2 * planet.R
+    if R_p_max is None:
+        R_p_max = 1.2 * planet.R
 
     M = planet.M
 
@@ -3134,13 +3148,12 @@ def spin_planet_fix_M(
     max_iter_2=5,
     tol=0.01,
 ):
-    """ Compute the SpinPlanet object such that the mass of each layer is equal to
-    the one provided in a Planet obj input.
+    """ Create a spinning planet from a spherical one, keeping the same layer masses.
 
     Parameters
     ----------
-    planet : onj
-        Instance of Planet class. Must be 1 layer
+    planet : Planet
+        The spherical planet object.
 
     period : float
         Period (h).
@@ -3149,10 +3162,10 @@ def spin_planet_fix_M(
         Number of grid points used in the 1D equatorial and polar profiles.
 
     R_e_max : float
-        Maximum equatorial radius (m).
+        Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
         
     R_p_max : float
-        Maximum polar radius (m).
+        Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
         
     check_min_period : bool
         Checks if period provided is lees than the minimum physically allowed.
@@ -3171,13 +3184,13 @@ def spin_planet_fix_M(
 
     Returns
     -------
-    spin_planet : obj
-        Instance of SpinPlanet class.
+    spin_planet : SpinPlanet
+        The spinning planet object.
     """
 
+    # Default max radii
     if R_e_max is None:
         R_e_max = 2 * planet.R
-
     if R_p_max is None:
         R_p_max = 1.2 * planet.R
 
