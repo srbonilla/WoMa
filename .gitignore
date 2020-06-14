@@ -20,3 +20,5 @@
 *.zip
 *.*#
 *~
+
+.ipynb_checkpoints/
