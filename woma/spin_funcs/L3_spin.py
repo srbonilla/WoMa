@@ -42,73 +42,73 @@ def _fillrho3(
     """ Compute densities of equatorial and polar profiles given the potential
         for a 3 layer planet.
 
-        Args:
+    Parameters
+    ----------
+    A1_r_equator ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            A1_r_equator ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    V_e ([float]):
+        Equatorial profile of potential (SI).
 
-            V_e ([float]):
-                Equatorial profile of potential (SI).
+    A1_r_pole ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            A1_r_pole ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    V_p ([float]):
+        Polar profile of potential (SI).
 
-            V_p ([float]):
-                Polar profile of potential (SI).
+    P_c (float):
+        Pressure at the center of the planet (SI).
 
-            P_c (float):
-                Pressure at the center of the planet (SI).
+    P_12 (float):
+        Pressure at the boundary between layers 1 and 2 of the planet (SI).
 
-            P_12 (float):
-                Pressure at the boundary between layers 1 and 2 of the planet (SI).
+    P_23 (float):
+        Pressure at the boundary between layers 2 and 3 of the planet (SI).
 
-            P_23 (float):
-                Pressure at the boundary between layers 2 and 3 of the planet (SI).
+    P_s (float):
+        Pressure at the surface of the planet (SI).
 
-            P_s (float):
-                Pressure at the surface of the planet (SI).
+    rho_c (float):
+        Density at the center of the planet (SI).
 
-            rho_c (float):
-                Density at the center of the planet (SI).
+    rho_s (float):
+        Density at the surface of the planet (SI).
 
-            rho_s (float):
-                Density at the surface of the planet (SI).
+    mat_id_L1 (int):
+        Material id for layer 1.
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    T_rho_type_id_L1 (int)
+        Relation between T and rho to be used in layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between T and rho to be used in layer 1.
+    T_rho_args_L1 (list):
+        Extra arguments to determine the relation in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    mat_id_L2 (int):
+        Material id for layer 2.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    T_rho_type_id_L2 (int)
+        Relation between T and rho to be used in layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between T and rho to be used in layer 2.
+    T_rho_args_L2 (list):
+        Extra arguments to determine the relation in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    mat_id_L3 (int):
+        Material id for layer 3.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    T_rho_type_id_L3 (int)
+        Relation between T and rho to be used in layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between T and rho to be used in layer 3.
-
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
+    T_rho_args_L3 (list):
+        Extra arguments to determine the relation in layer 3.
 
 
-        Returns:
+    Returns
+    -------
+    A1_rho_equator ([float]):
+        Equatorial profile of densities (SI).
 
-            A1_rho_equator ([float]):
-                Equatorial profile of densities (SI).
-
-            A1_rho_pole ([float]):
-                Polar profile of densities (SI).
+    A1_rho_pole ([float]):
+        Polar profile of densities (SI).
     """
 
     P_e = np.zeros(V_e.shape[0])
@@ -242,82 +242,81 @@ def spin3layer(
 ):
     """ Compute spining profile of densities for a 3 layer planet.
 
-        Args:
+    Parameters
+    ----------
+    num_attempt (int):
+        Number of num_attempt to run.
 
-            num_attempt (int):
-                Number of num_attempt to run.
+    A1_r_equator ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            A1_r_equator ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    A1_r_pole ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            A1_r_pole ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    radii ([float]):
+        Radii of the spherical profile (SI).
 
-            radii ([float]):
-                Radii of the spherical profile (SI).
+    densities ([float]):
+        Densities of the spherical profile (SI).
 
-            densities ([float]):
-                Densities of the spherical profile (SI).
+    period (float):
+        Period of the planet (hours).
 
-            period (float):
-                Period of the planet (hours).
+    P_c (float):
+        Pressure at the center of the planet (SI).
 
-            P_c (float):
-                Pressure at the center of the planet (SI).
+    P_12 (float):
+        Pressure at the boundary between layers 1 and 2 of the planet (SI).
 
-            P_12 (float):
-                Pressure at the boundary between layers 1 and 2 of the planet (SI).
+    P_23 (float):
+        Pressure at the boundary between layers 2 and 3 of the planet (SI).
 
-            P_23 (float):
-                Pressure at the boundary between layers 2 and 3 of the planet (SI).
+    P_s (float):
+        Pressure at the surface of the planet (SI).
 
-            P_s (float):
-                Pressure at the surface of the planet (SI).
+    rho_c (float):
+        Density at the center of the planet (SI).
 
-            rho_c (float):
-                Density at the center of the planet (SI).
+    rho_s (float):
+        Density at the surface of the planet (SI).
 
-            rho_s (float):
-                Density at the surface of the planet (SI).
+    mat_id_L1 (int):
+        Material id for layer 1.
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    T_rho_type_id_L1 (int)
+        Relation between T and rho to be used in layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between T and rho to be used in layer 1.
+    T_rho_args_L1 (list):
+        Extra arguments to determine the relation in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    mat_id_L2 (int):
+        Material id for layer 2.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    T_rho_type_id_L2 (int)
+        Relation between T and rho to be used in layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between T and rho to be used in layer 2.
+    T_rho_args_L2 (list):
+        Extra arguments to determine the relation in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    mat_id_L3 (int):
+        Material id for layer 3.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    T_rho_type_id_L3 (int)
+        Relation between T and rho to be used in layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between T and rho to be used in layer 3.
+    T_rho_args_L3 (list):
+        Extra arguments to determine the relation in layer 3.
+        
+    vervose (int):
+        Printing options.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
-                
-            vervose (int):
-                Printing options.
+    Returns
+    -------
+    profile_e ([[float]]):
+        List of the num_attempt of the equatorial density profile (SI).
 
-
-        Returns:
-
-            profile_e ([[float]]):
-                List of the num_attempt of the equatorial density profile (SI).
-
-            profile_p ([[float]]):
-                List of the num_attempt of the polar density profile (SI).
+    profile_p ([[float]]):
+        List of the num_attempt of the polar density profile (SI).
 
     """
 
@@ -380,104 +379,105 @@ def picle_placement_L3(
     T_rho_args_L3,
     N_neig=48,
 ):
-    """
-    Args:
+    """ Particle placement for 3 layer spinning planet profile.
+    
+    Parameters
+    ----------
+    A1_r_equator ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            A1_r_equator ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    A1_rho_equator ([float]):
+        Equatorial profile of densities (SI).
 
-            A1_rho_equator ([float]):
-                Equatorial profile of densities (SI).
+    A1_r_pole ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            A1_r_pole ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    A1_rho_pole ([float]):
+        Polar profile of densities (SI).
 
-            A1_rho_pole ([float]):
-                Polar profile of densities (SI).
+    period (float):
+        Period of the planet (hours).
 
-            period (float):
-                Period of the planet (hours).
+    N (int):
+        Number of particles.
+        
+    rho_12 (float):
+        Density at the boundary between layers 1 and 2 (SI).
 
-            N (int):
-                Number of particles.
-                
-            rho_12 (float):
-                Density at the boundary between layers 1 and 2 (SI).
+    rho_23 (float):
+        Density at the boundary between layers 2 and 3 (SI).
 
-            rho_23 (float):
-                Density at the boundary between layers 2 and 3 (SI).
+    mat_id_L1 (int):
+        Material id for layer 1.
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    T_rho_type_id_L1 (int)
+        Relation between T and rho to be used in layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between T and rho to be used in layer 1.
+    T_rho_args_L1 (list):
+        Extra arguments to determine the relation in layer 1.
+        
+    mat_id_L2 (int):
+        Material id for layer 2.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
-                
-            mat_id_L2 (int):
-                Material id for layer 2.
+    T_rho_type_id_L2 (int)
+        Relation between T and rho to be used in layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between T and rho to be used in layer 2.
+    T_rho_args_L2 (list):
+        Extra arguments to determine the relation in layer 2.
+        
+    mat_id_L3 (int):
+        Material id for layer 3.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
-                
-            mat_id_L3 (int):
-                Material id for layer 3.
+    T_rho_type_id_L3 (int)
+        Relation between T and rho to be used in layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between T and rho to be used in layer 3.
+    T_rho_args_L3 (list):
+        Extra arguments to determine the relation in layer 3.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
+    N_neig (int):
+        Number of neighbors in the SPH simulation.
+        
+    Returns
+    -------
+    A1_x ([float]):
+        Position x of each particle (SI).
 
-            N_neig (int):
-                Number of neighbors in the SPH simulation.
-                
-    Returns:
+    A1_y ([float]):
+        Position y of each particle (SI).
 
-            A1_x ([float]):
-                Position x of each particle (SI).
+    A1_z ([float]):
+        Position z of each particle (SI).
 
-            A1_y ([float]):
-                Position y of each particle (SI).
+    A1_vx ([float]):
+        Velocity in x of each particle (SI).
 
-            A1_z ([float]):
-                Position z of each particle (SI).
+    A1_vy ([float]):
+        Velocity in y of each particle (SI).
 
-            A1_vx ([float]):
-                Velocity in x of each particle (SI).
+    A1_vz ([float]):
+        Velocity in z of each particle (SI).
 
-            A1_vy ([float]):
-                Velocity in y of each particle (SI).
+    A1_m ([float]):
+        Mass of every particle (SI).
 
-            A1_vz ([float]):
-                Velocity in z of each particle (SI).
+    A1_rho ([float]):
+        Density for every particle (SI).
+        
+    A1_u ([float]):
+        Internal energy for every particle (SI).
 
-            A1_m ([float]):
-                Mass of every particle (SI).
+    A1_P ([float]):
+        Pressure for every particle (SI).
+        
+    A1_h ([float]):
+        Smoothing lenght for every particle (SI).
 
-            A1_rho ([float]):
-                Density for every particle (SI).
-                
-            A1_u ([float]):
-                Internal energy for every particle (SI).
+    A1_mat_id ([int]):
+        Material id for every particle.
 
-            A1_P ([float]):
-                Pressure for every particle (SI).
-                
-            A1_h ([float]):
-                Smoothing lenght for every particle (SI).
-
-            A1_mat_id ([int]):
-                Material id for every particle.
-
-            A1_id ([int]):
-                Identifier for every particle
-                
+    A1_id ([int]):
+        Identifier for every particle
+        
     """
     (
         A1_x,

@@ -19,22 +19,29 @@ from woma.spin_funcs import L1_spin, L2_spin, L3_spin
 # Spining model functions
 @njit
 def _analytic_solution_r(r, R, Z, x):
-    """ Indefinite integral, analytic solution of the optential
-        of an oblate spheroid evaluated at x with z = 0.
+    """ Indefinite integral, analytic solution of the potential
+        of an oblate spheroid evaluated at x with z = 0. Computed
+        from Kellogg's formula.
 
-        Args:
+    Parameters
+    ----------
+    r (float):
+        Cylindrical r coordinate where to compute the potential (SI).
 
-            r (float):
-                Cylindrical r coordinate where to compute the potential (SI).
+    R (float):
+        Mayor axis of the oblate spheroid (SI).
 
-            R (float):
-                Mayor axis of the oblate spheroid (SI).
+    Z (float):
+        Minor axis of the oblate spheroid (SI).
 
-            Z (float):
-                Minor axis of the oblate spheroid (SI).
-
-            x (float):
-                Integration variable (SI).
+    x (float):
+        Integration variable (SI).
+        
+    Returns
+    -------
+    A1 + A2 : float
+        Analitic solution.
+    
     """
     if R == Z:
         return 2 * (r * r - 3 * (R * R + x)) / 3 / np.sqrt((R * R + x) ** 3)
@@ -51,21 +58,27 @@ def _analytic_solution_r(r, R, Z, x):
 @njit
 def _analytic_solution_z(z, R, Z, x):
     """ Indefinite integral, analytic solution of the optential
-        of an oblate spheroid evaluated at x with r = 0.
+        of an oblate spheroid evaluated at x with r = 0. Computed
+        from Kellogg's formula.
 
-        Args:
+    Parameters
+    ----------
+    z (float):
+        Cylindrical z coordinate where to compute the potential (SI).
 
-            z (float):
-                Cylindrical z coordinate where to compute the potential (SI).
+    R (float):
+        Mayor axis of the oblate spheroid (SI).
 
-            R (float):
-                Mayor axis of the oblate spheroid (SI).
+    Z (float):
+        Minor axis of the oblate spheroid (SI).
 
-            Z (float):
-                Minor axis of the oblate spheroid (SI).
-
-            x (float):
-                Integration variable (SI).
+    x (float):
+        Integration variable (SI).
+                
+    Returns
+    -------
+    A1 + A2 : float
+        Analitic solution.
     """
 
     if R == Z:
@@ -85,23 +98,24 @@ def _Vgr(r, R, Z, rho):
     """ Gravitational potential due to an oblate spheroid with constant density
         at r, theta = 0, z = 0.
 
-        Args:
+    Parameters
+    ----------
+    r (float):
+        Cylindrical r coordinate where to compute the optential (SI).
 
-            r (float):
-                Cylindrical r coordinate where to compute the optential (SI).
+    R (float):
+        Mayor axis of the oblate spheroid (SI).
 
-            R (float):
-                Mayor axis of the oblate spheroid (SI).
+    Z (float):
+        Minor axis of the oblate spheroid (SI).
 
-            Z (float):
-                Minor axis of the oblate spheroid (SI).
+    rho (float):
+        Density of the spheroid (SI).
 
-            rho (float):
-                Density of the spheroid (SI).
-
-        Returns:
-            V (float):
-                Gravitational potential (SI).
+    Returns
+    -------
+        V (float):
+            Gravitational potential (SI).
     """
 
     V = 0
@@ -145,23 +159,24 @@ def _Vgz(z, R, Z, rho):
     """ Gravitational potential due to an oblate spheroid with constant density
         at r = 0, theta = 0, z.
 
-        Args:
+    Parameters
+    ----------
+    z (float):
+        Cylindrical z coordinate where to compute the optential (SI).
 
-            z (float):
-                Cylindrical z coordinate where to compute the optential (SI).
+    R (float):
+        Mayor axis of the oblate spheroid (SI).
 
-            R (float):
-                Mayor axis of the oblate spheroid (SI).
+    Z (float):
+        Minor axis of the oblate spheroid (SI).
 
-            Z (float):
-                Minor axis of the oblate spheroid (SI).
+    rho (float):
+        Density of the spheroid (SI).
 
-            rho (float):
-                Density of the spheroid (SI).
-
-        Returns:
-            V (float):
-                Gravitational potential (SI).
+    Returns
+    -------
+    V (float):
+        Gravitational potential (SI).
     """
 
     V = 0
@@ -207,30 +222,30 @@ def _el_eq(r, z, R, Z):
 def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
     """ Computes the density at any point r, z given a spining profile.
 
-        Args:
+    Parameters
+    ----------
+    r (float):
+        Cylindrical r coordinte where to compute the density (SI).
 
-            r (float):
-                Cylindrical r coordinte where to compute the density (SI).
+    z (float):
+        Cylindrical z coordinte where to compute the density (SI).
 
-            z (float):
-                Cylindrical z coordinte where to compute the density (SI).
+    r_array ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            r_array ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    rho_e ([float]):
+        Equatorial profile of densities (SI).
 
-            rho_e ([float]):
-                Equatorial profile of densities (SI).
+    z_array ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            z_array ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    rho_p ([float]):
+        Polar profile of densities (SI).
 
-            rho_p ([float]):
-                Polar profile of densities (SI).
-
-        Returns:
-
-            rho_2 (float):
-                Density at r, z (SI).
+    Returns
+    -------
+    rho_2 (float):
+        Density at r, z (SI).
 
     """
     z = np.abs(z)
@@ -300,15 +315,27 @@ def rho_rz(r, z, r_array, rho_e, z_array, rho_p):
 
 @njit
 def V_spheroid(R, Z):
+    """ Computes the volume of a spheroid of parameters R, Z.
+
+    Parameters
+    ----------
+    R (float):
+        Equatorial radius (SI).
+
+    Z (float):
+        Polar radius (SI).
+
+    Returns
+    -------
+    V (float):
+        Volume (SI).
+
+    """
 
     return np.pi * 4 / 3 * R * R * Z
 
 
 # Particle placement functions
-@njit
-def vol_spheroid(R, Z):
-    return 4 * np.pi * R * R * Z / 3
-
 
 @njit
 def integrand(theta, R_l, Z_l, R_h, Z_h):
@@ -457,60 +484,60 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, period):
 
     """ Particle placement for a spining profile.
 
-        Args:
+    Parameters
+    ----------
+    r_array ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            r_array ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    rho_e ([float]):
+        Equatorial profile of densities (SI).
 
-            rho_e ([float]):
-                Equatorial profile of densities (SI).
+    z_array ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            z_array ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    rho_p ([float]):
+        Polar profile of densities (SI).
 
-            rho_p ([float]):
-                Polar profile of densities (SI).
+    N (int):
+        Number of particles.
+        
+    period (float):
+        Period of the planet (hours).
 
-            N (int):
-                Number of particles.
-                
-            period (float):
-                Period of the planet (hours).
+    Returns
+    -------
+    A1_x ([float]):
+        Position x of each particle (SI).
 
-        Returns:
+    A1_y ([float]):
+        Position y of each particle (SI).
 
-            A1_x ([float]):
-                Position x of each particle (SI).
+    A1_z ([float]):
+        Position z of each particle (SI).
 
-            A1_y ([float]):
-                Position y of each particle (SI).
+    A1_vx ([float]):
+        Velocity in x of each particle (SI).
 
-            A1_z ([float]):
-                Position z of each particle (SI).
+    A1_vy ([float]):
+        Velocity in y of each particle (SI).
 
-            A1_vx ([float]):
-                Velocity in x of each particle (SI).
+    A1_vz ([float]):
+        Velocity in z of each particle (SI).
 
-            A1_vy ([float]):
-                Velocity in y of each particle (SI).
+    A1_m ([float]):
+        Mass of every particle (SI).
+        
+    A1_rho ([float]):
+        Density for every particle (SI).
 
-            A1_vz ([float]):
-                Velocity in z of each particle (SI).
+    A1_h ([float]):
+        Smoothing lenght for every particle (SI).
 
-            A1_m ([float]):
-                Mass of every particle (SI).
-                
-            A1_rho ([float]):
-                Density for every particle (SI).
-
-            A1_h ([float]):
-                Smoothing lenght for every particle (SI).
-
-            A1_R ([float]):
-                Semi-major axis of the elipsoid for every particle
-                
-            A1_Z ([float]):
-                Semi-minor axis of the elipsoid for every particle
+    A1_R ([float]):
+        Semi-major axis of the elipsoid for every particle.
+        
+    A1_Z ([float]):
+        Semi-minor axis of the elipsoid for every particle.
 
     """
 
@@ -687,30 +714,30 @@ def spin_escape_vel(r_array, rho_e, z_array, rho_p, period):
     """
         Computes the escape velocity for a spining planet.
         
-        Args:
+    Parameters
+    ----------
+    r_array ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            r_array ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    rho_e ([float]):
+        Equatorial profile of densities (SI).
 
-            rho_e ([float]):
-                Equatorial profile of densities (SI).
+    z_array ([float]):
+        Points at equatorial profile where the solution is defined (SI).
 
-            z_array ([float]):
-                Points at equatorial profile where the solution is defined (SI).
+    rho_p ([float]):
+        Polar profile of densities (SI).
+        
+    period (float):
+        Period of the planet (hours).
 
-            rho_p ([float]):
-                Polar profile of densities (SI).
-                
-            period (float):
-                Period of the planet (hours).
+    Returns
+    -------
+    v_escape_equator ([float]):
+        Escape velocity at the equator (SI).
 
-        Returns:
-
-            v_escape_equator ([float]):
-                Escape velocity at the equator (SI).
-
-            v_escape_pole ([float]):
-                Escape velocity at the pole (SI).
+    v_escape_pole ([float]):
+        Escape velocity at the pole (SI).
 
         
     """

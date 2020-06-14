@@ -2490,7 +2490,7 @@ class SpinPlanet:
 
     def spin(
         self,
-        max_iter_1=20,
+        max_iter_1=12,
         max_iter_2=20,
         print_info=True,
         tol=0.001,
@@ -2647,7 +2647,9 @@ def _L1_spin_planet_fix_M(
         # print(np.abs(planet.M - spin_planet.M)/planet.M)
 
         if criterion:
-            break
+            print("Tolerance level criteria reached.")
+            spin_planet.print_info()
+            return spin_planet
 
         if spin_planet.M > planet.M:
             f_max = f
@@ -2759,7 +2761,7 @@ def _L2_spin_planet_fix_M(
             new_planet.R = R_mantle
 
             # make new profile
-            new_planet.M_max = 1.05 * planet.M
+            new_planet.M_max = 1.2 * planet.M
             new_planet.gen_prof_L2_find_M_given_R1_R(print_info=False)
 
             spin_planet = SpinPlanet(
@@ -2782,6 +2784,8 @@ def _L2_spin_planet_fix_M(
             )
 
             if criterion_1 and criterion_2:
+                print("Tolerance level criteria reached.")
+                spin_planet.print_info()
                 return spin_planet
 
             if criterion_1:
@@ -2814,7 +2818,7 @@ def _L2_spin_planet_fix_M(
             new_planet.R = R_mantle
 
             # make new profile
-            new_planet.M_max = 1.05 * planet.M
+            new_planet.M_max = 1.2 * planet.M
             new_planet.gen_prof_L2_find_M_given_R1_R(print_info=False)
 
             spin_planet = SpinPlanet(
@@ -2837,6 +2841,8 @@ def _L2_spin_planet_fix_M(
             )
 
             if criterion_1 and criterion_2:
+                print("Tolerance level criteria reached.")
+                spin_planet.print_info()
                 return spin_planet
 
             if criterion_2:
