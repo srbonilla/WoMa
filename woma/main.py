@@ -80,7 +80,7 @@ class Planet:
         three need be provided (Pa, K, kg m^-3).
 
     I_MR2 : float
-        The reduced moment of inertia (kg m^2).
+        The moment of inertia factor.
 
     M_max : float
         The maximum mass allowed (kg).
@@ -133,9 +133,6 @@ class Planet:
         
     A1_mat_id : [int]
         The ID of the material at each profile radius.
-        
-    I_MR2 : float
-        Moment of inertia (kg m^2).    
     """
 
     def __init__(
@@ -276,8 +273,8 @@ class Planet:
             self.A1_M_layer[1:] -= self.A1_M_layer[:-1]
         self.M = np.sum(self.A1_M_layer)
 
-        # Moment of inertia
-        self.I_MR2 = utils.moi(self.A1_r, self.A1_rho)
+        # Moment of inertia factor
+        self.I_MR2 = utils.moi(self.A1_r, self.A1_rho) / (self.M * self.R ** 2)
 
         # P, T, and rho at the centre and the outer boundary of each layer
         self.P_0 = self.A1_P[0]
@@ -399,10 +396,7 @@ class Planet:
         )
         print_try(
             "    %s = %.5g  M_tot*R_tot^2",
-            (
-                utils.add_whitespace("I_MR2", space),
-                self.I_MR2 / self.M / self.R / self.R,
-            ),
+            (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
 
     def load_planet_profiles(self):
