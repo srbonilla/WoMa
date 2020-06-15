@@ -2963,8 +2963,20 @@ class ParticleSet:
         The number of neighbours used to estimate the SPH smoothing lengths and 
         densities.
 
+    verbosity : int
+        The verbosity to control printed output:
+        0       None
+        1       Standard (default)
+        2       Extra
+
     Attributes (in addition to the input parameters)
     ----------
+    A2_pos : [[float]]
+        Array of [x, y, z] positions for all particles (m).
+    
+    A2_vel : [[float]]
+        Array of [vx, vy, vz] velocities for all particles (m).
+    
     A1_x : [float]
         Array of x positions for all particles (m).
         
@@ -2992,6 +3004,9 @@ class ParticleSet:
     A1_u : [float]
         Array of specific internal energies for all particles (J kg^-1).
         
+    A1_T : [float]
+        Array of temperatures for all particles (K).
+        
     A1_P : [float]
         Array of pressures for all particles (Pa).
     
@@ -3006,7 +3021,7 @@ class ParticleSet:
     """
 
     def __init__(
-        self, planet=None, N_particles=None, N_ngb=48,
+        self, planet=None, N_particles=None, N_ngb=48, verbosity=1
     ):
         self.N_particles = N_particles
         self.N_ngb = N_ngb
@@ -3023,7 +3038,7 @@ class ParticleSet:
                 planet.A1_u[1:],
                 planet.A1_T[1:],
                 planet.A1_P[1:],
-                verb=0,
+                verbosity=verbosity,
             )
 
             self.A1_x = particles.A1_x
@@ -3035,6 +3050,7 @@ class ParticleSet:
             self.A1_m = particles.A1_m
             self.A1_rho = particles.A1_rho
             self.A1_u = particles.A1_u
+            self.A1_T = particles.A1_T
             self.A1_P = particles.A1_P
             self.A1_mat_id = particles.A1_mat
             self.A1_id = np.arange(self.A1_m.shape[0])
@@ -3159,3 +3175,7 @@ class ParticleSet:
                 )
 
                 self.N_particles = self.A1_x.shape[0]
+
+        # 2D position and velocity arrays
+        self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
+        self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
