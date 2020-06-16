@@ -197,7 +197,7 @@ def spin2layer(
     mat_id_L2,
     T_rho_type_id_L2,
     T_rho_args_L2,
-    verbose=1,
+    verbosity=1,
 ):
     """ Compute spining profile of densities for a 2 layer planet.
 
@@ -253,10 +253,6 @@ def spin2layer(
 
     T_rho_args_L2 (list):
         Extra arguments to determine the relation in layer 2.
-        
-    verbose (int):
-        Printing options.
-
 
     Returns
     -------
@@ -275,7 +271,7 @@ def spin2layer(
     profile_p.append(A1_rho_pole)
 
     for i in tqdm(
-        range(num_attempt), desc="Solving spining profile", disable=(not verbose >= 1)
+        range(num_attempt), desc="Solving spining profile", disable=verbosity == 0
     ):
         V_e, V_p = L1_spin._fillV(
             A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, period
@@ -438,7 +434,6 @@ def picle_placement_L2(
             A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L2)
             A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L2)
 
-    # print("Internal energy u computed\n")
     # Smoothing lengths, crudely estimated from the densities
     w_edge = 2  # r/h at which the kernel goes to zero
     A1_h = np.cbrt(N_neig * A1_m / (4 / 3 * np.pi * A1_rho)) / w_edge

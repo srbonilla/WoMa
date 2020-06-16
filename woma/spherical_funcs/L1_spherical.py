@@ -204,7 +204,7 @@ def L1_find_radius(
     T_rho_type_id,
     T_rho_args,
     num_attempt=40,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the total radius of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
@@ -254,7 +254,7 @@ def L1_find_radius(
         )
 
     # Iterate the radius
-    for i in tqdm(range(num_attempt), desc="Finding R given M", disable=(not verbose)):
+    for i in tqdm(range(num_attempt), desc="Finding R given M", disable=verbosity == 0):
         R_try = (R_min + R_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(

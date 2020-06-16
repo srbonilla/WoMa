@@ -311,7 +311,7 @@ def L2_find_radius(
     T_rho_type_id_L2,
     T_rho_args_L2,
     num_attempt=40,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the total radius of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -399,7 +399,7 @@ def L2_find_radius(
 
     if A1_m_enc_1[-1] == 0.0:
         for i in tqdm(
-            range(num_attempt), desc="Finding R given M, R1", disable=(not verbose)
+            range(num_attempt), desc="Finding R given M, R1", disable=verbosity == 0
         ):
             R_try = (R_min + R_max) * 0.5
 
@@ -441,7 +441,7 @@ def L2_find_R1(
     T_rho_type_id_L2,
     T_rho_args_L2,
     num_attempt=40,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the boundary of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -521,7 +521,7 @@ def L2_find_R1(
         raise Exception(e)
 
     for i in tqdm(
-        range(num_attempt), desc="Finding R1 given R, M", disable=(not verbose)
+        range(num_attempt), desc="Finding R1 given R, M", disable=verbosity == 0
     ):
         R1_try = (R1_min + R1_max) * 0.5
 
@@ -564,7 +564,7 @@ def L2_find_R1_R(
     T_rho_type_id_L2,
     T_rho_args_L2,
     num_attempt=40,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the boundary and radius of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -629,7 +629,7 @@ def L2_find_R1_R(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
-            verbose=0,
+            verbosity=0,
         )
     except:
         raise Exception(
@@ -648,7 +648,7 @@ def L2_find_R1_R(
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
-            verbose=0,
+            verbosity=0,
         )
     except:
         raise Exception(
@@ -661,7 +661,7 @@ def L2_find_R1_R(
         )
 
     for i in tqdm(
-        range(num_attempt), desc="Finding R1 and R given M1, M2", disable=(not verbose)
+        range(num_attempt), desc="Finding R1 and R given M1, M2", disable=verbosity == 0
     ):
         R_try = (R_min + R_max) * 0.5
 
@@ -679,7 +679,7 @@ def L2_find_R1_R(
             T_rho_type_id_L2,
             T_rho_args_L2,
             num_attempt=20,
-            verbose=0,
+            verbosity=0,
         )
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(

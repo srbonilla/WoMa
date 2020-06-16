@@ -84,7 +84,7 @@ def multi_get_planet_data(f, A1_param):
     return A1_data
 
 
-def save_planet(planet, Fp_planet):
+def save_planet(planet, Fp_planet, verbosity=1):
     """ Save a planet object to a file.
 
     Parameters
@@ -97,7 +97,8 @@ def save_planet(planet, Fp_planet):
     """
     Fp_planet = utils.check_end(p.Fp_planet, ".hdf5")
 
-    print('Saving "%s"... ' % Fp_planet[-60:], end="")
+    if verbosity >= 1:
+        print('Saving "%s"... ' % Fp_planet[-60:], end="")
     sys.stdout.flush()
 
     with h5py.File(Fp_planet, "w") as f:
@@ -134,7 +135,7 @@ def save_planet(planet, Fp_planet):
         )
 
 
-def load_planet(name, Fp_planet):
+def load_planet(name, Fp_planet, verbosity=1):
     """ Return a new Planet object loaded from a file.
 
     Parameters
@@ -154,8 +155,9 @@ def load_planet(name, Fp_planet):
 
     Fp_planet = utils.check_end(p.Fp_planet, ".hdf5")
 
-    print('Loading "%s"... ' % Fp_planet[-60:], end="")
-    sys.stdout.flush()
+    if verbosity >= 1:
+        print('Loading "%s"... ' % Fp_planet[-60:], end="")
+        sys.stdout.flush()
 
     with h5py.File(Fp_planet, "r") as f:
         (
@@ -205,9 +207,10 @@ def load_planet(name, Fp_planet):
             ],
         )
 
-    print("Done")
-
     p.update_attributes()
-    p.print_info()
+
+    if verbosity >= 1:
+        print("Done")
+        p.print_info()
 
     return p

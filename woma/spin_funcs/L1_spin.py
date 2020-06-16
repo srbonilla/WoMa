@@ -216,7 +216,7 @@ def spin1layer(
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
-    verbose=1,
+    verbosity=1,
 ):
     """ Compute spining profile of densities for a 1 layer planet.
 
@@ -260,9 +260,6 @@ def spin1layer(
 
     T_rho_args_L1 (list):
         Extra arguments to determine the relation in layer 1.
-        
-    vervose (int):
-        Printing options.
 
     Returns
     -------
@@ -281,7 +278,7 @@ def spin1layer(
     profile_p.append(A1_rho_pole)
 
     for i in tqdm(
-        range(num_attempt), desc="Solving spining profile", disable=(not verbose >= 1)
+        range(num_attempt), desc="Solving spining profile", disable=verbosity == 0
     ):
         V_e, V_p = _fillV(A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, period)
         A1_rho_equator, A1_rho_pole = _fillrho1(

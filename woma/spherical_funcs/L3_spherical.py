@@ -360,7 +360,7 @@ def L3_find_radius(
     T_rho_type_id_L3,
     T_rho_args_L3,
     num_attempt=40,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -425,7 +425,8 @@ def L3_find_radius(
 
     """
     if R1 > R2:
-        print("R1 should not be greater than R2")
+        if verbosity >= 1:
+            print("R1 should not be greater than R2")
         return -1
 
     R_min = R2
@@ -483,7 +484,7 @@ def L3_find_radius(
         raise Exception(e)
 
     for i in tqdm(
-        range(num_attempt), desc="Finding R given M, R1, R2", disable=(not verbose)
+        range(num_attempt), desc="Finding R given M, R1, R2", disable=verbosity == 0
     ):
         R_try = (R_min + R_max) * 0.5
 
@@ -533,7 +534,7 @@ def L3_find_R2(
     T_rho_type_id_L3,
     T_rho_args_L3,
     num_attempt=40,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the boundary between layers 2 and 3 of the planet for
         fixed boundary between layers 1 and 2.
@@ -646,7 +647,7 @@ def L3_find_R2(
         return R2_max
 
     for i in tqdm(
-        range(num_attempt), desc="Finding R2 given M, R, R1", disable=(not verbose)
+        range(num_attempt), desc="Finding R2 given M, R, R1", disable=verbosity == 0
     ):
 
         R2_try = (R2_min + R2_max) * 0.5
@@ -697,7 +698,7 @@ def L3_find_R1(
     T_rho_type_id_L3,
     T_rho_args_L3,
     num_attempt=40,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the boundary between layers 2 and 3 of the planet for
         fixed boundary between layers 1 and 2.
@@ -807,7 +808,7 @@ def L3_find_R1(
         raise Exception(e)
 
     for i in tqdm(
-        range(num_attempt), desc="Finding R1 given R, M, R2", disable=(not verbose)
+        range(num_attempt), desc="Finding R1 given R, M, R2", disable=verbosity == 0
     ):
 
         R1_try = (R1_min + R1_max) * 0.5
@@ -859,7 +860,7 @@ def L3_find_R1_R2(
     T_rho_args_L3,
     num_attempt=20,
     num_attempt_2=10,
-    verbose=1,
+    verbosity=1,
 ):
     """ Finder of the boundaries of the planet for a
         fixed moment of inertia factor.
@@ -913,7 +914,6 @@ def L3_find_R1_R2(
 
             T_rho_args_L3 (list):
                 Extra arguments to determine the relation in layer 3.
-
 
         Returns:
             R1, R2 ([float]):
@@ -997,7 +997,7 @@ def L3_find_R1_R2(
         for i in tqdm(
             range(num_attempt),
             desc="Finding R1, R2 given R, M, I_MR2",
-            disable=(not verbose),
+            disable=verbosity == 0,
         ):
             R1_try = (R1_min + R1_max) * 0.5
 
@@ -1019,7 +1019,7 @@ def L3_find_R1_R2(
                 T_rho_type_id_L3,
                 T_rho_args_L3,
                 num_attempt_2,
-                verbose=0,
+                verbosity=0,
             )
 
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
@@ -1048,19 +1048,24 @@ def L3_find_R1_R2(
                 R1_min = R1_try
 
     elif I_MR2 > I_MR2_max:
-        print("Moment of interia fractor is too high, maximum value is:")
-        print(I_MR2_max)
+        if verbosity >= 1:
+            print(
+                "Moment of interia fractor is too high, maximum value is:"
+            )  ### should these be errors?
+            print(I_MR2_max)
         R1_try = 0.0
         R2_try = 0.0
 
     elif I_MR2 < I_MR2_min:
-        print("Moment of interia fractor is too low, minimum value is:")
-        print(I_MR2_min)
+        if verbosity >= 1:
+            print("Moment of interia fractor is too low, minimum value is:")
+            print(I_MR2_min)
         R1_try = 0.0
         R2_try = 0.0
 
     else:
-        print("Something went wrong")
+        if verbosity >= 1:
+            print("Something went wrong")
         R1_try = 0.0
         R2_try = 0.0
 
