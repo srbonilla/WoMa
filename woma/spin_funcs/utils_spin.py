@@ -129,7 +129,6 @@ def _Vgr(r, R, Z, rho):
         Z = R
 
     elif Z > R:
-        # print("exception")
         Z = R
 
     if R == Z:
@@ -337,6 +336,7 @@ def V_spheroid(R, Z):
 
 # Particle placement functions
 
+
 @njit
 def integrand(theta, R_l, Z_l, R_h, Z_h):
 
@@ -480,7 +480,7 @@ def compute_M_shell(R_shell, r_array, rho_e, z_array, rho_p):
 
 
 # main function
-def picle_placement(r_array, rho_e, z_array, rho_p, N, period):
+def picle_placement(r_array, rho_e, z_array, rho_p, N, period, verbosity=1):
 
     """ Particle placement for a spining profile.
 
@@ -555,7 +555,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, period):
     radii = np.arange(0, Re, Re / 1000000)
     rho_e_model = interp1d(r_array, rho_e)
     densities = rho_e_model(radii)
-    particles = seagen.GenSphere(N, radii[1:], densities[1:], verb=0)
+    particles = seagen.GenSphere(N, radii[1:], densities[1:], verbosity=verbosity)
 
     index = np.where(rho_p == 0)[0][0] + 1
     rho_p_model_inv = interp1d(rho_p[:index], z_array[:index])
@@ -586,7 +586,7 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, period):
     A1_Z = []
 
     # all layers but first and last
-    for i in tqdm(range(N_shell.shape[0]), desc="Creating shells..."):
+    for i in tqdm(range(N_shell.shape[0]), desc="Creating shells...", disable=verbosity == 0):
 
         # First shell
         if i == 0:
@@ -771,6 +771,7 @@ def spin_iteration(
     A1_T_rho_args,
     P_1=None,
     P_2=None,
+    verbosity=1,
 ):
 
     # Use correct function
@@ -790,7 +791,7 @@ def spin_iteration(
             A1_mat_id_layer[0],
             A1_T_rho_type_id[0],
             A1_T_rho_args[0],
-            verbose=0,
+            verbosity=verbosity,
         )
 
     elif num_layer == 2:
@@ -813,7 +814,7 @@ def spin_iteration(
             A1_mat_id_layer[1],
             A1_T_rho_type_id[1],
             A1_T_rho_args[1],
-            verbose=0,
+            verbosity=verbosity,
         )
 
     elif num_layer == 3:
@@ -840,7 +841,7 @@ def spin_iteration(
             A1_mat_id_layer[2],
             A1_T_rho_type_id[2],
             A1_T_rho_args[2],
-            verbose=0,
+            verbosity=verbosity,
         )
 
     A1_rho_equator = profile_e[-1]
@@ -866,14 +867,14 @@ def find_min_period(
     P_2=None,
     max_period=10,
     max_iter=30,
-    print_info=False,
+    verbosity=1,
 ):
 
     min_period = 0.0001
     tol = 0.00001
 
     for k in tqdm(
-        range(max_iter), desc="Finding minimum period", disable=not print_info
+        range(max_iter), desc="Finding minimum period", disable=verbosity == 0
     ):
 
         try_period = np.mean([min_period, max_period])
@@ -906,7 +907,7 @@ def find_min_period(
 
     min_period = max_period
 
-    if print_info:
+    if verbosity >= 1:
         print("Minimum period: %.3f hours" % (min_period))
 
     return min_period
