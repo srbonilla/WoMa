@@ -1070,6 +1070,7 @@ class Planet:
         assert self.A1_mat_id_layer[1] is not None
         assert self.A1_T_rho_type_id[0] is not None
         assert self.A1_T_rho_type_id[1] is not None
+        assert self.rho_min is not None
 
         # Store the layer 2 properties
         mat_L2 = self.A1_mat_layer[1]
@@ -1186,6 +1187,7 @@ class Planet:
         assert self.A1_mat_id_layer[1] is not None
         assert self.A1_T_rho_type_id[0] is not None
         assert self.A1_T_rho_type_id[1] is not None
+        assert self.rho_min is not None
 
         # Store the layer 2 properties
         mat_L2 = self.A1_mat_layer[1]
@@ -1392,7 +1394,7 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,            
+            self.num_attempt,
             verbosity=verbosity,
         )
 
@@ -1909,6 +1911,7 @@ class Planet:
         assert self.A1_T_rho_type_id[0] is not None
         assert self.A1_T_rho_type_id[1] is not None
         assert self.A1_T_rho_type_id[2] is not None
+        assert self.rho_min is not None
 
         # Update R_min and R_max without changing the attributes
         R_min = self.R_min
@@ -3084,10 +3087,10 @@ class ParticleSet:
         Array of smoothing lengths for all particles (m).
         
     A1_mat_id : [int]
-        Array of material ids for all particles. See glob_vars.py
+        Array of material IDs for all particles. See the README.md documentation.
         
     A1_id : [int]
-        Array of ids for all particles.        
+        Array of IDs for all particles.        
     """
 
     def __init__(self, planet=None, N_particles=None, N_ngb=48, verbosity=1):

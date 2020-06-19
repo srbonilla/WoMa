@@ -586,7 +586,9 @@ def picle_placement(r_array, rho_e, z_array, rho_p, N, period, verbosity=1):
     A1_Z = []
 
     # all layers but first and last
-    for i in tqdm(range(N_shell.shape[0]), desc="Creating shells...", disable=verbosity == 0):
+    for i in tqdm(
+        range(N_shell.shape[0]), desc="Creating shells...", disable=verbosity == 0
+    ):
 
         # First shell
         if i == 0:
