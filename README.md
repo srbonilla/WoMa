@@ -1,5 +1,4 @@
-WoMa
-====
+![WoMa](http://astro.dur.ac.uk/~cklv53/woma_logo.png "WoMa")
 
 Create models of rotating and non-rotating planets by solving the differential 
 equations for hydrostatic equilibrium, and create initial conditions for 
@@ -126,7 +125,7 @@ These relations are set for each layer with `A1_T_rho_type`:
 
 + `"adiabatic"`: Adiabatic, only available for some EoS.
 + `"power=a"` where `a` is a float: A power law T ~ rho^`a`. 
-    Use `"power=0"` for isothermal.
+    So e.g. `"power=0"` for isothermal.
 
 
 ### Profile generation
