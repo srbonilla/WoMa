@@ -771,7 +771,7 @@ def spin_iteration(
     A1_T_rho_args,
     P_1=None,
     P_2=None,
-    verbosity=1,
+    verbosity=0,
 ):
 
     # Use correct function
