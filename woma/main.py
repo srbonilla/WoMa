@@ -554,7 +554,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L1_given_R_M(self):
+    def gen_prof_L1_given_R_M(self, verbosity=1):
         # Check for necessary input
         assert self.R is not None
         assert self.M is not None
@@ -727,7 +727,7 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L2_find_R_given_M_R1(self):
+    def gen_prof_L2_find_R_given_M_R1(self, verbosity=1):
         # Check for necessary input
         assert self.A1_R_layer[0] is not None
         assert self.R_max is not None
@@ -887,7 +887,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_given_R_M_R1(self):
+    def gen_prof_L2_given_R_M_R1(self, verbosity=1):
         # Check for necessary input
         assert self.R is not None
         assert self.A1_R_layer[0] is not None
@@ -923,7 +923,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_given_prof_L1(self, mat, T_rho_type_id, T_rho_args, rho_min):
+    def gen_prof_L2_given_prof_L1(self, mat, T_rho_type_id, T_rho_args, rho_min, verbosity=1):
         """ Add a second layer (atmosphere) on top of existing 1 layer profiles.
         
         ### Could probably be combined with gen_prof_L3_given_prof_L2()
@@ -1691,7 +1691,7 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L3_given_R_M_R1_R2(self):
+    def gen_prof_L3_given_R_M_R1_R2(self, verbosity=1):
         # Check for necessary input
         assert self.R is not None
         assert self.A1_R_layer[0] is not None
@@ -2669,9 +2669,9 @@ def _L1_spin_planet_fix_M(
 
     # Default max radii
     if R_e_max is None:
-        R_e_max = 4 * planet.R
+        R_e_max = 2 * planet.R
     if R_p_max is None:
-        R_p_max = 4 * planet.R
+        R_p_max = 1.2 * planet.R
 
     f_min = 0.0
     f_max = 1.0
@@ -2930,8 +2930,8 @@ def spin_planet_fix_M(
     R_e_max=None,
     R_p_max=None,
     check_min_period=False,
-    max_iter_1=20,
-    max_iter_2=5,
+    max_iter_1=8,
+    max_iter_2=8,
     tol=0.01,
 ):
     """ Create a spinning planet from a spherical one, keeping the same layer masses.
