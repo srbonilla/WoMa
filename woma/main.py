@@ -923,7 +923,9 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_given_prof_L1(self, mat, T_rho_type_id, T_rho_args, rho_min, verbosity=1):
+    def gen_prof_L2_given_prof_L1(
+        self, mat, T_rho_type_id, T_rho_args, rho_min, verbosity=1
+    ):
         """ Add a second layer (atmosphere) on top of existing 1 layer profiles.
         
         ### Could probably be combined with gen_prof_L3_given_prof_L2()
@@ -2435,6 +2437,13 @@ class SpinPlanet:
         space = 12
         print_try('Planet "%s": ', self.name)
         print_try(
+            "    %s = %.5g  h", (utils.add_whitespace("period", space), self.period)
+        )
+        print_try(
+            "    %s = %.5g  h",
+            (utils.add_whitespace("min_period", space), self.min_period),
+        )
+        print_try(
             "    %s = %.5g  kg  = %.5g  M_earth",
             (utils.add_whitespace("M", space), self.M, self.M / gv.M_earth),
         )
@@ -2547,14 +2556,29 @@ class SpinPlanet:
 
     def spin(
         self,
+        fix_mass=False,
         max_iter_1=12,
         max_iter_2=20,
         tol=0.001,
-        check_min_period=True,
+        check_min_period=True,  ### Is there ever any reason for this to be False?
+        tol_fix_mass=0.01,
         verbosity=1,
     ):
         # Check for necessary input
         self._check_input()
+
+        if fix_mass:
+            return spin_planet_fix_M(
+                self.planet,
+                self.period,
+                num_prof=self.num_prof,
+                R_e_max=self.R_e_max,
+                R_p_max=self.R_p_max,
+                check_min_period=check_min_period,
+                max_iter_1=max_iter_1,
+                max_iter_2=max_iter_2,
+                tol=tol_fix_mass,
+            )
 
         for i in tqdm(
             range(max_iter_1), desc="Computing spinning profile", disable=verbosity == 0
