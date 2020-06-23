@@ -2040,13 +2040,13 @@ class SpinPlanet:
         planet=None,
         period=None,
         num_prof=1000,
-        R_e_max=None,
-        R_p_max=None,
+        R_max_eq=None,
+        R_max_po=None,
     ):
         self.name = name
         self.num_prof = num_prof
-        self.R_e_max = R_e_max
-        self.R_p_max = R_p_max
+        self.R_max_eq = R_max_eq
+        self.R_max_po = R_max_po
         self.period = period
         self.P_1 = None
         self.P_2 = None
@@ -2067,28 +2067,28 @@ class SpinPlanet:
             self.A1_rho = planet.A1_rho
             self.M = planet.M
 
-        # Set default R_e_max and R_p_max
+        # Set default R_max_eq and R_max_po
         assert self.A1_r is not None
-        if self.R_e_max is None:
-            self.R_e_max = 1.5 * np.max(self.A1_r)
+        if self.R_max_eq is None:
+            self.R_max_eq = 1.5 * np.max(self.A1_r)
 
-        if self.R_p_max is None:
-            self.R_p_max = 1.2 * np.max(self.A1_r)
+        if self.R_max_po is None:
+            self.R_max_po = 1.2 * np.max(self.A1_r)
 
         assert self.num_layer in [1, 2, 3]
-        assert self.R_e_max is not None
-        assert self.R_p_max is not None
+        assert self.R_max_eq is not None
+        assert self.R_max_po is not None
 
-        # Initialize A1_rho_equator and A1_rho_pole with the spherical profile
-        self.A1_r_equator = np.linspace(0, self.R_e_max, self.num_prof)
-        self.A1_r_pole = np.linspace(0, self.R_p_max, self.num_prof)
+        # Initialize A1_rho_eq and A1_rho_po with the spherical profile
+        self.A1_r_eq = np.linspace(0, self.R_max_eq, self.num_prof)
+        self.A1_z_po = np.linspace(0, self.R_max_po, self.num_prof)
 
         spherical_model = interp1d(
             self.A1_r, self.A1_rho, bounds_error=False, fill_value=0
         )
 
-        self.A1_rho_equator = spherical_model(self.A1_r_equator)
-        self.A1_rho_pole = spherical_model(self.A1_r_pole)
+        self.A1_rho_eq = spherical_model(self.A1_r_eq)
+        self.A1_rho_po = spherical_model(self.A1_z_po)
 
         # compute pressure and density at points of change of material
         self.P_0 = np.max(self.A1_P)
@@ -2163,137 +2163,125 @@ class SpinPlanet:
     def update_attributes(self):
         # Compute mass of the planet
         self.M = us.compute_spin_planet_M(
-            self.A1_r_equator, self.A1_rho_equator, self.A1_r_pole, self.A1_rho_pole
+            self.A1_r_eq, self.A1_rho_eq, self.A1_z_po, self.A1_rho_po
         )
 
         # Compute escape velocity
-        v_esc_eq, v_esc_p = us.spin_escape_vel(
-            self.A1_r_equator,
-            self.A1_rho_equator,
-            self.A1_r_pole,
-            self.A1_rho_pole,
-            self.period,
+        v_esc_eq, v_esc_po = us.spin_escape_vel(
+            self.A1_r_eq, self.A1_rho_eq, self.A1_z_po, self.A1_rho_po, self.period,
         )
 
-        self.v_escape_pole = v_esc_p
-        self.v_escape_equator = v_esc_eq
+        self.v_escape_po = v_esc_po
+        self.v_escape_eq = v_esc_eq
 
         # Compute equatorial and polar radius
-        self.R_e = np.max(self.A1_r_equator[self.A1_rho_equator > 0.0])
-        self.R_p = np.max(self.A1_r_pole[self.A1_rho_pole > 0.0])
+        self.R_e = np.max(self.A1_r_eq[self.A1_rho_eq > 0.0])
+        self.R_p = np.max(self.A1_z_po[self.A1_rho_po > 0.0])
 
         # Mass per layer, Equatorial and polar temperature and pressure
         if self.num_layer == 1:
-            self.A1_R_layer_equator = np.array([self.R_e])
-            self.A1_R_layer_pole = np.array([self.R_p])
+            self.A1_R_layer_eq = np.array([self.R_e])
+            self.A1_R_layer_po = np.array([self.R_p])
             # Mass
             self.A1_M_layer = np.array([self.M])
             # Pressure and temperature
-            self.A1_P_equator = np.zeros_like(self.A1_r_equator)
-            self.A1_P_pole = np.zeros_like(self.A1_r_pole)
-            self.A1_T_equator = np.zeros_like(self.A1_r_equator)
-            self.A1_T_pole = np.zeros_like(self.A1_r_pole)
-            for i, rho in enumerate(self.A1_rho_equator):
+            self.A1_P_eq = np.zeros_like(self.A1_r_eq)
+            self.A1_P_po = np.zeros_like(self.A1_z_po)
+            self.A1_T_eq = np.zeros_like(self.A1_r_eq)
+            self.A1_T_po = np.zeros_like(self.A1_z_po)
+            for i, rho in enumerate(self.A1_rho_eq):
                 if rho >= self.rho_s:
-                    self.A1_T_equator[i] = T_rho(
+                    self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
                         self.A1_T_rho_args[0],
                         self.A1_mat_id_layer[0],
                     )
-                    self.A1_P_equator[i] = eos.P_T_rho(
-                        self.A1_T_equator[i], rho, self.A1_mat_id_layer[0]
+                    self.A1_P_eq[i] = eos.P_T_rho(
+                        self.A1_T_eq[i], rho, self.A1_mat_id_layer[0]
                     )
-            for i, rho in enumerate(self.A1_rho_pole):
+            for i, rho in enumerate(self.A1_rho_po):
                 if rho >= self.rho_s:
-                    self.A1_T_pole[i] = T_rho(
+                    self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
                         self.A1_T_rho_args[0],
                         self.A1_mat_id_layer[0],
                     )
-                    self.A1_P_pole[i] = eos.P_T_rho(
-                        self.A1_T_pole[i], rho, self.A1_mat_id_layer[0]
+                    self.A1_P_po[i] = eos.P_T_rho(
+                        self.A1_T_po[i], rho, self.A1_mat_id_layer[0]
                     )
             # Mat_id
-            self.A1_mat_id_equator = (
-                np.ones(self.A1_r_equator.shape) * self.A1_mat_id_layer[0]
-            )
-            self.A1_mat_id_pole = (
-                np.ones(self.A1_r_pole.shape) * self.A1_mat_id_layer[0]
-            )
+            self.A1_mat_id_eq = np.ones(self.A1_r_eq.shape) * self.A1_mat_id_layer[0]
+            self.A1_mat_id_po = np.ones(self.A1_z_po.shape) * self.A1_mat_id_layer[0]
 
         elif self.num_layer == 2:
-            self.R_1_equator = np.max(
-                self.A1_r_equator[self.A1_rho_equator >= self.rho_1]
-            )
-            self.A1_R_layer_equator = np.array([self.R_1_equator, self.R_e])
-            self.R_1_pole = np.max(self.A1_r_pole[self.A1_rho_pole >= self.rho_1])
-            self.A1_R_layer_pole = np.array([self.R_1_pole, self.R_p])
-            self.A1_mat_id_equator = (
-                (self.A1_rho_equator >= self.rho_1) * self.A1_mat_id_layer[0]
-                + (self.A1_rho_equator < self.rho_1) * self.A1_mat_id_layer[1]
-            )
-            self.A1_mat_id_pole = (
-                (self.A1_rho_pole >= self.rho_1) * self.A1_mat_id_layer[0]
-                + (self.A1_rho_pole < self.rho_1) * self.A1_mat_id_layer[1]
-            )
+            self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_1])
+            self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_e])
+            self.R_1_po = np.max(self.A1_z_po[self.A1_rho_po >= self.rho_1])
+            self.A1_R_layer_po = np.array([self.R_1_po, self.R_p])
+            self.A1_mat_id_eq = (self.A1_rho_eq >= self.rho_1) * self.A1_mat_id_layer[
+                0
+            ] + (self.A1_rho_eq < self.rho_1) * self.A1_mat_id_layer[1]
+            self.A1_mat_id_po = (self.A1_rho_po >= self.rho_1) * self.A1_mat_id_layer[
+                0
+            ] + (self.A1_rho_po < self.rho_1) * self.A1_mat_id_layer[1]
 
-            self.A1_mat_id_equator[self.A1_rho_equator <= 0] = -1
-            self.A1_mat_id_pole[self.A1_rho_pole <= 0] = -1
+            self.A1_mat_id_eq[self.A1_rho_eq <= 0] = -1
+            self.A1_mat_id_po[self.A1_rho_po <= 0] = -1
 
-            self.A1_P_equator = np.zeros_like(self.A1_r_equator)
-            self.A1_P_pole = np.zeros_like(self.A1_r_pole)
-            self.A1_T_equator = np.zeros_like(self.A1_r_equator)
-            self.A1_T_pole = np.zeros_like(self.A1_r_pole)
+            self.A1_P_eq = np.zeros_like(self.A1_r_eq)
+            self.A1_P_po = np.zeros_like(self.A1_z_po)
+            self.A1_T_eq = np.zeros_like(self.A1_r_eq)
+            self.A1_T_po = np.zeros_like(self.A1_z_po)
 
-            for i, rho in enumerate(self.A1_rho_equator):
+            for i, rho in enumerate(self.A1_rho_eq):
                 if rho >= self.rho_1:
-                    self.A1_T_equator[i] = T_rho(
+                    self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
                         self.A1_T_rho_args[0],
                         self.A1_mat_id_layer[0],
                     )
-                    self.A1_P_equator[i] = eos.P_T_rho(
-                        self.A1_T_equator[i], rho, self.A1_mat_id_layer[0]
+                    self.A1_P_eq[i] = eos.P_T_rho(
+                        self.A1_T_eq[i], rho, self.A1_mat_id_layer[0]
                     )
                 elif rho >= self.rho_s:
-                    self.A1_T_equator[i] = T_rho(
+                    self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[1],
                         self.A1_T_rho_args[1],
                         self.A1_mat_id_layer[1],
                     )
-                    self.A1_P_equator[i] = eos.P_T_rho(
-                        self.A1_T_equator[i], rho, self.A1_mat_id_layer[1]
+                    self.A1_P_eq[i] = eos.P_T_rho(
+                        self.A1_T_eq[i], rho, self.A1_mat_id_layer[1]
                     )
-            for i, rho in enumerate(self.A1_rho_pole):
+            for i, rho in enumerate(self.A1_rho_po):
                 if rho >= self.rho_1:
-                    self.A1_T_pole[i] = T_rho(
+                    self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
                         self.A1_T_rho_args[0],
                         self.A1_mat_id_layer[0],
                     )
-                    self.A1_P_pole[i] = eos.P_T_rho(
-                        self.A1_T_pole[i], rho, self.A1_mat_id_layer[0]
+                    self.A1_P_po[i] = eos.P_T_rho(
+                        self.A1_T_po[i], rho, self.A1_mat_id_layer[0]
                     )
                 elif rho >= self.rho_s:
-                    self.A1_T_pole[i] = T_rho(
+                    self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[1],
                         self.A1_T_rho_args[1],
                         self.A1_mat_id_layer[1],
                     )
-                    self.A1_P_pole[i] = eos.P_T_rho(
-                        self.A1_T_pole[i], rho, self.A1_mat_id_layer[1]
+                    self.A1_P_po[i] = eos.P_T_rho(
+                        self.A1_T_po[i], rho, self.A1_mat_id_layer[1]
                     )
 
-            r_temp = np.copy(self.A1_r_equator)
-            z_temp = np.copy(self.A1_r_pole)
-            rho_r_temp = np.copy(self.A1_rho_equator)
-            rho_z_temp = np.copy(self.A1_rho_pole)
+            r_temp = np.copy(self.A1_r_eq)
+            z_temp = np.copy(self.A1_z_po)
+            rho_r_temp = np.copy(self.A1_rho_eq)
+            rho_z_temp = np.copy(self.A1_rho_po)
             rho_r_temp[rho_r_temp < self.rho_1] = 0.0
             rho_z_temp[rho_z_temp < self.rho_1] = 0.0
             M1 = us.compute_spin_planet_M(r_temp, rho_r_temp, z_temp, rho_z_temp)
@@ -2303,116 +2291,110 @@ class SpinPlanet:
             self.A1_M_layer = np.array([M1, M2])
 
         elif self.num_layer == 3:
-            self.R_1_equator = np.max(
-                self.A1_r_equator[self.A1_rho_equator >= self.rho_1]
-            )
-            self.R_2_equator = np.max(
-                self.A1_r_equator[self.A1_rho_equator >= self.rho_2]
-            )
-            self.A1_R_layer_equator = np.array(
-                [self.R_1_equator, self.R_2_equator, self.R_e]
-            )
-            self.R_1_pole = np.max(self.A1_r_pole[self.A1_rho_pole >= self.rho_1])
-            self.R_2_pole = np.max(self.A1_r_pole[self.A1_rho_pole >= self.rho_2])
-            self.A1_R_layer_pole = np.array([self.R_1_pole, self.R_2_pole, self.R_p])
-            self.A1_mat_id_equator = (
-                (self.A1_rho_equator >= self.rho_1) * self.A1_mat_id_layer[0]
+            self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_1])
+            self.R_2_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_2])
+            self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_2_eq, self.R_e])
+            self.R_1_po = np.max(self.A1_z_po[self.A1_rho_po >= self.rho_1])
+            self.R_2_po = np.max(self.A1_z_po[self.A1_rho_po >= self.rho_2])
+            self.A1_R_layer_po = np.array([self.R_1_po, self.R_2_po, self.R_p])
+            self.A1_mat_id_eq = (
+                (self.A1_rho_eq >= self.rho_1) * self.A1_mat_id_layer[0]
                 + np.logical_and(
-                    self.A1_rho_equator < self.rho_1, self.A1_rho_equator >= self.rho_2
+                    self.A1_rho_eq < self.rho_1, self.A1_rho_eq >= self.rho_2
                 )
                 * self.A1_mat_id_layer[1]
-                + (self.A1_rho_equator < self.rho_2) * self.A1_mat_id_layer[2]
+                + (self.A1_rho_eq < self.rho_2) * self.A1_mat_id_layer[2]
             )
-            self.A1_mat_id_equator = (
-                (self.A1_rho_pole >= self.rho_1) * self.A1_mat_id_layer[0]
+            self.A1_mat_id_eq = (
+                (self.A1_rho_po >= self.rho_1) * self.A1_mat_id_layer[0]
                 + np.logical_and(
-                    self.A1_rho_pole < self.rho_1, self.A1_rho_pole >= self.rho_2
+                    self.A1_rho_po < self.rho_1, self.A1_rho_po >= self.rho_2
                 )
                 * self.A1_mat_id_layer[1]
-                + (self.A1_rho_pole < self.rho_2) * self.A1_mat_id_layer[2]
+                + (self.A1_rho_po < self.rho_2) * self.A1_mat_id_layer[2]
             )
 
-            self.A1_mat_id_equator[self.A1_rho_equator <= 0] = -1
-            self.A1_mat_id_pole[self.A1_rho_pole <= 0] = -1
+            self.A1_mat_id_eq[self.A1_rho_eq <= 0] = -1
+            self.A1_mat_id_po[self.A1_rho_po <= 0] = -1
 
-            self.A1_P_equator = np.zeros_like(self.A1_r_equator)
-            self.A1_P_pole = np.zeros_like(self.A1_r_pole)
-            self.A1_T_equator = np.zeros_like(self.A1_r_equator)
-            self.A1_T_pole = np.zeros_like(self.A1_r_pole)
+            self.A1_P_eq = np.zeros_like(self.A1_r_eq)
+            self.A1_P_po = np.zeros_like(self.A1_z_po)
+            self.A1_T_eq = np.zeros_like(self.A1_r_eq)
+            self.A1_T_po = np.zeros_like(self.A1_z_po)
 
-            for i, rho in enumerate(self.A1_rho_equator):
+            for i, rho in enumerate(self.A1_rho_eq):
                 if rho >= self.rho_1:
-                    self.A1_T_equator[i] = T_rho(
+                    self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
                         self.A1_T_rho_args[0],
                         self.A1_mat_id_layer[0],
                     )
-                    self.A1_P_equator[i] = eos.P_T_rho(
-                        self.A1_T_equator[i], rho, self.A1_mat_id_layer[0]
+                    self.A1_P_eq[i] = eos.P_T_rho(
+                        self.A1_T_eq[i], rho, self.A1_mat_id_layer[0]
                     )
                 elif rho >= self.rho_2:
-                    self.A1_T_equator[i] = T_rho(
+                    self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[1],
                         self.A1_T_rho_args[1],
                         self.A1_mat_id_layer[1],
                     )
-                    self.A1_P_equator[i] = eos.P_T_rho(
-                        self.A1_T_equator[i], rho, self.A1_mat_id_layer[1]
+                    self.A1_P_eq[i] = eos.P_T_rho(
+                        self.A1_T_eq[i], rho, self.A1_mat_id_layer[1]
                     )
                 elif rho >= self.rho_s:
-                    self.A1_T_equator[i] = T_rho(
+                    self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[2],
                         self.A1_T_rho_args[2],
                         self.A1_mat_id_layer[2],
                     )
-                    self.A1_P_equator[i] = eos.P_T_rho(
-                        self.A1_T_equator[i], rho, self.A1_mat_id_layer[2]
+                    self.A1_P_eq[i] = eos.P_T_rho(
+                        self.A1_T_eq[i], rho, self.A1_mat_id_layer[2]
                     )
-            for i, rho in enumerate(self.A1_rho_pole):
+            for i, rho in enumerate(self.A1_rho_po):
                 if rho >= self.rho_1:
-                    self.A1_T_pole[i] = T_rho(
+                    self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
                         self.A1_T_rho_args[0],
                         self.A1_mat_id_layer[0],
                     )
-                    self.A1_P_pole[i] = eos.P_T_rho(
-                        self.A1_T_pole[i], rho, self.A1_mat_id_layer[0]
+                    self.A1_P_po[i] = eos.P_T_rho(
+                        self.A1_T_po[i], rho, self.A1_mat_id_layer[0]
                     )
                 elif rho >= self.rho_2:
-                    self.A1_T_pole[i] = T_rho(
+                    self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[1],
                         self.A1_T_rho_args[1],
                         self.A1_mat_id_layer[1],
                     )
-                    self.A1_P_pole[i] = eos.P_T_rho(
-                        self.A1_T_pole[i], rho, self.A1_mat_id_layer[1]
+                    self.A1_P_po[i] = eos.P_T_rho(
+                        self.A1_T_po[i], rho, self.A1_mat_id_layer[1]
                     )
                 elif rho >= self.rho_s:
-                    self.A1_T_pole[i] = T_rho(
+                    self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[2],
                         self.A1_T_rho_args[2],
                         self.A1_mat_id_layer[2],
                     )
-                    self.A1_P_pole[i] = eos.P_T_rho(
-                        self.A1_T_pole[i], rho, self.A1_mat_id_layer[2]
+                    self.A1_P_po[i] = eos.P_T_rho(
+                        self.A1_T_po[i], rho, self.A1_mat_id_layer[2]
                     )
 
-            r_temp = np.copy(self.A1_r_equator)
-            z_temp = np.copy(self.A1_r_pole)
-            rho_r_temp = np.copy(self.A1_rho_equator)
-            rho_z_temp = np.copy(self.A1_rho_pole)
+            r_temp = np.copy(self.A1_r_eq)
+            z_temp = np.copy(self.A1_z_po)
+            rho_r_temp = np.copy(self.A1_rho_eq)
+            rho_z_temp = np.copy(self.A1_rho_po)
             rho_r_temp[rho_r_temp < self.rho_1] = 0.0
             rho_z_temp[rho_z_temp < self.rho_1] = 0.0
             M1 = us.compute_spin_planet_M(r_temp, rho_r_temp, z_temp, rho_z_temp)
 
-            rho_r_temp = np.copy(self.A1_rho_equator)
-            rho_z_temp = np.copy(self.A1_rho_pole)
+            rho_r_temp = np.copy(self.A1_rho_eq)
+            rho_z_temp = np.copy(self.A1_rho_po)
             rho_r_temp[rho_r_temp < self.rho_2] = 0.0
             rho_z_temp[rho_z_temp < self.rho_2] = 0.0
             M2 = us.compute_spin_planet_M(r_temp, rho_r_temp, z_temp, rho_z_temp)
@@ -2422,8 +2404,8 @@ class SpinPlanet:
 
             self.A1_M_layer = np.array([M1, M2, M3])
 
-        self.T_0 = self.A1_T_equator[0]
-        self.T_s = self.A1_T_equator[self.A1_T_equator > 0][-1]
+        self.T_0 = self.A1_T_eq[0]
+        self.T_s = self.A1_T_eq[self.A1_T_eq > 0][-1]
 
     def print_info(self):
         """ Print the main properties. """
@@ -2449,11 +2431,11 @@ class SpinPlanet:
         )
         print_try(
             "    %s = %.5g  m  = %.5g  R_earth",
-            (utils.add_whitespace("R_equator", space), self.R_e, self.R_e / gv.R_earth),
+            (utils.add_whitespace("R_eq", space), self.R_e, self.R_e / gv.R_earth),
         )
         print_try(
             "    %s = %.5g  m  = %.5g  R_earth",
-            (utils.add_whitespace("R_pole", space), self.R_p, self.R_p / gv.R_earth),
+            (utils.add_whitespace("R_po", space), self.R_p, self.R_p / gv.R_earth),
         )
         print_try(
             "    %s = %s ",
@@ -2473,14 +2455,14 @@ class SpinPlanet:
             "    %s = %s  R_earth",
             (
                 utils.add_whitespace("R_layer_eq", space),
-                utils.format_array_string(self.A1_R_layer_equator / gv.R_earth, "%.5g"),
+                utils.format_array_string(self.A1_R_layer_eq / gv.R_earth, "%.5g"),
             ),
         )
         print_try(
             "    %s = %s  R_earth",
             (
-                utils.add_whitespace("R_layer_pole", space),
-                utils.format_array_string(self.A1_R_layer_pole / gv.R_earth, "%.5g"),
+                utils.add_whitespace("R_layer_po", space),
+                utils.format_array_string(self.A1_R_layer_po / gv.R_earth, "%.5g"),
             ),
         )
         print_try(
@@ -2534,10 +2516,10 @@ class SpinPlanet:
 
         min_period = us.find_min_period(
             self.num_layer,
-            self.A1_r_equator,
-            self.A1_rho_equator,
-            self.A1_r_pole,
-            self.A1_rho_pole,
+            self.A1_r_eq,
+            self.A1_rho_eq,
+            self.A1_z_po,
+            self.A1_rho_po,
             self.P_0,
             self.P_s,
             self.rho_0,
@@ -2572,8 +2554,8 @@ class SpinPlanet:
                 self.planet,
                 self.period,
                 num_prof=self.num_prof,
-                R_e_max=self.R_e_max,
-                R_p_max=self.R_p_max,
+                R_max_eq=self.R_max_eq,
+                R_max_po=self.R_max_po,
                 check_min_period=check_min_period,
                 max_iter_1=max_iter_1,
                 max_iter_2=max_iter_2,
@@ -2596,13 +2578,13 @@ class SpinPlanet:
                 period_iter = self.period
 
             # compute profile
-            A1_rho_equator, A1_rho_pole = us.spin_iteration(
+            A1_rho_eq, A1_rho_po = us.spin_iteration(
                 period_iter,
                 self.num_layer,
-                self.A1_r_equator,
-                self.A1_rho_equator,
-                self.A1_r_pole,
-                self.A1_rho_pole,
+                self.A1_r_eq,
+                self.A1_rho_eq,
+                self.A1_z_po,
+                self.A1_rho_po,
                 self.P_0,
                 self.P_s,
                 self.rho_0,
@@ -2615,13 +2597,11 @@ class SpinPlanet:
             )
 
             # convergence criterion
-            criterion = np.mean(
-                np.abs(A1_rho_equator - self.A1_rho_equator) / self.rho_s
-            )
+            criterion = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
 
             # save results
-            self.A1_rho_equator = A1_rho_equator
-            self.A1_rho_pole = A1_rho_pole
+            self.A1_rho_eq = A1_rho_eq
+            self.A1_rho_po = A1_rho_po
 
             # check if there is convergence
             if criterion < tol:
@@ -2645,8 +2625,8 @@ def _L1_spin_planet_fix_M(
     planet,
     period,
     num_prof=1000,
-    R_e_max=None,
-    R_p_max=None,
+    R_max_eq=None,
+    R_max_po=None,
     check_min_period=False,
     max_iter_1=20,
     tol=0.001,
@@ -2667,10 +2647,10 @@ def _L1_spin_planet_fix_M(
     num_prof : int
         Number of grid points used in the 1D equatorial and polar profiles.
 
-    R_e_max : float
+    R_max_eq : float
         Maximum equatorial radius (m). Defaults to 4 times the spherical radius.
         
-    R_p_max : float
+    R_max_po : float
         Maximum polar radius (m). Defaults to 2 times the spherical radius.
         
     check_min_period : bool
@@ -2695,10 +2675,10 @@ def _L1_spin_planet_fix_M(
     assert planet.num_layer == 1
 
     # Default max radii
-    if R_e_max is None:
-        R_e_max = 2 * planet.R
-    if R_p_max is None:
-        R_p_max = 1.2 * planet.R
+    if R_max_eq is None:
+        R_max_eq = 2 * planet.R
+    if R_max_po is None:
+        R_max_po = 1.2 * planet.R
 
     f_min = 0.0
     f_max = 1.0
@@ -2721,7 +2701,7 @@ def _L1_spin_planet_fix_M(
         new_planet.gen_prof_L1_find_M_given_R(verbosity=0)
 
         spin_planet = SpinPlanet(
-            planet=new_planet, period=period, R_e_max=R_e_max, R_p_max=R_p_max
+            planet=new_planet, period=period, R_max_eq=R_max_eq, R_max_po=R_max_po
         )
 
         spin_planet.spin(check_min_period=check_min_period, verbosity=0)
@@ -2749,8 +2729,8 @@ def _L2_spin_planet_fix_M(
     planet,
     period,
     num_prof=1000,
-    R_e_max=None,
-    R_p_max=None,
+    R_max_eq=None,
+    R_max_po=None,
     check_min_period=False,
     max_iter_1=20,
     max_iter_2=5,
@@ -2772,10 +2752,10 @@ def _L2_spin_planet_fix_M(
     num_prof : int
         Number of grid points used in the 1D equatorial and polar profiles.
 
-    R_e_max : float
+    R_max_eq : float
         Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
         
-    R_p_max : float
+    R_max_po : float
         Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
         
     check_min_period : bool
@@ -2803,10 +2783,10 @@ def _L2_spin_planet_fix_M(
     assert planet.num_layer == 2
 
     # Default max radii
-    if R_e_max is None:
-        R_e_max = 2 * planet.R
-    if R_p_max is None:
-        R_p_max = 1.2 * planet.R
+    if R_max_eq is None:
+        R_max_eq = 2 * planet.R
+    if R_max_po is None:
+        R_max_po = 1.2 * planet.R
 
     M = planet.M
 
@@ -2818,8 +2798,8 @@ def _L2_spin_planet_fix_M(
         planet=new_planet,
         period=period,
         num_prof=num_prof,
-        R_e_max=R_e_max,
-        R_p_max=R_p_max,
+        R_max_eq=R_max_eq,
+        R_max_po=R_max_po,
     )
 
     spin_planet.spin(check_min_period=check_min_period, verbosity=0)
@@ -2855,8 +2835,8 @@ def _L2_spin_planet_fix_M(
                 planet=new_planet,
                 period=period,
                 num_prof=num_prof,
-                R_e_max=R_e_max,
-                R_p_max=R_p_max,
+                R_max_eq=R_max_eq,
+                R_max_po=R_max_po,
             )
 
             spin_planet.spin(check_min_period=check_min_period, verbosity=0)
@@ -2913,8 +2893,8 @@ def _L2_spin_planet_fix_M(
                 planet=new_planet,
                 period=period,
                 num_prof=num_prof,
-                R_e_max=R_e_max,
-                R_p_max=R_p_max,
+                R_max_eq=R_max_eq,
+                R_max_po=R_max_po,
             )
 
             spin_planet.spin(verbosity=0, check_min_period=check_min_period)
@@ -2954,8 +2934,8 @@ def spin_planet_fix_M(
     planet,
     period,
     num_prof=1000,
-    R_e_max=None,
-    R_p_max=None,
+    R_max_eq=None,
+    R_max_po=None,
     check_min_period=False,
     max_iter_1=8,
     max_iter_2=8,
@@ -2974,10 +2954,10 @@ def spin_planet_fix_M(
     num_prof : int
         Number of grid points used in the 1D equatorial and polar profiles.
 
-    R_e_max : float
+    R_max_eq : float
         Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
         
-    R_p_max : float
+    R_max_po : float
         Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
         
     check_min_period : bool
@@ -3002,10 +2982,10 @@ def spin_planet_fix_M(
     """
 
     # Default max radii
-    if R_e_max is None:
-        R_e_max = 2 * planet.R
-    if R_p_max is None:
-        R_p_max = 1.2 * planet.R
+    if R_max_eq is None:
+        R_max_eq = 2 * planet.R
+    if R_max_po is None:
+        R_max_po = 1.2 * planet.R
 
     if planet.num_layer == 1:
 
@@ -3013,8 +2993,8 @@ def spin_planet_fix_M(
             planet,
             period,
             num_prof,
-            R_e_max,
-            R_p_max,
+            R_max_eq,
+            R_max_po,
             check_min_period,
             max_iter_1,
             tol,
@@ -3026,8 +3006,8 @@ def spin_planet_fix_M(
             planet,
             period,
             num_prof,
-            R_e_max,
-            R_p_max,
+            R_max_eq,
+            R_max_po,
             check_min_period,
             max_iter_1,
             max_iter_2,
@@ -3176,10 +3156,10 @@ class ParticleSet:
                     self.A1_mat_id,
                     self.A1_id,
                 ) = L1_spin.picle_placement_L1(
-                    planet.A1_r_equator,
-                    planet.A1_rho_equator,
-                    planet.A1_r_pole,
-                    planet.A1_rho_pole,
+                    planet.A1_r_eq,
+                    planet.A1_rho_eq,
+                    planet.A1_z_po,
+                    planet.A1_rho_po,
                     planet.period,
                     self.N_particles,
                     planet.A1_mat_id_layer[0],
@@ -3211,10 +3191,10 @@ class ParticleSet:
                     self.A1_mat_id,
                     self.A1_id,
                 ) = L2_spin.picle_placement_L2(
-                    planet.A1_r_equator,
-                    planet.A1_rho_equator,
-                    planet.A1_r_pole,
-                    planet.A1_rho_pole,
+                    planet.A1_r_eq,
+                    planet.A1_rho_eq,
+                    planet.A1_z_po,
+                    planet.A1_rho_po,
                     planet.period,
                     self.N_particles,
                     rho_1,
@@ -3251,10 +3231,10 @@ class ParticleSet:
                     self.A1_mat_id,
                     self.A1_id,
                 ) = L3_spin.picle_placement_L3(
-                    planet.A1_r_equator,
-                    planet.A1_rho_equator,
-                    planet.A1_r_pole,
-                    planet.A1_rho_pole,
+                    planet.A1_r_eq,
+                    planet.A1_rho_eq,
+                    planet.A1_z_po,
+                    planet.A1_rho_po,
                     planet.period,
                     planet.N_particles,
                     rho_1,
