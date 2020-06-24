@@ -18,7 +18,7 @@ from woma.eos.T_rho import T_rho
 
 
 @njit
-def _fillrho2(
+def rho_eq_po_from_V_L2(
     A1_r_eq,
     A1_V_eq,
     A1_r_po,
@@ -40,57 +40,57 @@ def _fillrho2(
 
     Parameters
     ----------
-    A1_r_eq ([float]):
+    A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_V_eq ([float]):
+    A1_V_eq : [float]
         Equatorial profile of potential (SI).
 
-    A1_r_po ([float]):
+    A1_r_po : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_V_po ([float]):
+    A1_V_po : [float]
         Polar profile of potential (SI).
 
-    P_c (float):
+    P_c : float:
         Pressure at the center of the planet (SI).
 
-    P_i (float):
+    P_i : float:
         Pressure at the boundary of the planet (SI).
 
-    P_s (float):
+    P_s : float:
         Pressure at the surface of the planet (SI).
 
-    rho_c (float):
+    rho_c : float:
         Density at the center of the planet (SI).
 
-    rho_s (float):
+    rho_s : float:
         Density at the surface of the planet (SI).
 
-    mat_id_L1 (int):
+    mat_id_L1 : int:
         Material id for layer 1.
 
-    T_rho_type_id_L1 (int)
+    T_rho_type_id_L1 : int
         Relation between T and rho to be used in layer 1.
 
-    T_rho_args_L1 (list):
+    T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
-    mat_id_L2 (int):
+    mat_id_L2 : int:
         Material id for layer 2.
 
-    T_rho_type_id_L2 (int)
+    T_rho_type_id_L2 : int
         Relation between T and rho to be used in layer 2.
 
-    T_rho_args_L2 (list):
+    T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
 
     Returns
     -------
-    A1_rho_eq ([float]):
+    A1_rho_eq : [float]
         Equatorial profile of densities (SI).
 
-    A1_rho_po ([float]):
+    A1_rho_po : [float]
         Polar profile of densities (SI).
     """
 
@@ -179,7 +179,7 @@ def _fillrho2(
     return A1_rho_eq, A1_rho_po
 
 
-def spin2layer(
+def spin_L2(
     num_attempt,
     A1_r_eq,
     A1_rho_eq,
@@ -203,80 +203,80 @@ def spin2layer(
 
     Parameters
     ----------
-    num_attempt (int):
+    num_attempt : int:
         Number of num_attempt to run.
 
-    A1_r_eq ([float]):
+    A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_rho_eq ([float]):
+    A1_rho_eq : [float]
         Densitity values at corresponding A1_r_eq points (SI).
 
-    A1_r_po ([float]):
+    A1_r_po : [float]
         Points at polar profile where the solution is defined (SI).
 
-    A1_rho_po ([float]):
+    A1_rho_po : [float]
         Densitity values at corresponding A1_r_po points (SI).
 
-    period (float):
+    period : float:
         Period of the planet (hours).
 
-    P_c (float):
+    P_c : float:
         Pressure at the center of the planet (SI).
 
-    P_i (float):
+    P_i : float:
         Pressure at the boundary of the planet (SI).
 
-    P_s (float):
+    P_s : float:
         Pressure at the surface of the planet (SI).
 
-    rho_c (float):
+    rho_c : float:
         Density at the center of the planet (SI).
 
-    rho_s (float):
+    rho_s : float:
         Density at the surface of the planet (SI).
 
-    mat_id_L1 (int):
+    mat_id_L1 : int:
         Material id for layer 1.
 
-    T_rho_type_id_L1 (int)
+    T_rho_type_id_L1 : int
         Relation between T and rho to be used in layer 1.
 
-    T_rho_args_L1 (list):
+    T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
-    mat_id_L2 (int):
+    mat_id_L2 : int:
         Material id for layer 2.
 
-    T_rho_type_id_L2 (int)
+    T_rho_type_id_L2 : int
         Relation between T and rho to be used in layer 2.
 
-    T_rho_args_L2 (list):
+    T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
 
     Returns
     -------
-    profile_e ([[float]]):
+    profile_eq ([[float]]):
         List of the num_attempt of the equatorial density profile (SI).
 
-    profile_p ([[float]]):
+    profile_po ([[float]]):
         List of the num_attempt of the polar density profile (SI).
 
     """
 
-    profile_e = []
-    profile_p = []
+    profile_eq = []
+    profile_po = []
 
-    profile_e.append(A1_rho_eq)
-    profile_p.append(A1_rho_po)
+    profile_eq.append(A1_rho_eq)
+    profile_po.append(A1_rho_po)
 
     for i in tqdm(
         range(num_attempt), desc="Solving spining profile", disable=verbosity == 0
     ):
-        A1_V_eq, A1_V_po = L1_spin._fillV(
+        A1_V_eq, A1_V_po = L1_spin.V_eq_po_from_rho(
             A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period
         )
-        A1_rho_eq, A1_rho_po = _fillrho2(
+        A1_rho_eq, A1_rho_po = rho_eq_po_from_V_L2(
             A1_r_eq,
             A1_V_eq,
             A1_r_po,
@@ -293,10 +293,10 @@ def spin2layer(
             T_rho_type_id_L2,
             T_rho_args_L2,
         )
-        profile_e.append(A1_rho_eq)
-        profile_p.append(A1_rho_po)
+        profile_eq.append(A1_rho_eq)
+        profile_po.append(A1_rho_po)
 
-    return profile_e, profile_p
+    return profile_eq, profile_po
 
 
 def picle_placement_L2(
@@ -320,81 +320,81 @@ def picle_placement_L2(
     Parameters
     ----------
 
-    A1_r_eq ([float]):
+    A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_rho_eq ([float]):
+    A1_rho_eq : [float]
         Equatorial profile of densities (SI).
 
-    A1_r_po ([float]):
+    A1_r_po : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_rho_po ([float]):
+    A1_rho_po : [float]
         Polar profile of densities (SI).
 
-    period (float):
+    period : float:
         Period of the planet (hours).
 
-    N (int):
+    N : int:
         Number of particles.
         
-    rho_i (float):
+    rho_i : float:
         Density at the boundary between layers 1 and 2 (SI).
 
-    mat_id_L1 (int):
+    mat_id_L1 : int:
         Material id for layer 1.
 
-    T_rho_type_id_L1 (int)
+    T_rho_type_id_L1 : int
         Relation between T and rho to be used in layer 1.
 
-    T_rho_args_L1 (list):
+    T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
         
-    mat_id_L2 (int):
+    mat_id_L2 : int:
         Material id for layer 2.
 
-    T_rho_type_id_L2 (int)
+    T_rho_type_id_L2 : int
         Relation between T and rho to be used in layer 2.
 
-    T_rho_args_L2 (list):
+    T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
 
-    N_ngb (int):
+    N_ngb : int:
         Number of neighbors in the SPH simulation.
         
     Returns
     -------
-    A1_x ([float]):
+    A1_x : [float]
         Position x of each particle (SI).
 
-    A1_y ([float]):
+    A1_y : [float]
         Position y of each particle (SI).
 
-    A1_z ([float]):
+    A1_z : [float]
         Position z of each particle (SI).
 
-    A1_vx ([float]):
+    A1_vx : [float]
         Velocity in x of each particle (SI).
 
-    A1_vy ([float]):
+    A1_vy : [float]
         Velocity in y of each particle (SI).
 
-    A1_vz ([float]):
+    A1_vz : [float]
         Velocity in z of each particle (SI).
 
-    A1_m ([float]):
+    A1_m : [float]
         Mass of every particle (SI).
 
-    A1_rho ([float]):
+    A1_rho : [float]
         Density for every particle (SI).
         
-    A1_u ([float]):
+    A1_u : [float]
         Internal energy for every particle (SI).
 
-    A1_P ([float]):
+    A1_P : [float]
         Pressure for every particle (SI).
         
-    A1_h ([float]):
+    A1_h : [float]
         Smoothing lenght for every particle (SI).
 
     A1_mat_id ([int]):

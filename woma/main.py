@@ -242,7 +242,7 @@ class Planet:
         assert self.M is not None
         assert self.A1_R_layer[-1] is not None
 
-        self.v_escape = np.sqrt(2 * gv.G * self.M / self.A1_R_layer[-1])
+        self.v_esc = np.sqrt(2 * gv.G * self.M / self.A1_R_layer[-1])
 
     def update_attributes(self):
         """ Set all planet information after making the profiles. """
@@ -2171,8 +2171,8 @@ class SpinPlanet:
             self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po, self.period,
         )
 
-        self.v_escape_po = v_esc_po
-        self.v_escape_eq = v_esc_eq
+        self.v_esc_po = v_esc_po
+        self.v_esc_eq = v_esc_eq
 
         # Compute equatorial and polar radius
         self.R_e = np.max(self.A1_r_eq[self.A1_rho_eq > 0.0])
@@ -2422,10 +2422,6 @@ class SpinPlanet:
             "    %s = %.5g  h", (utils.add_whitespace("period", space), self.period)
         )
         print_try(
-            "    %s = %.5g  h",
-            (utils.add_whitespace("min_period", space), self.min_period),
-        )
-        print_try(
             "    %s = %.5g  kg  = %.5g  M_earth",
             (utils.add_whitespace("M", space), self.M, self.M / gv.M_earth),
         )
@@ -2538,12 +2534,12 @@ class SpinPlanet:
 
     def spin(
         self,
-        fix_mass=False,
-        max_iter_1=12,
-        max_iter_2=20,
-        tol=0.001,
-        check_min_period=True,  ### Is there ever any reason for this to be False?
-        tol_fix_mass=0.01,
+        fix_mass=True,
+        max_iter_1=15,
+        max_iter_2=15,
+        tol_density_profile_change=0.001,
+        check_min_period=True,
+        tol_layer_masses=0.01,
         verbosity=1,
     ):
         # Check for necessary input
@@ -2559,7 +2555,7 @@ class SpinPlanet:
                 check_min_period=check_min_period,
                 max_iter_1=max_iter_1,
                 max_iter_2=max_iter_2,
-                tol=tol_fix_mass,
+                tol_density_profile_change=tol_layer_masses,
             )
 
         for i in tqdm(
@@ -2604,7 +2600,7 @@ class SpinPlanet:
             self.A1_rho_po = A1_rho_po
 
             # check if there is convergence
-            if criterion < tol:
+            if criterion < tol_density_profile_change:
                 if verbosity >= 1:
                     print("Convergence criterion reached.")
                 break
@@ -2629,7 +2625,7 @@ def _L1_spin_planet_fix_M(
     R_max_po=None,
     check_min_period=False,
     max_iter_1=20,
-    tol=0.001,
+    tol_layer_masses=0.001,
     verbosity=1,
 ):
     """ Create a spinning planet from a spherical one, keeping the same layer masses.
@@ -2660,10 +2656,10 @@ def _L1_spin_planet_fix_M(
     max_iter_1: int
         Maximum number of iterations allowed.
         
-    tol : int
+    tol_layer_masses : int
         Tolerance level. The iterative search will end when the fractional 
         difference between the mass of the spinning planet and the spherical one
-        is less than tol.
+        is less than tol_layer_masses.
 
     Returns
     -------
@@ -2706,7 +2702,7 @@ def _L1_spin_planet_fix_M(
 
         spin_planet.spin(check_min_period=check_min_period, verbosity=0)
 
-        criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol
+        criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
 
         if criterion:
             if verbosity >= 1:
@@ -2734,7 +2730,7 @@ def _L2_spin_planet_fix_M(
     check_min_period=False,
     max_iter_1=20,
     max_iter_2=5,
-    tol=0.01,
+    tol_layer_masses=0.01,
     verbosity=1,
 ):
     """ Create a spinning planet from a spherical one, keeping the same layer masses.
@@ -2768,10 +2764,10 @@ def _L2_spin_planet_fix_M(
     max_iter_2: int
         Maximum number of iterations allowed. Outer loop.
         
-    tol : int
+    tol_layer_masses : int
         Tolerance level. The iterative search will end when the fractional 
         differences between the layer masses of the spinning planet and the 
-        spherical one are less than tol.
+        spherical one are less than tol_layer_masses.
 
     Returns
     -------
@@ -2841,13 +2837,13 @@ def _L2_spin_planet_fix_M(
 
             spin_planet.spin(check_min_period=check_min_period, verbosity=0)
 
-            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
+            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
             criterion_2 = (
                 np.abs(
                     planet.A1_M_layer[0] / planet.M
                     - spin_planet.A1_M_layer[0] / spin_planet.M
                 )
-                < tol
+                < tol_layer_masses
             )
 
             if criterion_1 and criterion_2:
@@ -2899,13 +2895,13 @@ def _L2_spin_planet_fix_M(
 
             spin_planet.spin(verbosity=0, check_min_period=check_min_period)
 
-            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol
+            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
             criterion_2 = (
                 np.abs(
                     planet.A1_M_layer[0] / planet.M
                     - spin_planet.A1_M_layer[0] / spin_planet.M
                 )
-                < tol
+                < tol_layer_masses
             )
 
             if criterion_1 and criterion_2:
@@ -2937,9 +2933,9 @@ def spin_planet_fix_M(
     R_max_eq=None,
     R_max_po=None,
     check_min_period=False,
-    max_iter_1=8,
-    max_iter_2=8,
-    tol=0.01,
+    max_iter_1=12,
+    max_iter_2=12,
+    tol_layer_masses=0.01,
 ):
     """ Create a spinning planet from a spherical one, keeping the same layer masses.
 
@@ -2970,10 +2966,10 @@ def spin_planet_fix_M(
     max_iter_2: int
         Maximum number of iterations allowed. Outer loop.
         
-    tol : int
+    tol_layer_masses : int
         Tolerance level. The iterative search will end when the fractional 
         differences between the layer masses of the spinning planet and the 
-        spherical one are less than tol.
+        spherical one are less than tol_layer_masses.
 
     Returns
     -------
@@ -2997,7 +2993,7 @@ def spin_planet_fix_M(
             R_max_po,
             check_min_period,
             max_iter_1,
-            tol,
+            tol_layer_masses,
         )
 
     elif planet.num_layer == 2:
@@ -3011,7 +3007,7 @@ def spin_planet_fix_M(
             check_min_period,
             max_iter_1,
             max_iter_2,
-            tol,
+            tol_layer_masses,
         )
 
     elif planet.num_layer == 3:
