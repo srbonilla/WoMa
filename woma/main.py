@@ -2081,14 +2081,14 @@ class SpinPlanet:
 
         # Initialize A1_rho_eq and A1_rho_po with the spherical profile
         self.A1_r_eq = np.linspace(0, self.R_max_eq, self.num_prof)
-        self.A1_z_po = np.linspace(0, self.R_max_po, self.num_prof)
+        self.A1_r_po = np.linspace(0, self.R_max_po, self.num_prof)
 
         spherical_model = interp1d(
             self.A1_r, self.A1_rho, bounds_error=False, fill_value=0
         )
 
         self.A1_rho_eq = spherical_model(self.A1_r_eq)
-        self.A1_rho_po = spherical_model(self.A1_z_po)
+        self.A1_rho_po = spherical_model(self.A1_r_po)
 
         # compute pressure and density at points of change of material
         self.P_0 = np.max(self.A1_P)
@@ -2163,12 +2163,12 @@ class SpinPlanet:
     def update_attributes(self):
         # Compute mass of the planet
         self.M = us.compute_spin_planet_M(
-            self.A1_r_eq, self.A1_rho_eq, self.A1_z_po, self.A1_rho_po
+            self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po
         )
 
         # Compute escape velocity
         v_esc_eq, v_esc_po = us.spin_escape_vel(
-            self.A1_r_eq, self.A1_rho_eq, self.A1_z_po, self.A1_rho_po, self.period,
+            self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po, self.period,
         )
 
         self.v_escape_po = v_esc_po
@@ -2176,7 +2176,7 @@ class SpinPlanet:
 
         # Compute equatorial and polar radius
         self.R_e = np.max(self.A1_r_eq[self.A1_rho_eq > 0.0])
-        self.R_p = np.max(self.A1_z_po[self.A1_rho_po > 0.0])
+        self.R_p = np.max(self.A1_r_po[self.A1_rho_po > 0.0])
 
         # Mass per layer, Equatorial and polar temperature and pressure
         if self.num_layer == 1:
@@ -2186,9 +2186,9 @@ class SpinPlanet:
             self.A1_M_layer = np.array([self.M])
             # Pressure and temperature
             self.A1_P_eq = np.zeros_like(self.A1_r_eq)
-            self.A1_P_po = np.zeros_like(self.A1_z_po)
+            self.A1_P_po = np.zeros_like(self.A1_r_po)
             self.A1_T_eq = np.zeros_like(self.A1_r_eq)
-            self.A1_T_po = np.zeros_like(self.A1_z_po)
+            self.A1_T_po = np.zeros_like(self.A1_r_po)
             for i, rho in enumerate(self.A1_rho_eq):
                 if rho >= self.rho_s:
                     self.A1_T_eq[i] = T_rho(
@@ -2213,12 +2213,12 @@ class SpinPlanet:
                     )
             # Mat_id
             self.A1_mat_id_eq = np.ones(self.A1_r_eq.shape) * self.A1_mat_id_layer[0]
-            self.A1_mat_id_po = np.ones(self.A1_z_po.shape) * self.A1_mat_id_layer[0]
+            self.A1_mat_id_po = np.ones(self.A1_r_po.shape) * self.A1_mat_id_layer[0]
 
         elif self.num_layer == 2:
             self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_1])
             self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_e])
-            self.R_1_po = np.max(self.A1_z_po[self.A1_rho_po >= self.rho_1])
+            self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.rho_1])
             self.A1_R_layer_po = np.array([self.R_1_po, self.R_p])
             self.A1_mat_id_eq = (self.A1_rho_eq >= self.rho_1) * self.A1_mat_id_layer[
                 0
@@ -2231,9 +2231,9 @@ class SpinPlanet:
             self.A1_mat_id_po[self.A1_rho_po <= 0] = -1
 
             self.A1_P_eq = np.zeros_like(self.A1_r_eq)
-            self.A1_P_po = np.zeros_like(self.A1_z_po)
+            self.A1_P_po = np.zeros_like(self.A1_r_po)
             self.A1_T_eq = np.zeros_like(self.A1_r_eq)
-            self.A1_T_po = np.zeros_like(self.A1_z_po)
+            self.A1_T_po = np.zeros_like(self.A1_r_po)
 
             for i, rho in enumerate(self.A1_rho_eq):
                 if rho >= self.rho_1:
@@ -2279,7 +2279,7 @@ class SpinPlanet:
                     )
 
             r_temp = np.copy(self.A1_r_eq)
-            z_temp = np.copy(self.A1_z_po)
+            z_temp = np.copy(self.A1_r_po)
             rho_r_temp = np.copy(self.A1_rho_eq)
             rho_z_temp = np.copy(self.A1_rho_po)
             rho_r_temp[rho_r_temp < self.rho_1] = 0.0
@@ -2294,8 +2294,8 @@ class SpinPlanet:
             self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_1])
             self.R_2_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_2])
             self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_2_eq, self.R_e])
-            self.R_1_po = np.max(self.A1_z_po[self.A1_rho_po >= self.rho_1])
-            self.R_2_po = np.max(self.A1_z_po[self.A1_rho_po >= self.rho_2])
+            self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.rho_1])
+            self.R_2_po = np.max(self.A1_r_po[self.A1_rho_po >= self.rho_2])
             self.A1_R_layer_po = np.array([self.R_1_po, self.R_2_po, self.R_p])
             self.A1_mat_id_eq = (
                 (self.A1_rho_eq >= self.rho_1) * self.A1_mat_id_layer[0]
@@ -2318,9 +2318,9 @@ class SpinPlanet:
             self.A1_mat_id_po[self.A1_rho_po <= 0] = -1
 
             self.A1_P_eq = np.zeros_like(self.A1_r_eq)
-            self.A1_P_po = np.zeros_like(self.A1_z_po)
+            self.A1_P_po = np.zeros_like(self.A1_r_po)
             self.A1_T_eq = np.zeros_like(self.A1_r_eq)
-            self.A1_T_po = np.zeros_like(self.A1_z_po)
+            self.A1_T_po = np.zeros_like(self.A1_r_po)
 
             for i, rho in enumerate(self.A1_rho_eq):
                 if rho >= self.rho_1:
@@ -2386,7 +2386,7 @@ class SpinPlanet:
                     )
 
             r_temp = np.copy(self.A1_r_eq)
-            z_temp = np.copy(self.A1_z_po)
+            z_temp = np.copy(self.A1_r_po)
             rho_r_temp = np.copy(self.A1_rho_eq)
             rho_z_temp = np.copy(self.A1_rho_po)
             rho_r_temp[rho_r_temp < self.rho_1] = 0.0
@@ -2518,7 +2518,7 @@ class SpinPlanet:
             self.num_layer,
             self.A1_r_eq,
             self.A1_rho_eq,
-            self.A1_z_po,
+            self.A1_r_po,
             self.A1_rho_po,
             self.P_0,
             self.P_s,
@@ -2583,7 +2583,7 @@ class SpinPlanet:
                 self.num_layer,
                 self.A1_r_eq,
                 self.A1_rho_eq,
-                self.A1_z_po,
+                self.A1_r_po,
                 self.A1_rho_po,
                 self.P_0,
                 self.P_s,
@@ -3158,7 +3158,7 @@ class ParticleSet:
                 ) = L1_spin.picle_placement_L1(
                     planet.A1_r_eq,
                     planet.A1_rho_eq,
-                    planet.A1_z_po,
+                    planet.A1_r_po,
                     planet.A1_rho_po,
                     planet.period,
                     self.N_particles,
@@ -3193,7 +3193,7 @@ class ParticleSet:
                 ) = L2_spin.picle_placement_L2(
                     planet.A1_r_eq,
                     planet.A1_rho_eq,
-                    planet.A1_z_po,
+                    planet.A1_r_po,
                     planet.A1_rho_po,
                     planet.period,
                     self.N_particles,
@@ -3233,7 +3233,7 @@ class ParticleSet:
                 ) = L3_spin.picle_placement_L3(
                     planet.A1_r_eq,
                     planet.A1_rho_eq,
-                    planet.A1_z_po,
+                    planet.A1_r_po,
                     planet.A1_rho_po,
                     planet.period,
                     planet.N_particles,

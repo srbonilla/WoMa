@@ -218,7 +218,7 @@ def _el_eq(r, z, R, Z):
 
 
 @jit(nopython=False)
-def rho_rz(r, z, A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
+def rho_rz(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
     """ Computes the density at any point r, z given a spining profile.
 
     Parameters
@@ -235,7 +235,7 @@ def rho_rz(r, z, A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
     A1_rho_eq ([float]):
         Equatorial profile of densities (SI).
 
-    A1_z_po ([float]):
+    A1_r_po ([float]):
         Points at equatorial profile where the solution is defined (SI).
 
     A1_rho_po ([float]):
@@ -250,9 +250,9 @@ def rho_rz(r, z, A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
     z = np.abs(z)
 
     rho_model_eq = interp1d(A1_r_eq, A1_rho_eq, bounds_error=False, fill_value=0)
-    rho_model_po = interp1d(A1_z_po, A1_rho_po, bounds_error=False, fill_value=0)
+    rho_model_po = interp1d(A1_r_po, A1_rho_po, bounds_error=False, fill_value=0)
     index = np.where(A1_rho_po == 0)[0][0] + 1
-    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_z_po[:index])
+    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
 
     r_0 = r
     r_1 = A1_r_eq[(A1_rho_eq > 0).sum() - 1]
@@ -411,10 +411,10 @@ def _V_theta_analytical(theta, shell_config):
 
 
 @jit(nopython=False)
-def compute_M_array(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
+def compute_M_array(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
     index = np.where(A1_rho_po == 0)[0][0] + 1
-    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_z_po[:index])
+    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
     R_array = A1_r_eq
     Z_array = rho_model_po_inv(A1_rho_eq)
 
@@ -434,17 +434,17 @@ def compute_M_array(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
 
 
 @jit(nopython=False)
-def compute_spin_planet_M(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
+def compute_spin_planet_M(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
-    M = compute_M_array(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po)
+    M = compute_M_array(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
 
     return np.sum(M)
 
 
-def compute_M_shell(R_shell, A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
+def compute_M_shell(R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
     M_shell = np.zeros_like(R_shell)
-    M_array = compute_M_array(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po)
+    M_array = compute_M_array(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
 
     R_eq = np.max(A1_r_eq[A1_rho_eq > 0])
 
@@ -480,7 +480,7 @@ def compute_M_shell(R_shell, A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po):
 
 
 # main function
-def picle_placement(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, N, period, verbosity=1):
+def picle_placement(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity=1):
 
     """ Particle placement for a spining profile.
 
@@ -492,7 +492,7 @@ def picle_placement(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, N, period, verbosity
     A1_rho_eq ([float]):
         Equatorial profile of densities (SI).
 
-    A1_z_po ([float]):
+    A1_r_po ([float]):
         Points at equatorial profile where the solution is defined (SI).
 
     A1_rho_po ([float]):
@@ -542,14 +542,14 @@ def picle_placement(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, N, period, verbosity
     """
 
     assert len(A1_r_eq) == len(A1_rho_eq)
-    assert len(A1_z_po) == len(A1_rho_po)
+    assert len(A1_r_po) == len(A1_rho_po)
 
     # mass of the model planet
-    M = compute_spin_planet_M(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po)
+    M = compute_spin_planet_M(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
 
     # Equatorial and polar radius radius
     R_eq = np.max(A1_r_eq[A1_rho_eq > 0])
-    R_po = np.max(A1_z_po[A1_rho_po > 0])
+    R_po = np.max(A1_r_po[A1_rho_po > 0])
 
     # First model - spherical planet from equatorial profile
     radii = np.arange(0, R_eq, R_eq / 1000000)
@@ -558,7 +558,7 @@ def picle_placement(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, N, period, verbosity
     particles = seagen.GenSphere(N, radii[1:], densities[1:], verbosity=verbosity)
 
     index = np.where(A1_rho_po == 0)[0][0] + 1
-    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_z_po[:index])
+    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
 
     R_shell = np.unique(particles.A1_r)
     # R_shell_outer = particles.A1_r_outer.copy()
@@ -568,7 +568,7 @@ def picle_placement(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, N, period, verbosity
     # Get picle mass of final configuration
     m_picle = M / N
 
-    M_shell = compute_M_shell(R_shell, A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po)
+    M_shell = compute_M_shell(R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
 
     # Number of particles per shell
     N_shell = np.round(M_shell / m_picle).astype(int)
@@ -712,7 +712,7 @@ def picle_placement(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, N, period, verbosity
     return A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_R, A1_Z
 
 
-def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, period):
+def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     """
         Computes the escape velocity for a spining planet.
         
@@ -724,7 +724,7 @@ def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, period):
     A1_rho_eq ([float]):
         Equatorial profile of densities (SI).
 
-    A1_z_po ([float]):
+    A1_r_po ([float]):
         Points at equatorial profile where the solution is defined (SI).
 
     A1_rho_po ([float]):
@@ -743,7 +743,7 @@ def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, period):
 
         
     """
-    V_eq, V_po = L1_spin._fillV(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, period)
+    V_eq, V_po = L1_spin._fillV(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period)
 
     i_eq = min(np.where(A1_rho_eq == 0)[0]) - 1
     i_po = min(np.where(A1_rho_po == 0)[0]) - 1
@@ -762,7 +762,7 @@ def spin_iteration(
     num_layer,
     A1_r_eq,
     A1_rho_eq,
-    A1_z_po,
+    A1_r_po,
     A1_rho_po,
     P_0,
     P_s,
@@ -783,7 +783,7 @@ def spin_iteration(
             1,
             A1_r_eq,
             A1_rho_eq,
-            A1_z_po,
+            A1_r_po,
             A1_rho_po,
             period,
             P_0,
@@ -802,7 +802,7 @@ def spin_iteration(
             1,
             A1_r_eq,
             A1_rho_eq,
-            A1_z_po,
+            A1_r_po,
             A1_rho_po,
             period,
             P_0,
@@ -825,7 +825,7 @@ def spin_iteration(
             1,
             A1_r_eq,
             A1_rho_eq,
-            A1_z_po,
+            A1_r_po,
             A1_rho_po,
             period,
             P_0,
@@ -856,7 +856,7 @@ def find_min_period(
     num_layer,
     A1_r_eq,
     A1_rho_eq,
-    A1_z_po,
+    A1_r_po,
     A1_rho_po,
     P_0,
     P_s,
@@ -886,7 +886,7 @@ def find_min_period(
             num_layer,
             A1_r_eq,
             A1_rho_eq,
-            A1_z_po,
+            A1_r_po,
             A1_rho_po,
             P_0,
             P_s,

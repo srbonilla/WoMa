@@ -21,7 +21,7 @@ from woma.eos.T_rho import T_rho
 def _fillrho2(
     A1_r_eq,
     A1_V_eq,
-    A1_z_po,
+    A1_r_po,
     A1_V_po,
     P_c,
     P_i,
@@ -46,7 +46,7 @@ def _fillrho2(
     A1_V_eq ([float]):
         Equatorial profile of potential (SI).
 
-    A1_z_po ([float]):
+    A1_r_po ([float]):
         Points at equatorial profile where the solution is defined (SI).
 
     A1_V_po ([float]):
@@ -141,7 +141,7 @@ def _fillrho2(
             break
 
     # polar profile
-    for i in range(A1_z_po.shape[0] - 1):
+    for i in range(A1_r_po.shape[0] - 1):
         gradV = A1_V_po[i + 1] - A1_V_po[i]
         gradP = -A1_rho_po[i] * gradV
         A1_P_po[i + 1] = A1_P_po[i] + gradP
@@ -183,7 +183,7 @@ def spin2layer(
     num_attempt,
     A1_r_eq,
     A1_rho_eq,
-    A1_z_po,
+    A1_r_po,
     A1_rho_po,
     period,
     P_c,
@@ -212,11 +212,11 @@ def spin2layer(
     A1_rho_eq ([float]):
         Densitity values at corresponding A1_r_eq points (SI).
 
-    A1_z_po ([float]):
+    A1_r_po ([float]):
         Points at polar profile where the solution is defined (SI).
 
     A1_rho_po ([float]):
-        Densitity values at corresponding A1_z_po points (SI).
+        Densitity values at corresponding A1_r_po points (SI).
 
     period (float):
         Period of the planet (hours).
@@ -274,12 +274,12 @@ def spin2layer(
         range(num_attempt), desc="Solving spining profile", disable=verbosity == 0
     ):
         A1_V_eq, A1_V_po = L1_spin._fillV(
-            A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, period
+            A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period
         )
         A1_rho_eq, A1_rho_po = _fillrho2(
             A1_r_eq,
             A1_V_eq,
-            A1_z_po,
+            A1_r_po,
             A1_V_po,
             P_c,
             P_i,
@@ -302,7 +302,7 @@ def spin2layer(
 def picle_placement_L2(
     A1_r_eq,
     A1_rho_eq,
-    A1_z_po,
+    A1_r_po,
     A1_rho_po,
     period,
     N,
@@ -326,7 +326,7 @@ def picle_placement_L2(
     A1_rho_eq ([float]):
         Equatorial profile of densities (SI).
 
-    A1_z_po ([float]):
+    A1_r_po ([float]):
         Points at equatorial profile where the solution is defined (SI).
 
     A1_rho_po ([float]):
@@ -415,7 +415,7 @@ def picle_placement_L2(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.picle_placement(A1_r_eq, A1_rho_eq, A1_z_po, A1_rho_po, N, period)
+    ) = us.picle_placement(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period)
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))
