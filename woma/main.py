@@ -7,6 +7,8 @@ the differential equations for hydrostatic equilibrium, and/or create initial
 conditions for smoothed particle hydrodynamics (SPH) or any other particle-based 
 methods by placing particles to precisely match the planet's profiles.
 
+See README.md and tutorial.ipynb for general documentation and examples.
+
 Presented in Ruiz-Bonilla et al. (2020), MNRAS..., https://doi.org/...
 
 Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 
@@ -34,11 +36,6 @@ from woma.misc import glob_vars as gv
 from woma.misc import utils, io
 from woma.eos import eos
 from woma.eos.T_rho import T_rho, set_T_rho_args, T_rho_id_and_args_from_type
-
-
-# ============================================================================ #
-#                       Spherical profile class                                #
-# ============================================================================ #
 
 
 class Planet:
@@ -2041,11 +2038,6 @@ class Planet:
             print("Done!")
 
 
-# ============================================================================ #
-#                       Spining profile classes                                #
-# ============================================================================ #
-
-
 class SpinPlanet:
     """ Spinning planet class ...
 
@@ -2556,493 +2548,418 @@ class SpinPlanet:
 
         self.min_period = min_period
 
-    def spin(
-        self,
-        fix_mass=True,
-        max_iter_1=15,
-        max_iter_2=15,
-        tol_density_profile_change=0.001,
-        check_min_period=True,
-        tol_layer_masses=0.01,
+    def _L1_spin_planet_fix_M(
+        planet,
+        period,
+        num_prof=1000,
+        R_max_eq=None,
+        R_max_po=None,
+        check_min_period=False,
+        tol_layer_masses=0.001,
+        max_iter_1=20,
         verbosity=1,
     ):
-        # Check for necessary input
-        self._check_input()
+        """ 
+        Create a spinning planet from a spherical one, keeping the same layer 
+        masses, for a 1 layer planet.
+        
+        See SpinPlanet.spin() for the parameter documentation.
+        """
 
-        if fix_mass:
-            return spin_planet_fix_M(
-                self.planet,
-                self.period,
-                num_prof=self.num_prof,
-                R_max_eq=self.R_max_eq,
-                R_max_po=self.R_max_po,
-                check_min_period=check_min_period,
-                max_iter_1=max_iter_1,
-                max_iter_2=max_iter_2,
-                tol_density_profile_change=tol_layer_masses,
-            )
+        assert isinstance(planet, Planet)
+        assert planet.num_layer == 1
+
+        # Default max radii
+        if R_max_eq is None:
+            R_max_eq = 2 * planet.R
+        if R_max_po is None:
+            R_max_po = 1.2 * planet.R
+
+        f_min = 0.0
+        f_max = 1.0
 
         for i in tqdm(
             range(max_iter_1), desc="Computing spinning profile", disable=verbosity == 0
         ):
-            # compute min_period
-            if check_min_period:
-                self.find_min_period(max_iter=max_iter_2, verbosity=0)
 
-                # select period for this iteration
-                if self.period >= self.min_period:
-                    period_iter = self.period
-                else:
-                    period_iter = self.min_period
-            else:
-                period_iter = self.period
-
-            # compute profile
-            A1_rho_eq, A1_rho_po = us.spin_iteration(
-                period_iter,
-                self.num_layer,
-                self.A1_r_eq,
-                self.A1_rho_eq,
-                self.A1_r_po,
-                self.A1_rho_po,
-                self.P_0,
-                self.P_s,
-                self.rho_0,
-                self.rho_s,
-                self.A1_mat_id_layer,
-                self.A1_T_rho_type_id,
-                self.A1_T_rho_args,
-                self.P_1,
-                self.P_2,
-            )
-
-            # convergence criterion
-            criterion = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
-
-            # save results
-            self.A1_rho_eq = A1_rho_eq
-            self.A1_rho_po = A1_rho_po
-
-            # check if there is convergence
-            if criterion < tol_density_profile_change:
-                if verbosity >= 1:
-                    print("Convergence criterion reached.")
-                break
-
-        if self.period < period_iter:
-            if verbosity >= 1:
-                print("")
-                print("Minimum period found at", period_iter, "h")
-            self.period = period_iter
-
-        self.update_attributes()
-
-        if verbosity >= 1:
-            self.print_info()
-
-
-def _L1_spin_planet_fix_M(
-    planet,
-    period,
-    num_prof=1000,
-    R_max_eq=None,
-    R_max_po=None,
-    check_min_period=False,
-    max_iter_1=20,
-    tol_layer_masses=0.001,
-    verbosity=1,
-):
-    """ Create a spinning planet from a spherical one, keeping the same layer masses.
-    
-    For a 1 layer planet.
-
-    Parameters
-    ----------
-    planet : woma.Planet
-        The spherical planet object. Must have 1 layer.
-
-    period : float
-        Period (h).
-        
-    num_prof : int
-        Number of grid points used in the 1D equatorial and polar profiles.
-
-    R_max_eq : float
-        Maximum equatorial radius (m). Defaults to 4 times the spherical radius.
-        
-    R_max_po : float
-        Maximum polar radius (m). Defaults to 2 times the spherical radius.
-        
-    check_min_period : bool
-        Checks if period provided is lees than the minimum physically allowed.
-        Use True only for extreme high spin.
-        
-    max_iter_1: int
-        Maximum number of iterations allowed.
-        
-    tol_layer_masses : int
-        Tolerance level. The iterative search will end when the fractional 
-        difference between the mass of the spinning planet and the spherical one
-        is less than tol_layer_masses.
-
-    Returns
-    -------
-    spin_planet : woma.SpinPlanet
-        The spinning planet object.
-    """
-
-    assert isinstance(planet, Planet)
-    assert planet.num_layer == 1
-
-    # Default max radii
-    if R_max_eq is None:
-        R_max_eq = 2 * planet.R
-    if R_max_po is None:
-        R_max_po = 1.2 * planet.R
-
-    f_min = 0.0
-    f_max = 1.0
-
-    for i in tqdm(
-        range(max_iter_1), desc="Computing spinning profile", disable=verbosity == 0
-    ):
-
-        f = np.mean([f_min, f_max])
-
-        # create copy of planet
-        new_planet = copy.deepcopy(planet)
-
-        # shrink it
-        new_planet.A1_R_layer = f * new_planet.A1_R_layer
-        new_planet.R = f * new_planet.R
-
-        # make new profile
-        new_planet.M_max = new_planet.M
-        new_planet.gen_prof_L1_find_M_given_R(verbosity=0)
-
-        spin_planet = SpinPlanet(
-            planet=new_planet, period=period, R_max_eq=R_max_eq, R_max_po=R_max_po
-        )
-
-        spin_planet.spin(check_min_period=check_min_period, verbosity=0)
-
-        criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
-
-        if criterion:
-            if verbosity >= 1:
-                print("Tolerance level criteria reached.")
-                spin_planet.print_info()
-            return spin_planet
-
-        if spin_planet.M > planet.M:
-            f_max = f
-        else:
-            f_min = f
-
-    if verbosity >= 1:
-        spin_planet.print_info()
-
-    return spin_planet
-
-
-def _L2_spin_planet_fix_M(
-    planet,
-    period,
-    num_prof=1000,
-    R_max_eq=None,
-    R_max_po=None,
-    check_min_period=False,
-    max_iter_1=20,
-    max_iter_2=5,
-    tol_layer_masses=0.01,
-    verbosity=1,
-):
-    """ Create a spinning planet from a spherical one, keeping the same layer masses.
-    
-    For a 2 layer planet.
-
-    Parameters
-    ----------
-    planet : woma.Planet
-        The spherical planet object. Must have 2 layers.
-
-    period : float
-        Period (h).
-        
-    num_prof : int
-        Number of grid points used in the 1D equatorial and polar profiles.
-
-    R_max_eq : float
-        Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
-        
-    R_max_po : float
-        Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
-        
-    check_min_period : bool
-        Checks if period provided is lees than the minimum physically allowed.
-        Use True only for extreme high spin.
-        
-    max_iter_1: int
-        Maximum number of iterations allowed. Inner loop.
-        
-    max_iter_2: int
-        Maximum number of iterations allowed. Outer loop.
-        
-    tol_layer_masses : int
-        Tolerance level. The iterative search will end when the fractional 
-        differences between the layer masses of the spinning planet and the 
-        spherical one are less than tol_layer_masses.
-
-    Returns
-    -------
-    spin_planet : woma.SpinPlanet
-        The spinning planet object.
-    """
-
-    assert isinstance(planet, Planet)
-    assert planet.num_layer == 2
-
-    # Default max radii
-    if R_max_eq is None:
-        R_max_eq = 2 * planet.R
-    if R_max_po is None:
-        R_max_po = 1.2 * planet.R
-
-    M = planet.M
-
-    f_M_core = planet.A1_M_layer[0] / M
-
-    new_planet = copy.deepcopy(planet)
-
-    spin_planet = SpinPlanet(
-        planet=new_planet,
-        period=period,
-        num_prof=num_prof,
-        R_max_eq=R_max_eq,
-        R_max_po=R_max_po,
-    )
-
-    spin_planet.spin(check_min_period=check_min_period, verbosity=0)
-
-    for k in tqdm(
-        range(max_iter_2), desc="Computing spinning profile", disable=verbosity == 0
-    ):
-
-        if spin_planet.M > M:
-            R_mantle_min = new_planet.A1_R_layer[0]
-            R_mantle_max = new_planet.A1_R_layer[1]
-        else:
-            R_mantle_min = new_planet.A1_R_layer[1]
-            R_mantle_max = 1.1 * new_planet.A1_R_layer[1]
-
-        for i in tqdm(range(max_iter_1), desc="Adjusting outer edge", disable=True):
-
-            # R_core   = np.mean([R_core_min, R_core_max])
-            R_mantle = np.mean([R_mantle_min, R_mantle_max])
+            f = np.mean([f_min, f_max])
 
             # create copy of planet
             new_planet = copy.deepcopy(planet)
 
-            # modify boundaries
-            new_planet.A1_R_layer[1] = R_mantle
-            new_planet.R = R_mantle
+            # shrink it
+            new_planet.A1_R_layer = f * new_planet.A1_R_layer
+            new_planet.R = f * new_planet.R
 
             # make new profile
-            new_planet.M_max = 1.2 * planet.M
-            new_planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
+            new_planet.M_max = new_planet.M
+            new_planet.gen_prof_L1_find_M_given_R(verbosity=0)
 
             spin_planet = SpinPlanet(
-                planet=new_planet,
-                period=period,
-                num_prof=num_prof,
-                R_max_eq=R_max_eq,
-                R_max_po=R_max_po,
+                planet=new_planet, period=period, R_max_eq=R_max_eq, R_max_po=R_max_po
             )
 
             spin_planet.spin(check_min_period=check_min_period, verbosity=0)
 
-            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
-            criterion_2 = (
-                np.abs(
-                    planet.A1_M_layer[0] / planet.M
-                    - spin_planet.A1_M_layer[0] / spin_planet.M
-                )
-                < tol_layer_masses
-            )
+            criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
 
-            if criterion_1 and criterion_2:
+            if criterion:
                 if verbosity >= 1:
                     print("Tolerance level criteria reached.")
                     spin_planet.print_info()
                 return spin_planet
-
-            if criterion_1:
-                break
 
             if spin_planet.M > planet.M:
-                R_mantle_max = R_mantle
+                f_max = f
             else:
-                R_mantle_min = R_mantle
+                f_min = f
 
-        if spin_planet.A1_M_layer[0] / spin_planet.M > f_M_core:
-            R_core_min = 0
-            R_core_max = new_planet.A1_R_layer[0]
-        else:
-            R_core_min = new_planet.A1_R_layer[0]
-            R_core_max = new_planet.A1_R_layer[1]
+        if verbosity >= 1:
+            spin_planet.print_info()
 
-        for i in tqdm(
-            range(max_iter_1), desc="Adjusting core-mantle boundary", disable=True
+        return spin_planet
+
+    def _L2_spin_planet_fix_M(
+        planet,
+        period,
+        num_prof=1000,
+        R_max_eq=None,
+        R_max_po=None,
+        check_min_period=False,
+        tol_layer_masses=0.01,
+        max_iter_1=20,
+        max_iter_2=10,
+        verbosity=1,
+    ):
+        """ 
+        Create a spinning planet from a spherical one, keeping the same layer 
+        masses, for a 2 layer planet.
+        
+        See SpinPlanet.spin() for the parameter documentation.
+        """
+
+        assert isinstance(planet, Planet)
+        assert planet.num_layer == 2
+
+        # Default max radii
+        if R_max_eq is None:
+            R_max_eq = 2 * planet.R
+        if R_max_po is None:
+            R_max_po = 1.2 * planet.R
+
+        M = planet.M
+
+        f_M_core = planet.A1_M_layer[0] / M
+
+        new_planet = copy.deepcopy(planet)
+
+        spin_planet = SpinPlanet(
+            planet=new_planet,
+            period=period,
+            num_prof=num_prof,
+            R_max_eq=R_max_eq,
+            R_max_po=R_max_po,
+        )
+
+        spin_planet.spin(check_min_period=check_min_period, verbosity=0)
+
+        for k in tqdm(
+            range(max_iter_2), desc="Computing spinning profile", disable=verbosity == 0
         ):
 
-            R_core = np.mean([R_core_min, R_core_max])
-
-            # create copy of planet
-            new_planet = copy.deepcopy(planet)
-
-            # modify boundaries
-            new_planet.A1_R_layer[0] = R_core
-            new_planet.A1_R_layer[1] = R_mantle
-            new_planet.R = R_mantle
-
-            # make new profile
-            new_planet.M_max = 1.2 * planet.M
-            new_planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
-
-            spin_planet = SpinPlanet(
-                planet=new_planet,
-                period=period,
-                num_prof=num_prof,
-                R_max_eq=R_max_eq,
-                R_max_po=R_max_po,
-            )
-
-            spin_planet.spin(verbosity=0, check_min_period=check_min_period)
-
-            criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
-            criterion_2 = (
-                np.abs(
-                    planet.A1_M_layer[0] / planet.M
-                    - spin_planet.A1_M_layer[0] / spin_planet.M
-                )
-                < tol_layer_masses
-            )
-
-            if criterion_1 and criterion_2:
-                if verbosity >= 1:
-                    print("Tolerance level criteria reached.")
-                    spin_planet.print_info()
-                return spin_planet
-
-            if criterion_2:
-                break
-
-            new_f_M_core = spin_planet.A1_M_layer[0] / spin_planet.M
-
-            if new_f_M_core > f_M_core:
-                R_core_max = R_core
+            if spin_planet.M > M:
+                R_mantle_min = new_planet.A1_R_layer[0]
+                R_mantle_max = new_planet.A1_R_layer[1]
             else:
-                R_core_min = R_core
+                R_mantle_min = new_planet.A1_R_layer[1]
+                R_mantle_max = 1.1 * new_planet.A1_R_layer[1]
 
-    if verbosity >= 1:
-        spin_planet.print_info()
+            for i in tqdm(range(max_iter_1), desc="Adjusting outer edge", disable=True):
 
-    return spin_planet
+                # R_core   = np.mean([R_core_min, R_core_max])
+                R_mantle = np.mean([R_mantle_min, R_mantle_max])
 
+                # create copy of planet
+                new_planet = copy.deepcopy(planet)
 
-def spin_planet_fix_M(
-    planet,
-    period,
-    num_prof=1000,
-    R_max_eq=None,
-    R_max_po=None,
-    check_min_period=False,
-    max_iter_1=12,
-    max_iter_2=12,
-    tol_layer_masses=0.01,
-):
-    """ Create a spinning planet from a spherical one, keeping the same layer masses.
+                # modify boundaries
+                new_planet.A1_R_layer[1] = R_mantle
+                new_planet.R = R_mantle
 
-    Parameters
-    ----------
-    planet : woma.Planet
-        The spherical planet object.
+                # make new profile
+                new_planet.M_max = 1.2 * planet.M
+                new_planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
 
-    period : float
-        Period (h).
+                spin_planet = SpinPlanet(
+                    planet=new_planet,
+                    period=period,
+                    num_prof=num_prof,
+                    R_max_eq=R_max_eq,
+                    R_max_po=R_max_po,
+                )
+
+                spin_planet.spin(check_min_period=check_min_period, verbosity=0)
+
+                criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
+                criterion_2 = (
+                    np.abs(
+                        planet.A1_M_layer[0] / planet.M
+                        - spin_planet.A1_M_layer[0] / spin_planet.M
+                    )
+                    < tol_layer_masses
+                )
+
+                if criterion_1 and criterion_2:
+                    if verbosity >= 1:
+                        print("Tolerance level criteria reached.")
+                        spin_planet.print_info()
+                    return spin_planet
+
+                if criterion_1:
+                    break
+
+                if spin_planet.M > planet.M:
+                    R_mantle_max = R_mantle
+                else:
+                    R_mantle_min = R_mantle
+
+            if spin_planet.A1_M_layer[0] / spin_planet.M > f_M_core:
+                R_core_min = 0
+                R_core_max = new_planet.A1_R_layer[0]
+            else:
+                R_core_min = new_planet.A1_R_layer[0]
+                R_core_max = new_planet.A1_R_layer[1]
+
+            for i in tqdm(
+                range(max_iter_1), desc="Adjusting core-mantle boundary", disable=True
+            ):
+
+                R_core = np.mean([R_core_min, R_core_max])
+
+                # create copy of planet
+                new_planet = copy.deepcopy(planet)
+
+                # modify boundaries
+                new_planet.A1_R_layer[0] = R_core
+                new_planet.A1_R_layer[1] = R_mantle
+                new_planet.R = R_mantle
+
+                # make new profile
+                new_planet.M_max = 1.2 * planet.M
+                new_planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
+
+                spin_planet = SpinPlanet(
+                    planet=new_planet,
+                    period=period,
+                    num_prof=num_prof,
+                    R_max_eq=R_max_eq,
+                    R_max_po=R_max_po,
+                )
+
+                spin_planet.spin(verbosity=0, check_min_period=check_min_period)
+
+                criterion_1 = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
+                criterion_2 = (
+                    np.abs(
+                        planet.A1_M_layer[0] / planet.M
+                        - spin_planet.A1_M_layer[0] / spin_planet.M
+                    )
+                    < tol_layer_masses
+                )
+
+                if criterion_1 and criterion_2:
+                    if verbosity >= 1:
+                        print("Tolerance level criteria reached.")
+                        spin_planet.print_info()
+                    return spin_planet
+
+                if criterion_2:
+                    break
+
+                new_f_M_core = spin_planet.A1_M_layer[0] / spin_planet.M
+
+                if new_f_M_core > f_M_core:
+                    R_core_max = R_core
+                else:
+                    R_core_min = R_core
+
+        if verbosity >= 1:
+            spin_planet.print_info()
+
+        return spin_planet
+
+    def spin(
+        self,
+        fix_mass=True,
+        num_prof=1000,
+        R_max_eq=None,
+        R_max_po=None,
+        check_min_period=True,
+        tol_density_profile_change=0.001,
+        tol_layer_masses=0.01,
+        max_iter_1=15,
+        max_iter_2=15,
+        verbosity=1,
+    ):
+        """ Create a spinning planet from a spherical one.
+
+        Parameters
+        ----------
+        self.planet : woma.Planet
+            The spherical planet object.
+
+        self.period : float
+            Period (h).
         
-    num_prof : int
-        Number of grid points used in the 1D equatorial and polar profiles.
-
-    R_max_eq : float
-        Maximum equatorial radius (m). Defaults to 2 times the spherical radius.
+        fix_mass : bool
+            If True (default), then iterate the input mass to ensure that the  
+            final spinning mass is the same. If False, then more quickly create 
+            the spinning profiles directly from the spherical one.
         
-    R_max_po : float
-        Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
+        num_prof : int
+            Number of grid points used in the 1D equatorial and polar profiles.
+
+        R_max_eq : float
+            Maximum equatorial radius (m). Defaults to 2 times the spherical 
+            radius.
+            
+        R_max_po : float
+            Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
+            
+        check_min_period : bool
+            Checks if the period provided is less than the minimum physically 
+            allowed. Slow -- set True only if required for extremely high spin.
+            
+        tol_density_profile_change : float
+            The iterative search will end when the fractional differences 
+            between the density profiles in successive iterations is less than 
+            this tolerance.
+            
+        tol_layer_masses : float
+            The iterative search will end when the fractional differences 
+            between the layer masses of the spinning planet and the spherical 
+            one are less than this tolerance.
+            
+        max_iter_1: int
+            Maximum number of iterations allowed. Inner loop.
+            
+        max_iter_2: int
+            Maximum number of iterations allowed. Outer loop.
+
+        Returns
+        -------
+        spin_planet : woma.SpinPlanet
+            The spinning planet object.
+        """
+        # Check for necessary input
+        self._check_input()
         
-    check_min_period : bool
-        Checks if period provided is lees than the minimum physically allowed.
-        Use True only for extreme high spin.
+        assert self.period is not None
+
+        if fix_mass:
+            # Default max radii
+            if R_max_eq is None:
+                R_max_eq = 2 * self.planet.R
+            if R_max_po is None:
+                R_max_po = 1.2 * self.planet.R
+
+            if self.planet.num_layer == 1:
+
+                spin_planet = _L1_spin_planet_fix_M(
+                    self.planet,
+                    self.period,
+                    num_prof=num_prof,
+                    R_max_eq=R_max_eq,
+                    R_max_po=R_max_po,
+                    check_min_period=check_min_period,
+                    tol_layer_masses=tol_layer_masses,
+                    max_iter_1=max_iter_1,
+                    verbosity=verbosity,
+                )
+
+            elif self.planet.num_layer == 2:
+
+                spin_planet = _L2_spin_planet_fix_M(
+                    self.planet,
+                    self.period,
+                    num_prof=num_prof,
+                    R_max_eq=R_max_eq,
+                    R_max_po=R_max_po,
+                    check_min_period=check_min_period,
+                    tol_layer_masses=tol_layer_masses,
+                    max_iter_1=max_iter_1,
+                    max_iter_2=max_iter_2,
+                    verbosity=verbosity,
+                )
+
+            elif self.planet.num_layer == 3:
+
+                raise ValueError("3 layers not implemented yet")
+
+            else:
+
+                raise ValueError("self.planet.num_layer must be 1, 2, or 3")
+
+            return spin_planet
         
-    max_iter_1: int
-        Maximum number of iterations allowed. Inner loop.
-        
-    max_iter_2: int
-        Maximum number of iterations allowed. Outer loop.
-        
-    tol_layer_masses : int
-        Tolerance level. The iterative search will end when the fractional 
-        differences between the layer masses of the spinning planet and the 
-        spherical one are less than tol_layer_masses.
+        else:
+            for i in tqdm(
+                range(max_iter_1), desc="Computing spinning profile", disable=verbosity == 0
+            ):
+                # compute min_period
+                if check_min_period:
+                    self.find_min_period(max_iter=max_iter_2, verbosity=0)
 
-    Returns
-    -------
-    spin_planet : woma.SpinPlanet
-        The spinning planet object.
-    """
+                    # select period for this iteration
+                    if self.period >= self.min_period:
+                        period_iter = self.period
+                    else:
+                        period_iter = self.min_period
+                else:
+                    period_iter = self.period
 
-    # Default max radii
-    if R_max_eq is None:
-        R_max_eq = 2 * planet.R
-    if R_max_po is None:
-        R_max_po = 1.2 * planet.R
+                # compute profile
+                A1_rho_eq, A1_rho_po = us.spin_iteration(
+                    period_iter,
+                    self.num_layer,
+                    self.A1_r_eq,
+                    self.A1_rho_eq,
+                    self.A1_r_po,
+                    self.A1_rho_po,
+                    self.P_0,
+                    self.P_s,
+                    self.rho_0,
+                    self.rho_s,
+                    self.A1_mat_id_layer,
+                    self.A1_T_rho_type_id,
+                    self.A1_T_rho_args,
+                    self.P_1,
+                    self.P_2,
+                )
 
-    if planet.num_layer == 1:
+                # convergence criterion
+                criterion = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
 
-        spin_planet = _L1_spin_planet_fix_M(
-            planet,
-            period,
-            num_prof,
-            R_max_eq,
-            R_max_po,
-            check_min_period,
-            max_iter_1,
-            tol_layer_masses,
-        )
+                # save results
+                self.A1_rho_eq = A1_rho_eq
+                self.A1_rho_po = A1_rho_po
 
-    elif planet.num_layer == 2:
+                # check if there is convergence
+                if criterion < tol_density_profile_change:
+                    if verbosity >= 1:
+                        print("Convergence criterion reached.")
+                    break
 
-        spin_planet = _L2_spin_planet_fix_M(
-            planet,
-            period,
-            num_prof,
-            R_max_eq,
-            R_max_po,
-            check_min_period,
-            max_iter_1,
-            max_iter_2,
-            tol_layer_masses,
-        )
+            if self.period < period_iter:
+                if verbosity >= 1:
+                    print("")
+                    print("Minimum period found at", period_iter, "h")
+                self.period = period_iter
 
-    elif planet.num_layer == 3:
+            self.update_attributes()
 
-        raise ValueError("3 layers not implemented yet")
-
-    else:
-
-        raise ValueError("planet.num_layer must be 1, 2, or 3")
-
-    return spin_planet
+            if verbosity >= 1:
+                self.print_info()
 
 
 class ParticleSet:
