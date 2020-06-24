@@ -80,7 +80,7 @@ def plot_planet_profiles_alternate(planet, fig=None, ax=None):
 #                       Spherical profile examples                             #
 # ============================================================================ #
 
-
+import woma
 def demo_gen_prof_L1_find_R_given_M():
     planet = woma.Planet(
         name            = "planet",

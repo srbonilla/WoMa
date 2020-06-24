@@ -4,7 +4,7 @@ WoMa 1 layer spherical functions
 
 import numpy as np
 from numba import njit
-from tqdm import tqdm
+import sys
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -169,7 +169,7 @@ def L2_integrate(
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-@njit
+#@njit
 def L2_find_mass(
     num_prof,
     R,
@@ -184,6 +184,9 @@ def L2_find_mass(
     mat_id_L2,
     T_rho_type_id_L2,
     T_rho_args_L2,
+    num_attempt=40,
+    tol=0.01,
+    verbosity=1,
 ):
     """ Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -228,18 +231,23 @@ def L2_find_mass(
             T_rho_args_L2 (list):
                 Extra arguments to determine the relation in layer 2.
 
-            u_cold_array_L1 ([float]):
-                Precomputed values of cold internal energy
-                with function _create_u_cold_array() for layer 1 (SI).
-
-            u_cold_array_L2 ([float]):
-                Precomputed values of cold internal energy
-                with function _create_u_cold_array() for layer 2 (SI).
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive masses.
+                
+            verbosity (int):
+                Printing options.
 
         Returns:
             M_max ([float]):
                 Mass of the planet (SI).
     """
+    min_tol = 1e-7
+    if tol > min_tol:
+        tol = min_tol
+        
     M_min = 0.0
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -257,37 +265,53 @@ def L2_find_mass(
         T_rho_type_id_L2,
         T_rho_args_L2,
     )
-
-    if A1_m_enc[-1] > 0.0:
-        while np.abs(M_min - M_max) > 1e-10 * M_min:
-            M_try = (M_min + M_max) * 0.5
-
-            A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-                num_prof,
-                R,
-                M_try,
-                P_s,
-                T_s,
-                rho_s,
-                R1,
-                mat_id_L1,
-                T_rho_type_id_L1,
-                T_rho_args_L1,
-                mat_id_L2,
-                T_rho_type_id_L2,
-                T_rho_args_L2,
-            )
-
-            if A1_m_enc[-1] > 0.0:
-                M_max = M_try
-            else:
-                M_min = M_try
-
-    else:
+    
+    if A1_m_enc[-1] < 0:
         raise Exception(
             "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
-        return 0.0
+
+    for i in range(num_attempt):
+    
+        M_try = (M_min + M_max) * 0.5
+
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
+            num_prof,
+            R,
+            M_try,
+            P_s,
+            T_s,
+            rho_s,
+            R1,
+            mat_id_L1,
+            T_rho_type_id_L1,
+            T_rho_args_L1,
+            mat_id_L2,
+            T_rho_type_id_L2,
+            T_rho_args_L2,
+        )
+
+        if A1_m_enc[-1] > 0.0:
+            M_max = M_try
+        else:
+            M_min = M_try
+            
+        tol_reached = np.abs(M_min - M_max)/M_min
+        
+        # print info (cannot do it with numba)
+        if verbosity >= 1:
+            
+            string = "Iteration " + str(i) + "/" + str(num_attempt) + \
+            ". Tolerance reached " + "{:.2e}".format(tol_reached) + \
+            "/" + str(tol)
+            sys.stdout.write('\r' + string)
+
+        if tol_reached < tol:
+            
+            if verbosity >= 1:
+                sys.stdout.write('\n')
+                
+            return M_max
 
     return M_max
 
@@ -307,6 +331,7 @@ def L2_find_radius(
     T_rho_type_id_L2,
     T_rho_args_L2,
     num_attempt=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the total radius of the planet.
@@ -351,6 +376,15 @@ def L2_find_radius(
 
             T_rho_args_L2 (list):
                 Extra arguments to determine the relation in layer 2.
+                
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive radius.
+                
+            verbosity (int):
+                Printing options.
 
         Returns:
             M_max ([float]):
@@ -391,12 +425,9 @@ def L2_find_radius(
             + "Try increase M or reduce R1.\n"
         )
         raise Exception(e)
-        return -1
 
     if A1_m_enc_1[-1] == 0.0:
-        for i in tqdm(
-            range(num_attempt), desc="Finding R given M, R1", disable=verbosity == 0
-        ):
+        for i in range(num_attempt):
             R_try = (R_min + R_max) * 0.5
 
             A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -419,6 +450,23 @@ def L2_find_radius(
                 R_min = R_try
             else:
                 R_max = R_try
+                
+            tol_reached = np.abs(R_min - R_max)/R_max
+        
+            # print info
+            if verbosity >= 1:
+                
+                string = "Iteration " + str(i) + "/" + str(num_attempt) + \
+                ". Tolerance reached " + "{:.2e}".format(tol_reached) + \
+                "/" + str(tol)
+                sys.stdout.write('\r' + string)
+    
+            if tol_reached < tol:
+                
+                if verbosity >= 1:
+                    sys.stdout.write('\n')
+                    
+                return R_min
 
     return R_min
 
@@ -437,6 +485,7 @@ def L2_find_R1(
     T_rho_type_id_L2,
     T_rho_args_L2,
     num_attempt=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the boundary of the planet.
@@ -478,6 +527,15 @@ def L2_find_R1(
 
             T_rho_args_L2 (list):
                 Extra arguments to determine the relation in layer 2.
+            
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive radius.
+                
+            verbosity (int):
+                Printing options.
 
         Returns:
             R1_min ([float]):
@@ -516,9 +574,7 @@ def L2_find_R1(
         )
         raise Exception(e)
 
-    for i in tqdm(
-        range(num_attempt), desc="Finding R1 given R, M", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
         R1_try = (R1_min + R1_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
