@@ -169,7 +169,7 @@ def L2_integrate(
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-#@njit
+# @njit
 def L2_find_mass(
     num_prof,
     R,
@@ -247,7 +247,7 @@ def L2_find_mass(
     min_tol = 1e-7
     if tol > min_tol:
         tol = min_tol
-        
+
     M_min = 0.0
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -265,14 +265,14 @@ def L2_find_mass(
         T_rho_type_id_L2,
         T_rho_args_L2,
     )
-    
+
     if A1_m_enc[-1] < 0:
         raise Exception(
             "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
 
     for i in range(num_attempt):
-    
+
         M_try = (M_min + M_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -295,23 +295,30 @@ def L2_find_mass(
             M_max = M_try
         else:
             M_min = M_try
-            
-        tol_reached = np.abs(M_min - M_max)/M_min
-        
+
+        tol_reached = np.abs(M_min - M_max) / M_min
+
         # print info (cannot do it with numba)
         if verbosity >= 1:
-            
-            string = "Iteration " + str(i) + "/" + str(num_attempt) + \
-            ". Tolerance reached " + "{:.2e}".format(tol_reached) + \
-            "/" + str(tol)
-            sys.stdout.write('\r' + string)
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-            
-            if verbosity >= 1:
-                sys.stdout.write('\n')
-                
-            return M_max
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return M_max
 
@@ -426,47 +433,53 @@ def L2_find_radius(
         )
         raise Exception(e)
 
-    if A1_m_enc_1[-1] == 0.0:
-        for i in range(num_attempt):
-            R_try = (R_min + R_max) * 0.5
+    for i in range(num_attempt):
+        R_try = (R_min + R_max) * 0.5
 
-            A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-                num_prof,
-                R_try,
-                M,
-                P_s,
-                T_s,
-                rho_s,
-                R1,
-                mat_id_L1,
-                T_rho_type_id_L1,
-                T_rho_args_L1,
-                mat_id_L2,
-                T_rho_type_id_L2,
-                T_rho_args_L2,
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
+            num_prof,
+            R_try,
+            M,
+            P_s,
+            T_s,
+            rho_s,
+            R1,
+            mat_id_L1,
+            T_rho_type_id_L1,
+            T_rho_args_L1,
+            mat_id_L2,
+            T_rho_type_id_L2,
+            T_rho_args_L2,
+        )
+
+        if A1_m_enc[-1] > 0.0:
+            R_min = R_try
+        else:
+            R_max = R_try
+
+        tol_reached = np.abs(R_min - R_max) / R_max
+
+        # print info
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
             )
+            sys.stdout.write("\r" + string)
 
-            if A1_m_enc[-1] > 0.0:
-                R_min = R_try
-            else:
-                R_max = R_try
-                
-            tol_reached = np.abs(R_min - R_max)/R_max
-        
-            # print info
-            if verbosity >= 1:
-                
-                string = "Iteration " + str(i) + "/" + str(num_attempt) + \
-                ". Tolerance reached " + "{:.2e}".format(tol_reached) + \
-                "/" + str(tol)
-                sys.stdout.write('\r' + string)
-    
-            if tol_reached < tol:
-                
-                if verbosity >= 1:
-                    sys.stdout.write('\n')
-                    
-                return R_min
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return R_min
 
@@ -598,6 +611,30 @@ def L2_find_R1(
         else:
             R1_max = R1_try
 
+        tol_reached = np.abs(R1_min - R1_max) / R1_max
+
+        # print info
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
+
     return R1_min
 
 
@@ -616,6 +653,7 @@ def L2_find_R1_R(
     T_rho_type_id_L2,
     T_rho_args_L2,
     num_attempt=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the boundary and radius of the planet.
@@ -660,6 +698,15 @@ def L2_find_R1_R(
 
             T_rho_args_L2 (list):
                 Extra arguments to determine the relation in layer 2.
+                
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive radius.
+                
+            verbosity (int):
+                Printing options.
 
         Returns:
             R1_min ([float]):
@@ -670,6 +717,8 @@ def L2_find_R1_R(
     rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
 
     # Build planet made of core material
+    if verbosity >= 1:
+        print("Trying to build a planet made of core material.")
     try:
         R_min = L1_spherical.L1_find_radius(
             num_prof,
@@ -685,10 +734,12 @@ def L2_find_R1_R(
         )
     except:
         raise Exception(
-            "Could not build a planet made of core material.\nPlease increase R_max.\n"
+            "Could not build a planet made of core material.\nPlease increase R_max."
         )
 
     # Build planet made of mantle material
+    if verbosity >= 1:
+        print("Trying to build a planet made of mantle material.")
     try:
         R_max = L1_spherical.L1_find_radius(
             num_prof,
@@ -712,9 +763,7 @@ def L2_find_R1_R(
             "A planet made of core material is bigger than one made of mantle material.\n"
         )
 
-    for i in tqdm(
-        range(num_attempt), desc="Finding R1 and R given M1, M2", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
 
         R1_try = L2_find_R1(
@@ -756,5 +805,29 @@ def L2_find_R1_R(
             R_min = R_try
         else:
             R_max = R_try
+
+        tol_reached = np.abs(M1_try - M1) / M1
+
+        # print info
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return R1_try, R_try

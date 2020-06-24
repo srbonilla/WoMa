@@ -629,6 +629,7 @@ class Planet:
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -649,6 +650,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         (
@@ -702,6 +706,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         (
@@ -756,6 +763,7 @@ class Planet:
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -777,6 +785,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         if verbosity >= 1:
@@ -839,6 +850,7 @@ class Planet:
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -860,6 +872,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         if verbosity >= 1:
@@ -930,7 +945,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_given_prof_L1(
+    def gen_prof_L2_given_prof_L1(  # this function should go in L2_spherical.py
         self, mat, T_rho_type_id, T_rho_args, rho_min, verbosity=1
     ):
         """ Add a second layer (atmosphere) on top of existing 1 layer profiles.
@@ -1052,7 +1067,9 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_find_R1_given_M1_add_L2(self, verbosity=1):
+    def gen_prof_L2_find_R1_given_M1_add_L2(
+        self, verbosity=1
+    ):  # this should go to L2_spherical.py
         """ Generate a 2 layer profile by first finding the inner 1 layer
             profile using the mass of that layer then add the third layer
             (atmosphere) on top.

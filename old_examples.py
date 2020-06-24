@@ -129,7 +129,7 @@ def demo_gen_prof_L2_find_R1_given_R_M():
 
     planet.gen_prof_L2_find_R1_given_R_M()
 
-    plot_planet_profiles_alternate(planet)
+    plot_planet_profiles(planet)
 
 
 def demo_gen_prof_L2_find_R_given_M_R1():
@@ -154,7 +154,6 @@ def demo_gen_prof_L2_find_M_given_R1_R():
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
         A1_T_rho_type   = ["power=0.", "power=0."],
-        A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [0.40*R_earth, R_earth],
         P_s             = 0,
         T_s             = 300,
@@ -162,6 +161,21 @@ def demo_gen_prof_L2_find_M_given_R1_R():
 
     planet.M_max = 2*M_earth
     planet.gen_prof_L2_find_M_given_R1_R()
+
+    plot_planet_profiles(planet)
+    
+def demo_gen_prof_L2_find_R1_R_given_M1_M2():
+    planet = woma.Planet(
+        name            = "planet",
+        A1_mat_layer    = ["Til_iron", "Til_granite"],
+        A1_T_rho_type   = ["power=0.", "power=0."],
+        A1_M_layer      = [0.3*M_earth, 0.7*M_earth],
+        P_s             = 0,
+        T_s             = 300,
+        )
+
+    planet.R_max = 2*R_earth
+    planet.gen_prof_L2_find_R1_R_given_M1_M2()
 
     plot_planet_profiles(planet)
 

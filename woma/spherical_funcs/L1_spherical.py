@@ -122,9 +122,18 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-#@njit
+# @njit
 def L1_find_mass(
-    num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args, num_attempt=40,
+    num_prof,
+    R,
+    M_max,
+    P_s,
+    T_s,
+    rho_s,
+    mat_id,
+    T_rho_type_id,
+    T_rho_args,
+    num_attempt=40,
     tol=0.01,
     verbosity=1,
 ):
@@ -172,12 +181,12 @@ def L1_find_mass(
             M_max (float):
                 Mass of the planet (SI).
     """
-    
+
     # need this tolerance to avoid peaks in the centre of the planet for the density profile
     min_tol = 1e-7
     if tol > min_tol:
         tol = min_tol
-        
+
     M_min = 0.0
 
     # Try integrating the profile with the maximum mass
@@ -192,7 +201,7 @@ def L1_find_mass(
 
     # Iterate the mass
     for i in range(num_attempt):
-        
+
         M_try = (M_min + M_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
@@ -203,23 +212,30 @@ def L1_find_mass(
             M_max = M_try
         else:
             M_min = M_try
-            
-        tol_reached = np.abs(M_min - M_max)/M_min
-        
+
+        tol_reached = np.abs(M_min - M_max) / M_min
+
         # print info (cannot do it with numba)
         if verbosity >= 1:
-            
-            string = "Iteration " + str(i) + "/" + str(num_attempt) + \
-            ". Tolerance reached " + "{:.2e}".format(tol_reached) + \
-            "/" + str(tol)
-            sys.stdout.write('\r' + string)
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-            
-            if verbosity >= 1:
-                sys.stdout.write('\n')
-                
-            return M_max
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return M_max
 
@@ -296,7 +312,7 @@ def L1_find_radius(
 
     # Iterate the radius
     for i in range(num_attempt):
-        
+
         R_try = (R_min + R_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
@@ -307,22 +323,29 @@ def L1_find_radius(
             R_min = R_try
         else:
             R_max = R_try
-            
-        tol_reached = np.abs(R_min - R_max)/R_max
-        
+
+        tol_reached = np.abs(R_min - R_max) / R_max
+
         # print info
         if verbosity >= 1:
-            
-            string = "Iteration " + str(i) + "/" + str(num_attempt) + \
-            ". Tolerance reached " + "{:.2e}".format(tol_reached) + \
-            "/" + str(tol)
-            sys.stdout.write('\r' + string)
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-            
-            if verbosity >= 1:
-                sys.stdout.write('\n')
-                
-            return R_min
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return R_min
