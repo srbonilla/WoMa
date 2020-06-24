@@ -91,6 +91,10 @@ class Planet:
     rho_min : float
         The minimum density for the outer edge of the profile (kg m^-3).
 
+    tol : float
+        The tolerance for finding the appropriate radius or boundaries, as a fraction of the 
+        difference between two consecutive values.
+
     M_frac_tol : float
         The tolerance for finding the appropriate mass, as a fraction of the 
         total mass.
@@ -162,6 +166,7 @@ class Planet:
         R_min=None,
         R_max=None,
         rho_min=None,
+        tol=0.001,
         M_frac_tol=0.01,
         num_prof=10000,
         num_attempt=40,
@@ -192,6 +197,7 @@ class Planet:
         self.R_min = R_min
         self.R_max = R_max
         self.rho_min = rho_min
+        self.tol = tol
         self.M_frac_tol = M_frac_tol
         self.num_prof = num_prof
         self.num_attempt = num_attempt
@@ -455,6 +461,7 @@ class Planet:
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -472,6 +479,9 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         if verbosity >= 1:
@@ -511,9 +521,6 @@ class Planet:
         if self.R is None:
             self.R = self.A1_R_layer[0]
 
-        if verbosity >= 1:
-            print("Finding M given R...")
-
         self.M = L1_spherical.L1_find_mass(
             self.num_prof,
             self.R,
@@ -524,6 +531,9 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         if verbosity >= 1:
@@ -619,6 +629,7 @@ class Planet:
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -639,6 +650,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         (
@@ -678,9 +692,6 @@ class Planet:
         assert self.M_max is not None
         self._2_layer_input()
 
-        if verbosity >= 1:
-            print("Finding M given R1 and R...")
-
         self.M = L2_spherical.L2_find_mass(
             self.num_prof,
             self.R,
@@ -695,6 +706,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         (
@@ -749,6 +763,7 @@ class Planet:
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -770,6 +785,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         if verbosity >= 1:
@@ -832,6 +850,7 @@ class Planet:
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -853,6 +872,9 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.num_attempt,
+            self.tol,
+            verbosity=verbosity,
         )
 
         if verbosity >= 1:
@@ -923,7 +945,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_given_prof_L1(
+    def gen_prof_L2_given_prof_L1(  # this function should go in L2_spherical.py
         self, mat, T_rho_type_id, T_rho_args, rho_min, verbosity=1
     ):
         """ Add a second layer (atmosphere) on top of existing 1 layer profiles.
@@ -1045,7 +1067,9 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_find_R1_given_M1_add_L2(self, verbosity=1):
+    def gen_prof_L2_find_R1_given_M1_add_L2(
+        self, verbosity=1
+    ):  # this should go to L2_spherical.py
         """ Generate a 2 layer profile by first finding the inner 1 layer
             profile using the mass of that layer then add the third layer
             (atmosphere) on top.
