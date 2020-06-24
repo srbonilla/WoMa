@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Mon Jul 29 11:13:54 2019
-
-@author: sergio
+WoMa 1 layer spinning functions 
 """
 
 import numpy as np
@@ -79,7 +75,7 @@ def V_eq_po_from_rho(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
 
 
 @njit
-def rho_eq_po_from_V_L1(
+def L1_rho_eq_po_from_V(
     A1_r_eq,
     A1_V_eq,
     A1_r_po,
@@ -202,7 +198,7 @@ def rho_eq_po_from_V_L1(
     return A1_rho_eq, A1_rho_po
 
 
-def spin_L1(
+def L1_spin(
     num_attempt,
     A1_r_eq,
     A1_rho_eq,
@@ -283,7 +279,7 @@ def spin_L1(
         A1_V_eq, A1_V_po = V_eq_po_from_rho(
             A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period
         )
-        A1_rho_eq, A1_rho_po = rho_eq_po_from_V_L1(
+        A1_rho_eq, A1_rho_po = L1_rho_eq_po_from_V(
             A1_r_eq,
             A1_V_eq,
             A1_r_po,
@@ -302,7 +298,7 @@ def spin_L1(
     return profile_eq, profile_po
 
 
-def picle_placement_L1(
+def L1_place_particles(
     A1_r_eq,
     A1_rho_eq,
     A1_r_po,
@@ -400,7 +396,7 @@ def picle_placement_L1(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.picle_placement(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period)
+    ) = us.place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period)
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))

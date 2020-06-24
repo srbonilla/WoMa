@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Mon Jul 29 10:08:06 2019
-
-@author: sergio
+WoMa 3 layer spherical functions 
 """
 
 import numpy as np

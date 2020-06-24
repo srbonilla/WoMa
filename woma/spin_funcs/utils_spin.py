@@ -1,9 +1,5 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Mon Jul 29 11:10:28 2019
-
-@author: sergio
+WoMa general spinning functions
 """
 
 import numpy as np
@@ -375,7 +371,7 @@ def frac_vol_theta_analytical(theta, R_in, Z_in, R_out, Z_out):
 
 
 @jit(nopython=False)
-def compute_spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
+def spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
     index = np.where(A1_rho_po == 0)[0][0] + 1
     rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
@@ -398,19 +394,17 @@ def compute_spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
 
 @jit(nopython=False)
-def compute_M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
+def M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
-    return np.sum(compute_spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po))
+    return np.sum(spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po))
 
 
-def compute_picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
+def picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
     R_eq = np.max(A1_r_eq[A1_rho_eq > 0])
 
     A1_M_shell = np.zeros_like(A1_R_shell)
-    A1_M_cum = np.cumsum(
-        compute_spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
-    )
+    A1_M_cum = np.cumsum(spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po))
     get_M_cum_model = interp1d(A1_r_eq, A1_M_cum)
 
     for i in range(A1_M_shell.shape[0]):
@@ -441,8 +435,7 @@ def compute_picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_p
     return A1_M_shell
 
 
-# main function
-def picle_placement(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity=1):
+def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity=1):
 
     """ Particle placement for a spining profile.
 
@@ -507,7 +500,7 @@ def picle_placement(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     assert len(A1_r_po) == len(A1_rho_po)
 
     # mass of the model planet
-    M = compute_M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
+    M = M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
 
     # Equatorial and polar radius radius
     R_eq = np.max(A1_r_eq[A1_rho_eq > 0])
@@ -530,9 +523,7 @@ def picle_placement(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     # Get picle mass of final configuration
     m_picle = M / N
 
-    A1_M_shell = compute_picle_shell_masses(
-        A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po
-    )
+    A1_M_shell = picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
 
     # Number of particles per shell
     N_shell = np.round(A1_M_shell / m_picle).astype(int)
@@ -744,7 +735,7 @@ def spin_iteration(
     # Use correct function
     if num_layer == 1:
 
-        profile_eq, profile_po = L1_spin.spin_L1(
+        profile_eq, profile_po = L1_spin.L1_spin(
             1,
             A1_r_eq,
             A1_rho_eq,
@@ -763,7 +754,7 @@ def spin_iteration(
 
     elif num_layer == 2:
 
-        profile_eq, profile_po = L2_spin.spin_L2(
+        profile_eq, profile_po = L2_spin.L2_spin(
             1,
             A1_r_eq,
             A1_rho_eq,
@@ -786,7 +777,7 @@ def spin_iteration(
 
     elif num_layer == 3:
 
-        profile_eq, profile_po = L3_spin.spin_L3(
+        profile_eq, profile_po = L3_spin.L3_spin(
             1,
             A1_r_eq,
             A1_rho_eq,

@@ -3151,7 +3151,7 @@ class ParticleSet:
                     self.A1_h,
                     self.A1_mat_id,
                     self.A1_id,
-                ) = L1_spin.picle_placement_L1(
+                ) = L1_spin.L1_place_particles(
                     planet.A1_r_eq,
                     planet.A1_rho_eq,
                     planet.A1_r_po,
@@ -3186,7 +3186,7 @@ class ParticleSet:
                     self.A1_h,
                     self.A1_mat_id,
                     self.A1_id,
-                ) = L2_spin.picle_placement_L2(
+                ) = L2_spin.L2_place_particles(
                     planet.A1_r_eq,
                     planet.A1_rho_eq,
                     planet.A1_r_po,
@@ -3226,7 +3226,7 @@ class ParticleSet:
                     self.A1_h,
                     self.A1_mat_id,
                     self.A1_id,
-                ) = L3_spin.picle_placement_L3(
+                ) = L3_spin.L3_place_particles(
                     planet.A1_r_eq,
                     planet.A1_rho_eq,
                     planet.A1_r_po,
