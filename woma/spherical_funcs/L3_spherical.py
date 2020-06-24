@@ -4,7 +4,7 @@ WoMa 3 layer spherical functions
 
 import numpy as np
 from numba import njit
-from tqdm import tqdm
+import sys
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -197,7 +197,7 @@ def L3_integrate(
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-@njit
+#@njit
 def L3_find_mass(
     num_prof,
     R,
@@ -216,6 +216,9 @@ def L3_find_mass(
     mat_id_L3,
     T_rho_type_id_L3,
     T_rho_args_L3,
+    num_attempt=40,
+    tol=0.01,
+    verbosity=1,
 ):
     """ Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
@@ -271,6 +274,15 @@ def L3_find_mass(
 
             T_rho_args_L3 (list):
                 Extra arguments to determine the relation in layer 3.
+                
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive masses.
+                
+            verbosity (int):
+                Printing options.
 
         Returns:
 
@@ -278,6 +290,10 @@ def L3_find_mass(
                 Mass of the planet (SI).
 
     """
+    min_tol = 1e-7
+    if tol > min_tol:
+        tol = min_tol
+    
     M_min = 0.0
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
@@ -299,40 +315,64 @@ def L3_find_mass(
         T_rho_type_id_L3,
         T_rho_args_L3,
     )
-
-    if A1_m_enc[-1] > 0.0:
-        while np.abs(M_min - M_max) > 1e-10 * M_min:
-            M_try = (M_min + M_max) * 0.5
-
-            A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
-                num_prof,
-                R,
-                M_try,
-                P_s,
-                T_s,
-                rho_s,
-                R1,
-                R2,
-                mat_id_L1,
-                T_rho_type_id_L1,
-                T_rho_args_L1,
-                mat_id_L2,
-                T_rho_type_id_L2,
-                T_rho_args_L2,
-                mat_id_L3,
-                T_rho_type_id_L3,
-                T_rho_args_L3,
-            )
-
-            if A1_m_enc[-1] > 0.0:
-                M_max = M_try
-            else:
-                M_min = M_try
-
-    else:
+    
+    if A1_m_enc[-1] < 0:
         raise Exception(
-            "M_max is too low, ran out of mass in first iteration.\n Please increase M_max.\n"
+            "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
+
+    for i in range(num_attempt):
+    
+        M_try = (M_min + M_max) * 0.5
+
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
+            num_prof,
+            R,
+            M_try,
+            P_s,
+            T_s,
+            rho_s,
+            R1,
+            R2,
+            mat_id_L1,
+            T_rho_type_id_L1,
+            T_rho_args_L1,
+            mat_id_L2,
+            T_rho_type_id_L2,
+            T_rho_args_L2,
+            mat_id_L3,
+            T_rho_type_id_L3,
+            T_rho_args_L3,
+        )
+
+        if A1_m_enc[-1] > 0.0:
+            M_max = M_try
+        else:
+            M_min = M_try
+
+        tol_reached = np.abs(M_min - M_max) / M_min
+
+        # Print info (cannot do it with numba)
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return M_max
 
@@ -356,6 +396,7 @@ def L3_find_radius(
     T_rho_type_id_L3,
     T_rho_args_L3,
     num_attempt=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the total mass of the planet.
@@ -412,6 +453,15 @@ def L3_find_radius(
 
             T_rho_args_L3 (list):
                 Extra arguments to determine the relation in layer 3.
+                
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive masses or radius.
+                
+            verbosity (int):
+                Printing options.
 
 
         Returns:
@@ -479,9 +529,7 @@ def L3_find_radius(
         )
         raise Exception(e)
 
-    for i in tqdm(
-        range(num_attempt), desc="Finding R given M, R1, R2", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
@@ -508,6 +556,30 @@ def L3_find_radius(
             R_min = R_try
         else:
             R_max = R_try
+            
+        tol_reached = np.abs(R_min - R_max) / R_max
+
+        # Print info
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return R_min
 
@@ -530,6 +602,7 @@ def L3_find_R2(
     T_rho_type_id_L3,
     T_rho_args_L3,
     num_attempt=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the boundary between layers 2 and 3 of the planet for
@@ -584,6 +657,15 @@ def L3_find_R2(
 
             T_rho_args_L3 (list):
                 Extra arguments to determine the relation in layer 3.
+                
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive masses or radius.
+                
+            verbosity (int):
+                Printing options.
 
         Returns:
             R2_max ([float]):
@@ -642,9 +724,7 @@ def L3_find_R2(
 
         return R2_max
 
-    for i in tqdm(
-        range(num_attempt), desc="Finding R2 given M, R, R1", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
 
         R2_try = (R2_min + R2_max) * 0.5
 
@@ -672,6 +752,30 @@ def L3_find_R2(
             R2_min = R2_try
         else:
             R2_max = R2_try
+            
+        tol_reached = np.abs(R2_min - R2_max) / R2_max
+
+        # print info
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return R2_max
 
@@ -694,6 +798,7 @@ def L3_find_R1(
     T_rho_type_id_L3,
     T_rho_args_L3,
     num_attempt=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the boundary between layers 2 and 3 of the planet for
@@ -748,6 +853,15 @@ def L3_find_R1(
 
             T_rho_args_L3 (list):
                 Extra arguments to determine the relation in layer 3.
+                
+            num_attempt (float):
+                Maximum number of iterations to perform.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive masses or radius.
+                
+            verbosity (int):
+                Printing options.
 
 
         Returns:
@@ -803,9 +917,7 @@ def L3_find_R1(
         )
         raise Exception(e)
 
-    for i in tqdm(
-        range(num_attempt), desc="Finding R1 given R, M, R2", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
 
         R1_try = (R1_min + R1_max) * 0.5
 
@@ -833,6 +945,30 @@ def L3_find_R1(
             R1_min = R1_try
         else:
             R1_max = R1_try
+            
+        tol_reached = np.abs(R1_min - R1_max) / R1_max
+
+        # Print info
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return R1_max
 
@@ -854,8 +990,9 @@ def L3_find_R1_R2(
     mat_id_L3,
     T_rho_type_id_L3,
     T_rho_args_L3,
-    num_attempt=20,
-    num_attempt_2=10,
+    num_attempt=40,
+    num_attempt_2=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the boundaries of the planet for a
@@ -910,6 +1047,18 @@ def L3_find_R1_R2(
 
             T_rho_args_L3 (list):
                 Extra arguments to determine the relation in layer 3.
+                
+            num_attempt (float):
+                Maximum number of iterations to perform. Outer loop.
+                
+            num_attempt_2 (float):
+                Maximum number of iterations to perform. Inner loop.
+                
+            tol (float):
+                Tolerance level. Relative difference between two consecutive masses or radius.
+                
+            verbosity (int):
+                Printing options.
 
         Returns:
             R1, R2 ([float]):
@@ -921,36 +1070,33 @@ def L3_find_R1_R2(
 
     rho_s_L2 = eos.rho_P_T(P_s, T_s, mat_id_L2)
 
-    R1_I_max = L2_spherical.L2_find_R1(
-        num_prof,
-        R,
-        M,
-        P_s,
-        T_s,
-        rho_s_L2,
-        mat_id_L1,
-        T_rho_type_id_L1,
-        T_rho_args_L1,
-        mat_id_L2,
-        T_rho_type_id_L2,
-        T_rho_args_L2,
-    )
+    if verbosity >= 1:
+        print("Trying to build a planet made of core and mantle materials.")
 
-    R1_I_min = L2_spherical.L2_find_R1(
-        num_prof,
-        R,
-        M,
-        P_s,
-        T_s,
-        rho_s,
-        mat_id_L1,
-        T_rho_type_id_L1,
-        T_rho_args_L1,
-        mat_id_L3,
-        T_rho_type_id_L3,
-        T_rho_args_L3,
-    )
-
+    try:
+        R1_I_max = L2_spherical.L2_find_R1(
+            num_prof,
+            R,
+            M,
+            P_s,
+            T_s,
+            rho_s_L2,
+            mat_id_L1,
+            T_rho_type_id_L1,
+            T_rho_args_L1,
+            mat_id_L2,
+            T_rho_type_id_L2,
+            T_rho_args_L2,
+            num_attempt,
+            tol,
+            verbosity=0
+        )
+        
+    except:
+        raise Exception(
+            "Could not build a planet made of core and mantle materials."
+        )
+        
     r_max, A1_m_enc, A1_P, A1_T, rho_23x, A1_u, A1_mat_id = L2_spherical.L2_integrate(
         num_prof,
         R,
@@ -966,6 +1112,38 @@ def L3_find_R1_R2(
         T_rho_type_id_L2,
         T_rho_args_L2,
     )
+    
+    I_MR2_max = utils.moi(r_max, rho_23x) / MR2
+    
+    if verbosity >= 1:
+        print("Maximum moment of inertia factor allowed: {:.2f}".format(I_MR2_max))
+    
+    if verbosity >= 1:
+        print("Trying to build a planet made of core and atmosphere materials.")
+
+    try:
+        R1_I_min = L2_spherical.L2_find_R1(
+            num_prof,
+            R,
+            M,
+            P_s,
+            T_s,
+            rho_s,
+            mat_id_L1,
+            T_rho_type_id_L1,
+            T_rho_args_L1,
+            mat_id_L3,
+            T_rho_type_id_L3,
+            T_rho_args_L3,
+            num_attempt,
+            tol,
+            verbosity=0
+        )
+        
+    except:
+        raise Exception(
+            "Could not build a planet made of core and atmosphere materials."
+        )
 
     r_min, A1_m_enc, A1_P, A1_T, rho_min, A1_u, A1_mat_id = L2_spherical.L2_integrate(
         num_prof,
@@ -984,17 +1162,17 @@ def L3_find_R1_R2(
     )
 
     I_MR2_min = utils.moi(r_min, rho_min) / MR2
-    I_MR2_max = utils.moi(r_max, rho_23x) / MR2
-
+    
+    if verbosity >= 1:
+        print("Minimum moment of inertia factor allowed: {:.2f}".format(I_MR2_min))
+    
+    assert I_MR2_min <= I_MR2_max
+    
     R1_min = R1_I_max
     R1_max = R1_I_min
 
     if I_MR2 > I_MR2_min and I_MR2 < I_MR2_max:
-        for i in tqdm(
-            range(num_attempt),
-            desc="Finding R1, R2 given R, M, I_MR2",
-            disable=verbosity == 0,
-        ):
+        for i in range(num_attempt):
             R1_try = (R1_min + R1_max) * 0.5
 
             R2_try = L3_find_R2(
@@ -1015,6 +1193,7 @@ def L3_find_R1_R2(
                 T_rho_type_id_L3,
                 T_rho_args_L3,
                 num_attempt_2,
+                tol,
                 verbosity=0,
             )
 
@@ -1038,31 +1217,35 @@ def L3_find_R1_R2(
                 T_rho_args_L3,
             )
 
-            if utils.moi(A1_r, A1_rho) / MR2 < I_MR2:
+            I_MR2_iter = utils.moi(A1_r, A1_rho) / MR2
+            
+            if I_MR2_iter < I_MR2:
                 R1_max = R1_try
             else:
                 R1_min = R1_try
 
-    elif I_MR2 > I_MR2_max:
-        if verbosity >= 1:
-            print(
-                "Moment of interia fractor is too high, maximum value is:"
-            )  ### should these be errors?
-            print(I_MR2_max)
-        R1_try = 0.0
-        R2_try = 0.0
+            tol_reached = np.abs(I_MR2_iter - I_MR2) / I_MR2
 
-    elif I_MR2 < I_MR2_min:
+            # print info
+            if verbosity >= 1:
+    
+                string = (
+                    "Iteration "
+                    + str(i)
+                    + "/"
+                    + str(num_attempt)
+                    + ". Tolerance reached "
+                    + "{:.2e}".format(tol_reached)
+                    + "/"
+                    + str(tol)
+                )
+                sys.stdout.write("\r" + string)
+    
+            if tol_reached < tol:
+    
+                break
+    
         if verbosity >= 1:
-            print("Moment of interia fractor is too low, minimum value is:")
-            print(I_MR2_min)
-        R1_try = 0.0
-        R2_try = 0.0
-
-    else:
-        if verbosity >= 1:
-            print("Something went wrong")
-        R1_try = 0.0
-        R2_try = 0.0
+            sys.stdout.write("\n")
 
     return R1_try, R2_try

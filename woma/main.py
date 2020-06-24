@@ -1330,6 +1330,7 @@ class Planet:
             self.A1_T_rho_args[2],
             self.num_attempt,
             self.num_attempt_2,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -1354,6 +1355,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1418,6 +1422,7 @@ class Planet:
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -1442,6 +1447,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1503,6 +1511,7 @@ class Planet:
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -1527,6 +1536,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1571,9 +1583,6 @@ class Planet:
         assert self.M_max is not None
         self._3_layer_input()
 
-        if verbosity >= 1:
-            print("Finding M given R1, R2 and R...")
-
         self.M = L3_spherical.L3_find_mass(
             self.num_prof,
             self.R,
@@ -1592,6 +1601,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1655,6 +1667,7 @@ class Planet:
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
             self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -1680,6 +1693,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
