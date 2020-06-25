@@ -1415,7 +1415,7 @@ class Planet:
         assert self.A1_mat_id_layer[2] is not None
         assert self.A1_T_rho_type_id[2] is not None
 
-    def gen_prof_L3_find_R1_R2_given_R_M_I(self, verbosity=1):  ### WIP
+    def gen_prof_L3_find_R1_R2_given_R_M_I(self, R1_min, R1_max, verbosity=1):  ### WIP
         # Check for necessary input
         assert self.R is not None
         assert self.M is not None
@@ -1439,8 +1439,11 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            num_attempt=num_attempt,
-            num_attempt_2=num_attempt_2,
+            R1_min,
+            R1_max,
+            self.num_attempt,
+            self.num_attempt_2,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -1465,6 +1468,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1533,7 +1539,7 @@ class Planet:
         assert self.A1_R_layer[0] is not None
         assert self.M is not None
         self._3_layer_input()
-
+        
         self.A1_R_layer[1] = L3_spherical.L3_find_R2(
             self.num_prof,
             self.R,
@@ -1551,7 +1557,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            num_attempt=num_attempt,
+            self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -1576,6 +1583,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1659,7 +1669,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            num_attempt=num_attempt,
+            self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
 
@@ -1684,6 +1695,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1748,9 +1762,6 @@ class Planet:
         assert self.A1_R_layer[1] is not None
         self._3_layer_input()
 
-        if verbosity >= 1:
-            print("Finding M given R1, R2 and R...")
-
         self.M = L3_spherical.L3_find_mass(
             self.num_prof,
             self.R,
@@ -1769,6 +1780,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -1855,7 +1869,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            num_attempt=num_attempt,
+            self.num_attempt,
+            self.tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -1881,6 +1896,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            self.num_attempt,
+            self.tol,
+            verbosity,
         )
 
         (
@@ -2850,16 +2868,13 @@ class SpinPlanet:
                     print("Convergence criterion reached.")
                 break
 
-        if self.period < period_iter:
-            if verbosity >= 1:
-                print("")
-                print("Minimum period found at", period_iter, "h")
-            self.period = period_iter
+            spin_planet = SpinPlanet(
+                planet=new_planet, period=period, R_max_eq=R_max_eq, R_max_po=R_max_po
+            )
 
-        self.update_attributes()
+            spin_planet.spin(check_min_period=check_min_period, verbosity=0)
 
-        if verbosity >= 1:
-            self.print_info()
+            criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
 
     def _L1_spin_planet_fix_M(
         self,

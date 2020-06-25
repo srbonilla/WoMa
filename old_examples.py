@@ -80,7 +80,6 @@ def plot_planet_profiles_alternate(planet, fig=None, ax=None):
 #                       Spherical profile examples                             #
 # ============================================================================ #
 
-import woma
 def demo_gen_prof_L1_find_R_given_M():
     planet = woma.Planet(
         name            = "planet",
@@ -216,13 +215,11 @@ def demo_gen_prof_L3_find_R1_R2_given_R_M_I():
         A1_R_layer      = [None, None, R_earth],
         P_s             = 0,
         T_s             = 300,
-        I_MR2           = 0.3*M_earth*R_earth**2,
+        I_MR2           = 0.3,
         M               = M_earth,
-        num_attempt     = 5,
-        num_attempt_2   = 5
         )
 
-    planet.gen_prof_L3_find_R1_R2_given_R_M_I()
+    planet.gen_prof_L3_find_R1_R2_given_R_M_I(R1_min=0.45*R_earth, R1_max=0.64*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -232,7 +229,7 @@ def demo_gen_prof_L3_find_R2_given_R_M_R1():
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite", "SESAME_steam"],
         A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
-        A1_R_layer      = [0.55*R_earth, None, R_earth],
+        A1_R_layer      = [0.5*R_earth, None, R_earth],
         P_s             = 1e5,
         T_s             = 300,
         M               = M_earth
@@ -335,3 +332,4 @@ if __name__ == "__main__":
     demo_gen_prof_L2_find_R1_given_R_M()
     
     plt.show()
+    
