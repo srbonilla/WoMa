@@ -1304,7 +1304,7 @@ class Planet:
         assert self.A1_mat_id_layer[2] is not None
         assert self.A1_T_rho_type_id[2] is not None
 
-    def gen_prof_L3_find_R1_R2_given_R_M_I(self, verbosity=1):  ### WIP
+    def gen_prof_L3_find_R1_R2_given_R_M_I(self, R1_min, R1_max, verbosity=1):  ### WIP
         # Check for necessary input
         assert self.R is not None
         assert self.M is not None
@@ -1328,6 +1328,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
+            R1_min,
+            R1_max,
             self.num_attempt,
             self.num_attempt_2,
             self.tol,
@@ -1403,7 +1405,7 @@ class Planet:
         assert self.A1_R_layer[0] is not None
         assert self.M is not None
         self._3_layer_input()
-
+        
         self.A1_R_layer[1] = L3_spherical.L3_find_R2(
             self.num_prof,
             self.R,
