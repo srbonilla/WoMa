@@ -730,7 +730,9 @@ def L2_find_R1_R(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
-            verbosity=0,
+            tol=tol,
+            num_attempt=num_attempt,
+            verbosity=verbosity,
         )
     except:
         raise Exception(
@@ -751,7 +753,9 @@ def L2_find_R1_R(
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
-            verbosity=0,
+            tol=tol,
+            num_attempt=num_attempt,
+            verbosity=verbosity,
         )
     except:
         raise Exception(
@@ -779,7 +783,8 @@ def L2_find_R1_R(
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
-            num_attempt=20,
+            num_attempt=num_attempt,
+            tol=tol,
             verbosity=0,
         )
 

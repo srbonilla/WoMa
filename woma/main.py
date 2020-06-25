@@ -22,7 +22,6 @@ and for support.
 """
 
 import numpy as np
-import copy
 import h5py
 from scipy.interpolate import interp1d
 from tqdm import tqdm
@@ -140,7 +139,7 @@ class Planet:
         T_2=None,
         rho_2=None,
         I_MR2=None,
-        num_prof=10000,
+        num_prof=1000,
     ):
         self.name = name
         self.A1_mat_layer = A1_mat_layer
@@ -193,9 +192,7 @@ class Planet:
             self.A1_M_layer = [None] * self.num_layer
         if self.A1_R_layer is None:
             self.A1_R_layer = [None] * self.num_layer
-        if self.M is None:
-            self.M = self.A1_M_layer[-1]
-        if self.R is None:
+        if self.R is None and (self.A1_R_layer[-1] is not None):
             self.R = self.A1_R_layer[-1]
 
         # Force types for numba
@@ -344,7 +341,7 @@ class Planet:
                 "    %s = %.5g  K", (utils.add_whitespace("T_2", space), self.T_2)
             )
             print_try(
-                "    %s = %.5g  kg m^-",
+                "    %s = %.5g  kg m^-3",
                 (utils.add_whitespace("rho_2", space), self.rho_2),
             )
         if self.num_layer > 1:
@@ -1415,7 +1412,9 @@ class Planet:
         assert self.A1_mat_id_layer[2] is not None
         assert self.A1_T_rho_type_id[2] is not None
 
-    def gen_prof_L3_find_R1_R2_given_R_M_I(self, R1_min, R1_max, verbosity=1):  ### WIP
+    def gen_prof_L3_find_R1_R2_given_R_M_I(
+        self, R1_min, R1_max, tol=0.001, num_attempt=40, num_attempt_2=40, verbosity=1
+    ):
         # Check for necessary input
         assert self.R is not None
         assert self.M is not None
@@ -1441,9 +1440,9 @@ class Planet:
             self.A1_T_rho_args[2],
             R1_min,
             R1_max,
-            self.num_attempt,
-            self.num_attempt_2,
-            self.tol,
+            num_attempt=num_attempt,
+            num_attempt_2=num_attempt_2,
+            tol=tol,
             verbosity=verbosity,
         )
 
@@ -1468,9 +1467,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
-            verbosity,
+            num_attempt=num_attempt,
+            tol=tol,
+            verbosity=verbosity,
         )
 
         (
@@ -1539,7 +1538,7 @@ class Planet:
         assert self.A1_R_layer[0] is not None
         assert self.M is not None
         self._3_layer_input()
-        
+
         self.A1_R_layer[1] = L3_spherical.L3_find_R2(
             self.num_prof,
             self.R,
@@ -1557,8 +1556,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
+            num_attempt=num_attempt,
+            tol=tol,
             verbosity=verbosity,
         )
 
@@ -1583,9 +1582,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
-            verbosity,
+            num_attempt=num_attempt,
+            tol=tol,
+            verbosity=verbosity,
         )
 
         (
@@ -1669,8 +1668,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
+            num_attempt=num_attempt,
+            tol=tol,
             verbosity=verbosity,
         )
 
@@ -1695,9 +1694,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
-            verbosity,
+            num_attempt=num_attempt,
+            tol=tol,
+            verbosity=verbosity,
         )
 
         (
@@ -1780,9 +1779,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
-            verbosity,
+            num_attempt=num_attempt,
+            tol=tol,
+            verbosity=verbosity,
         )
 
         (
@@ -1869,8 +1868,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
+            num_attempt=num_attempt,
+            tol=tol,
             verbosity=verbosity,
         )
         self.A1_R_layer[-1] = self.R
@@ -1896,9 +1895,9 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            self.num_attempt,
-            self.tol,
-            verbosity,
+            num_attempt=num_attempt,
+            tol=tol,
+            verbosity=verbosity,
         )
 
         (

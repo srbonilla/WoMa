@@ -91,9 +91,7 @@ def demo_gen_prof_L1_find_R_given_M():
         T_s             = 300
         )
 
-    planet.R_max = R_earth
-
-    planet.gen_prof_L1_find_R_given_M()
+    planet.gen_prof_L1_find_R_given_M(R_max=R_earth)
 
     plot_planet_profiles(planet)
 
@@ -108,9 +106,7 @@ def demo_gen_prof_L1_find_M_given_R():
         T_s             = 300,
         )
 
-    planet.M_max = M_earth
-
-    planet.gen_prof_L1_find_M_given_R()
+    planet.gen_prof_L1_find_M_given_R(M_max=M_earth)
 
     plot_planet_profiles(planet)
 
@@ -142,8 +138,7 @@ def demo_gen_prof_L2_find_R_given_M_R1():
         T_s             = 300,
         )
 
-    planet.R_max = 2*R_earth
-    planet.gen_prof_L2_find_R_given_M_R1()
+    planet.gen_prof_L2_find_R_given_M_R1(R_max=2*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -158,8 +153,7 @@ def demo_gen_prof_L2_find_M_given_R1_R():
         T_s             = 300,
         )
 
-    planet.M_max = 2*M_earth
-    planet.gen_prof_L2_find_M_given_R1_R()
+    planet.gen_prof_L2_find_M_given_R1_R(M_max=2*M_earth)
 
     plot_planet_profiles(planet)
     
@@ -173,8 +167,7 @@ def demo_gen_prof_L2_find_R1_R_given_M1_M2():
         T_s             = 300,
         )
 
-    planet.R_max = 2*R_earth
-    planet.gen_prof_L2_find_R1_R_given_M1_M2()
+    planet.gen_prof_L2_find_R1_R_given_M1_M2(R_max=2*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -263,11 +256,10 @@ def demo_gen_prof_L3_find_M_given_R_R1_R2():
         A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
         A1_R_layer      = [0.5*R_earth, 0.9*R_earth, R_earth],
         P_s             = 0,
-        T_s             = 300,
-        M_max           = 2*M_earth
+        T_s             = 300
         )
 
-    planet.gen_prof_L3_find_M_given_R_R1_R2()
+    planet.gen_prof_L3_find_M_given_R_R1_R2(M_max=2*M_earth)
 
     plot_planet_profiles(planet)
 
@@ -281,10 +273,9 @@ def demo_gen_prof_L3_find_R_given_M_R1_R2():
         P_s             = 0,
         T_s             = 300,
         M               = M_earth,
-        R_max           = 2*R_earth
         )
 
-    planet.gen_prof_L3_find_R_given_M_R1_R2()
+    planet.gen_prof_L3_find_R_given_M_R1_R2(R_max=2*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -295,14 +286,12 @@ def demo_gen_uranus_prof():
         name            = "Uranus",
         A1_mat_layer    = ["HM80_rock", "HM80_ice", "HM80_HHe"],
         A1_T_rho_type   = ["power=0.", "power=0.9", "adiabatic"],
-        # M               = 14.536 * M_earth,
-        M_max           = 14.7 * M_earth,
         A1_R_layer      = [1.0 * R_earth, 3.1 * R_earth, 3.98 * R_earth],
         P_s             = 1e5,
         T_s             = 60,
         )
 
-    planet.gen_prof_L3_find_M_given_R_R1_R2()
+    planet.gen_prof_L3_find_M_given_R_R1_R2(M_max=14.7*M_earth)
 
     plot_planet_profiles_alternate(planet)
 

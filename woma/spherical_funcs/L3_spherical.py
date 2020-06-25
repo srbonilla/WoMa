@@ -197,7 +197,7 @@ def L3_integrate(
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-#@njit
+# @njit
 def L3_find_mass(
     num_prof,
     R,
@@ -293,7 +293,7 @@ def L3_find_mass(
     min_tol = 1e-7
     if tol > min_tol:
         tol = min_tol
-    
+
     M_min = 0.0
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
@@ -315,14 +315,14 @@ def L3_find_mass(
         T_rho_type_id_L3,
         T_rho_args_L3,
     )
-    
+
     if A1_m_enc[-1] < 0:
         raise Exception(
             "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
 
     for i in range(num_attempt):
-    
+
         M_try = (M_min + M_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
@@ -556,7 +556,7 @@ def L3_find_radius(
             R_min = R_try
         else:
             R_max = R_try
-            
+
         tol_reached = np.abs(R_min - R_max) / R_max
 
         # Print info
@@ -702,7 +702,7 @@ def L3_find_R2(
             R2_min = R2_try
         else:
             R2_max = R2_try
-            
+
         tol_reached = np.abs(R2_min - R2_max) / R2_max
 
         # print info
@@ -726,9 +726,11 @@ def L3_find_R2(
 
     if verbosity >= 1:
         sys.stdout.write("\n")
-        
-    assert R2_max/R > R1/R + 2*tol, "Boundary not found, decrease R1 or increase M"
-    assert R2_max/R < R/R - 2*tol, "Boundary not found, increase R1 or decrease M"
+
+    assert (
+        R2_max / R > R1 / R + 2 * tol
+    ), "Boundary not found, decrease R1 or increase M"
+    assert R2_max / R < R / R - 2 * tol, "Boundary not found, increase R1 or decrease M"
 
     return R2_max
 
@@ -852,7 +854,7 @@ def L3_find_R1(
             R1_min = R1_try
         else:
             R1_max = R1_try
-            
+
         tol_reached = np.abs(R1_min - R1_max) / R1_max
 
         # Print info
@@ -876,9 +878,11 @@ def L3_find_R1(
 
     if verbosity >= 1:
         sys.stdout.write("\n")
-        
-    assert R1_max/R > 2*tol, "Boundary not found, decrease R2 or increase M"
-    assert R1_max/R < R2/R - 2*tol, "Boundary not found, increase R2 or decrease M"
+
+    assert R1_max / R > 2 * tol, "Boundary not found, decrease R2 or increase M"
+    assert (
+        R1_max / R < R2 / R - 2 * tol
+    ), "Boundary not found, increase R2 or decrease M"
 
     return R1_max
 
@@ -1009,13 +1013,11 @@ def L3_find_R1_R2(
             num_attempt=num_attempt,
             tol=tol,
             verbosity=verbosity,
-            )
-        
-    except:
-        raise Exception(
-            "Could not build a planet with R1_min."
         )
-        
+
+    except:
+        raise Exception("Could not build a planet with R1_min.")
+
     try:
         if verbosity >= 1:
             print("Creating a planet with R1_max")
@@ -1039,57 +1041,71 @@ def L3_find_R1_R2(
             num_attempt=num_attempt,
             tol=tol,
             verbosity=verbosity,
-            )
-        
+        )
+
     except:
-        raise Exception(
-            "Could not build a planet with R1_max."
-        )
-        
-    A1_r_min, A1_m_enc_min, A1_P_min, A1_T_min, A1_rho_min, A1_u_min, A1_mat_id_min = L3_integrate(
-            num_prof,
-            R,
-            M,
-            P_s,
-            T_s,
-            rho_s,
-            R1_min,
-            R2_min,
-            mat_id_L1,
-            T_rho_type_id_L1,
-            T_rho_args_L1,
-            mat_id_L2,
-            T_rho_type_id_L2,
-            T_rho_args_L2,
-            mat_id_L3,
-            T_rho_type_id_L3,
-            T_rho_args_L3,
-        )
-    
+        raise Exception("Could not build a planet with R1_max.")
+
+    (
+        A1_r_min,
+        A1_m_enc_min,
+        A1_P_min,
+        A1_T_min,
+        A1_rho_min,
+        A1_u_min,
+        A1_mat_id_min,
+    ) = L3_integrate(
+        num_prof,
+        R,
+        M,
+        P_s,
+        T_s,
+        rho_s,
+        R1_min,
+        R2_min,
+        mat_id_L1,
+        T_rho_type_id_L1,
+        T_rho_args_L1,
+        mat_id_L2,
+        T_rho_type_id_L2,
+        T_rho_args_L2,
+        mat_id_L3,
+        T_rho_type_id_L3,
+        T_rho_args_L3,
+    )
+
     I_MR2_R1_min = utils.moi(A1_r_min, A1_rho_min) / MR2
-    
-    A1_r_max, A1_m_enc_max, A1_P_max, A1_T_max, A1_rho_max, A1_u_max, A1_mat_id_max = L3_integrate(
-            num_prof,
-            R,
-            M,
-            P_s,
-            T_s,
-            rho_s,
-            R1_max,
-            R2_max,
-            mat_id_L1,
-            T_rho_type_id_L1,
-            T_rho_args_L1,
-            mat_id_L2,
-            T_rho_type_id_L2,
-            T_rho_args_L2,
-            mat_id_L3,
-            T_rho_type_id_L3,
-            T_rho_args_L3,
-        )
-    
+
+    (
+        A1_r_max,
+        A1_m_enc_max,
+        A1_P_max,
+        A1_T_max,
+        A1_rho_max,
+        A1_u_max,
+        A1_mat_id_max,
+    ) = L3_integrate(
+        num_prof,
+        R,
+        M,
+        P_s,
+        T_s,
+        rho_s,
+        R1_max,
+        R2_max,
+        mat_id_L1,
+        T_rho_type_id_L1,
+        T_rho_args_L1,
+        mat_id_L2,
+        T_rho_type_id_L2,
+        T_rho_args_L2,
+        mat_id_L3,
+        T_rho_type_id_L3,
+        T_rho_args_L3,
+    )
+
     I_MR2_R1_max = utils.moi(A1_r_max, A1_rho_max) / MR2
-    
+
     # compute I_MR2_min and _max
     I_MR2_min = np.min([I_MR2_R1_min, I_MR2_R1_max])
     I_MR2_max = np.max([I_MR2_R1_min, I_MR2_R1_max])
@@ -1097,14 +1113,15 @@ def L3_find_R1_R2(
     if verbosity >= 1:
         print("Minimum moment of inertia factor found: {:.3f}".format(I_MR2_min))
         print("Maximum moment of inertia factor found: {:.3f}".format(I_MR2_max))
-        
-    if (I_MR2 < I_MR2_min or I_MR2_max < I_MR2):
-        e = "I_MR2 outside the values found for R1_min and R1_max.\n" + \
-            "Try modifying R1_min, R1_max or I_MR2."
-            
+
+    if I_MR2 < I_MR2_min or I_MR2_max < I_MR2:
+        e = (
+            "I_MR2 outside the values found for R1_min and R1_max.\n"
+            + "Try modifying R1_min, R1_max or I_MR2."
+        )
+
         raise ValueError(e)
-    
-    
+
     for i in range(num_attempt):
         R1_try = (R1_min + R1_max) * 0.5
 
@@ -1151,19 +1168,19 @@ def L3_find_R1_R2(
         )
 
         I_MR2_iter = utils.moi(A1_r, A1_rho) / MR2
-        
+
         if I_MR2_R1_min == I_MR2_max:
             if I_MR2_iter < I_MR2:
                 R1_max = R1_try
             else:
                 R1_min = R1_try
-                
+
         elif I_MR2_R1_min == I_MR2_min:
             if I_MR2_iter > I_MR2:
                 R1_max = R1_try
             else:
                 R1_min = R1_try
-                
+
         else:
             raise ValueError("Something unexpected occured. Please report it!")
 
