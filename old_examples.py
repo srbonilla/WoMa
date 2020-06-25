@@ -337,10 +337,10 @@ if __name__ == "__main__":
     
     spin_planet = woma.SpinPlanet(
             planet=planet,
-            period=6,
-            fix_mass=False,
+            period=5,
+            fix_mass=True,
             check_min_period=False,
-            R_max_eq=1.2*R_earth,
+            R_max_eq=1.4*R_earth,
             R_max_po=1.1*R_earth)
     
     # 1 layer
@@ -358,10 +358,10 @@ if __name__ == "__main__":
     
     spin_planet = woma.SpinPlanet(
             planet=planet,
-            period=6,
+            period=4,
             fix_mass=True,
             check_min_period=False,
-            R_max_eq=1.2*R_earth,
-            R_max_po=1.1*R_earth)
+            R_max_eq=1.4*R_earth,
+            R_max_po=1.2*R_earth)
     
     

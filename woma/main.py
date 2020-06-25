@@ -25,6 +25,7 @@ import numpy as np
 import h5py
 from scipy.interpolate import interp1d
 from tqdm import tqdm
+from copy import deepcopy
 import seagen
 import sys
 
@@ -2325,7 +2326,7 @@ class SpinPlanet:
         verbosity=1,
     ):
         self.name = name
-        self.planet = planet
+        self.planet = deepcopy(planet)
         self.period = period
         self.num_prof = num_prof
         self.fix_mass = fix_mass
@@ -2337,6 +2338,9 @@ class SpinPlanet:
         self.num_attempt = num_attempt
         self.num_attempt_2 = num_attempt_2
         self.verbosity = verbosity
+        
+        self.R_original = planet.R
+        self.A1_R_layer_original = planet.A1_R_layer
 
         # Spherical planet attributes
         self.copy_spherical_attributes(self.planet)
@@ -2909,12 +2913,12 @@ class SpinPlanet:
             f = np.mean([f_min, f_max])
 
             # Shrink the input spherical planet
-            self.planet.A1_R_layer = f * self.planet.A1_R_layer
-            self.planet.R = f * self.planet.R
+            self.planet.A1_R_layer = f * self.A1_R_layer_original
+            self.planet.R = f * self.R_original
 
             # Make the new spherical profiles
-            self.planet.gen_prof_L1_find_M_given_R(M_max=1.2*self.planet.M, verbosity=0)
-
+            self.planet.gen_prof_L1_find_M_given_R(M_max=1.2*M_fixed, verbosity=0)
+            
             # Create the spinning profiles
             self.copy_spherical_attributes(self.planet)
             self._spin_planet_simple(
@@ -2925,22 +2929,34 @@ class SpinPlanet:
                 verbosity=0,
             )
 
-            criterion = np.abs(self.M - M_fixed) / M_fixed < tol_layer_masses
-            
-            print(self.M)
-
-            if criterion:
-                if verbosity >= 1:
-                    print("Tolerance level criteria reached.")
-                    self.print_info()
-                return
-
             if self.M > M_fixed:
                 f_max = f
             else:
                 f_min = f
+                
+            tol_reached = np.abs(self.M - M_fixed) / M_fixed
 
+            # print info (cannot do it with numba)
+            if verbosity >= 1:
+    
+                string = (
+                    "Iteration "
+                    + str(i)
+                    + "/"
+                    + str(num_attempt)
+                    + ". Tolerance reached "
+                    + "{:.2e}".format(tol_reached)
+                    + "/"
+                    + str(tol_layer_masses)
+                )
+                sys.stdout.write("\r" + string)
+    
+            if tol_reached < tol_layer_masses:
+    
+                break
+            
         if verbosity >= 1:
+            sys.stdout.write("\n")
             self.print_info()
 
     def _L2_spin_planet_fix_M(
@@ -2961,8 +2977,8 @@ class SpinPlanet:
 
         assert self.num_layer == 2
 
-        M_fixed = self.M
-        M0_fixed = self.A1_M_layer[0]
+        M_fixed = np.copy(self.M)
+        M0_fixed = np.copy(self.A1_M_layer[0])
 
         # Create the spinning profiles
         self.copy_spherical_attributes(self.planet)
@@ -2974,28 +2990,26 @@ class SpinPlanet:
             verbosity=0,
             )
 
-        for k in tqdm(
-            range(num_attempt), desc="Computing spinning profile", disable=verbosity == 0
-        ):
+        for i in range(num_attempt):
 
             if self.M > M_fixed:
-                R_mantle_min = self.planet.A1_R_layer[0]
-                R_mantle_max = self.planet.A1_R_layer[1]
+                R_min = self.A1_R_layer_original[0]
+                R_max = self.A1_R_layer_original[1]
             else:
-                R_mantle_min = self.planet.A1_R_layer[1]
-                R_mantle_max = 1.1 * self.planet.A1_R_layer[1]
+                R_min = self.A1_R_layer_original[1]
+                R_max = 1.1 * self.A1_R_layer_original[1]
 
-            for i in tqdm(range(num_attempt_2), desc="Adjusting outer edge", disable=True):
+            for j in range(num_attempt_2):
 
-                R_mantle = np.mean([R_mantle_min, R_mantle_max])
+                R = np.mean([R_min, R_max])
 
                 # Modify the input spherical planet boundaries
-                self.planet.A1_R_layer[1] = R_mantle
-                self.planet.R = R_mantle
+                self.planet.A1_R_layer[1] = R
+                self.planet.R = R
 
                 # Make the new spherical profiles
                 self.planet.gen_prof_L2_find_M_given_R1_R(
-                    M_max=1.2 * self.M, verbosity=0
+                    M_max=1.2 * M_fixed, verbosity=0
                 )
 
                 # Create the spinning profiles
@@ -3008,24 +3022,39 @@ class SpinPlanet:
                     verbosity=0,
                     )
 
-                criterion_1 = np.abs(self.M - M_fixed) / M_fixed < tol_layer_masses
-                criterion_2 = (
-                    np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed < tol_layer_masses
+                tol_1 = np.abs(self.M - M_fixed) / M_fixed 
+                tol_2 = (
+                    np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed 
                 )
 
-                if criterion_1 and criterion_2:
+                if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
                     if verbosity >= 1:
-                        print("Tolerance level criteria reached.")
+                        string = (
+                            "Iteration "
+                            + str(i)
+                            + "/"
+                            + str(num_attempt)
+                            + ". Tolerances reached "
+                            + "{:.2e}".format(tol_1)
+                            + "/"
+                            + str(tol_layer_masses)
+                            + " and {:.2e}".format(tol_2)
+                            + "/"
+                            + str(tol_layer_masses)
+                        )
+                        sys.stdout.write("\r" + string)
+                        print("\nTolerance level criteria reached.")
                         self.print_info()
+                        
                     return
 
-                if criterion_1:
+                if tol_1 < tol_layer_masses:
                     break
 
                 if self.M > M_fixed:
-                    R_mantle_max = R_mantle
+                    R_max = R
                 else:
-                    R_mantle_min = R_mantle
+                    R_min = R
 
             if self.A1_M_layer[0] / self.M > M0_fixed / M_fixed:
                 R_core_min = 0
@@ -3034,20 +3063,18 @@ class SpinPlanet:
                 R_core_min = self.planet.A1_R_layer[0]
                 R_core_max = self.planet.A1_R_layer[1]
 
-            for i in tqdm(
-                range(num_attempt_2), desc="Adjusting layer 1 and 2 boundary", disable=True
-            ):
+            for j in range(num_attempt_2):
 
                 R_core = np.mean([R_core_min, R_core_max])
 
                 # Modify the input spherical planet boundaries
                 self.planet.A1_R_layer[0] = R_core
-                self.planet.A1_R_layer[1] = R_mantle
-                self.planet.R = R_mantle
+                self.planet.A1_R_layer[1] = R
+                self.planet.R = R
 
                 # Make the new spherical profiles
                 self.planet.gen_prof_L2_find_M_given_R1_R(
-                    M_max=1.2 * self.M, verbosity=0
+                    M_max=1.2 * M_fixed, verbosity=0
                 )
 
                 # Create the spinning profiles
@@ -3060,23 +3087,56 @@ class SpinPlanet:
                     verbosity=0,
                 )
 
-                criterion_1 = np.abs(self.M - M_fixed) / M_fixed < tol_layer_masses
-                criterion_2 = (
-                    np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed < tol_layer_masses
+                tol_1 = np.abs(self.M - M_fixed) / M_fixed 
+                tol_2 = (
+                    np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
                 )
 
-                if criterion_1 and criterion_2:
+                if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
                     if verbosity >= 1:
-                        print("Tolerance level criteria reached.")
+                        string = (
+                            "Iteration "
+                            + str(i)
+                            + "/"
+                            + str(num_attempt)
+                            + ". Tolerances reached "
+                            + "{:.2e}".format(tol_1)
+                            + "/"
+                            + str(tol_layer_masses)
+                            + " and {:.2e}".format(tol_2)
+                            + "/"
+                            + str(tol_layer_masses)
+                        )
+                        sys.stdout.write("\r" + string)
+                        print("\nTolerance level criteria reached.")
                         self.print_info()
+                        
+                    return
 
-                if criterion_2:
+                if tol_2 < tol_layer_masses:
                     break
 
                 if self.A1_M_layer[0] / self.M > M0_fixed / M_fixed:
                     R_core_max = R_core
                 else:
                     R_core_min = R_core
+                    
+            if verbosity >= 1:
+
+                string = (
+                    "Iteration "
+                    + str(i)
+                    + "/"
+                    + str(num_attempt)
+                    + ". Tolerances reached "
+                    + "{:.2e}".format(tol_1)
+                    + "/"
+                    + str(tol_layer_masses)
+                    + " and {:.2e}".format(tol_2)
+                    + "/"
+                    + str(tol_layer_masses)
+                )
+                sys.stdout.write("\r" + string)
 
         if verbosity >= 1:
             self.print_info()
