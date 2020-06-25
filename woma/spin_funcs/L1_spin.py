@@ -273,9 +273,7 @@ def L1_spin(
     profile_eq.append(A1_rho_eq)
     profile_po.append(A1_rho_po)
 
-    for i in tqdm(
-        range(num_attempt), desc="Solving spining profile", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
         A1_V_eq, A1_V_po = V_eq_po_from_rho(
             A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period
         )

@@ -3,9 +3,9 @@ WoMa general spinning functions
 """
 
 import numpy as np
+import sys
 from numba import njit, jit
 from scipy.interpolate import interp1d
-import scipy.integrate as integrate
 from tqdm import tqdm
 import seagen
 
@@ -824,16 +824,14 @@ def find_min_period(
     P_1=None,
     P_2=None,
     max_period=10,
-    max_iter=30,
+    num_attempt=30,
+    tol=0.00001,
     verbosity=1,
 ):
 
     min_period = 0.0001
-    tol = 0.00001
 
-    for k in tqdm(
-        range(max_iter), desc="Finding minimum period", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
 
         try_period = np.mean([min_period, max_period])
 
@@ -859,6 +857,21 @@ def find_min_period(
             min_period = try_period
         else:
             max_period = try_period
+            
+        tol_reached = np.abs(max_period - min_period) / min_period
+        
+        if verbosity >= 1:
+            string = (
+                    "Iteration "
+                    + str(i)
+                    + "/"
+                    + str(num_attempt)
+                    + ". Tolerance reached "
+                    + "{:.2e}".format(tol_reached)
+                    + "/"
+                    + str(tol)
+                )
+            sys.stdout.write("\r" + string)
 
         if np.abs(max_period - min_period) / min_period < tol:
             break

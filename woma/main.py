@@ -2320,8 +2320,8 @@ class SpinPlanet:
         check_min_period=True,
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
-        max_iter_1=15,
-        max_iter_2=15,
+        num_attempt=15,
+        num_attempt_2=15,
         verbosity=1,
     ):
         self.name = name
@@ -2334,8 +2334,8 @@ class SpinPlanet:
         self.check_min_period = check_min_period
         self.tol_density_profile = tol_density_profile
         self.tol_layer_masses = tol_layer_masses
-        self.max_iter_1 = max_iter_1
-        self.max_iter_2 = max_iter_2
+        self.num_attempt = num_attempt
+        self.num_attempt_2 = num_attempt_2
         self.verbosity = verbosity
 
         # Spherical planet attributes
@@ -2343,14 +2343,14 @@ class SpinPlanet:
 
         # Make the spinning profiles!
         self.spin(
-            fix_mass=self.fix_mass,
             R_max_eq=self.R_max_eq,
             R_max_po=self.R_max_po,
+            fix_mass=self.fix_mass,
             check_min_period=self.check_min_period,
             tol_density_profile=self.tol_density_profile,
             tol_layer_masses=self.tol_layer_masses,
-            max_iter_1=self.max_iter_1,
-            max_iter_2=self.max_iter_2,
+            num_attempt=self.num_attempt,
+            num_attempt_2=self.num_attempt_2,
             verbosity=self.verbosity,
         )
 
@@ -2676,7 +2676,7 @@ class SpinPlanet:
         space = 12
         print_try('SpinPlanet "%s": ', self.name)
         print_try(
-            "    %s = %s  h", (utils.add_whitespace("planet", space), self.planet.name)
+            "    %s = %s", (utils.add_whitespace("planet", space), self.planet.name)
         )
         print_try(
             "    %s = %.5g  h", (utils.add_whitespace("period", space), self.period)
@@ -2778,7 +2778,7 @@ class SpinPlanet:
         self.A1_rho_eq = rho_model(self.A1_r_eq)
         self.A1_rho_po = rho_model(self.A1_r_po)
 
-    def find_min_period(self, max_period=10, max_iter=20, verbosity=1):
+    def find_min_period(self, max_period=10, tol=0.001, max_iter=20, verbosity=1):
 
         min_period = us.find_min_period(
             self.num_layer,
@@ -2796,7 +2796,8 @@ class SpinPlanet:
             self.P_1,
             self.P_2,
             max_period,
-            max_iter,
+            num_attempt=max_iter,
+            tol=tol,
             verbosity=verbosity,
         )
 
@@ -2806,11 +2807,11 @@ class SpinPlanet:
         self,
         R_max_eq,
         R_max_po,
-        check_min_period,
-        tol_density_profile,
-        max_iter_1,
-        max_iter_2,
+        tol_density_profile=0.001,
+        check_min_period=False,
         verbosity=1,
+        max_iter_spin_simple=20,
+        max_iter_find_min_period=20,
     ):
         """ 
         Create a spinning planet from a spherical one.
@@ -2819,13 +2820,15 @@ class SpinPlanet:
         self._prep_spin_profile_arrays(R_max_eq, R_max_po)
 
         for i in tqdm(
-            range(max_iter_1),
+            range(max_iter_spin_simple),
             desc="Computing spinning profile",
             disable=verbosity == 0,
         ):
             # Compute min_period
             if check_min_period:
-                self.find_min_period(max_iter=max_iter_2, verbosity=0)
+                self.find_min_period(
+                        max_iter=max_iter_find_min_period,
+                        verbosity=0)
 
                 # Select period for this iteration
                 if self.period >= self.min_period:
@@ -2867,23 +2870,26 @@ class SpinPlanet:
                     print("Convergence criterion reached.")
                 break
 
-            spin_planet = SpinPlanet(
-                planet=new_planet, period=period, R_max_eq=R_max_eq, R_max_po=R_max_po
-            )
+        if self.period < period_iter:
+            if verbosity >= 1:
+                print("")
+                print("Minimum period found at", period_iter, "h")
+            self.period = period_iter
 
-            spin_planet.spin(check_min_period=check_min_period, verbosity=0)
+        self.update_attributes()
 
-            criterion = np.abs(planet.M - spin_planet.M) / planet.M < tol_layer_masses
+        if verbosity >= 1:
+            self.print_info()
+
 
     def _L1_spin_planet_fix_M(
         self,
         R_max_eq,
         R_max_po,
-        check_min_period,
-        tol_layer_masses,
-        tol_density_profile,
-        max_iter_1,
-        max_iter_2,
+        check_min_period=False,
+        tol_layer_masses=0.01,
+        tol_density_profile=0.001,
+        num_attempt=15,
         verbosity=1,
     ):
         """ 
@@ -2896,12 +2902,10 @@ class SpinPlanet:
         f_min = 0.0
         f_max = 1.0
 
-        M_fixed = self.M
+        M_fixed = np.copy(self.M)
 
-        for i in tqdm(
-            range(max_iter_1), desc="Computing spinning profile", disable=verbosity == 0
-        ):
-
+        for i in range(num_attempt):
+            
             f = np.mean([f_min, f_max])
 
             # Shrink the input spherical planet
@@ -2909,22 +2913,21 @@ class SpinPlanet:
             self.planet.R = f * self.planet.R
 
             # Make the new spherical profiles
-            self.planet.M_max = self.planet.M
-            self.planet.gen_prof_L1_find_M_given_R(verbosity=0)
+            self.planet.gen_prof_L1_find_M_given_R(M_max=1.2*self.planet.M, verbosity=0)
 
             # Create the spinning profiles
             self.copy_spherical_attributes(self.planet)
             self._spin_planet_simple(
                 R_max_eq,
                 R_max_po,
-                check_min_period,
-                tol_density_profile,
-                max_iter_1,
-                max_iter_2,
+                tol_density_profile=tol_density_profile,
+                check_min_period=check_min_period,
                 verbosity=0,
             )
 
             criterion = np.abs(self.M - M_fixed) / M_fixed < tol_layer_masses
+            
+            print(self.M)
 
             if criterion:
                 if verbosity >= 1:
@@ -2932,7 +2935,7 @@ class SpinPlanet:
                     self.print_info()
                 return
 
-            if spin_planet.M > M_fixed:
+            if self.M > M_fixed:
                 f_max = f
             else:
                 f_min = f
@@ -2944,11 +2947,11 @@ class SpinPlanet:
         self,
         R_max_eq,
         R_max_po,
-        check_min_period,
-        tol_layer_masses,
-        tol_density_profile,
-        max_iter_1,
-        max_iter_2,
+        check_min_period=False,
+        tol_layer_masses=0.01,
+        tol_density_profile=0.001,
+        num_attempt=15,
+        num_attempt_2=15,
         verbosity=1,
     ):
         """ 
@@ -2966,15 +2969,13 @@ class SpinPlanet:
         self._spin_planet_simple(
             R_max_eq,
             R_max_po,
-            check_min_period,
-            tol_density_profile,
-            max_iter_1,
-            max_iter_2,
+            tol_density_profile=tol_density_profile,
+            check_min_period=check_min_period,
             verbosity=0,
-        )
+            )
 
         for k in tqdm(
-            range(max_iter_2), desc="Computing spinning profile", disable=verbosity == 0
+            range(num_attempt), desc="Computing spinning profile", disable=verbosity == 0
         ):
 
             if self.M > M_fixed:
@@ -2984,7 +2985,7 @@ class SpinPlanet:
                 R_mantle_min = self.planet.A1_R_layer[1]
                 R_mantle_max = 1.1 * self.planet.A1_R_layer[1]
 
-            for i in tqdm(range(max_iter_1), desc="Adjusting outer edge", disable=True):
+            for i in tqdm(range(num_attempt_2), desc="Adjusting outer edge", disable=True):
 
                 R_mantle = np.mean([R_mantle_min, R_mantle_max])
 
@@ -3002,12 +3003,10 @@ class SpinPlanet:
                 self._spin_planet_simple(
                     R_max_eq,
                     R_max_po,
-                    check_min_period,
-                    tol_density_profile,
-                    max_iter_1,
-                    max_iter_2,
+                    tol_density_profile=tol_density_profile,
+                    check_min_period=check_min_period,
                     verbosity=0,
-                )
+                    )
 
                 criterion_1 = np.abs(self.M - M_fixed) / M_fixed < tol_layer_masses
                 criterion_2 = (
@@ -3036,7 +3035,7 @@ class SpinPlanet:
                 R_core_max = self.planet.A1_R_layer[1]
 
             for i in tqdm(
-                range(max_iter_1), desc="Adjusting layer 1 and 2 boundary", disable=True
+                range(num_attempt_2), desc="Adjusting layer 1 and 2 boundary", disable=True
             ):
 
                 R_core = np.mean([R_core_min, R_core_max])
@@ -3056,10 +3055,8 @@ class SpinPlanet:
                 self._spin_planet_simple(
                     R_max_eq,
                     R_max_po,
-                    check_min_period,
-                    tol_density_profile,
-                    max_iter_1,
-                    max_iter_2,
+                    tol_density_profile=tol_density_profile,
+                    check_min_period=check_min_period,
                     verbosity=0,
                 )
 
@@ -3086,14 +3083,14 @@ class SpinPlanet:
 
     def spin(
         self,
-        fix_mass=True,
         R_max_eq=None,
         R_max_po=None,
-        check_min_period=True,
+        fix_mass=True,
+        check_min_period=False,
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
-        max_iter_1=15,
-        max_iter_2=15,
+        num_attempt=15,
+        num_attempt_2=15,
         verbosity=1,
     ):
         """ Create the spinning planet from the spherical one.
@@ -3146,11 +3143,10 @@ class SpinPlanet:
                 self._L1_spin_planet_fix_M(
                     R_max_eq,
                     R_max_po,
-                    check_min_period,
-                    tol_layer_masses,
-                    tol_density_profile,
-                    max_iter_1,
-                    max_iter_2,
+                    check_min_period=check_min_period,
+                    tol_layer_masses=tol_layer_masses,
+                    tol_density_profile=tol_density_profile,
+                    num_attempt=num_attempt,
                     verbosity=verbosity,
                 )
 
@@ -3158,13 +3154,13 @@ class SpinPlanet:
                 self._L2_spin_planet_fix_M(
                     R_max_eq,
                     R_max_po,
-                    check_min_period,
-                    tol_layer_masses,
-                    tol_density_profile,
-                    max_iter_1,
-                    max_iter_2,
+                    check_min_period=check_min_period,
+                    tol_layer_masses=tol_layer_masses,
+                    tol_density_profile=tol_density_profile,
+                    num_attempt=num_attempt,
+                    num_attempt_2=num_attempt_2,
                     verbosity=verbosity,
-                )
+                    )
 
             elif self.planet.num_layer == 3:
                 raise ValueError("3 layers not implemented yet")
@@ -3176,12 +3172,10 @@ class SpinPlanet:
             self._spin_planet_simple(
                 R_max_eq,
                 R_max_po,
-                check_min_period,
-                tol_density_profile,
-                max_iter_1,
-                max_iter_2,
+                tol_density_profile=tol_density_profile,
+                check_min_period=check_min_period,
                 verbosity=verbosity,
-            )
+                )
 
 
 class ParticlePlanet:
