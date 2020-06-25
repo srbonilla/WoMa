@@ -2262,17 +2262,108 @@ class SpinPlanet:
     num_prof : int
         The number of grid points used in the 1D equatorial and polar profiles, 
         i.e. the number of nested spheroids used to model the spinning planet.
+
+    R_max_eq : float
+        Maximum equatorial radius (m). Defaults to 2 times the spherical 
+        radius.
+        
+    R_max_po : float
+        Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
+        
+    check_min_period : bool
+        Checks if the period provided is less than the minimum physically 
+        allowed. Slow -- set True only if required for extremely high spin.
+        
+    tol_density_profile : float
+        The iterative search will end when the fractional differences 
+        between the density profiles in successive iterations is less than 
+        this tolerance.
+        
+    tol_layer_masses : float
+        The iterative search will end when the fractional differences 
+        between the layer masses of the spinning planet and the spherical 
+        one are less than this tolerance.
+        
+    max_iter_1: int
+        Maximum number of iterations allowed. Inner loop.
+        
+    max_iter_2: int
+        Maximum number of iterations allowed. Outer loop.
     """
 
     def __init__(
-        self, name=None, planet=None, period=None, num_prof=1000,
+        self,
+        name=None,
+        planet=None,
+        period=None,
+        num_prof=1000,
+        fix_mass=True,
+        R_max_eq=None,
+        R_max_po=None,
+        check_min_period=True,
+        tol_density_profile=0.001,
+        tol_layer_masses=0.01,
+        max_iter_1=15,
+        max_iter_2=15,
+        verbosity=1,
     ):
         self.name = name
         self.planet = planet
         self.period = period
         self.num_prof = num_prof
+        self.fix_mass = fix_mass
+        self.R_max_eq = R_max_eq
+        self.R_max_po = R_max_po
+        self.check_min_period = check_min_period
+        self.tol_density_profile = tol_density_profile
+        self.tol_layer_masses = tol_layer_masses
+        self.max_iter_1 = max_iter_1
+        self.max_iter_2 = max_iter_2
+        self.verbosity = verbosity
 
         # Spherical planet attributes
+        self.copy_spherical_attributes(self.planet)
+
+        # Make the spinning profiles!
+        self.spin(
+            fix_mass=self.fix_mass,
+            R_max_eq=self.R_max_eq,
+            R_max_po=self.R_max_po,
+            check_min_period=self.check_min_period,
+            tol_density_profile=self.tol_density_profile,
+            tol_layer_masses=self.tol_layer_masses,
+            max_iter_1=self.max_iter_1,
+            max_iter_2=self.max_iter_2,
+            verbosity=self.verbosity,
+        )
+
+    def _check_input(self):
+
+        if self.num_layer == 1:
+            assert self.A1_mat_id_layer[0] is not None
+            assert self.A1_T_rho_type_id[0] is not None
+        elif self.num_layer == 2:
+            assert self.A1_mat_id_layer[0] is not None
+            assert self.A1_T_rho_type_id[0] is not None
+            assert self.A1_mat_id_layer[1] is not None
+            assert self.A1_T_rho_type_id[1] is not None
+        elif self.num_layer == 3:
+            assert self.A1_mat_id_layer[0] is not None
+            assert self.A1_T_rho_type_id[0] is not None
+            assert self.A1_mat_id_layer[1] is not None
+            assert self.A1_T_rho_type_id[1] is not None
+            assert self.A1_mat_id_layer[2] is not None
+            assert self.A1_T_rho_type_id[2] is not None
+
+    def copy_spherical_attributes(self, planet):
+        """ Set the spin planet's relevant attributes to the spherical ones. 
+        
+        Parameters
+        ----------
+        planet : woma.Planet
+            The spherical planet object.            
+        """
+
         self.num_layer = planet.num_layer
         self.A1_mat_layer = planet.A1_mat_layer
         self.A1_mat_id_layer = planet.A1_mat_id_layer
@@ -2308,24 +2399,6 @@ class SpinPlanet:
         self.P_s = planet.P_s
         self.T_s = planet.T_s
         self.rho_s = planet.rho_s
-
-    def _check_input(self):
-
-        if self.num_layer == 1:
-            assert self.A1_mat_id_layer[0] is not None
-            assert self.A1_T_rho_type_id[0] is not None
-        elif self.num_layer == 2:
-            assert self.A1_mat_id_layer[0] is not None
-            assert self.A1_T_rho_type_id[0] is not None
-            assert self.A1_mat_id_layer[1] is not None
-            assert self.A1_T_rho_type_id[1] is not None
-        elif self.num_layer == 3:
-            assert self.A1_mat_id_layer[0] is not None
-            assert self.A1_T_rho_type_id[0] is not None
-            assert self.A1_mat_id_layer[1] is not None
-            assert self.A1_T_rho_type_id[1] is not None
-            assert self.A1_mat_id_layer[2] is not None
-            assert self.A1_T_rho_type_id[2] is not None
 
     def update_attributes(self):
         # Compute mass of the planet
@@ -2584,7 +2657,10 @@ class SpinPlanet:
                 print("    %s = None" % variables[0])
 
         space = 12
-        print_try('Planet "%s": ', self.name)
+        print_try('SpinPlanet "%s": ', self.name)
+        print_try(
+            "    %s = %s  h", (utils.add_whitespace("planet", space), self.planet.name)
+        )
         print_try(
             "    %s = %.5g  h", (utils.add_whitespace("period", space), self.period)
         )
@@ -2710,11 +2786,11 @@ class SpinPlanet:
         self.min_period = min_period
 
     def _spin_planet_simple(
-        self, 
-        R_max_eq, 
-        R_max_po, 
-        check_min_period, 
-        tol_density_profile, 
+        self,
+        R_max_eq,
+        R_max_po,
+        check_min_period,
+        tol_density_profile,
         max_iter_1,
         max_iter_2,
         verbosity=1,
@@ -2803,12 +2879,6 @@ class SpinPlanet:
 
         assert self.num_layer == 1
 
-        # Default max radii
-        if R_max_eq is None:
-            R_max_eq = 2 * self.R
-        if R_max_po is None:
-            R_max_po = 1.2 * self.R
-
         f_min = 0.0
         f_max = 1.0
 
@@ -2829,11 +2899,12 @@ class SpinPlanet:
             self.planet.gen_prof_L1_find_M_given_R(verbosity=0)
 
             # Create the spinning profiles
+            self.copy_spherical_attributes(self.planet)
             self._spin_planet_simple(
-                R_max_eq, 
-                R_max_po, 
-                check_min_period, 
-                tol_density_profile, 
+                R_max_eq,
+                R_max_po,
+                check_min_period,
+                tol_density_profile,
                 max_iter_1,
                 max_iter_2,
                 verbosity=0,
@@ -2873,21 +2944,16 @@ class SpinPlanet:
 
         assert self.num_layer == 2
 
-        # Default max radii
-        if R_max_eq is None:
-            R_max_eq = 2 * self.R
-        if R_max_po is None:
-            R_max_po = 1.2 * self.R
-
         M_fixed = self.M
         M0_fixed = self.A1_M_layer[0]
 
         # Create the spinning profiles
+        self.copy_spherical_attributes(self.planet)
         self._spin_planet_simple(
-            R_max_eq, 
-            R_max_po, 
-            check_min_period, 
-            tol_density_profile, 
+            R_max_eq,
+            R_max_po,
+            check_min_period,
+            tol_density_profile,
             max_iter_1,
             max_iter_2,
             verbosity=0,
@@ -2913,14 +2979,17 @@ class SpinPlanet:
                 self.planet.R = R_mantle
 
                 # Make the new spherical profiles
-                self.planet.gen_prof_L2_find_M_given_R1_R(M_max=1.2 * self.M, verbosity=0)
+                self.planet.gen_prof_L2_find_M_given_R1_R(
+                    M_max=1.2 * self.M, verbosity=0
+                )
 
                 # Create the spinning profiles
+                self.copy_spherical_attributes(self.planet)
                 self._spin_planet_simple(
-                    R_max_eq, 
-                    R_max_po, 
-                    check_min_period, 
-                    tol_density_profile, 
+                    R_max_eq,
+                    R_max_po,
+                    check_min_period,
+                    tol_density_profile,
                     max_iter_1,
                     max_iter_2,
                     verbosity=0,
@@ -2964,14 +3033,17 @@ class SpinPlanet:
                 self.planet.R = R_mantle
 
                 # Make the new spherical profiles
-                self.planet.gen_prof_L2_find_M_given_R1_R(M_max=1.2 * self.M, verbosity=0)
+                self.planet.gen_prof_L2_find_M_given_R1_R(
+                    M_max=1.2 * self.M, verbosity=0
+                )
 
                 # Create the spinning profiles
+                self.copy_spherical_attributes(self.planet)
                 self._spin_planet_simple(
-                    R_max_eq, 
-                    R_max_po, 
-                    check_min_period, 
-                    tol_density_profile, 
+                    R_max_eq,
+                    R_max_po,
+                    check_min_period,
+                    tol_density_profile,
                     max_iter_1,
                     max_iter_2,
                     verbosity=0,
@@ -3028,7 +3100,7 @@ class SpinPlanet:
             
         check_min_period : bool
             Checks if the period provided is less than the minimum physically 
-            allowed. Slow -- set True only if required for extremely high spin.
+            allowed. Slow, set True only if required for extremely high spin.
             
         tol_density_profile : float
             The iterative search will end when the fractional differences 
@@ -3049,15 +3121,14 @@ class SpinPlanet:
         # Check for necessary input
         self._check_input()
 
+        # Default maximum radii
         if R_max_eq is None:
             R_max_eq = 2 * self.planet.R
         if R_max_po is None:
             R_max_po = 1.2 * self.planet.R
 
         if fix_mass:
-
             if self.planet.num_layer == 1:
-
                 self._L1_spin_planet_fix_M(
                     R_max_eq,
                     R_max_po,
@@ -3065,11 +3136,11 @@ class SpinPlanet:
                     tol_layer_masses,
                     tol_density_profile,
                     max_iter_1,
+                    max_iter_2,
                     verbosity=verbosity,
                 )
 
             elif self.planet.num_layer == 2:
-
                 self._L2_spin_planet_fix_M(
                     R_max_eq,
                     R_max_po,
@@ -3082,11 +3153,9 @@ class SpinPlanet:
                 )
 
             elif self.planet.num_layer == 3:
-
                 raise ValueError("3 layers not implemented yet")
 
             else:
-
                 raise ValueError("self.planet.num_layer must be 1, 2, or 3")
 
         else:
