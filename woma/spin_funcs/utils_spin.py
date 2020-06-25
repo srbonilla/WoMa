@@ -213,7 +213,7 @@ def ellipse_eqn(r, z, R, Z):
     return r ** 2 / R ** 2 + z ** 2 / Z ** 2
 
 
-@jit(nopython=False)
+# @jit(nopython=False)
 def rho_at_r_z(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
     """ Computes the density at any point r, z given a spining profile.
 
@@ -259,14 +259,8 @@ def rho_at_r_z(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
     Z_0 = rho_model_po_inv(rho_0)
     R_1 = r_1
     Z_1 = rho_model_po_inv(rho_1)
-
-    if ellipse_eqn(r, z, R_1, Z_1) > 1:
-        return 0
-
-    elif ellipse_eqn(r, z, R_1, Z_1) == 1:
-        return rho_1
-
-    elif r == 0 and z == 0:
+        
+    if r == 0 and z == 0:
         return rho_0
 
     elif r == 0 and z != 0:
@@ -274,6 +268,12 @@ def rho_at_r_z(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
     elif r != 0 and z == 0:
         return rho_model_eq(r)
+        
+    elif ellipse_eqn(r, z, R_1, Z_1) > 1:
+        return 0
+
+    elif ellipse_eqn(r, z, R_1, Z_1) == 1:
+        return rho_1
 
     elif ellipse_eqn(r, z, R_0, Z_0) == 1:
         return rho_0
