@@ -2677,12 +2677,10 @@ class SpinPlanet:
         self.A1_r_eq = np.linspace(0, R_max_eq, self.num_prof)
         self.A1_r_po = np.linspace(0, R_max_po, self.num_prof)
 
-        spherical_model = interp1d(
-            self.A1_r, self.A1_rho, bounds_error=False, fill_value=0
-        )
+        rho_model = interp1d(self.A1_r, self.A1_rho, bounds_error=False, fill_value=0)
 
-        self.A1_rho_eq = spherical_model(self.A1_r_eq)
-        self.A1_rho_po = spherical_model(self.A1_r_po)
+        self.A1_rho_eq = rho_model(self.A1_r_eq)
+        self.A1_rho_po = rho_model(self.A1_r_po)
 
     def find_min_period(self, max_period=10, max_iter=20, verbosity=1):
 
@@ -2811,19 +2809,15 @@ class SpinPlanet:
 
             f = np.mean([f_min, f_max])
 
-            # create copy of planet
-            new_planet = copy.deepcopy(planet)
+            # Shrink the input spherical planet
+            self.planet.A1_R_layer = f * self.planet.A1_R_layer
+            self.planet.R = f * self.planet.R
 
-            # shrink it
-            new_planet.A1_R_layer = f * new_planet.A1_R_layer
-            new_planet.R = f * new_planet.R
+            # Make the new spherical profiles
+            self.planet.M_max = self.planet.M
+            self.planet.gen_prof_L1_find_M_given_R(verbosity=0)
 
-            # make new profile
-            new_planet.M_max = new_planet.M
-            new_planet.gen_prof_L1_find_M_given_R(verbosity=0)
-
-            self.planet = new_planet
-
+            # Create the spinning profiles
             self._spin_planet_simple(
                 R_max_eq, R_max_po, check_min_period, tol_density_profile, verbosity=0,
             )
@@ -2871,41 +2865,35 @@ class SpinPlanet:
         M_fixed = self.M
         M0_fixed = self.A1_M_layer[0]
 
-        new_planet = copy.deepcopy(planet)
-
-        self.planet = new_planet
-
-        self.spin(fix_mass=False, check_min_period=check_min_period, verbosity=0)
+        # Create the spinning profiles
+        self._spin_planet_simple(
+            R_max_eq, R_max_po, check_min_period, tol_density_profile, verbosity=0,
+        )
 
         for k in tqdm(
             range(max_iter_2), desc="Computing spinning profile", disable=verbosity == 0
         ):
 
-            if spin_planet.M > M_fixed:
-                R_mantle_min = new_planet.A1_R_layer[0]
-                R_mantle_max = new_planet.A1_R_layer[1]
+            if self.M > M_fixed:
+                R_mantle_min = self.planet.A1_R_layer[0]
+                R_mantle_max = self.planet.A1_R_layer[1]
             else:
-                R_mantle_min = new_planet.A1_R_layer[1]
-                R_mantle_max = 1.1 * new_planet.A1_R_layer[1]
+                R_mantle_min = self.planet.A1_R_layer[1]
+                R_mantle_max = 1.1 * self.planet.A1_R_layer[1]
 
             for i in tqdm(range(max_iter_1), desc="Adjusting outer edge", disable=True):
 
-                # R_core   = np.mean([R_core_min, R_core_max])
                 R_mantle = np.mean([R_mantle_min, R_mantle_max])
 
-                # create copy of planet
-                new_planet = copy.deepcopy(planet)
+                # Modify the input spherical planet boundaries
+                self.planet.A1_R_layer[1] = R_mantle
+                self.planet.R = R_mantle
 
-                # modify boundaries
-                new_planet.A1_R_layer[1] = R_mantle
-                new_planet.R = R_mantle
+                # Make the new spherical profiles
+                self.planet.M_max = 1.2 * self.M
+                self.planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
 
-                # make new profile
-                new_planet.M_max = 1.2 * self.M
-                new_planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
-
-                self.planet = new_planet
-
+                # Create the spinning profiles
                 self._spin_planet_simple(
                     R_max_eq,
                     R_max_po,
@@ -2935,10 +2923,10 @@ class SpinPlanet:
 
             if self.A1_M_layer[0] / self.M > M0_fixed / M_fixed:
                 R_core_min = 0
-                R_core_max = new_planet.A1_R_layer[0]
+                R_core_max = self.planet.A1_R_layer[0]
             else:
-                R_core_min = new_planet.A1_R_layer[0]
-                R_core_max = new_planet.A1_R_layer[1]
+                R_core_min = self.planet.A1_R_layer[0]
+                R_core_max = self.planet.A1_R_layer[1]
 
             for i in tqdm(
                 range(max_iter_1), desc="Adjusting layer 1 and 2 boundary", disable=True
@@ -2946,20 +2934,16 @@ class SpinPlanet:
 
                 R_core = np.mean([R_core_min, R_core_max])
 
-                # create copy of planet
-                new_planet = copy.deepcopy(planet)
+                # Modify the input spherical planet boundaries
+                self.planet.A1_R_layer[0] = R_core
+                self.planet.A1_R_layer[1] = R_mantle
+                self.planet.R = R_mantle
 
-                # modify boundaries
-                new_planet.A1_R_layer[0] = R_core
-                new_planet.A1_R_layer[1] = R_mantle
-                new_planet.R = R_mantle
+                # Make the new spherical profiles
+                self.planet.M_max = 1.2 * self.M
+                self.planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
 
-                # make new profile
-                new_planet.M_max = 1.2 * M_fixed
-                new_planet.gen_prof_L2_find_M_given_R1_R(verbosity=0)
-
-                self.planet = new_planet
-
+                # Create the spinning profiles
                 self._spin_planet_simple(
                     R_max_eq,
                     R_max_po,
