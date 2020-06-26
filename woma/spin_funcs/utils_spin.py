@@ -510,7 +510,12 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     radii = np.arange(0, R_eq, R_eq / 1000000)
     rho_model_eq = interp1d(A1_r_eq, A1_rho_eq)
     densities = rho_model_eq(radii)
-    particles = seagen.GenSphere(N, radii[1:], densities[1:], verbosity=verbosity)
+    particles = seagen.GenSphere(
+            N,
+            radii[1:],
+            densities[1:], 
+            verbosity=0,
+            )
 
     index = np.where(A1_rho_po == 0)[0][0] + 1
     rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
@@ -541,9 +546,11 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     A1_Z = []
 
     # all layers but first and last
-    for i in tqdm(
-        range(N_shell.shape[0]), desc="Creating shells...", disable=verbosity == 0
-    ):
+    for i in range(N_shell.shape[0]):
+        
+        if verbosity >= 1:
+            string = "Creating spheroidal shell {}/{}".format(i,N_shell.shape[0])
+            sys.stdout.write("\r" + string)
 
         # First shell
         if i == 0:
@@ -644,6 +651,9 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
         A1_R.append(A1_R_shell[i] * np.ones(N_shell[i]))
         A1_Z.append(Z_shell[i] * np.ones(N_shell[i]))
 
+    if verbosity >= 1:
+        sys.stdout.write("\n")
+    
     # Flatten
     A1_x = np.concatenate(A1_x)
     A1_y = np.concatenate(A1_y)

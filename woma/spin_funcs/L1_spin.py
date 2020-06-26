@@ -5,7 +5,6 @@ WoMa 1 layer spinning functions
 import numpy as np
 from scipy.interpolate import interp1d
 from numba import njit, jit
-from tqdm import tqdm
 
 from woma.spin_funcs import utils_spin as us
 from woma.eos import eos
@@ -307,6 +306,7 @@ def L1_place_particles(
     T_rho_type_id_L1,
     T_rho_args_L1,
     N_ngb=48,
+    verbosity=1,
 ):
     """ Particle placement for 1 layer spinning planet profile.
     Parameters
@@ -394,7 +394,7 @@ def L1_place_particles(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period)
+    ) = us.place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity)
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))

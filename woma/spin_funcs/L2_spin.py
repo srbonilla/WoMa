@@ -4,7 +4,6 @@ WoMa 1 layer spinning functions
 
 import numpy as np
 from numba import njit
-from tqdm import tqdm
 
 from woma.spin_funcs import L1_spin
 from woma.spin_funcs import utils_spin as us
@@ -265,9 +264,7 @@ def L2_spin(
     profile_eq.append(A1_rho_eq)
     profile_po.append(A1_rho_po)
 
-    for i in tqdm(
-        range(num_attempt), desc="Solving spining profile", disable=verbosity == 0
-    ):
+    for i in range(num_attempt):
         A1_V_eq, A1_V_po = L1_spin.V_eq_po_from_rho(
             A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period
         )
@@ -309,6 +306,7 @@ def L2_place_particles(
     T_rho_type_id_L2,
     T_rho_args_L2,
     N_ngb=48,
+    verbosity=1,
 ):
     """ Particle placement for 2 layer spinning planet profile.
     
@@ -410,7 +408,7 @@ def L2_place_particles(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period)
+    ) = us.place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity)
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))

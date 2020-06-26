@@ -24,7 +24,6 @@ and for support.
 import numpy as np
 import h5py
 from scipy.interpolate import interp1d
-from tqdm import tqdm
 from copy import deepcopy
 import seagen
 import sys
@@ -2318,7 +2317,7 @@ class SpinPlanet:
         fix_mass=True,
         R_max_eq=None,
         R_max_po=None,
-        check_min_period=True,
+        check_min_period=False,
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
         num_attempt=15,
@@ -2823,11 +2822,7 @@ class SpinPlanet:
         # Set up the spheroid equatorial and polar arrays
         self._prep_spin_profile_arrays(R_max_eq, R_max_po)
 
-        for i in tqdm(
-            range(max_iter_spin_simple),
-            desc="Computing spinning profile",
-            disable=verbosity == 0,
-        ):
+        for i in range(max_iter_spin_simple):
             # Compute min_period
             if check_min_period:
                 self.find_min_period(
@@ -2862,16 +2857,30 @@ class SpinPlanet:
             )
 
             # Convergence criterion
-            criterion = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
+            tol_reached = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
+            
+            if verbosity >= 1:
+
+                string = (
+                    "Iteration "
+                    + str(i)
+                    + "/"
+                    + str(max_iter_spin_simple)
+                    + ". Tolerance reached "
+                    + "{:.2e}".format(tol_reached)
+                    + "/"
+                    + str(tol_density_profile)
+                )
+                sys.stdout.write("\r" + string)
 
             # Save results
             self.A1_rho_eq = A1_rho_eq
             self.A1_rho_po = A1_rho_po
 
             # Check if there is convergence
-            if criterion < tol_density_profile:
+            if tol_reached < tol_density_profile:
                 if verbosity >= 1:
-                    print("Convergence criterion reached.")
+                    print("\nConvergence criterion reached.")
                 break
 
         if self.period < period_iter:
@@ -3352,7 +3361,7 @@ class ParticlePlanet:
             self.N_particles = particles.A1_x.shape[0]
 
         if isinstance(planet, SpinPlanet):
-            if self.num_layer == 1:
+            if planet.num_layer == 1:
 
                 (
                     self.A1_x,
@@ -3384,7 +3393,7 @@ class ParticlePlanet:
 
                 self.N_particles = self.A1_x.shape[0]
 
-            elif self.num_layer == 2:
+            elif planet.num_layer == 2:
 
                 rho_P_model = interp1d(planet.A1_P, planet.A1_rho)
                 rho_1 = rho_P_model(planet.P_1)
@@ -3423,7 +3432,7 @@ class ParticlePlanet:
 
                 self.N_particles = self.A1_x.shape[0]
 
-            elif self.num_layer == 3:
+            elif planet.num_layer == 3:
 
                 rho_P_model = interp1d(planet.A1_P, planet.A1_rho)
                 rho_1 = rho_P_model(planet.P_1)
