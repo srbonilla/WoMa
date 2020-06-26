@@ -1,7 +1,7 @@
 ![WoMa](http://astro.dur.ac.uk/~cklv53/woma_logo.png "WoMa")
 
 Create models of rotating and non-rotating planets by solving the differential 
-equations for hydrostatic equilibrium, and create initial conditions for 
+equations for hydrostatic equilibrium, and create initial conditions for e.g. 
 smoothed particle hydrodynamics (SPH) simulations by placing particles that
 precisely match the planet's profiles.
 
@@ -48,17 +48,6 @@ Notation etc.
 + Formatted with [black](https://github.com/psf/black).
 + Arrays are explicitly labelled with a prefix `A1_`, or `An_` for an
     `n`-dimensional array.
-    
-
-Dev Notes
----------
-+ Format all files with black (except the examples):  
-    `black woma/`
-+ Comment out numba for debugging:  
-    `find ./ -type f -name "*.py" -exec sed -i "s/@njit/#@njit/g" {} \;`  
-    Revert: `find ./ -type f -name "*.py" -exec sed -i "s/#@njit/@njit/g" {} \;`
-
-
 
 
 Documentation
@@ -84,6 +73,9 @@ Set `0` for no printing, `1` for standard output, or `2` for extra details.
 All profiles require 2 of the 3 surface values: `P_s`, `T_s`, `rho_s`,
 plus the material and temperature-density relation for each layer (see below):
 `A1_mat_layer` and `A1_T_rho_type`.
+
+The optional parameter `num_prof` sets the number of profile integration steps.
+Default 1000.
 
 
 ### Equations of state (EoS) 
@@ -129,15 +121,21 @@ These relations are set for each layer with `A1_T_rho_type`:
 
 
 ### Profile generation
-There are several options for which additional parameters are set 
-and which unknowns are found, depending on the number of layers in the planet.
+There are several options for which additional parameters are set and which 
+unknowns are found, depending on the number of layers in the planet.
 
-Most of these functions are simple iterative bisection searches 
-over the unknown parameter(s)
-to find a valid planet in hydrostatic equilibrium 
-that satisfies the set values.
-The maximum parameters (e.g. `R_max`) just set the upper bound 
-for these iterations so do not need to be precise.
+Most of these functions are simple iterative bisection searches over the unknown 
+parameter(s) to find a valid planet in hydrostatic equilibrium that satisfies 
+the set attribute values.
+
+The additional function arguments like `R_max` just set things like the upper 
+bound for an iteration, so do not need to be precise.
+
+Optional arguments for these functions (in addition to the `verbosity`) set:
++ `tol`: The tolerance for finding unknown parameters as a fractional 
+    difference between two consecutive iterations. Default 0.001.
++ `num_attempt`: The maximum number of iteration attempts if the tolerance has 
+    still not been reached. Default usually 40, depending on the method.
 
 If the outer radii or masses of some but not all layers are required as inputs, 
 then the unknown elements in the input arrays can be left as `None`, e.g.:
@@ -145,73 +143,56 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
 
 #### 1 layer
 + `gen_prof_L1_find_R_given_M()`, requires:
-    + Total mass: `M`
+    + Total mass: `self.M`
     + Maximum radius: `R_max`
 + `gen_prof_L1_find_M_given_R()`, requires:
-    + Total radius: `R`
+    + Total radius: `self.R`
     + Maximum mass: `M_max`
-+ `gen_prof_L1_given_R_M()`, requires: \#\#\# just do, not iteration or fixing
-    + Total radius: `R`
-    + Total mass: `M`
 
 #### 2 layers
 + `gen_prof_L1_find_R_given_M()`, requires:
-    + Total mass: `M`
+    + Total mass: `self.M`
     + Maximum radius: `R_max`
 + `gen_prof_L2_find_R1_given_R_M()`, requires:
-    + Total radius: `R`
+    + Total radius: `self.R`
     + Total mass: `M`
 + `gen_prof_L2_find_M_given_R1_R()`, requires:
-    + Total radius: `R`
-    + Layer 1 outer radius: `A1_R_layer[0]`
+    + Total radius: `self.R`
+    + Layer 1 outer radius: `self.A1_R_layer[0]`
     + Maximum mass: `M_max`
 + `gen_prof_L2_find_R_given_M_R1()`, requires:
-    + Total mass: `M`
-    + Layer 1 outer radius: `A1_R_layer[0]`
+    + Total mass: `self.M`
+    + Layer 1 outer radius: `self.A1_R_layer[0]`
     + Maximum radius: `R_max`
 + `gen_prof_L2_find_R1_R_given_M1_M2()`, requires:
-    + Layer 1 and 2 masses: `A1_M_layer`
+    + Layer 1 and 2 masses: `self.A1_M_layer`
     + Maximum radius: `R_max`
-+ `gen_prof_L2_given_R_M_R1()`, requires: \#\#\# just do, not iteration or fixing
-    + Total mass: `M`
-    + Total radius: `R`
-    + Layer 1 outer radius: `A1_R_layer[0]`
-+ `gen_prof_L2_find_R1_given_M1_add_L2()`,
-    first make the inner 1 layer, then add a second layer on top
-    (e.g. atmosphere), integrating outwards. 
-    The `_s` "surface" parameters set the conditions 
-    at the outer edge of the inner layer.
-    Requires:
-    + Layer 1 mass: `A1_M_layer[0]`
-    + Layer 1 maximum radius: `R_max`
-    + Minimum density for outer layer: `rho_min`
-+ `gen_prof_L2_find_M1_given_R1_add_L2()` (see above), requires:
-    + Layer 1 outer radius: `A1_R_layer[0]`
-    + Layer 1 maximum mass: `M_max`
-    + Minimum density for outer layer: `rho_min`
-
+    
 #### 3 layers
 + `gen_prof_L3_find_R2_given_R_M_R1()`, requires:
-    + Total mass: `M`
-    + Total radius: `R`
-    + Layer 1 outer radius: `A1_R_layer[0]`
+    + Total mass: `self.M`
+    + Total radius: `self.R`
+    + Layer 1 outer radius: `self.A1_R_layer[0]`
 + `gen_prof_L3_find_R1_given_R_M_R2()`, requires:
-    + Total mass: `M`
-    + Total radius: `R`
-    + Layer 2 outer radius: `A1_R_layer[1]`
+    + Total mass: `self.M`
+    + Total radius: `self.R`
+    + Layer 2 outer radius: `self.A1_R_layer[1]`
 + `gen_prof_L3_find_M_given_R_R1_R2()`, requires:
-    + Layer 1, 2, and 3 outer radii: `A1_R_layer`
+    + Layer 1, 2, and 3 outer radii: `self.A1_R_layer`
 + `gen_prof_L3_find_R_given_M_R1_R2()`, requires:
-    + Total mass: `M`
-    + Layer 1 and 2 outer radii: `A1_R_layer[0]`, `[1]`
-+ `gen_prof_L3_given_R_M_R1_R2()`, requires: \#\#\# just do, not iteration or fixing
-    + Total mass: `M`
-    + Total radius: `R`
-    + Layer 1 and 2 outer radii: `A1_R_layer[0]`, `[1]`
-+ `gen_prof_L3_find_R1_R2_given_M1_M2_add_L3()` 
-    (see `gen_prof_L2_find_R1_given_M1_add_L2()`), requires:
-    + Layer 1 and 2 masses: `A1_M_layer[0]`, `[1]`
-    + Minimum density for outer layer: `rho_min`
+    + Total mass: `self.M`
+    + Layer 1 and 2 outer radii: `self.A1_R_layer[0]`, `[1]`
++ `gen_prof_L3_find_R1_R2_given_R_M_I()`, requires:
+    + Total mass: `self.M`
+
+#### Adding layers
++ `gen_prof_given_inner_prof()`:
+    After generating an initial planet, a new layer can be added on top by 
+    integrating outwards. Requires:
+    + Name of the material in the new layer: `mat`
+    + Temperature-density relation in the new layer: `T_rho_type`
+    + Minimum density at which the new layer will stop: `rho_min`
+    + Minimum pressure at which the new layer will stop: `P_min`
 
 
 
@@ -235,4 +216,4 @@ particles = woma.ParticleSet(planet, N_particles, N_ngb=N_ngb)
 ``` 
 
 The output attributes available from the `particles` object 
-are documented in the `ParticleSet` class docstring in `woma/main.py`.
+are documented in the `ParticlePlanet` class docstring in `woma/main.py`.
