@@ -2388,6 +2388,23 @@ class SpinPlanet:
         f_max = 1.0
 
         M_fixed = np.copy(self.M)
+        
+        # Create the spinning profiles
+        self._spin_planet_simple(
+            R_max_eq,
+            R_max_po,
+            tol_density_profile=tol_density_profile,
+            check_min_period=check_min_period,
+            verbosity=0,
+        )
+        
+        tol = np.abs(self.M - M_fixed) / M_fixed
+        
+        # check if simple_spin does the job (good for very high periods)
+        if tol < tol_layer_masses:
+            
+            self.print_info()
+            return
 
         for i in range(num_attempt):
 
@@ -2398,7 +2415,18 @@ class SpinPlanet:
             self.planet.R = f * self.R_original
 
             # Make the new spherical profiles
-            self.planet.gen_prof_L1_find_M_given_R(M_max=1.2 * M_fixed, verbosity=0)
+            M_max_factor = 1.2
+            for _ in range(num_attempt):
+                
+                try:
+                    self.planet.gen_prof_L2_find_M_given_R1_R(
+                        M_max=M_max_factor * M_fixed, verbosity=0
+                    )
+                    
+                    break
+                except:
+                    M_max_factor *= 10
+            
 
             # Create the spinning profiles
             self.copy_spherical_attributes(self.planet)
@@ -2470,6 +2498,15 @@ class SpinPlanet:
             check_min_period=check_min_period,
             verbosity=0,
         )
+        
+        tol_1 = np.abs(self.M - M_fixed) / M_fixed
+        tol_2 = np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
+        
+        # check if simple_spin does the job (good for very high periods)
+        if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
+            
+            self.print_info()
+            return
 
         for i in range(num_attempt):
 
@@ -2552,9 +2589,17 @@ class SpinPlanet:
                 self.planet.R = R
 
                 # Make the new spherical profiles
-                self.planet.gen_prof_L2_find_M_given_R1_R(
-                    M_max=1.2 * M_fixed, verbosity=0
-                )
+                M_max_factor = 1.2
+                for _ in range(num_attempt_2):
+                    
+                    try:
+                        self.planet.gen_prof_L2_find_M_given_R1_R(
+                            M_max=M_max_factor * M_fixed, verbosity=0
+                        )
+                        
+                        break
+                    except:
+                        M_max_factor *= 10
 
                 # Create the spinning profiles
                 self.copy_spherical_attributes(self.planet)

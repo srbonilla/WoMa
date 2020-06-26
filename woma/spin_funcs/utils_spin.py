@@ -6,7 +6,6 @@ import numpy as np
 import sys
 from numba import njit, jit
 from scipy.interpolate import interp1d
-from tqdm import tqdm
 import seagen
 
 from woma.misc import glob_vars as gv
