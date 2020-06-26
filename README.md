@@ -107,7 +107,7 @@ set by a base type ID (multiplied by 100) plus a minor type:
     + Hydrogen-helium atmosphere: `HM80_HHe` : `200`
     + Ice H20-CH4-NH3 mix: `HM80_ice` : `201`
     + Rock SiO2-MgO-FeS-FeO mix: `HM80_rock` : `202`
-+ SESAME (and similar): `3`
++ SESAME (Lyon & Johnson 1992) and similar: `3`
     + Iron (2140): `SESAME_iron` : `300`
     + Basalt (7530): `SESAME_basalt` : `301`
     + Water (7154): `SESAME_water` : `302`
@@ -150,7 +150,7 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
 + `gen_prof_L1_find_M_given_R()`, requires:
     + Total radius: `R`
     + Maximum mass: `M_max`
-+ `gen_prof_L1_given_R_M()`, requires: \#\#\#why?
++ `gen_prof_L1_given_R_M()`, requires: \#\#\# just do, not iteration or fixing
     + Total radius: `R`
     + Total mass: `M`
 
@@ -158,7 +158,7 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
 + `gen_prof_L1_find_R_given_M()`, requires:
     + Total mass: `M`
     + Maximum radius: `R_max`
-+ `gen_prof_L2_find_R1_given_R_M()`, requires: \#\#\#why?
++ `gen_prof_L2_find_R1_given_R_M()`, requires:
     + Total radius: `R`
     + Total mass: `M`
 + `gen_prof_L2_find_M_given_R1_R()`, requires:
@@ -172,7 +172,7 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
 + `gen_prof_L2_find_R1_R_given_M1_M2()`, requires:
     + Layer 1 and 2 masses: `A1_M_layer`
     + Maximum radius: `R_max`
-+ `gen_prof_L2_given_R_M_R1()`, requires: \#\#\#why?
++ `gen_prof_L2_given_R_M_R1()`, requires: \#\#\# just do, not iteration or fixing
     + Total mass: `M`
     + Total radius: `R`
     + Layer 1 outer radius: `A1_R_layer[0]`
@@ -204,7 +204,7 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
 + `gen_prof_L3_find_R_given_M_R1_R2()`, requires:
     + Total mass: `M`
     + Layer 1 and 2 outer radii: `A1_R_layer[0]`, `[1]`
-+ `gen_prof_L3_given_R_M_R1_R2()`, requires: \#\#\#why?
++ `gen_prof_L3_given_R_M_R1_R2()`, requires: \#\#\# just do, not iteration or fixing
     + Total mass: `M`
     + Total radius: `R`
     + Layer 1 and 2 outer radii: `A1_R_layer[0]`, `[1]`
@@ -214,8 +214,10 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Minimum density for outer layer: `rho_min`
 
 
+
 2. Spinning profiles  
 --------------------
+
 
 
 3. Particle placement
