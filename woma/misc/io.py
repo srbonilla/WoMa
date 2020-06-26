@@ -1,6 +1,8 @@
 """
 WoMa IO utilities
 
+### WIP ###
+
 The profile and particle data and attributes can be conveniently saved and 
 loaded with HDF5 files (see www.hdfgroup.org and www.h5py.org).
 
@@ -8,6 +10,9 @@ The particle data also match the format for SWIFT (see www.swiftsim.com).
 """
 
 import numpy as np
+import sys
+import h5py
+
 from woma.misc import utils
 
 
@@ -95,7 +100,7 @@ def save_planet(planet, Fp_planet, verbosity=1):
     Fp_planet : str
         The file path.
     """
-    Fp_planet = utils.check_end(p.Fp_planet, ".hdf5")
+    Fp_planet = utils.check_end(Fp_planet, ".hdf5")
 
     if verbosity >= 1:
         print('Saving "%s"... ' % Fp_planet[-60:], end="")
@@ -106,32 +111,34 @@ def save_planet(planet, Fp_planet, verbosity=1):
         grp = f.create_group("/planet")
 
         # Lists not numpy for attributes
-        if type(self.A1_mat_layer).__module__ == np.__name__:
-            self.A1_mat_layer = self.A1_mat_layer.tolist()
+        if type(planet.A1_mat_layer).__module__ == np.__name__:
+            planet.A1_mat_layer = planet.A1_mat_layer.tolist()
 
         # Attributes
-        grp.attrs[Di_hdf5_planet_label["num_layer"]] = self.num_layer
-        grp.attrs[Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
-        grp.attrs[Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
-        grp.attrs[Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
-        grp.attrs[Di_hdf5_planet_label["R_layer"]] = self.A1_R_layer
-        grp.attrs[Di_hdf5_planet_label["M_layer"]] = self.A1_M_layer
-        grp.attrs[Di_hdf5_planet_label["M"]] = self.M
-        grp.attrs[Di_hdf5_planet_label["R"]] = self.R
-        grp.attrs[Di_hdf5_planet_label["idx_layer"]] = self.A1_idx_layer
-        grp.attrs[Di_hdf5_planet_label["P_s"]] = self.P_s
-        grp.attrs[Di_hdf5_planet_label["T_s"]] = self.T_s
-        grp.attrs[Di_hdf5_planet_label["rho_s"]] = self.rho_s
+        grp.attrs[Di_hdf5_planet_label["num_layer"]] = planet.num_layer
+        grp.attrs[Di_hdf5_planet_label["mat_layer"]] = planet.A1_mat_layer
+        grp.attrs[Di_hdf5_planet_label["mat_id_layer"]] = planet.A1_mat_id_layer
+        grp.attrs[Di_hdf5_planet_label["T_rho_type"]] = planet.A1_T_rho_type
+        grp.attrs[Di_hdf5_planet_label["R_layer"]] = planet.A1_R_layer
+        grp.attrs[Di_hdf5_planet_label["M_layer"]] = planet.A1_M_layer
+        grp.attrs[Di_hdf5_planet_label["M"]] = planet.M
+        grp.attrs[Di_hdf5_planet_label["R"]] = planet.R
+        grp.attrs[Di_hdf5_planet_label["idx_layer"]] = planet.A1_idx_layer
+        grp.attrs[Di_hdf5_planet_label["P_s"]] = planet.P_s
+        grp.attrs[Di_hdf5_planet_label["T_s"]] = planet.T_s
+        grp.attrs[Di_hdf5_planet_label["rho_s"]] = planet.rho_s
 
         # Arrays
-        grp.create_dataset(Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
-        grp.create_dataset(Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d")
-        grp.create_dataset(Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
-        grp.create_dataset(Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
-        grp.create_dataset(Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
-        grp.create_dataset(Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
+        grp.create_dataset(Di_hdf5_planet_label["r"], data=planet.A1_r, dtype="d")
         grp.create_dataset(
-            Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
+            Di_hdf5_planet_label["m_enc"], data=planet.A1_m_enc, dtype="d"
+        )
+        grp.create_dataset(Di_hdf5_planet_label["rho"], data=planet.A1_rho, dtype="d")
+        grp.create_dataset(Di_hdf5_planet_label["T"], data=planet.A1_T, dtype="d")
+        grp.create_dataset(Di_hdf5_planet_label["P"], data=planet.A1_P, dtype="d")
+        grp.create_dataset(Di_hdf5_planet_label["u"], data=planet.A1_u, dtype="d")
+        grp.create_dataset(
+            Di_hdf5_planet_label["mat_id"], data=planet.A1_mat_id, dtype="i"
         )
 
 
