@@ -80,7 +80,7 @@ Default 1000.
 
 ### Equations of state (EoS) 
 It is important to check that the EoS you use are appropriate 
-for your use case.
+for your application.
 
 So far, we have implemented several Tillotson, ANEOS, SESAME, 
 and Hubbard & MacFarlane (1980) materials, with more on the way.
@@ -128,8 +128,8 @@ Most of these functions are simple iterative bisection searches over the unknown
 parameter(s) to find a valid planet in hydrostatic equilibrium that satisfies 
 the set attribute values.
 
-The additional function arguments like `R_max` just set things like the upper 
-bound for an iteration, so do not need to be precise.
+The additional function arguments like `R_max` set things like the upper bound
+for an iteration so do not need to be precise.
 
 Optional arguments for these functions (in addition to the `verbosity`) set:
 + `tol`: The tolerance for finding unknown parameters as a fractional 
@@ -139,7 +139,7 @@ Optional arguments for these functions (in addition to the `verbosity`) set:
 
 If the outer radii or masses of some but not all layers are required as inputs, 
 then the unknown elements in the input arrays can be left as `None`, e.g.:
-`A1_R_layer = [3.14, None]` or `A1_M_layer = [None, 3.14, 1.59]`.
+`A1_R_layer = [3.1415, None]` or `A1_M_layer = [None, 1.23, 4.56]`.
 
 #### 1 layer
 + `gen_prof_L1_find_R_given_M()`, requires:
@@ -150,12 +150,9 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Maximum mass: `M_max`
 
 #### 2 layers
-+ `gen_prof_L1_find_R_given_M()`, requires:
-    + Total mass: `self.M`
-    + Maximum radius: `R_max`
 + `gen_prof_L2_find_R1_given_R_M()`, requires:
     + Total radius: `self.R`
-    + Total mass: `M`
+    + Total mass: `self.M`
 + `gen_prof_L2_find_M_given_R1_R()`, requires:
     + Total radius: `self.R`
     + Layer 1 outer radius: `self.A1_R_layer[0]`
@@ -169,16 +166,16 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Maximum radius: `R_max`
     
 #### 3 layers
-+ `gen_prof_L3_find_R2_given_R_M_R1()`, requires:
-    + Total mass: `self.M`
-    + Total radius: `self.R`
-    + Layer 1 outer radius: `self.A1_R_layer[0]`
++ `gen_prof_L3_find_M_given_R_R1_R2()`, requires:
+    + Layer 1, 2, and 3 outer radii: `self.A1_R_layer`
 + `gen_prof_L3_find_R1_given_R_M_R2()`, requires:
     + Total mass: `self.M`
     + Total radius: `self.R`
     + Layer 2 outer radius: `self.A1_R_layer[1]`
-+ `gen_prof_L3_find_M_given_R_R1_R2()`, requires:
-    + Layer 1, 2, and 3 outer radii: `self.A1_R_layer`
++ `gen_prof_L3_find_R2_given_R_M_R1()`, requires:
+    + Total mass: `self.M`
+    + Total radius: `self.R`
+    + Layer 1 outer radius: `self.A1_R_layer[0]`
 + `gen_prof_L3_find_R_given_M_R1_R2()`, requires:
     + Total mass: `self.M`
     + Layer 1 and 2 outer radii: `self.A1_R_layer[0]`, `[1]`

@@ -405,6 +405,49 @@ class Planet:
         assert self.A1_mat_id_layer[0] is not None
         assert self.A1_T_rho_type_id[0] is not None
 
+    def gen_prof_L1_given_R_M(self, verbosity=1):
+        """ 
+        Compute the profile of a planet with 1 layer given the mass and radius.
+            
+        Parameters
+        ----------
+        self.R : float
+            The total radius (m).
+            
+        self.M : float
+            The total mass (kg).            
+        """
+
+        # Check for necessary input
+        assert self.R is not None
+        assert self.M is not None
+        self._1_layer_input()
+
+        # Integrate the profiles
+        (
+            self.A1_r,
+            self.A1_m_enc,
+            self.A1_P,
+            self.A1_T,
+            self.A1_rho,
+            self.A1_u,
+            self.A1_mat_id,
+        ) = L1_spherical.L1_integrate(
+            self.num_prof,
+            self.R,
+            self.M,
+            self.P_s,
+            self.T_s,
+            self.rho_s,
+            self.A1_mat_id_layer[0],
+            self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0],
+        )
+
+        self.update_attributes()
+        if verbosity >= 1:
+            self.print_info()
+
     def gen_prof_L1_find_R_given_M(self, R_max, tol=0.001, num_attempt=40, verbosity=1):
         """ 
         Compute the profile of a planet with 1 layer to find the radius given 
@@ -561,49 +604,6 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L1_given_R_M(self, verbosity=1):
-        """ 
-        Compute the profile of a planet with 1 layer given the mass and radius.
-            
-        Parameters
-        ----------
-        self.R : float
-            The total radius (m).
-            
-        self.M : float
-            The total mass (kg).            
-        """
-
-        # Check for necessary input
-        assert self.R is not None
-        assert self.M is not None
-        self._1_layer_input()
-
-        # Integrate the profiles
-        (
-            self.A1_r,
-            self.A1_m_enc,
-            self.A1_P,
-            self.A1_T,
-            self.A1_rho,
-            self.A1_u,
-            self.A1_mat_id,
-        ) = L1_spherical.L1_integrate(
-            self.num_prof,
-            self.R,
-            self.M,
-            self.P_s,
-            self.T_s,
-            self.rho_s,
-            self.A1_mat_id_layer[0],
-            self.A1_T_rho_type_id[0],
-            self.A1_T_rho_args[0],
-        )
-
-        self.update_attributes()
-        if verbosity >= 1:
-            self.print_info()
-
     def gen_prof_given_inner_prof(
         self, mat, T_rho_type, rho_min=0, P_min=0, verbosity=1
     ):
@@ -714,6 +714,54 @@ class Planet:
         assert self.A1_T_rho_type_id[0] is not None
         assert self.A1_mat_id_layer[1] is not None
         assert self.A1_T_rho_type_id[1] is not None
+
+    def gen_prof_L2_given_R_M_R1(self, verbosity=1):
+        """ 
+            Compute the profile of a planet with 2 layers given the total mass and 
+            the outer radii of both layers.
+                
+            Parameters
+            ----------
+            self.M : float
+                The total mass (kg).
+                
+            self.A1_R_layer : [float]
+                The outer radii of each layer (m).       
+            """
+        # Check for necessary input
+        assert self.R is not None
+        assert self.A1_R_layer[0] is not None
+        assert self.M is not None
+        self._2_layer_input()
+
+        (
+            self.A1_r,
+            self.A1_m_enc,
+            self.A1_P,
+            self.A1_T,
+            self.A1_rho,
+            self.A1_u,
+            self.A1_mat_id,
+        ) = L2_spherical.L2_integrate(
+            self.num_prof,
+            self.R,
+            self.M,
+            self.P_s,
+            self.T_s,
+            self.rho_s,
+            self.A1_R_layer[0],
+            self.A1_mat_id_layer[0],
+            self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1],
+            self.A1_T_rho_type_id[1],
+            self.A1_T_rho_args[1],
+        )
+
+        self.update_attributes()
+
+        if verbosity >= 1:
+            self.print_info()
 
     def gen_prof_L2_find_R1_given_R_M(self, tol=0.001, num_attempt=40, verbosity=1):
         """ 
@@ -1113,65 +1161,25 @@ class Planet:
         assert self.A1_mat_id_layer[2] is not None
         assert self.A1_T_rho_type_id[2] is not None
 
-    def gen_prof_L3_find_R1_R2_given_R_M_I(
-        self, R1_min, R1_max, tol=0.001, num_attempt=40, num_attempt_2=40, verbosity=1
-    ):
+    def gen_prof_L3_given_R_M_R1_R2(self, verbosity=1):
+        """ 
+        Compute the profile of a planet with 3 layers given the total mass and 
+        the outer radii of all three layers.
+            
+        Parameters
+        ----------
+        self.M : float
+            The total mass (kg).
+            
+        self.A1_R_layer : [float]
+            The outer radii of each layer (m).       
+        """
         # Check for necessary input
         assert self.R is not None
+        assert self.A1_R_layer[0] is not None
+        assert self.A1_R_layer[1] is not None
         assert self.M is not None
-        assert self.I_MR2 is not None
         self._3_layer_input()
-
-        self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2(
-            self.num_prof,
-            self.R,
-            self.M,
-            self.P_s,
-            self.T_s,
-            self.rho_s,
-            self.I_MR2,
-            self.A1_mat_id_layer[0],
-            self.A1_T_rho_type_id[0],
-            self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1],
-            self.A1_T_rho_args[1],
-            self.A1_mat_id_layer[2],
-            self.A1_T_rho_type_id[2],
-            self.A1_T_rho_args[2],
-            R1_min,
-            R1_max,
-            num_attempt=num_attempt,
-            num_attempt_2=num_attempt_2,
-            tol=tol,
-            verbosity=verbosity,
-        )
-
-        if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet...")
-
-        self.M = L3_spherical.L3_find_mass(
-            self.num_prof,
-            self.R,
-            1.05 * self.M,
-            self.P_s,
-            self.T_s,
-            self.rho_s,
-            self.A1_R_layer[0],
-            self.A1_R_layer[1],
-            self.A1_mat_id_layer[0],
-            self.A1_T_rho_type_id[0],
-            self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1],
-            self.A1_T_rho_args[1],
-            self.A1_mat_id_layer[2],
-            self.A1_T_rho_type_id[2],
-            self.A1_T_rho_args[2],
-            num_attempt=num_attempt,
-            tol=tol,
-            verbosity=verbosity,
-        )
 
         (
             self.A1_r,
@@ -1204,28 +1212,22 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
             self.print_info()
 
-    def gen_prof_L3_find_R_R1_R2_given_M_M1_M2(self):  ### WIP
-        return None
-
-    def gen_prof_L3_find_R2_given_R_M_R1(self, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L3_find_M_given_R_R1_R2(
+        self, M_max, tol=0.001, num_attempt=40, verbosity=1
+    ):
         """ 
-        Compute the profile of a planet with 3 layers to find the outer radius 
-        of the second layer, given the total mass, total radius, and outer 
-        radius of the first layer.
+        Compute the profile of a planet with 3 layers to find the total mass
+        given the outer radii of all three layers.
             
         Parameters
         ----------
-        self.R : float
-            The total radius (m).
+        self.A1_R_layer : [float]
+            The radii of each layer (m).
         
-        self.A1_R_layer[0] : [float]
-            The outer radius of the first layer (m).
-        
-        self.M : float
-            The total mass (kg).
+        M_max : float
+            The maximum mass to try (kg).
 
         tol : float
             The tolerance for finding unknown parameters as a fractional 
@@ -1237,38 +1239,13 @@ class Planet:
         # Check for necessary input
         assert self.R is not None
         assert self.A1_R_layer[0] is not None
-        assert self.M is not None
+        assert self.A1_R_layer[1] is not None
         self._3_layer_input()
-
-        self.A1_R_layer[1] = L3_spherical.L3_find_R2(
-            self.num_prof,
-            self.R,
-            self.M,
-            self.P_s,
-            self.T_s,
-            self.rho_s,
-            self.A1_R_layer[0],
-            self.A1_mat_id_layer[0],
-            self.A1_T_rho_type_id[0],
-            self.A1_T_rho_args[0],
-            self.A1_mat_id_layer[1],
-            self.A1_T_rho_type_id[1],
-            self.A1_T_rho_args[1],
-            self.A1_mat_id_layer[2],
-            self.A1_T_rho_type_id[2],
-            self.A1_T_rho_args[2],
-            num_attempt=num_attempt,
-            tol=tol,
-            verbosity=verbosity,
-        )
-
-        if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L3_spherical.L3_find_mass(
             self.num_prof,
             self.R,
-            1.05 * self.M,
+            M_max,
             self.P_s,
             self.T_s,
             self.rho_s,
@@ -1434,20 +1411,22 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L3_find_M_given_R_R1_R2(
-        self, M_max, tol=0.001, num_attempt=40, verbosity=1
-    ):
+    def gen_prof_L3_find_R2_given_R_M_R1(self, tol=0.001, num_attempt=40, verbosity=1):
         """ 
-        Compute the profile of a planet with 3 layers to find the total mass
-        given the outer radii of all three layers.
+        Compute the profile of a planet with 3 layers to find the outer radius 
+        of the second layer, given the total mass, total radius, and outer 
+        radius of the first layer.
             
         Parameters
         ----------
-        self.A1_R_layer : [float]
-            The radii of each layer (m).
+        self.R : float
+            The total radius (m).
         
-        M_max : float
-            The maximum mass to try (kg).
+        self.A1_R_layer[0] : [float]
+            The outer radius of the first layer (m).
+        
+        self.M : float
+            The total mass (kg).
 
         tol : float
             The tolerance for finding unknown parameters as a fractional 
@@ -1459,13 +1438,38 @@ class Planet:
         # Check for necessary input
         assert self.R is not None
         assert self.A1_R_layer[0] is not None
-        assert self.A1_R_layer[1] is not None
+        assert self.M is not None
         self._3_layer_input()
+
+        self.A1_R_layer[1] = L3_spherical.L3_find_R2(
+            self.num_prof,
+            self.R,
+            self.M,
+            self.P_s,
+            self.T_s,
+            self.rho_s,
+            self.A1_R_layer[0],
+            self.A1_mat_id_layer[0],
+            self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1],
+            self.A1_T_rho_type_id[1],
+            self.A1_T_rho_args[1],
+            self.A1_mat_id_layer[2],
+            self.A1_T_rho_type_id[2],
+            self.A1_T_rho_args[2],
+            num_attempt=num_attempt,
+            tol=tol,
+            verbosity=verbosity,
+        )
+
+        if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet...")
 
         self.M = L3_spherical.L3_find_mass(
             self.num_prof,
             self.R,
-            M_max,
+            1.05 * self.M,
             self.P_s,
             self.T_s,
             self.rho_s,
@@ -1635,25 +1639,65 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L3_given_R_M_R1_R2(self, verbosity=1):
-        """ 
-        Compute the profile of a planet with 3 layers given the total mass and 
-        the outer radii of all three layers.
-            
-        Parameters
-        ----------
-        self.M : float
-            The total mass (kg).
-            
-        self.A1_R_layer : [float]
-            The outer radii of each layer (m).       
-        """
+    def gen_prof_L3_find_R1_R2_given_R_M_I(
+        self, R1_min, R1_max, tol=0.001, num_attempt=40, num_attempt_2=40, verbosity=1
+    ):
         # Check for necessary input
         assert self.R is not None
-        assert self.A1_R_layer[0] is not None
-        assert self.A1_R_layer[1] is not None
         assert self.M is not None
+        assert self.I_MR2 is not None
         self._3_layer_input()
+
+        self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2(
+            self.num_prof,
+            self.R,
+            self.M,
+            self.P_s,
+            self.T_s,
+            self.rho_s,
+            self.I_MR2,
+            self.A1_mat_id_layer[0],
+            self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1],
+            self.A1_T_rho_type_id[1],
+            self.A1_T_rho_args[1],
+            self.A1_mat_id_layer[2],
+            self.A1_T_rho_type_id[2],
+            self.A1_T_rho_args[2],
+            R1_min,
+            R1_max,
+            num_attempt=num_attempt,
+            num_attempt_2=num_attempt_2,
+            tol=tol,
+            verbosity=verbosity,
+        )
+
+        if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet...")
+
+        self.M = L3_spherical.L3_find_mass(
+            self.num_prof,
+            self.R,
+            1.05 * self.M,
+            self.P_s,
+            self.T_s,
+            self.rho_s,
+            self.A1_R_layer[0],
+            self.A1_R_layer[1],
+            self.A1_mat_id_layer[0],
+            self.A1_T_rho_type_id[0],
+            self.A1_T_rho_args[0],
+            self.A1_mat_id_layer[1],
+            self.A1_T_rho_type_id[1],
+            self.A1_T_rho_args[1],
+            self.A1_mat_id_layer[2],
+            self.A1_T_rho_type_id[2],
+            self.A1_T_rho_args[2],
+            num_attempt=num_attempt,
+            tol=tol,
+            verbosity=verbosity,
+        )
 
         (
             self.A1_r,
@@ -1686,7 +1730,11 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
+            print("Done!")
             self.print_info()
+
+    def gen_prof_L3_find_R_R1_R2_given_M_M1_M2(self):  ### WIP
+        return None
 
 
 class SpinPlanet:
@@ -2283,7 +2331,7 @@ class SpinPlanet:
 
             # Convergence criterion
             tol_reached = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
-            
+
             if verbosity >= 1:
 
                 string = (

@@ -510,12 +510,7 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     radii = np.arange(0, R_eq, R_eq / 1000000)
     rho_model_eq = interp1d(A1_r_eq, A1_rho_eq)
     densities = rho_model_eq(radii)
-    particles = seagen.GenSphere(
-            N,
-            radii[1:],
-            densities[1:], 
-            verbosity=0,
-            )
+    particles = seagen.GenSphere(N, radii[1:], densities[1:], verbosity=0,)
 
     index = np.where(A1_rho_po == 0)[0][0] + 1
     rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
@@ -547,9 +542,9 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
 
     # all layers but first and last
     for i in range(N_shell.shape[0]):
-        
+
         if verbosity >= 1:
-            string = "Creating spheroidal shell {}/{}".format(i,N_shell.shape[0])
+            string = "Creating spheroidal shell {}/{}".format(i, N_shell.shape[0])
             sys.stdout.write("\r" + string)
 
         # First shell
@@ -653,7 +648,7 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
 
     if verbosity >= 1:
         sys.stdout.write("\n")
-    
+
     # Flatten
     A1_x = np.concatenate(A1_x)
     A1_y = np.concatenate(A1_y)
@@ -867,20 +862,20 @@ def find_min_period(
             min_period = try_period
         else:
             max_period = try_period
-            
+
         tol_reached = np.abs(max_period - min_period) / min_period
-        
+
         if verbosity >= 1:
             string = (
-                    "Iteration "
-                    + str(i)
-                    + "/"
-                    + str(num_attempt)
-                    + ". Tolerance reached "
-                    + "{:.2e}".format(tol_reached)
-                    + "/"
-                    + str(tol)
-                )
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
             sys.stdout.write("\r" + string)
 
         if np.abs(max_period - min_period) / min_period < tol:
