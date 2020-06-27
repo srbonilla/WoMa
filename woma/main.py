@@ -1776,10 +1776,10 @@ class SpinPlanet:
         between the layer masses of the spinning planet and the spherical 
         one are less than this tolerance.
         
-    max_iter_1: int
+    num_attempt_1: int
         Maximum number of iterations allowed. Inner loop.
         
-    max_iter_2: int
+    num_attempt_2: int
         Maximum number of iterations allowed. Outer loop.
     """
 
@@ -2256,7 +2256,7 @@ class SpinPlanet:
         self.A1_rho_eq = rho_model(self.A1_r_eq)
         self.A1_rho_po = rho_model(self.A1_r_po)
 
-    def find_min_period(self, max_period=10, tol=0.001, max_iter=20, verbosity=1):
+    def find_min_period(self, max_period=10, tol=0.001, num_attempt=20, verbosity=1):
 
         min_period = us.find_min_period(
             self.num_layer,
@@ -2274,7 +2274,7 @@ class SpinPlanet:
             self.P_1,
             self.P_2,
             max_period,
-            num_attempt=max_iter,
+            num_attempt=num_attempt,
             tol=tol,
             verbosity=verbosity,
         )
@@ -2288,8 +2288,8 @@ class SpinPlanet:
         tol_density_profile=0.001,
         check_min_period=False,
         verbosity=1,
-        max_iter_spin_simple=20,
-        max_iter_find_min_period=20,
+        num_attempt=20,
+        num_attempt_find_min_period=20,
     ):
         """ 
         Create a spinning planet from a spherical one.
@@ -2297,20 +2297,24 @@ class SpinPlanet:
         # Set up the spheroid equatorial and polar arrays
         self._prep_spin_profile_arrays(R_max_eq, R_max_po)
 
-        for i in range(max_iter_spin_simple):
-            # Compute min_period
+        # Iterate updating the density profiles and the effective potential
+        for i in range(num_attempt):
+            # Check the current period is not below the minimum
             if check_min_period:
-                self.find_min_period(max_iter=max_iter_find_min_period, verbosity=0)
+                self.find_min_period(
+                    num_attempt=num_attempt_find_min_period, verbosity=0
+                )
 
                 # Select period for this iteration
                 if self.period >= self.min_period:
                     period_iter = self.period
                 else:
                     period_iter = self.min_period
+            # Assume we're above the minimum period
             else:
                 period_iter = self.period
 
-            # Compute profile
+            # Compute the spinning profiles
             A1_rho_eq, A1_rho_po = us.spin_iteration(
                 period_iter,
                 self.num_layer,
@@ -2329,7 +2333,7 @@ class SpinPlanet:
                 self.P_2,
             )
 
-            # Convergence criterion
+            # Check the fractional change in the density profile for convergence
             tol_reached = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
 
             if verbosity >= 1:
@@ -2338,7 +2342,7 @@ class SpinPlanet:
                     "Iteration "
                     + str(i)
                     + "/"
-                    + str(max_iter_spin_simple)
+                    + str(num_attempt)
                     + ". Tolerance reached "
                     + "{:.2e}".format(tol_reached)
                     + "/"
@@ -2350,7 +2354,7 @@ class SpinPlanet:
             self.A1_rho_eq = A1_rho_eq
             self.A1_rho_po = A1_rho_po
 
-            # Check if there is convergence
+            # Check if converged
             if tol_reached < tol_density_profile:
                 if verbosity >= 1:
                     print("\nConvergence criterion reached.")
@@ -2384,11 +2388,13 @@ class SpinPlanet:
 
         assert self.num_layer == 1
 
+        # Initialise bisection over the spherical planet radius
         f_min = 0.0
         f_max = 1.0
 
+        # Desired mass
         M_fixed = np.copy(self.M)
-        
+
         # Create the spinning profiles
         self._spin_planet_simple(
             R_max_eq,
@@ -2397,36 +2403,31 @@ class SpinPlanet:
             check_min_period=check_min_period,
             verbosity=0,
         )
-        
+
+        # Check the fractional error in the mass for convergence
         tol = np.abs(self.M - M_fixed) / M_fixed
-        
-        # check if simple_spin does the job (good for very high periods)
+
+        # No need to search if simple spin does the job (e.g. very high periods)
         if tol < tol_layer_masses:
-            
+
             self.print_info()
             return
 
+        # Vary the spherical planet radius to fix the spinning planet mass
         for i in range(num_attempt):
 
+            # Bisection
             f = np.mean([f_min, f_max])
 
             # Shrink the input spherical planet
             self.planet.A1_R_layer = f * self.A1_R_layer_original
             self.planet.R = f * self.R_original
 
-            # Make the new spherical profiles
-            M_max_factor = 1.2
-            for _ in range(num_attempt):
-                
-                try:
-                    self.planet.gen_prof_L2_find_M_given_R1_R(
-                        M_max=M_max_factor * M_fixed, verbosity=0
-                    )
-                    
-                    break
-                except:
-                    M_max_factor *= 10
-            
+            # Make the new spherical profiles, increase the max mass if needed
+            try:
+                self.planet.gen_prof_L1_find_M_given_R(M_max=1.2 * M_fixed, verbosity=0)
+            except ValueError:
+                self.planet.gen_prof_L1_find_M_given_R(M_max=20 * M_fixed, verbosity=0)
 
             # Create the spinning profiles
             self.copy_spherical_attributes(self.planet)
@@ -2438,14 +2439,9 @@ class SpinPlanet:
                 verbosity=0,
             )
 
-            if self.M > M_fixed:
-                f_max = f
-            else:
-                f_min = f
-
+            # Check the fractional error in the mass for convergence
             tol_reached = np.abs(self.M - M_fixed) / M_fixed
 
-            # print info (cannot do it with numba)
             if verbosity >= 1:
 
                 string = (
@@ -2460,9 +2456,15 @@ class SpinPlanet:
                 )
                 sys.stdout.write("\r" + string)
 
+            # Stop once converged
             if tol_reached < tol_layer_masses:
-
                 break
+
+            # Update the bounds
+            if self.M > M_fixed:
+                f_max = f
+            else:
+                f_min = f
 
         if verbosity >= 1:
             sys.stdout.write("\n")
@@ -2486,6 +2488,7 @@ class SpinPlanet:
 
         assert self.num_layer == 2
 
+        # Desired masses
         M_fixed = np.copy(self.M)
         M0_fixed = np.copy(self.A1_M_layer[0])
 
@@ -2498,18 +2501,23 @@ class SpinPlanet:
             check_min_period=check_min_period,
             verbosity=0,
         )
-        
+
+        # Check the fractional error in the masses for convergence
         tol_1 = np.abs(self.M - M_fixed) / M_fixed
         tol_2 = np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
-        
-        # check if simple_spin does the job (good for very high periods)
+
+        # No need to search if simple spin does the job (e.g. very high periods)
         if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
-            
+            if verbosity >= 1:
+                print("Simple spin method sufficient")
+
             self.print_info()
             return
 
+        # Vary the spherical planet radii to fix the spinning planet masses
         for i in range(num_attempt):
 
+            # Initialise the bounds
             if self.M > M_fixed:
                 R_min = self.A1_R_layer_original[0]
                 R_max = self.A1_R_layer_original[1]
@@ -2517,8 +2525,10 @@ class SpinPlanet:
                 R_min = self.A1_R_layer_original[1]
                 R_max = 1.1 * self.A1_R_layer_original[1]
 
+            # Vary the outer radius to fix the spinning total mass
             for j in range(num_attempt_2):
 
+                # Bisect
                 R = np.mean([R_min, R_max])
 
                 # Modify the input spherical planet boundaries
@@ -2540,9 +2550,11 @@ class SpinPlanet:
                     verbosity=0,
                 )
 
+                # Check the fractional error in the masses for convergence
                 tol_1 = np.abs(self.M - M_fixed) / M_fixed
                 tol_2 = np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
 
+                # Stop once converged
                 if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
                     if verbosity >= 1:
                         string = (
@@ -2564,42 +2576,43 @@ class SpinPlanet:
 
                     return
 
-                if tol_1 < tol_layer_masses:
+                elif tol_1 < tol_layer_masses:
                     break
 
+                # Update the bounds
                 if self.M > M_fixed:
                     R_max = R
                 else:
                     R_min = R
 
+            # Initialise the bounds
             if self.A1_M_layer[0] / self.M > M0_fixed / M_fixed:
-                R_core_min = 0
-                R_core_max = self.planet.A1_R_layer[0]
+                R1_min = 0
+                R1_max = self.planet.A1_R_layer[0]
             else:
-                R_core_min = self.planet.A1_R_layer[0]
-                R_core_max = self.planet.A1_R_layer[1]
+                R1_min = self.planet.A1_R_layer[0]
+                R1_max = self.planet.A1_R_layer[1]
 
+            # Vary the inner radius to fix the spinning inner layer mass
             for j in range(num_attempt_2):
 
-                R_core = np.mean([R_core_min, R_core_max])
+                # Bisect
+                R1 = np.mean([R1_min, R1_max])
 
                 # Modify the input spherical planet boundaries
-                self.planet.A1_R_layer[0] = R_core
+                self.planet.A1_R_layer[0] = R1
                 self.planet.A1_R_layer[1] = R
                 self.planet.R = R
 
-                # Make the new spherical profiles
-                M_max_factor = 1.2
-                for _ in range(num_attempt_2):
-                    
-                    try:
-                        self.planet.gen_prof_L2_find_M_given_R1_R(
-                            M_max=M_max_factor * M_fixed, verbosity=0
-                        )
-                        
-                        break
-                    except:
-                        M_max_factor *= 10
+                # Make the new spherical profiles, increase the max mass if needed
+                try:
+                    self.planet.gen_prof_L2_find_M_given_R1_R(
+                        M_max=1.2 * M_fixed, verbosity=0
+                    )
+                except ValueError:
+                    self.planet.gen_prof_L2_find_M_given_R1_R(
+                        M_max=20 * M_fixed, verbosity=0
+                    )
 
                 # Create the spinning profiles
                 self.copy_spherical_attributes(self.planet)
@@ -2611,9 +2624,11 @@ class SpinPlanet:
                     verbosity=0,
                 )
 
+                # Check the fractional error in the masses for convergence
                 tol_1 = np.abs(self.M - M_fixed) / M_fixed
                 tol_2 = np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
 
+                # Stop once converged
                 if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
                     if verbosity >= 1:
                         string = (
@@ -2635,16 +2650,16 @@ class SpinPlanet:
 
                     return
 
-                if tol_2 < tol_layer_masses:
+                elif tol_2 < tol_layer_masses:
                     break
 
+                # Update the bounds
                 if self.A1_M_layer[0] / self.M > M0_fixed / M_fixed:
-                    R_core_max = R_core
+                    R1_max = R1
                 else:
-                    R_core_min = R_core
+                    R1_min = R1
 
             if verbosity >= 1:
-
                 string = (
                     "Iteration "
                     + str(i)
@@ -2705,10 +2720,10 @@ class SpinPlanet:
             between the layer masses of the spinning planet and the spherical 
             one are less than this tolerance.
             
-        max_iter_1: int
+        num_attempt_1: int
             Maximum number of iterations allowed. Inner loop.
             
-        max_iter_2: int
+        num_attempt_2: int
             Maximum number of iterations allowed. Outer loop.
         """
         # Check for necessary input
