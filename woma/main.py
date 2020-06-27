@@ -268,7 +268,7 @@ class Planet:
                 print("    %s = None" % variables[0])
 
         space = 12
-        print_try('Planet "%s": ', self.name)
+        print_try("Planet \"%s\": ", self.name)
         print_try(
             "    %s = %.5g  kg  = %.5g  M_earth",
             (utils.add_whitespace("M", space), self.M, self.M / gv.M_earth),
@@ -374,7 +374,7 @@ class Planet:
         Fp_planet = utils.check_end(Fp_planet, ".hdf5")
 
         if verbosity >= 1:
-            print('Loading "%s"... ' % Fp_planet[-60:], end="")
+            print("Loading \"%s\"... " % Fp_planet[-60:], end="")
             sys.stdout.flush()
 
         with h5py.File(Fp_planet, "r") as f:
@@ -1913,7 +1913,7 @@ class SpinPlanet:
         self.R_e = np.max(self.A1_r_eq[self.A1_rho_eq > 0.0])
         self.R_p = np.max(self.A1_r_po[self.A1_rho_po > 0.0])
 
-        # Mass per layer, Equatorial and polar temperature and pressure
+        # Mass per layer, equatorial and polar temperature and pressure
         if self.num_layer == 1:
             self.A1_R_layer_eq = np.array([self.R_e])
             self.A1_R_layer_po = np.array([self.R_p])
@@ -2152,9 +2152,9 @@ class SpinPlanet:
                 print("    %s = None" % variables[0])
 
         space = 12
-        print_try('SpinPlanet "%s": ', self.name)
+        print_try("SpinPlanet \"%s\": ", self.name)
         print_try(
-            "    %s = %s", (utils.add_whitespace("planet", space), self.planet.name)
+            "    %s = \"%s\"", (utils.add_whitespace("planet", space), self.planet.name)
         )
         print_try(
             "    %s = %.5g  h", (utils.add_whitespace("period", space), self.period)
@@ -2251,28 +2251,30 @@ class SpinPlanet:
         self.A1_r_eq = np.linspace(0, R_max_eq, self.num_prof)
         self.A1_r_po = np.linspace(0, R_max_po, self.num_prof)
 
-        rho_model = interp1d(self.A1_r, self.A1_rho, bounds_error=False, fill_value=0)
+        rho_model = interp1d(
+            self.planet.A1_r, self.planet.A1_rho, bounds_error=False, fill_value=0
+        )
 
         self.A1_rho_eq = rho_model(self.A1_r_eq)
         self.A1_rho_po = rho_model(self.A1_r_po)
 
     def find_min_period(self, max_period=10, tol=0.001, num_attempt=20, verbosity=1):
-
+        ### Need to pass arguments on from spin functions
         min_period = us.find_min_period(
             self.num_layer,
             self.A1_r_eq,
             self.A1_rho_eq,
             self.A1_r_po,
             self.A1_rho_po,
-            self.P_0,
-            self.P_s,
-            self.rho_0,
-            self.rho_s,
-            self.A1_mat_id_layer,
-            self.A1_T_rho_type_id,
-            self.A1_T_rho_args,
-            self.P_1,
-            self.P_2,
+            self.planet.P_0,
+            self.planet.P_s,
+            self.planet.rho_0,
+            self.planet.rho_s,
+            self.planet.A1_mat_id_layer,
+            self.planet.A1_T_rho_type_id,
+            self.planet.A1_T_rho_args,
+            self.planet.P_1,
+            self.planet.P_2,
             max_period,
             num_attempt=num_attempt,
             tol=tol,
@@ -2322,15 +2324,15 @@ class SpinPlanet:
                 self.A1_rho_eq,
                 self.A1_r_po,
                 self.A1_rho_po,
-                self.P_0,
-                self.P_s,
-                self.rho_0,
-                self.rho_s,
-                self.A1_mat_id_layer,
-                self.A1_T_rho_type_id,
-                self.A1_T_rho_args,
-                self.P_1,
-                self.P_2,
+                self.planet.P_0,
+                self.planet.P_s,
+                self.planet.rho_0,
+                self.planet.rho_s,
+                self.planet.A1_mat_id_layer,
+                self.planet.A1_T_rho_type_id,
+                self.planet.A1_T_rho_args,
+                self.planet.P_1,
+                self.planet.P_2,
             )
 
             # Check the fractional change in the density profile for convergence
@@ -2354,7 +2356,7 @@ class SpinPlanet:
             self.A1_rho_eq = A1_rho_eq
             self.A1_rho_po = A1_rho_po
 
-            # Check if converged
+            # Stop once converged
             if tol_reached < tol_density_profile:
                 if verbosity >= 1:
                     print("\nConvergence criterion reached.")
@@ -2393,7 +2395,7 @@ class SpinPlanet:
         f_max = 1.0
 
         # Desired mass
-        M_fixed = np.copy(self.M)
+        M_fixed = np.copy(self.planet.M)
 
         # Create the spinning profiles
         self._spin_planet_simple(
@@ -2423,14 +2425,14 @@ class SpinPlanet:
             self.planet.A1_R_layer = f * self.A1_R_layer_original
             self.planet.R = f * self.R_original
 
-            # Make the new spherical profiles, increase the max mass if needed
+            # Make the new spherical profiles, set a large max mass if needed
             try:
                 self.planet.gen_prof_L1_find_M_given_R(M_max=1.2 * M_fixed, verbosity=0)
             except ValueError:
-                self.planet.gen_prof_L1_find_M_given_R(M_max=20 * M_fixed, verbosity=0)
+                M_max = 10 * np.pi * self.planet.R**3 * self.planet.rho_0
+                self.planet.gen_prof_L1_find_M_given_R(M_max=M_max, verbosity=0)
 
             # Create the spinning profiles
-            self.copy_spherical_attributes(self.planet)
             self._spin_planet_simple(
                 R_max_eq,
                 R_max_po,
@@ -2489,11 +2491,10 @@ class SpinPlanet:
         assert self.num_layer == 2
 
         # Desired masses
-        M_fixed = np.copy(self.M)
-        M0_fixed = np.copy(self.A1_M_layer[0])
+        M_fixed = np.copy(self.planet.M)
+        M0_fixed = np.copy(self.planet.A1_M_layer[0])
 
         # Create the spinning profiles
-        self.copy_spherical_attributes(self.planet)
         self._spin_planet_simple(
             R_max_eq,
             R_max_po,
@@ -2540,8 +2541,25 @@ class SpinPlanet:
                     M_max=1.2 * M_fixed, verbosity=0
                 )
 
+                # ### has a small effect but why?
+                # if self.num_layer > 1:
+                #     self.P_1 = self.planet.P_1
+                #     self.T_1 = self.planet.T_1
+                #     self.rho_1 = self.planet.rho_1
+                # else:
+                #     self.P_1 = None
+                #     self.T_1 = None
+                #     self.rho_1 = None
+                # if self.num_layer > 2:
+                #     self.P_2 = self.planet.P_2
+                #     self.T_2 = self.planet.T_2
+                #     self.rho_2 = self.planet.rho_2
+                # else:
+                #     self.P_2 = None
+                #     self.T_2 = None
+                #     self.rho_2 = None
+                
                 # Create the spinning profiles
-                self.copy_spherical_attributes(self.planet)
                 self._spin_planet_simple(
                     R_max_eq,
                     R_max_po,
@@ -2604,18 +2622,18 @@ class SpinPlanet:
                 self.planet.A1_R_layer[1] = R
                 self.planet.R = R
 
-                # Make the new spherical profiles, increase the max mass if needed
+                # Make the new spherical profiles, set a large max mass if needed
                 try:
                     self.planet.gen_prof_L2_find_M_given_R1_R(
                         M_max=1.2 * M_fixed, verbosity=0
                     )
                 except ValueError:
+                    M_max = 10 * np.pi * self.planet.R**3 * self.planet.rho_0
                     self.planet.gen_prof_L2_find_M_given_R1_R(
-                        M_max=20 * M_fixed, verbosity=0
+                        M_max=M_max, verbosity=0
                     )
 
                 # Create the spinning profiles
-                self.copy_spherical_attributes(self.planet)
                 self._spin_planet_simple(
                     R_max_eq,
                     R_max_po,
