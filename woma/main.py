@@ -2538,23 +2538,8 @@ class SpinPlanet:
                     M_max=1.2 * M_fixed, verbosity=0
                 )
 
-                # ### has a small effect but why?
-                # if self.num_layer > 1:
-                #     self.P_1 = self.planet.P_1
-                #     self.T_1 = self.planet.T_1
-                #     self.rho_1 = self.planet.rho_1
-                # else:
-                #     self.P_1 = None
-                #     self.T_1 = None
-                #     self.rho_1 = None
-                # if self.num_layer > 2:
-                #     self.P_2 = self.planet.P_2
-                #     self.T_2 = self.planet.T_2
-                #     self.rho_2 = self.planet.rho_2
-                # else:
-                #     self.P_2 = None
-                #     self.T_2 = None
-                #     self.rho_2 = None
+                ### has a small effect but why?
+                self.rho_1 = self.planet.rho_1
 
                 # Create the spinning profiles
                 self._spin_planet_simple(
