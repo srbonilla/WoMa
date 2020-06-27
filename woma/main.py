@@ -1640,7 +1640,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_L3_find_R1_R2_given_R_M_I(
-        self, R1_min, R1_max, tol=0.001, num_attempt=40, num_attempt_2=40, verbosity=1
+        self, R_1_min, R_1_max, tol=0.001, num_attempt=40, num_attempt_2=40, verbosity=1
     ):
         # Check for necessary input
         assert self.R is not None
@@ -1665,8 +1665,8 @@ class Planet:
             self.A1_mat_id_layer[2],
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
-            R1_min,
-            R1_max,
+            R_1_min,
+            R_1_max,
             num_attempt=num_attempt,
             num_attempt_2=num_attempt_2,
             tol=tol,
@@ -1859,7 +1859,6 @@ class SpinPlanet:
         planet : woma.Planet
             The spherical planet object.            
         """
-
         self.num_layer = planet.num_layer
         self.A1_mat_layer = planet.A1_mat_layer
         self.A1_mat_id_layer = planet.A1_mat_id_layer
@@ -1898,13 +1897,13 @@ class SpinPlanet:
         )
 
         # Compute equatorial and polar radius
-        self.R_e = np.max(self.A1_r_eq[self.A1_rho_eq > 0.0])
-        self.R_p = np.max(self.A1_r_po[self.A1_rho_po > 0.0])
+        self.R_eq = np.max(self.A1_r_eq[self.A1_rho_eq > 0.0])
+        self.R_po = np.max(self.A1_r_po[self.A1_rho_po > 0.0])
 
         # Mass per layer, equatorial and polar temperature and pressure
         if self.num_layer == 1:
-            self.A1_R_layer_eq = np.array([self.R_e])
-            self.A1_R_layer_po = np.array([self.R_p])
+            self.A1_R_layer_eq = np.array([self.R_eq])
+            self.A1_R_layer_po = np.array([self.R_po])
             # Mass
             self.A1_M_layer = np.array([self.M])
             # Pressure and temperature
@@ -1940,9 +1939,9 @@ class SpinPlanet:
 
         elif self.num_layer == 2:
             self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.planet.rho_1])
-            self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_e])
+            self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_eq])
             self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.planet.rho_1])
-            self.A1_R_layer_po = np.array([self.R_1_po, self.R_p])
+            self.A1_R_layer_po = np.array([self.R_1_po, self.R_po])
             self.A1_mat_id_eq = (self.A1_rho_eq >= self.planet.rho_1) * self.A1_mat_id_layer[
                 0
             ] + (self.A1_rho_eq < self.planet.rho_1) * self.A1_mat_id_layer[1]
@@ -2007,19 +2006,19 @@ class SpinPlanet:
             A1_rho_po_tmp = np.copy(self.A1_rho_po)
             A1_rho_eq_tmp[A1_rho_eq_tmp < self.planet.rho_1] = 0.0
             A1_rho_po_tmp[A1_rho_po_tmp < self.planet.rho_1] = 0.0
-            M1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
+            M_1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
 
-            M2 = self.M - M1
+            M_2 = self.M - M_1
 
-            self.A1_M_layer = np.array([M1, M2])
+            self.A1_M_layer = np.array([M_1, M_2])
 
         elif self.num_layer == 3:
             self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.planet.rho_1])
             self.R_2_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.planet.rho_2])
-            self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_2_eq, self.R_e])
+            self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_2_eq, self.R_eq])
             self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.planet.rho_1])
             self.R_2_po = np.max(self.A1_r_po[self.A1_rho_po >= self.planet.rho_2])
-            self.A1_R_layer_po = np.array([self.R_1_po, self.R_2_po, self.R_p])
+            self.A1_R_layer_po = np.array([self.R_1_po, self.R_2_po, self.R_po])
             self.A1_mat_id_eq = (
                 (self.A1_rho_eq >= self.planet.rho_1) * self.A1_mat_id_layer[0]
                 + np.logical_and(
@@ -2114,18 +2113,18 @@ class SpinPlanet:
             A1_rho_po_tmp = np.copy(self.A1_rho_po)
             A1_rho_eq_tmp[A1_rho_eq_tmp < self.planet.rho_1] = 0.0
             A1_rho_po_tmp[A1_rho_po_tmp < self.planet.rho_1] = 0.0
-            M1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
+            M_1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
 
             A1_rho_eq_tmp = np.copy(self.A1_rho_eq)
             A1_rho_po_tmp = np.copy(self.A1_rho_po)
             A1_rho_eq_tmp[A1_rho_eq_tmp < self.planet.rho_2] = 0.0
             A1_rho_po_tmp[A1_rho_po_tmp < self.planet.rho_2] = 0.0
-            M2 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
-            M2 = M2 - M1
+            M_2 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
+            M_2 = M_2 - M_1
 
-            M3 = self.M - M2 - M1
+            M_3 = self.M - M_2 - M_1
 
-            self.A1_M_layer = np.array([M1, M2, M3])
+            self.A1_M_layer = np.array([M_1, M_2, M_3])
 
         self.T_0 = self.A1_T_eq[0]
         self.T_s = self.A1_T_eq[self.A1_T_eq > 0][-1]
@@ -2153,11 +2152,11 @@ class SpinPlanet:
         )
         print_try(
             "    %s = %.5g  m  = %.5g  R_earth",
-            (utils.add_whitespace("R_eq", space), self.R_e, self.R_e / gv.R_earth),
+            (utils.add_whitespace("R_eq", space), self.R_eq, self.R_eq / gv.R_earth),
         )
         print_try(
             "    %s = %.5g  m  = %.5g  R_earth",
-            (utils.add_whitespace("R_po", space), self.R_p, self.R_p / gv.R_earth),
+            (utils.add_whitespace("R_po", space), self.R_po, self.R_po / gv.R_earth),
         )
         print_try(
             "    %s = %s ",
@@ -2480,7 +2479,7 @@ class SpinPlanet:
 
         # Desired masses
         M_fixed = self.planet.M
-        M0_fixed = self.planet.A1_M_layer[0]
+        M_0_fixed = self.planet.A1_M_layer[0]
 
         # Create the spinning profiles
         self._spin_planet_simple(
@@ -2493,7 +2492,7 @@ class SpinPlanet:
 
         # Check the fractional error in the masses for convergence
         tol_1 = np.abs(self.M - M_fixed) / M_fixed
-        tol_2 = np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
+        tol_2 = np.abs(self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
 
         # No need to search if simple spin does the job (e.g. very high periods)
         if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
@@ -2540,7 +2539,7 @@ class SpinPlanet:
 
                 # Check the fractional error in the masses for convergence
                 tol_1 = np.abs(self.M - M_fixed) / M_fixed
-                tol_2 = np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
+                tol_2 = np.abs(self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
 
                 # Stop once converged
                 if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
@@ -2574,21 +2573,21 @@ class SpinPlanet:
                     R_min = R
 
             # Initialise the bounds
-            if self.A1_M_layer[0] / self.M > M0_fixed / M_fixed:
-                R1_min = 0
-                R1_max = self.planet.A1_R_layer[0]
+            if self.A1_M_layer[0] / self.M > M_0_fixed / M_fixed:
+                R_1_min = 0
+                R_1_max = self.planet.A1_R_layer[0]
             else:
-                R1_min = self.planet.A1_R_layer[0]
-                R1_max = self.planet.A1_R_layer[1]
+                R_1_min = self.planet.A1_R_layer[0]
+                R_1_max = self.planet.A1_R_layer[1]
 
             # Vary the inner radius to fix the spinning inner layer mass
             for j in range(num_attempt_2):
 
                 # Bisect
-                R1 = np.mean([R1_min, R1_max])
+                R_1 = np.mean([R_1_min, R_1_max])
 
                 # Modify the input spherical planet boundaries
-                self.planet.A1_R_layer[0] = R1
+                self.planet.A1_R_layer[0] = R_1
                 self.planet.A1_R_layer[1] = R
                 self.planet.R = R
 
@@ -2612,7 +2611,7 @@ class SpinPlanet:
 
                 # Check the fractional error in the masses for convergence
                 tol_1 = np.abs(self.M - M_fixed) / M_fixed
-                tol_2 = np.abs(self.A1_M_layer[0] - M0_fixed) / M0_fixed
+                tol_2 = np.abs(self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
 
                 # Stop once converged
                 if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
@@ -2640,10 +2639,10 @@ class SpinPlanet:
                     break
 
                 # Update the bounds
-                if self.A1_M_layer[0] / self.M > M0_fixed / M_fixed:
-                    R1_max = R1
+                if self.A1_M_layer[0] / self.M > M_0_fixed / M_fixed:
+                    R_1_max = R_1
                 else:
-                    R1_min = R1
+                    R_1_min = R_1
 
             if verbosity >= 1:
                 string = (
