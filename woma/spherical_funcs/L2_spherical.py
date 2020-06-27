@@ -249,7 +249,7 @@ def L2_find_mass(
         tol = min_tol
 
     M_min = 0.0
-    
+
     M_max_input = np.copy(M_max)
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
@@ -321,7 +321,7 @@ def L2_find_mass(
 
     if verbosity >= 1:
         sys.stdout.write("\n")
-        
+
     if (M_max_input - M_max) < tol:
         raise ValueError("Please increase M_max")
 

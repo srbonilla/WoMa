@@ -268,7 +268,7 @@ class Planet:
                 print("    %s = None" % variables[0])
 
         space = 12
-        print_try("Planet \"%s\": ", self.name)
+        print_try('Planet "%s": ', self.name)
         print_try(
             "    %s = %.5g  kg  = %.5g  M_earth",
             (utils.add_whitespace("M", space), self.M, self.M / gv.M_earth),
@@ -374,7 +374,7 @@ class Planet:
         Fp_planet = utils.check_end(Fp_planet, ".hdf5")
 
         if verbosity >= 1:
-            print("Loading \"%s\"... " % Fp_planet[-60:], end="")
+            print('Loading "%s"... ' % Fp_planet[-60:], end="")
             sys.stdout.flush()
 
         with h5py.File(Fp_planet, "r") as f:
@@ -1902,12 +1902,9 @@ class SpinPlanet:
         )
 
         # Compute escape velocity
-        v_esc_eq, v_esc_po = us.spin_escape_vel(
+        self.v_esc_eq, self.v_esc_po = us.spin_escape_vel(
             self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po, self.period,
         )
-
-        self.v_esc_po = v_esc_po
-        self.v_esc_eq = v_esc_eq
 
         # Compute equatorial and polar radius
         self.R_e = np.max(self.A1_r_eq[self.A1_rho_eq > 0.0])
@@ -2013,13 +2010,13 @@ class SpinPlanet:
                         self.A1_T_po[i], rho, self.A1_mat_id_layer[1]
                     )
 
-            r_temp = np.copy(self.A1_r_eq)
-            z_temp = np.copy(self.A1_r_po)
-            rho_r_temp = np.copy(self.A1_rho_eq)
-            rho_z_temp = np.copy(self.A1_rho_po)
-            rho_r_temp[rho_r_temp < self.rho_1] = 0.0
-            rho_z_temp[rho_z_temp < self.rho_1] = 0.0
-            M1 = us.M_spin_planet(r_temp, rho_r_temp, z_temp, rho_z_temp)
+            A1_r_tmp = np.copy(self.A1_r_eq)
+            A1_z_tmp = np.copy(self.A1_r_po)
+            A1_rho_eq_tmp = np.copy(self.A1_rho_eq)
+            A1_rho_po_tmp = np.copy(self.A1_rho_po)
+            A1_rho_eq_tmp[A1_rho_eq_tmp < self.rho_1] = 0.0
+            A1_rho_po_tmp[A1_rho_po_tmp < self.rho_1] = 0.0
+            M1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
 
             M2 = self.M - M1
 
@@ -2120,19 +2117,19 @@ class SpinPlanet:
                         self.A1_T_po[i], rho, self.A1_mat_id_layer[2]
                     )
 
-            r_temp = np.copy(self.A1_r_eq)
-            z_temp = np.copy(self.A1_r_po)
-            rho_r_temp = np.copy(self.A1_rho_eq)
-            rho_z_temp = np.copy(self.A1_rho_po)
-            rho_r_temp[rho_r_temp < self.rho_1] = 0.0
-            rho_z_temp[rho_z_temp < self.rho_1] = 0.0
-            M1 = us.M_spin_planet(r_temp, rho_r_temp, z_temp, rho_z_temp)
+            A1_r_tmp = np.copy(self.A1_r_eq)
+            A1_z_tmp = np.copy(self.A1_r_po)
+            A1_rho_eq_tmp = np.copy(self.A1_rho_eq)
+            A1_rho_po_tmp = np.copy(self.A1_rho_po)
+            A1_rho_eq_tmp[A1_rho_eq_tmp < self.rho_1] = 0.0
+            A1_rho_po_tmp[A1_rho_po_tmp < self.rho_1] = 0.0
+            M1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
 
-            rho_r_temp = np.copy(self.A1_rho_eq)
-            rho_z_temp = np.copy(self.A1_rho_po)
-            rho_r_temp[rho_r_temp < self.rho_2] = 0.0
-            rho_z_temp[rho_z_temp < self.rho_2] = 0.0
-            M2 = us.M_spin_planet(r_temp, rho_r_temp, z_temp, rho_z_temp)
+            A1_rho_eq_tmp = np.copy(self.A1_rho_eq)
+            A1_rho_po_tmp = np.copy(self.A1_rho_po)
+            A1_rho_eq_tmp[A1_rho_eq_tmp < self.rho_2] = 0.0
+            A1_rho_po_tmp[A1_rho_po_tmp < self.rho_2] = 0.0
+            M2 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
             M2 = M2 - M1
 
             M3 = self.M - M2 - M1
@@ -2152,9 +2149,9 @@ class SpinPlanet:
                 print("    %s = None" % variables[0])
 
         space = 12
-        print_try("SpinPlanet \"%s\": ", self.name)
+        print_try('SpinPlanet "%s": ', self.name)
         print_try(
-            "    %s = \"%s\"", (utils.add_whitespace("planet", space), self.planet.name)
+            '    %s = "%s"', (utils.add_whitespace("planet", space), self.planet.name)
         )
         print_try(
             "    %s = %.5g  h", (utils.add_whitespace("period", space), self.period)
@@ -2395,7 +2392,7 @@ class SpinPlanet:
         f_max = 1.0
 
         # Desired mass
-        M_fixed = np.copy(self.planet.M)
+        M_fixed = self.planet.M
 
         # Create the spinning profiles
         self._spin_planet_simple(
@@ -2429,7 +2426,7 @@ class SpinPlanet:
             try:
                 self.planet.gen_prof_L1_find_M_given_R(M_max=1.2 * M_fixed, verbosity=0)
             except ValueError:
-                M_max = 10 * np.pi * self.planet.R**3 * self.planet.rho_0
+                M_max = 10 * np.pi * self.planet.R ** 3 * self.planet.rho_0
                 self.planet.gen_prof_L1_find_M_given_R(M_max=M_max, verbosity=0)
 
             # Create the spinning profiles
@@ -2491,8 +2488,8 @@ class SpinPlanet:
         assert self.num_layer == 2
 
         # Desired masses
-        M_fixed = np.copy(self.planet.M)
-        M0_fixed = np.copy(self.planet.A1_M_layer[0])
+        M_fixed = self.planet.M
+        M0_fixed = self.planet.A1_M_layer[0]
 
         # Create the spinning profiles
         self._spin_planet_simple(
@@ -2558,7 +2555,7 @@ class SpinPlanet:
                 #     self.P_2 = None
                 #     self.T_2 = None
                 #     self.rho_2 = None
-                
+
                 # Create the spinning profiles
                 self._spin_planet_simple(
                     R_max_eq,
@@ -2628,10 +2625,8 @@ class SpinPlanet:
                         M_max=1.2 * M_fixed, verbosity=0
                     )
                 except ValueError:
-                    M_max = 10 * np.pi * self.planet.R**3 * self.planet.rho_0
-                    self.planet.gen_prof_L2_find_M_given_R1_R(
-                        M_max=M_max, verbosity=0
-                    )
+                    M_max = 10 * np.pi * self.planet.R ** 3 * self.planet.rho_0
+                    self.planet.gen_prof_L2_find_M_given_R1_R(M_max=M_max, verbosity=0)
 
                 # Create the spinning profiles
                 self._spin_planet_simple(
