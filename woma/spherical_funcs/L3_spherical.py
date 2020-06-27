@@ -317,7 +317,7 @@ def L3_find_mass(
     )
 
     if A1_m_enc[-1] < 0:
-        raise Exception(
+        raise ValueError(
             "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
 
@@ -500,7 +500,7 @@ def L3_find_radius(
             "Ran out of mass for a 2 layer planet.\n"
             + "Try increase the mass or reduce R1.\n"
         )
-        raise Exception(e)
+        raise ValueError(e)
 
     A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
         num_prof,
@@ -527,7 +527,7 @@ def L3_find_radius(
             "Excess of mass for a 3 layer planet with R = R_max.\n"
             + "Try reduce the mass or increase R_max.\n"
         )
-        raise Exception(e)
+        raise ValueError(e)
 
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
@@ -1016,7 +1016,7 @@ def L3_find_R1_R2(
         )
 
     except:
-        raise Exception("Could not build a planet with R1_min.")
+        raise ValueError("Could not build a planet with R1_min.")
 
     try:
         if verbosity >= 1:
@@ -1044,7 +1044,7 @@ def L3_find_R1_R2(
         )
 
     except:
-        raise Exception("Could not build a planet with R1_max.")
+        raise ValueError("Could not build a planet with R1_max.")
 
     (
         A1_r_min,

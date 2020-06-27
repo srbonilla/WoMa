@@ -293,3 +293,35 @@ if __name__ == "__main__":
     
     plt.show()
     
+    planet = woma.Planet(
+        A1_mat_layer    = ["Til_iron", "Til_basalt"],
+        A1_T_rho_type   = ["power=2", "power=2"],
+        P_s             = 1e5,
+        T_s             = 1000,
+        M               = M_earth,
+        R               = R_earth,
+    )
+    planet.gen_prof_L2_find_R1_given_R_M()
+    
+    spin_planet = woma.SpinPlanet(
+        planet  = planet,
+        period  = 4,  # h
+    )
+    
+    planet = woma.Planet(
+        A1_mat_layer    = ["Til_basalt"],
+        A1_T_rho_type   = ["power=2"],
+        P_s             = 1e5,
+        T_s             = 1000,
+        M               = 0.5*M_earth,
+    )
+    planet.gen_prof_L1_find_R_given_M(R_max=2*R_earth)
+    
+    spin_planet = woma.SpinPlanet(
+        planet  = planet,
+        period  = 0.001,  # h
+        check_min_period=True,
+        R_max_eq=3*R_earth,
+        R_max_po=2*R_earth,
+    )
+        

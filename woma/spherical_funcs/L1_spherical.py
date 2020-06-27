@@ -308,7 +308,7 @@ def L1_find_mass(
     )
 
     if A1_m_enc[-1] < 0:
-        raise Exception(
+        raise ValueError(
             "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
 
@@ -419,7 +419,7 @@ def L1_find_radius(
     )
 
     if A1_m_enc[-1] != 0:
-        raise Exception(
+        raise ValueError(
             "R_max is too low, did not ran out of mass in first iteration.\nPlease increase R_max.\n"
         )
 

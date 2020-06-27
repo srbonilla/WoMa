@@ -269,7 +269,7 @@ def L2_find_mass(
     )
 
     if A1_m_enc[-1] < 0:
-        raise Exception(
+        raise ValueError(
             "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
 
@@ -427,7 +427,7 @@ def L2_find_radius(
     )
 
     if A1_m_enc_1[-1] > 0:
-        raise Exception(
+        raise ValueError(
             "R_max too low, excess of mass for R = R_max.\nPlease increase R_max.\n"
         )
 
@@ -436,7 +436,7 @@ def L2_find_radius(
             "R = R1 yields a planet which already lacks mass.\n"
             + "Try increase M or reduce R1.\n"
         )
-        raise Exception(e)
+        raise ValueError(e)
 
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
@@ -582,7 +582,7 @@ def L2_find_R1(
             "Try increasing the mass (M) or decreasing the radius (R).\n"
             % gv.Di_id_mat[mat_id_L2]
         )
-        raise Exception(e)
+        raise ValueError(e)
 
     elif A1_m_enc_2[-1] > 0:
         e = (
@@ -590,7 +590,7 @@ def L2_find_R1(
             "Try decreasing the mass (M) or increasing the radius (R).\n"
             % gv.Di_id_mat[mat_id_L2]
         )
-        raise Exception(e)
+        raise ValueError(e)
 
     for i in range(num_attempt):
         R1_try = (R1_min + R1_max) * 0.5
@@ -740,7 +740,7 @@ def L2_find_R1_R(
             verbosity=verbosity,
         )
     except:
-        raise Exception(
+        raise ValueError(
             "Could not build a planet made of core material.\nPlease increase R_max."
         )
 
@@ -763,12 +763,12 @@ def L2_find_R1_R(
             verbosity=verbosity,
         )
     except:
-        raise Exception(
+        raise ValueError(
             "Could not build a planet made of mantle material.\nPlease increase R_max.\n"
         )
 
     if R_min > R_max:
-        raise Exception(
+        raise ValueError(
             "A planet made of core material is bigger than one made of mantle material.\n"
         )
 

@@ -1815,8 +1815,9 @@ class SpinPlanet:
 
         self.R_original = planet.R
         self.A1_R_layer_original = planet.A1_R_layer
+        self.period_input = period
 
-        # Spherical planet attributes
+        # Spherical planet attributes that will be unchanged
         self.copy_spherical_attributes(self.planet)
 
         # Make the spinning profiles!
@@ -1865,37 +1866,27 @@ class SpinPlanet:
         self.A1_T_rho_type = planet.A1_T_rho_type
         self.A1_T_rho_type_id = planet.A1_T_rho_type_id
         self.A1_T_rho_args = planet.A1_T_rho_args
-        self.A1_M_layer = planet.A1_M_layer
-        self.A1_R_layer = planet.A1_R_layer
-        self.A1_r = planet.A1_r
-        self.A1_P = planet.A1_P
-        self.A1_T = planet.A1_T
-        self.A1_rho = planet.A1_rho
-        self.M = planet.M
-        self.P_0 = planet.P_0
-        self.T_0 = planet.T_0
-        self.rho_0 = planet.rho_0
-        if self.num_layer > 1:
-            self.P_1 = planet.P_1
-            self.T_1 = planet.T_1
-            self.rho_1 = planet.rho_1
-        else:
-            self.P_1 = None
-            self.T_1 = None
-            self.rho_1 = None
-        if self.num_layer > 2:
-            self.P_2 = planet.P_2
-            self.T_2 = planet.T_2
-            self.rho_2 = planet.rho_2
-        else:
-            self.P_2 = None
-            self.T_2 = None
-            self.rho_2 = None
         self.P_s = planet.P_s
         self.T_s = planet.T_s
         self.rho_s = planet.rho_s
 
     def update_attributes(self):
+        # Temperature, pressure and density at the boundaries
+        self.P_s = self.planet.P_s
+        self.T_s = self.planet.T_s
+        self.rho_s = self.planet.rho_s
+        self.P_0 = self.planet.P_0
+        self.T_0 = self.planet.T_0
+        self.rho_0 = self.planet.rho_0
+        if self.num_layer > 1:
+            self.P_1 = self.planet.P_1
+            self.T_1 = self.planet.T_1
+            self.rho_1 = self.planet.rho_1
+        if self.num_layer > 2:
+            self.P_2 = self.planet.P_2
+            self.T_2 = self.planet.T_2
+            self.rho_2 = self.planet.rho_2
+        
         # Compute mass of the planet
         self.M = us.M_spin_planet(
             self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po
@@ -1948,16 +1939,16 @@ class SpinPlanet:
             self.A1_mat_id_po = np.ones(self.A1_r_po.shape) * self.A1_mat_id_layer[0]
 
         elif self.num_layer == 2:
-            self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_1])
+            self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.planet.rho_1])
             self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_e])
-            self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.rho_1])
+            self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.planet.rho_1])
             self.A1_R_layer_po = np.array([self.R_1_po, self.R_p])
-            self.A1_mat_id_eq = (self.A1_rho_eq >= self.rho_1) * self.A1_mat_id_layer[
+            self.A1_mat_id_eq = (self.A1_rho_eq >= self.planet.rho_1) * self.A1_mat_id_layer[
                 0
-            ] + (self.A1_rho_eq < self.rho_1) * self.A1_mat_id_layer[1]
-            self.A1_mat_id_po = (self.A1_rho_po >= self.rho_1) * self.A1_mat_id_layer[
+            ] + (self.A1_rho_eq < self.planet.rho_1) * self.A1_mat_id_layer[1]
+            self.A1_mat_id_po = (self.A1_rho_po >= self.planet.rho_1) * self.A1_mat_id_layer[
                 0
-            ] + (self.A1_rho_po < self.rho_1) * self.A1_mat_id_layer[1]
+            ] + (self.A1_rho_po < self.planet.rho_1) * self.A1_mat_id_layer[1]
 
             self.A1_mat_id_eq[self.A1_rho_eq <= 0] = -1
             self.A1_mat_id_po[self.A1_rho_po <= 0] = -1
@@ -1968,7 +1959,7 @@ class SpinPlanet:
             self.A1_T_po = np.zeros_like(self.A1_r_po)
 
             for i, rho in enumerate(self.A1_rho_eq):
-                if rho >= self.rho_1:
+                if rho >= self.planet.rho_1:
                     self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
@@ -1989,7 +1980,7 @@ class SpinPlanet:
                         self.A1_T_eq[i], rho, self.A1_mat_id_layer[1]
                     )
             for i, rho in enumerate(self.A1_rho_po):
-                if rho >= self.rho_1:
+                if rho >= self.planet.rho_1:
                     self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
@@ -2014,8 +2005,8 @@ class SpinPlanet:
             A1_z_tmp = np.copy(self.A1_r_po)
             A1_rho_eq_tmp = np.copy(self.A1_rho_eq)
             A1_rho_po_tmp = np.copy(self.A1_rho_po)
-            A1_rho_eq_tmp[A1_rho_eq_tmp < self.rho_1] = 0.0
-            A1_rho_po_tmp[A1_rho_po_tmp < self.rho_1] = 0.0
+            A1_rho_eq_tmp[A1_rho_eq_tmp < self.planet.rho_1] = 0.0
+            A1_rho_po_tmp[A1_rho_po_tmp < self.planet.rho_1] = 0.0
             M1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
 
             M2 = self.M - M1
@@ -2023,27 +2014,27 @@ class SpinPlanet:
             self.A1_M_layer = np.array([M1, M2])
 
         elif self.num_layer == 3:
-            self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_1])
-            self.R_2_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.rho_2])
+            self.R_1_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.planet.rho_1])
+            self.R_2_eq = np.max(self.A1_r_eq[self.A1_rho_eq >= self.planet.rho_2])
             self.A1_R_layer_eq = np.array([self.R_1_eq, self.R_2_eq, self.R_e])
-            self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.rho_1])
-            self.R_2_po = np.max(self.A1_r_po[self.A1_rho_po >= self.rho_2])
+            self.R_1_po = np.max(self.A1_r_po[self.A1_rho_po >= self.planet.rho_1])
+            self.R_2_po = np.max(self.A1_r_po[self.A1_rho_po >= self.planet.rho_2])
             self.A1_R_layer_po = np.array([self.R_1_po, self.R_2_po, self.R_p])
             self.A1_mat_id_eq = (
-                (self.A1_rho_eq >= self.rho_1) * self.A1_mat_id_layer[0]
+                (self.A1_rho_eq >= self.planet.rho_1) * self.A1_mat_id_layer[0]
                 + np.logical_and(
-                    self.A1_rho_eq < self.rho_1, self.A1_rho_eq >= self.rho_2
+                    self.A1_rho_eq < self.planet.rho_1, self.A1_rho_eq >= self.planet.rho_2
                 )
                 * self.A1_mat_id_layer[1]
-                + (self.A1_rho_eq < self.rho_2) * self.A1_mat_id_layer[2]
+                + (self.A1_rho_eq < self.planet.rho_2) * self.A1_mat_id_layer[2]
             )
             self.A1_mat_id_eq = (
-                (self.A1_rho_po >= self.rho_1) * self.A1_mat_id_layer[0]
+                (self.A1_rho_po >= self.planet.rho_1) * self.A1_mat_id_layer[0]
                 + np.logical_and(
-                    self.A1_rho_po < self.rho_1, self.A1_rho_po >= self.rho_2
+                    self.A1_rho_po < self.planet.rho_1, self.A1_rho_po >= self.planet.rho_2
                 )
                 * self.A1_mat_id_layer[1]
-                + (self.A1_rho_po < self.rho_2) * self.A1_mat_id_layer[2]
+                + (self.A1_rho_po < self.planet.rho_2) * self.A1_mat_id_layer[2]
             )
 
             self.A1_mat_id_eq[self.A1_rho_eq <= 0] = -1
@@ -2055,7 +2046,7 @@ class SpinPlanet:
             self.A1_T_po = np.zeros_like(self.A1_r_po)
 
             for i, rho in enumerate(self.A1_rho_eq):
-                if rho >= self.rho_1:
+                if rho >= self.planet.rho_1:
                     self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
@@ -2065,7 +2056,7 @@ class SpinPlanet:
                     self.A1_P_eq[i] = eos.P_T_rho(
                         self.A1_T_eq[i], rho, self.A1_mat_id_layer[0]
                     )
-                elif rho >= self.rho_2:
+                elif rho >= self.planet.rho_2:
                     self.A1_T_eq[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[1],
@@ -2086,7 +2077,7 @@ class SpinPlanet:
                         self.A1_T_eq[i], rho, self.A1_mat_id_layer[2]
                     )
             for i, rho in enumerate(self.A1_rho_po):
-                if rho >= self.rho_1:
+                if rho >= self.planet.rho_1:
                     self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[0],
@@ -2096,7 +2087,7 @@ class SpinPlanet:
                     self.A1_P_po[i] = eos.P_T_rho(
                         self.A1_T_po[i], rho, self.A1_mat_id_layer[0]
                     )
-                elif rho >= self.rho_2:
+                elif rho >= self.planet.rho_2:
                     self.A1_T_po[i] = T_rho(
                         rho,
                         self.A1_T_rho_type_id[1],
@@ -2121,14 +2112,14 @@ class SpinPlanet:
             A1_z_tmp = np.copy(self.A1_r_po)
             A1_rho_eq_tmp = np.copy(self.A1_rho_eq)
             A1_rho_po_tmp = np.copy(self.A1_rho_po)
-            A1_rho_eq_tmp[A1_rho_eq_tmp < self.rho_1] = 0.0
-            A1_rho_po_tmp[A1_rho_po_tmp < self.rho_1] = 0.0
+            A1_rho_eq_tmp[A1_rho_eq_tmp < self.planet.rho_1] = 0.0
+            A1_rho_po_tmp[A1_rho_po_tmp < self.planet.rho_1] = 0.0
             M1 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
 
             A1_rho_eq_tmp = np.copy(self.A1_rho_eq)
             A1_rho_po_tmp = np.copy(self.A1_rho_po)
-            A1_rho_eq_tmp[A1_rho_eq_tmp < self.rho_2] = 0.0
-            A1_rho_po_tmp[A1_rho_po_tmp < self.rho_2] = 0.0
+            A1_rho_eq_tmp[A1_rho_eq_tmp < self.planet.rho_2] = 0.0
+            A1_rho_po_tmp[A1_rho_po_tmp < self.planet.rho_2] = 0.0
             M2 = us.M_spin_planet(A1_r_tmp, A1_rho_eq_tmp, A1_z_tmp, A1_rho_po_tmp)
             M2 = M2 - M1
 
@@ -2305,13 +2296,13 @@ class SpinPlanet:
                 )
 
                 # Select period for this iteration
-                if self.period >= self.min_period:
-                    period_iter = self.period
+                if self.period_input >= self.min_period:
+                    period_iter = self.period_input
                 else:
                     period_iter = self.min_period
             # Assume we're above the minimum period
             else:
-                period_iter = self.period
+                period_iter = self.period_input
 
             # Compute the spinning profiles
             A1_rho_eq, A1_rho_po = us.spin_iteration(
@@ -2359,7 +2350,7 @@ class SpinPlanet:
                     print("\nConvergence criterion reached.")
                 break
 
-        if self.period < period_iter:
+        if self.period_input < period_iter:
             if verbosity >= 1:
                 print("")
                 print("Minimum period found at", period_iter, "h")
@@ -2538,9 +2529,6 @@ class SpinPlanet:
                     M_max=1.2 * M_fixed, verbosity=0
                 )
 
-                ### has a small effect but why?
-                self.rho_1 = self.planet.rho_1
-
                 # Create the spinning profiles
                 self._spin_planet_simple(
                     R_max_eq,
@@ -2685,7 +2673,7 @@ class SpinPlanet:
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
         num_attempt=15,
-        num_attempt_2=15,
+        num_attempt_2=5,
         verbosity=1,
     ):
         """ Create the spinning planet from the spherical one.
