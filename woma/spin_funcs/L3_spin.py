@@ -17,11 +17,11 @@ def L3_rho_eq_po_from_V(
     A1_V_eq,
     A1_r_po,
     A1_V_po,
-    P_c,
-    P_12,
-    P_23,
+    P_0,
+    P_1,
+    P_2,
     P_s,
-    rho_c,
+    rho_0,
     rho_s,
     mat_id_L1,
     T_rho_type_id_L1,
@@ -50,25 +50,25 @@ def L3_rho_eq_po_from_V(
     A1_V_po : [float]
         Polar profile of potential (SI).
 
-    P_c : float:
+    P_0 : float
         Pressure at the center of the planet (SI).
 
-    P_12 : float:
+    P_1 : float
         Pressure at the boundary between layers 1 and 2 of the planet (SI).
 
-    P_23 : float:
+    P_2 : float
         Pressure at the boundary between layers 2 and 3 of the planet (SI).
 
-    P_s : float:
+    P_s : float
         Pressure at the surface of the planet (SI).
 
-    rho_c : float:
+    rho_0 : float
         Density at the center of the planet (SI).
 
-    rho_s : float:
+    rho_s : float
         Density at the surface of the planet (SI).
 
-    mat_id_L1 : int:
+    mat_id_L1 : int
         Material id for layer 1.
 
     T_rho_type_id_L1 : int
@@ -77,7 +77,7 @@ def L3_rho_eq_po_from_V(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
-    mat_id_L2 : int:
+    mat_id_L2 : int
         Material id for layer 2.
 
     T_rho_type_id_L2 : int
@@ -86,7 +86,7 @@ def L3_rho_eq_po_from_V(
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
 
-    mat_id_L3 : int:
+    mat_id_L3 : int
         Material id for layer 3.
 
     T_rho_type_id_L3 : int
@@ -110,10 +110,10 @@ def L3_rho_eq_po_from_V(
     A1_rho_eq = np.zeros(A1_V_eq.shape[0])
     A1_rho_po = np.zeros(A1_V_po.shape[0])
 
-    A1_P_eq[0] = P_c
-    A1_P_po[0] = P_c
-    A1_rho_eq[0] = rho_c
-    A1_rho_po[0] = rho_c
+    A1_P_eq[0] = P_0
+    A1_P_po[0] = P_0
+    A1_rho_eq[0] = rho_0
+    A1_rho_po[0] = rho_0
 
     # equatorial profile
     for i in range(A1_r_eq.shape[0] - 1):
@@ -127,7 +127,7 @@ def L3_rho_eq_po_from_V(
             break
 
         # compute density
-        if A1_P_eq[i + 1] >= P_s and A1_P_eq[i + 1] >= P_12:
+        if A1_P_eq[i + 1] >= P_s and A1_P_eq[i + 1] >= P_1:
             A1_rho_eq[i + 1] = eos.find_rho(
                 A1_P_eq[i + 1],
                 mat_id_L1,
@@ -137,7 +137,7 @@ def L3_rho_eq_po_from_V(
                 A1_rho_eq[i],
             )
 
-        elif A1_P_eq[i + 1] >= P_s and A1_P_eq[i + 1] >= P_23:
+        elif A1_P_eq[i + 1] >= P_s and A1_P_eq[i + 1] >= P_2:
             A1_rho_eq[i + 1] = eos.find_rho(
                 A1_P_eq[i + 1],
                 mat_id_L2,
@@ -173,7 +173,7 @@ def L3_rho_eq_po_from_V(
             break
 
         # compute density
-        if A1_P_po[i + 1] >= P_s and A1_P_po[i + 1] >= P_12:
+        if A1_P_po[i + 1] >= P_s and A1_P_po[i + 1] >= P_1:
             A1_rho_po[i + 1] = eos.find_rho(
                 A1_P_po[i + 1],
                 mat_id_L1,
@@ -183,7 +183,7 @@ def L3_rho_eq_po_from_V(
                 A1_rho_po[i],
             )
 
-        elif A1_P_po[i + 1] >= P_s and A1_P_po[i + 1] >= P_23:
+        elif A1_P_po[i + 1] >= P_s and A1_P_po[i + 1] >= P_2:
             A1_rho_po[i + 1] = eos.find_rho(
                 A1_P_po[i + 1],
                 mat_id_L2,
@@ -217,11 +217,11 @@ def L3_spin(
     A1_r_po,
     A1_rho_po,
     period,
-    P_c,
-    P_12,
-    P_23,
+    P_0,
+    P_1,
+    P_2,
     P_s,
-    rho_c,
+    rho_0,
     rho_s,
     mat_id_L1,
     T_rho_type_id_L1,
@@ -238,7 +238,7 @@ def L3_spin(
 
     Parameters
     ----------
-    num_attempt : int:
+    num_attempt : int
         Number of num_attempt to run.
 
     A1_r_eq : [float]
@@ -253,28 +253,28 @@ def L3_spin(
     densities : [float]
         Densities of the spherical profile (SI).
 
-    period : float:
+    period : float
         Period of the planet (hours).
 
-    P_c : float:
+    P_0 : float
         Pressure at the center of the planet (SI).
 
-    P_12 : float:
+    P_1 : float
         Pressure at the boundary between layers 1 and 2 of the planet (SI).
 
-    P_23 : float:
+    P_2 : float
         Pressure at the boundary between layers 2 and 3 of the planet (SI).
 
-    P_s : float:
+    P_s : float
         Pressure at the surface of the planet (SI).
 
-    rho_c : float:
+    rho_0 : float
         Density at the center of the planet (SI).
 
-    rho_s : float:
+    rho_s : float
         Density at the surface of the planet (SI).
 
-    mat_id_L1 : int:
+    mat_id_L1 : int
         Material id for layer 1.
 
     T_rho_type_id_L1 : int
@@ -283,7 +283,7 @@ def L3_spin(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
-    mat_id_L2 : int:
+    mat_id_L2 : int
         Material id for layer 2.
 
     T_rho_type_id_L2 : int
@@ -292,7 +292,7 @@ def L3_spin(
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
 
-    mat_id_L3 : int:
+    mat_id_L3 : int
         Material id for layer 3.
 
     T_rho_type_id_L3 : int
@@ -326,11 +326,11 @@ def L3_spin(
             A1_V_eq,
             A1_r_po,
             A1_V_po,
-            P_c,
-            P_12,
-            P_23,
+            P_0,
+            P_1,
+            P_2,
             P_s,
-            rho_c,
+            rho_0,
             rho_s,
             mat_id_L1,
             T_rho_type_id_L1,
@@ -355,8 +355,8 @@ def L3_place_particles(
     A1_rho_po,
     period,
     N,
-    rho_12,
-    rho_23,
+    rho_1,
+    rho_2,
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
@@ -385,19 +385,19 @@ def L3_place_particles(
     A1_rho_po : [float]
         Polar profile of densities (SI).
 
-    period : float:
+    period : float
         Period of the planet (hours).
 
-    N : int:
+    N : int
         Number of particles.
         
-    rho_12 : float:
+    rho_1 : float
         Density at the boundary between layers 1 and 2 (SI).
 
-    rho_23 : float:
+    rho_2 : float
         Density at the boundary between layers 2 and 3 (SI).
 
-    mat_id_L1 : int:
+    mat_id_L1 : int
         Material id for layer 1.
 
     T_rho_type_id_L1 : int
@@ -406,7 +406,7 @@ def L3_place_particles(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
         
-    mat_id_L2 : int:
+    mat_id_L2 : int
         Material id for layer 2.
 
     T_rho_type_id_L2 : int
@@ -415,7 +415,7 @@ def L3_place_particles(
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
         
-    mat_id_L3 : int:
+    mat_id_L3 : int
         Material id for layer 3.
 
     T_rho_type_id_L3 : int
@@ -424,7 +424,7 @@ def L3_place_particles(
     T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
 
-    N_ngb : int:
+    N_ngb : int
         Number of neighbors in the SPH simulation.
         
     Returns
@@ -462,10 +462,10 @@ def L3_place_particles(
     A1_h : [float]
         Smoothing lenght for every particle (SI).
 
-    A1_mat_id ([int]):
+    A1_mat_id : [int]
         Material id for every particle.
 
-    A1_id ([int]):
+    A1_id : [int]
         Identifier for every particle
         
     """
@@ -488,12 +488,12 @@ def L3_place_particles(
     A1_P = np.zeros((A1_m.shape[0],))
 
     for k in range(A1_m.shape[0]):
-        if A1_rho[k] > rho_12:
+        if A1_rho[k] > rho_1:
             T = T_rho(A1_rho[k], T_rho_type_id_L1, T_rho_args_L1, mat_id_L1)
             A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L1)
             A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L1)
 
-        elif A1_rho[k] > rho_23:
+        elif A1_rho[k] > rho_2:
             T = T_rho(A1_rho[k], T_rho_type_id_L2, T_rho_args_L2, mat_id_L2)
             A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L2)
             A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L2)
@@ -509,9 +509,9 @@ def L3_place_particles(
 
     A1_id = np.arange(A1_m.shape[0])
     A1_mat_id = (
-        (A1_rho > rho_12) * mat_id_L1
-        + np.logical_and(A1_rho <= rho_12, A1_rho > rho_23) * mat_id_L2
-        + (A1_rho < rho_23) * mat_id_L3
+        (A1_rho > rho_1) * mat_id_L1
+        + np.logical_and(A1_rho <= rho_1, A1_rho > rho_2) * mat_id_L2
+        + (A1_rho < rho_2) * mat_id_L3
     )
 
     return (

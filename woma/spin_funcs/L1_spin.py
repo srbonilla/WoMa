@@ -29,7 +29,7 @@ def V_eq_po_from_rho(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     A1_rho_po : [float]
         Polar profile of densities (SI).
 
-    period : float:
+    period : float
         Period of the planet (hours).
 
     Returns
@@ -79,9 +79,9 @@ def L1_rho_eq_po_from_V(
     A1_V_eq,
     A1_r_po,
     A1_V_po,
-    P_c,
+    P_0,
     P_s,
-    rho_c,
+    rho_0,
     rho_s,
     mat_id_L1,
     T_rho_type_id_L1,
@@ -104,19 +104,19 @@ def L1_rho_eq_po_from_V(
     A1_V_po : [float]
         Polar profile of potential (SI).
 
-    P_c : float:
+    P_0 : float
         Pressure at the center of the planet (SI).
 
-    P_s : float:
+    P_s : float
         Pressure at the surface of the planet (SI).
 
-    rho_c : float:
+    rho_0 : float
         Density at the center of the planet (SI).
 
-    rho_s : float:
+    rho_s : float
         Density at the surface of the planet (SI).
 
-    mat_id_L1 : int:
+    mat_id_L1 : int
         Material id for layer 1.
 
     T_rho_type_id_L1 : int
@@ -139,10 +139,10 @@ def L1_rho_eq_po_from_V(
     A1_rho_eq = np.zeros(A1_V_eq.shape[0])
     A1_rho_po = np.zeros(A1_V_po.shape[0])
 
-    A1_P_eq[0] = P_c
-    A1_P_po[0] = P_c
-    A1_rho_eq[0] = rho_c
-    A1_rho_po[0] = rho_c
+    A1_P_eq[0] = P_0
+    A1_P_po[0] = P_0
+    A1_rho_eq[0] = rho_0
+    A1_rho_po[0] = rho_0
 
     # equatorial profile
     for i in range(A1_r_eq.shape[0] - 1):
@@ -204,9 +204,9 @@ def L1_spin(
     A1_r_po,
     A1_rho_po,
     period,
-    P_c,
+    P_0,
     P_s,
-    rho_c,
+    rho_0,
     rho_s,
     mat_id_L1,
     T_rho_type_id_L1,
@@ -217,7 +217,7 @@ def L1_spin(
 
     Parameters
     ----------
-    num_attempt : int:
+    num_attempt : int
         Number of num_attempt to run.
 
     A1_r_eq : [float]
@@ -232,22 +232,22 @@ def L1_spin(
     A1_rho_po : [float]
         Densitity values at corresponding A1_r_po points (SI).
 
-    period : float:
+    period : float
         Period of the planet (hours).
 
-    P_c : float:
+    P_0 : float
         Pressure at the center of the planet (SI).
 
-    P_s : float:
+    P_s : float
         Pressure at the surface of the planet (SI).
 
-    rho_c : float:
+    rho_0 : float
         Density at the center of the planet (SI).
 
-    rho_s : float:
+    rho_s : float
         Density at the surface of the planet (SI).
 
-    mat_id_L1 : int:
+    mat_id_L1 : int
         Material id for layer 1.
 
     T_rho_type_id_L1 : int
@@ -281,9 +281,9 @@ def L1_spin(
             A1_V_eq,
             A1_r_po,
             A1_V_po,
-            P_c,
+            P_0,
             P_s,
-            rho_c,
+            rho_0,
             rho_s,
             mat_id_L1,
             T_rho_type_id_L1,
@@ -323,13 +323,13 @@ def L1_place_particles(
     A1_rho_po : [float]
         Polar profile of densities (SI).
 
-    period : float:
+    period : float
         Period of the planet (hours).
 
-    N : int:
+    N : int
         Number of particles.
 
-    mat_id_L1 : int:
+    mat_id_L1 : int
         Material id for layer 1.
 
     T_rho_type_id_L1 : int
@@ -338,7 +338,7 @@ def L1_place_particles(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
-    N_ngb : int:
+    N_ngb : int
         Number of neighbors in the SPH simulation.
         
     Returns
@@ -376,10 +376,10 @@ def L1_place_particles(
     A1_h : [float]
         Smoothing lenght for every particle (SI).
 
-    A1_mat_id ([int]):
+    A1_mat_id : [int]
         Material id for every particle.
 
-    A1_id ([int]):
+    A1_id : [int]
         Identifier for every particle
         
     """
