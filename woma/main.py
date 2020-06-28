@@ -362,6 +362,49 @@ class Planet:
             "    %s = %.5g  M_tot*R_tot^2",
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
+    
+    def save_planet(self, Fp_planet):
+        Fp_planet = utils.check_end(Fp_planet, ".hdf5")
+
+        print('Saving "%s"... ' % Fp_planet[-60:], end="")
+        sys.stdout.flush()
+
+        with h5py.File(Fp_planet, "w") as f:
+            # Group
+            grp = f.create_group("/planet")
+
+            # Lists not numpy for attributes
+            if type(self.A1_mat_layer).__module__ == np.__name__:
+                self.A1_mat_layer = self.A1_mat_layer.tolist()
+
+            # Attributes
+            grp.attrs[io.Di_hdf5_planet_label["num_layer"]] = self.num_layer
+            grp.attrs[io.Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
+            grp.attrs[io.Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
+            grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
+            grp.attrs[io.Di_hdf5_planet_label["R_layer"]] = self.A1_R_layer
+            grp.attrs[io.Di_hdf5_planet_label["M_layer"]] = self.A1_M_layer
+            grp.attrs[io.Di_hdf5_planet_label["M"]] = self.M
+            grp.attrs[io.Di_hdf5_planet_label["R"]] = self.R
+            grp.attrs[io.Di_hdf5_planet_label["idx_layer"]] = self.A1_idx_layer
+            grp.attrs[io.Di_hdf5_planet_label["P_s"]] = self.P_s
+            grp.attrs[io.Di_hdf5_planet_label["T_s"]] = self.T_s
+            grp.attrs[io.Di_hdf5_planet_label["rho_s"]] = self.rho_s
+
+            # Arrays
+            grp.create_dataset(io.Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d"
+            )
+            grp.create_dataset(io.Di_hdf5_planet_label["rho"], data=self.A1_rho, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["T"], data=self.A1_T, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["P"], data=self.A1_P, dtype="d")
+            grp.create_dataset(io.Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
+            )
+
+        print("Done")
 
     def load_planet_profiles(self, Fp_planet, verbosity=1):
         """ Load the profiles arrays for an existing Planet object from a file. 
