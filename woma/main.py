@@ -1827,6 +1827,7 @@ class SpinPlanet:
     num_attempt_2: int
         Maximum number of iterations allowed. Outer loop.
         
+    
     Attributes (in addition to the input parameters)
     ----------
     M : float
@@ -1840,15 +1841,18 @@ class SpinPlanet:
         outwards (kg).
         
     A1_R, A1_Z : [float]
-        The semi-major (equatorial) and semi-minor (polar) radii (m) of the 
-        nested spheroids.
+        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        nested spheroids (m).
         
-    A1_m, A1_mat_id : [float]
-        The mass (kg) and material ID (see README.md) of each spheroid.
+    A1_m : [float]
+        The mass of each spheroid (kg).
 
     A1_rho, A1_P, A1_T, A1_u : [float]
         The pressure (Pa), density (kg m^-3), temperature (K), and specific 
         internal energy (J kg^-1) of each spheroid.
+        
+    A1_mat_id : [int]
+        The material ID of each spheroid. (See the README.md documentation.)
 
     P_0, P_1, ... P_s;  T_0, ..., T_s;  rho_0, ..., rho_s : float
         The pressure (Pa), temperature (K), and density (kg m^-3) at each layer 
@@ -1892,7 +1896,6 @@ class SpinPlanet:
         self.A1_T_rho_type = planet.A1_T_rho_type
         self.A1_T_rho_type_id = planet.A1_T_rho_type_id
         self.A1_T_rho_args = planet.A1_T_rho_args
-
         self.P_s = self.planet.P_s
         self.T_s = self.planet.T_s
         self.rho_s = self.planet.rho_s
@@ -1907,7 +1910,6 @@ class SpinPlanet:
             self.P_2 = self.planet.P_2
             self.T_2 = self.planet.T_2
             self.rho_2 = self.planet.rho_2
-
         self.A1_R_layer_original = planet.A1_R_layer
         self.R_original = planet.R
         self.period_input = period
@@ -2728,55 +2730,35 @@ class ParticlePlanet:
         1       Standard (default)
         2       Extra
 
+
     Attributes (in addition to the input parameters)
     ----------
     A2_pos : [[float]]
-        Array of [x, y, z] positions for all particles (m).
+        The [x, y, z] positions of each particle (m).
     
     A2_vel : [[float]]
-        Array of [vx, vy, vz] velocities for all particles (m).
-    
-    A1_x : [float]
-        Array of x positions for all particles (m).
-        
-    A1_y : [float]
-        Array of y positions for all particles (m).
-        
-    A1_z : [float]
-        Array of z positions for all particles (m).
-        
-    A1_vx : [float]
-        Array of x velocities for all particles (m s^-1).
-        
-    A1_vy : [float]
-        Array of y velocities for all particles (m s^-1).
-        
-    A1_vz : [float]
-        Array of z velocities for all particles (m s^-1).
-        
+        The [v_x, v_y, v_z] velocities of each particle (m s^-1).
+            
     A1_m : [float]
-        Array of masses for all particles (kg).
+        The mass of each particle (kg).
         
     A1_rho : [float]
-        Array of densities for all particles (kg m^-3).
+        The density of each particle (kg m^-3).
         
     A1_u : [float]
-        Array of specific internal energies for all particles (J kg^-1).
+        The specific internal energy of each particle (J kg^-1).
         
     A1_T : [float]
-        Array of temperatures for all particles (K).
+        The temperature of each particle (K).
         
     A1_P : [float]
-        Array of pressures for all particles (Pa).
+        The pressure of each particle (Pa).
     
     A1_h : [float]
-        Array of smoothing lengths for all particles (m).
+        The approximate smoothing length of each particle (m).
         
     A1_mat_id : [int]
-        Array of material IDs for all particles. See the README.md documentation.
-        
-    A1_id : [int]
-        Array of IDs for all particles.        
+        The material ID of each particle. (See the README.md documentation.)      
     """
 
     def __init__(self, planet=None, N_particles=None, N_ngb=48, verbosity=1):
