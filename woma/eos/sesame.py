@@ -295,9 +295,13 @@ def P_u_rho(u, rho, mat_id):
     P_3 = A2_P[idx_rho + 1, idx_u_2]
     P_4 = A2_P[idx_rho + 1, idx_u_2 + 1]
 
+    # If below the minimum u at this rho then just use the lowest table values
+    if idx_rho >= 0 and (intp_u_1 < 0 or intp_u_2 < 0 or P_1 > P_2 or P_3 > P_4):
+        intp_u_1 = 0
+        intp_u_2 = 0
+
     # If more than two table values are non-positive then return zero
     num_non_pos = np.sum(np.array([P_1, P_2, P_3, P_4]) < 0)
-    # num_non_pos = np.sum([int(P_i <= 0) for P_i in [P_1, P_2, P_3, P_4]])
     if num_non_pos > 2:
         return 0.0
 
