@@ -5,23 +5,19 @@ equations for hydrostatic equilibrium, and create initial conditions for e.g.
 smoothed particle hydrodynamics (SPH) simulations by placing particles that
 precisely match the planet's profiles.
 
-See the `tutorial.ipynb` notebook for a full tutorial and examples,
-with additional documentation in this file, below.
+See the `tutorial.ipynb` notebook for a full tutorial and examples (at 
+github.com/srbonilla/WoMa), with additional documentation in this file, below.
 
-<!-- Presented in Ruiz-Bonilla et al. (2020), MNRAS..., https://doi.org/... -->
+Presented in Ruiz-Bonilla et al. (2020), arxiv...
 
-Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 
-487:4) with modifications for spinning planets.
+Includes SEAGen (github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 487:4) 
+with modifications for spinning planets.
 
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
 Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
 
-<!-- Visit https://github.com/.../woma to download the code including examples
-and for support. -->
-
-This program has been tested for a wide range of cases but not exhaustively. If
-you find any bugs, potential improvements, or features worth adding, then please
-let us know!
+If you find any bugs, potential improvements, or features worth adding, then 
+please let us know!
 
 
 Files
@@ -53,7 +49,6 @@ Notation etc.
 Documentation
 =============
 See the `tutorial.ipynb` notebook for a full tutorial and examples.
-The basic usage explained there is not repeated here.
 This documentation summarises the different options available.
 
 Full documentation is provided in the class and function docstrings.
@@ -195,6 +190,25 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
 
 2. Spinning profiles  
 --------------------
+See `tutorial.ipynb` for the main usage:
+```python
+spherical_planet = woma.Planet( . . . ) 
+
+spin_planet = woma.SpinPlanet(
+    planet = spherical_planet,
+    period = 24,  # hours
+)
+```
+
+The output attributes available from the `spin_planet` object 
+are documented in the `SpinPlanet` class docstring in `woma/main.py`.
+
+The primary outputs are the arrays of properties of the nested spheroids,
+including their equatorial and polar radii (semi-major and semi-minor axes), 
+`A1_R` and `A1_Z`, 
+and for example their masses, densities, pressures, and temperatures, 
+`A1_m`, `A1_rho`, `A1_P`, and `A1_T`.
+
 
 
 

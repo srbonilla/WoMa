@@ -2304,7 +2304,7 @@ class SpinPlanet:
 
         self._update_internal_attributes()
 
-        if verbosity >= 1:
+        if verbosity >= 2:
             self.print_info()
 
     def _L1_spin_planet_fix_M(
@@ -2345,8 +2345,8 @@ class SpinPlanet:
 
         # No need to search if simple spin does the job (e.g. very high periods)
         if tol < tol_layer_masses:
-
-            self.print_info()
+            if verbosity >= 2:
+                self.print_info()
             return
 
         # Vary the spherical planet radius to fix the spinning planet mass
@@ -2402,10 +2402,6 @@ class SpinPlanet:
             else:
                 f_min = f
 
-        if verbosity >= 1:
-            sys.stdout.write("\n")
-            self.print_info()
-
     def _L2_spin_planet_fix_M(
         self,
         R_max_eq,
@@ -2446,7 +2442,8 @@ class SpinPlanet:
             if verbosity >= 1:
                 print("Simple spin method sufficient")
 
-            self.print_info()
+            if verbosity >= 2:
+                self.print_info()
             return
 
         # Vary the spherical planet radii to fix the spinning planet masses
@@ -2506,6 +2503,8 @@ class SpinPlanet:
                         )
                         sys.stdout.write("\r" + string)
                         print("\nTolerance level criteria reached.")
+
+                    if verbosity >= 2:
                         self.print_info()
 
                     return
@@ -2578,6 +2577,8 @@ class SpinPlanet:
                         )
                         sys.stdout.write("\r" + string)
                         print("\nTolerance level criteria reached.")
+
+                    if verbosity >= 2:
                         self.print_info()
 
                     return
@@ -2606,9 +2607,6 @@ class SpinPlanet:
                     + str(tol_layer_masses)
                 )
                 sys.stdout.write("\r" + string)
-
-        if verbosity >= 1:
-            self.print_info()
 
     def spin(
         self,
