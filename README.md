@@ -148,10 +148,10 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Maximum mass: `M_max`
 
 #### 2 layers
-+ `gen_prof_L2_find_R1_given_R_M()`, requires:
++ `gen_prof_L2_find_R1_given_M_R()`, requires:
     + Total radius: `self.R`
     + Total mass: `self.M`
-+ `gen_prof_L2_find_M_given_R1_R()`, requires:
++ `gen_prof_L2_find_M_given_R_R1()`, requires:
     + Total radius: `self.R`
     + Layer 1 outer radius: `self.A1_R_layer[0]`
     + Maximum mass: `M_max`
@@ -159,25 +159,25 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Total mass: `self.M`
     + Layer 1 outer radius: `self.A1_R_layer[0]`
     + Maximum radius: `R_max`
-+ `gen_prof_L2_find_R1_R_given_M1_M2()`, requires:
++ `gen_prof_L2_find_R_R1_given_M1_M2()`, requires:
     + Layer 1 and 2 masses: `self.A1_M_layer`
     + Maximum radius: `R_max`
     
 #### 3 layers
 + `gen_prof_L3_find_M_given_R_R1_R2()`, requires:
     + Layer 1, 2, and 3 outer radii: `self.A1_R_layer`
-+ `gen_prof_L3_find_R1_given_R_M_R2()`, requires:
++ `gen_prof_L3_find_R1_given_M_R_R2()`, requires:
     + Total mass: `self.M`
     + Total radius: `self.R`
     + Layer 2 outer radius: `self.A1_R_layer[1]`
-+ `gen_prof_L3_find_R2_given_R_M_R1()`, requires:
++ `gen_prof_L3_find_R2_given_M_R_R1()`, requires:
     + Total mass: `self.M`
     + Total radius: `self.R`
     + Layer 1 outer radius: `self.A1_R_layer[0]`
 + `gen_prof_L3_find_R_given_M_R1_R2()`, requires:
     + Total mass: `self.M`
     + Layer 1 and 2 outer radii: `self.A1_R_layer[0]`, `[1]`
-+ `gen_prof_L3_find_R1_R2_given_R_M_I()`, requires:
++ `gen_prof_L3_find_R1_R2_given_M_R_I()`, requires:
     + Total mass: `self.M`
 
 #### Adding layers

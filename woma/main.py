@@ -808,7 +808,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_find_R1_given_R_M(self, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L2_find_R1_given_M_R(self, tol=0.001, num_attempt=40, verbosity=1):
         """ 
         Compute the profile of a planet with 2 layers to find the outer radius 
         of the first layer, given the total mass and total radius.
@@ -833,7 +833,7 @@ class Planet:
         assert self.M is not None
         self._2_layer_input()
 
-        self.A1_R_layer[0] = L2_spherical.L2_find_R1_given_R_M(
+        self.A1_R_layer[0] = L2_spherical.L2_find_R1_given_M_R(
             self.num_prof,
             self.R,
             self.M,
@@ -854,7 +854,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L2_spherical.L2_find_M_given_R1_R(
+        self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -903,7 +903,7 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L2_find_M_given_R1_R(
+    def gen_prof_L2_find_M_given_R_R1(
         self, M_max, tol=0.001, num_attempt=40, verbosity=1
     ):
         """ 
@@ -930,7 +930,7 @@ class Planet:
         assert self.A1_R_layer[0] is not None
         self._2_layer_input()
 
-        self.M = L2_spherical.L2_find_M_given_R1_R(
+        self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
             self.R,
             M_max,
@@ -1032,7 +1032,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L2_spherical.L2_find_M_given_R1_R(
+        self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -1083,7 +1083,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_find_R1_R_given_M1_M2(
+    def gen_prof_L2_find_R_R1_given_M1_M2(
         self, R_max, tol=0.001, num_attempt=40, verbosity=1
     ):
         """ 
@@ -1116,7 +1116,7 @@ class Planet:
         else:
             self.M = self.A1_M_layer[0] + self.A1_M_layer[1]
 
-        self.A1_R_layer[0], self.R = L2_spherical.L2_find_R1_R_given_M1_M2(
+        self.A1_R_layer[0], self.R = L2_spherical.L2_find_R_R1_given_M1_M2(
             self.num_prof,
             R_max,
             self.A1_M_layer[0],
@@ -1139,7 +1139,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L2_spherical.L2_find_M_given_R1_R(
+        self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -1344,7 +1344,7 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L3_find_R1_given_R_M_R2(self, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L3_find_R1_given_M_R_R2(self, tol=0.001, num_attempt=40, verbosity=1):
         """ 
         Compute the profile of a planet with 3 layers to find the outer radius 
         of the first layer, given the total mass, total radius, and outer 
@@ -1374,7 +1374,7 @@ class Planet:
         assert self.M is not None
         self._3_layer_input()
 
-        self.A1_R_layer[0] = L3_spherical.L3_find_R1_given_R_M_R2(
+        self.A1_R_layer[0] = L3_spherical.L3_find_R1_given_M_R_R2(
             self.num_prof,
             self.R,
             self.M,
@@ -1456,7 +1456,7 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L3_find_R2_given_R_M_R1(self, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L3_find_R2_given_M_R_R1(self, tol=0.001, num_attempt=40, verbosity=1):
         """ 
         Compute the profile of a planet with 3 layers to find the outer radius 
         of the second layer, given the total mass, total radius, and outer 
@@ -1486,7 +1486,7 @@ class Planet:
         assert self.M is not None
         self._3_layer_input()
 
-        self.A1_R_layer[1] = L3_spherical.L3_find_R2_given_R_M_R1(
+        self.A1_R_layer[1] = L3_spherical.L3_find_R2_given_M_R_R1(
             self.num_prof,
             self.R,
             self.M,
@@ -1684,7 +1684,7 @@ class Planet:
             print("Done!")
             self.print_info()
 
-    def gen_prof_L3_find_R1_R2_given_R_M_I(
+    def gen_prof_L3_find_R1_R2_given_M_R_I(
         self, R_1_min, R_1_max, tol=0.001, num_attempt=40, num_attempt_2=40, verbosity=1
     ):
         # Check for necessary input
@@ -1693,7 +1693,7 @@ class Planet:
         assert self.I_MR2 is not None
         self._3_layer_input()
 
-        self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2_given_R_M_I(
+        self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2_given_M_R_I(
             self.num_prof,
             self.R,
             self.M,
@@ -2468,7 +2468,7 @@ class SpinPlanet:
                 self.planet.R = R
 
                 # Make the new spherical profiles
-                self.planet.gen_prof_L2_find_M_given_R1_R(
+                self.planet.gen_prof_L2_find_M_given_R_R1(
                     M_max=1.2 * M_fixed, verbosity=0
                 )
 
@@ -2539,12 +2539,12 @@ class SpinPlanet:
 
                 # Make the new spherical profiles, set a large max mass if needed
                 try:
-                    self.planet.gen_prof_L2_find_M_given_R1_R(
+                    self.planet.gen_prof_L2_find_M_given_R_R1(
                         M_max=1.2 * M_fixed, verbosity=0
                     )
                 except ValueError:
                     M_max = 10 * np.pi * self.planet.R ** 3 * self.planet.rho_0
-                    self.planet.gen_prof_L2_find_M_given_R1_R(M_max=M_max, verbosity=0)
+                    self.planet.gen_prof_L2_find_M_given_R_R1(M_max=M_max, verbosity=0)
 
                 # Create the spinning profiles
                 self._spin_planet_simple(

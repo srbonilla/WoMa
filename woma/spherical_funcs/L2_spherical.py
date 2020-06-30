@@ -170,7 +170,7 @@ def L2_integrate(
 
 
 # @njit
-def L2_find_M_given_R1_R(
+def L2_find_M_given_R_R1(
     num_prof,
     R,
     M_max,
@@ -489,7 +489,7 @@ def L2_find_R_given_M_R1(
     return R_min
 
 
-def L2_find_R1_given_R_M(
+def L2_find_R1_given_M_R(
     num_prof,
     R,
     M,
@@ -643,7 +643,7 @@ def L2_find_R1_given_R_M(
     return R1_min
 
 
-def L2_find_R1_R_given_M1_M2(
+def L2_find_R_R1_given_M1_M2(
     num_prof,
     R_max,
     M1,
@@ -725,7 +725,7 @@ def L2_find_R1_R_given_M1_M2(
     if verbosity >= 1:
         print("Trying to build a planet made of core material.")
     try:
-        R_min = L1_spherical.L1_find_radius(
+        R_min = L1_spherical.L1_find_R_given_M(
             num_prof,
             R_max,
             M,
@@ -748,7 +748,7 @@ def L2_find_R1_R_given_M1_M2(
     if verbosity >= 1:
         print("Trying to build a planet made of mantle material.")
     try:
-        R_max = L1_spherical.L1_find_radius(
+        R_max = L1_spherical.L1_find_R_given_M(
             num_prof,
             R_max,
             M,
@@ -775,7 +775,7 @@ def L2_find_R1_R_given_M1_M2(
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
 
-        R1_try = L2_find_R1_given_R_M(
+        R1_try = L2_find_R1_given_M_R(
             num_prof,
             R_try,
             M,
