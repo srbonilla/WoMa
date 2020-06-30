@@ -1,14 +1,10 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Thu Jul 25 19:15:44 2019
-
-@author: sergio
+WoMa 1 layer spherical functions 
 """
 
 import numpy as np
 from numba import njit
-from tqdm import tqdm
+import sys
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -23,53 +19,53 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
     """ Integration of a 1 layer spherical planet.
 
         Args:
-            num_prof (int):
+            num_prof : int
                 Number of profile integration steps.
 
-            R (float):
+            R : float
                 Radii of the planet (SI).
 
-            M (float):
+            M : float
                 Mass of the planet (SI).
 
-            P_s (float):
+            P_s : float
                 Pressure at the surface (SI).
 
-            T_s (float):
+            T_s : float
                 Temperature at the surface (SI).
 
-            rho_s (float):
+            rho_s : float
                 Density at the surface (SI).
 
-            mat_id (int):
+            mat_id : int
                 Material id.
 
-            T_rho_type_id (int)
+            T_rho_type_id : int
                 Relation between A1_T and A1_rho to be used.
 
-            T_rho_args (list):
+            T_rho_args : [float]
                 Extra arguments to determine the relation.
 
         Returns:
-            A1_r ([float]):
+            A1_r : [float]
                 Array of radii (SI).
 
-            A1_m_enc ([float]):
+            A1_m_enc : [float]
                 Array of cumulative mass (SI).
 
-            A1_P ([float]):
+            A1_P : [float]
                 Array of pressures (SI).
 
-            A1_T ([float]):
+            A1_T : [float]
                 Array of temperatures (SI).
 
-            A1_rho ([float]):
+            A1_rho : [float]
                 Array of densities (SI).
 
-            A1_u ([float]):
+            A1_u : [float]
                 Array of internal energy (SI).
 
-            A1_mat_id ([float]):
+            A1_mat_id : [float]
                 Array of material ids (SI).
     """
     # Initialise the profile arrays
@@ -127,44 +123,183 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
 
 
 @njit
+def L1_integrate_out(
+    r, dr, m_enc, P, T, u, mat_id, T_rho_type_id, T_rho_args, rho_min=0, P_min=0
+):
+    """ Integrate a new layer of a spherical planet outwards.
+
+    Parameters
+    ----------
+    r : float
+        The radius at the base (m).
+        
+    dr : float
+        The radius step for the integration (m).
+        
+    m_enc : float
+        The enclosed mass at the base (Pa).
+        
+    P : float
+        The pressure at the base (Pa).
+
+    T : float
+        The temperature at the base (K).
+
+    u : float
+        The specific internal energy at the base (J kg^-1).
+
+    mat_id : int
+        The material ID.
+
+    T_rho_type_id : int
+        The ID for the temperature-density relation.
+
+    T_rho_args : [float]
+        Extra arguments for the temperature-density relation.
+
+    rho_min : float
+        The minimum density (must be >= 0) at which the new layer will stop.
+
+    P_min : float
+        The minimum pressure (must be >= 0) at which the new layer will stop. 
+
+    Returns
+    -------
+    A1_r : [float]
+        Array of radii (SI).
+
+    A1_m_enc : [float]
+        Array of cumulative mass (SI).
+
+    A1_P : [float]
+        Array of pressures (SI).
+
+    A1_T : [float]
+        Array of temperatures (SI).
+
+    A1_rho : [float]
+        Array of densities (SI).
+
+    A1_u : [float]
+        Array of internal energy (SI).
+
+    A1_mat_id : [float]
+        Array of material ids (SI).
+    """
+    # Initialise the profile arrays
+    A1_r = [r]
+    A1_m_enc = [m_enc]
+    A1_P = [P]
+    A1_T = [T]
+    A1_u = [u]
+    A1_mat_id = [mat_id]
+    A1_rho = [eos.rho_P_T(A1_P[0], A1_T[0], mat_id)]
+
+    # Integrate outwards until the minimum density (or zero pressure)
+    while A1_rho[-1] > rho_min and A1_P[-1] > P_min:
+        A1_r.append(A1_r[-1] + dr)
+        A1_m_enc.append(
+            A1_m_enc[-1] + 4 * np.pi * A1_r[-1] * A1_r[-1] * A1_rho[-1] * dr
+        )
+        A1_P.append(A1_P[-1] - gv.G * A1_m_enc[-1] * A1_rho[-1] / (A1_r[-1] ** 2) * dr)
+        if A1_P[-1] <= 0:
+            # Add dummy values which will be removed along with the -ve P
+            A1_rho.append(0)
+            A1_T.append(0)
+            A1_u.append(0)
+            A1_mat_id.append(0)
+            break
+        # Update the T-rho parameters
+        if T_rho_type_id == gv.type_adb and mat_id == gv.id_HM80_HHe:
+            T_rho_args = set_T_rho_args(
+                A1_T[-1], A1_rho[-1], T_rho_type_id, T_rho_args, mat_id,
+            )
+        rho = eos.find_rho(
+            A1_P[-1], mat_id, T_rho_type_id, T_rho_args, 0.9 * A1_rho[-1], A1_rho[-1],
+        )
+        A1_rho.append(rho)
+        A1_T.append(T_rho(rho, T_rho_type_id, T_rho_args, mat_id))
+        A1_u.append(eos.u_rho_T(rho, A1_T[-1], mat_id))
+        A1_mat_id.append(mat_id)
+
+    # Remove the duplicate first step and the final too-low density or too-low
+    # pressure step
+    return (
+        A1_r[1:-1],
+        A1_m_enc[1:-1],
+        A1_P[1:-1],
+        A1_T[1:-1],
+        A1_rho[1:-1],
+        A1_u[1:-1],
+        A1_mat_id[1:-1],
+    )
+
+
+# @njit
 def L1_find_mass(
-    num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
+    num_prof,
+    R,
+    M_max,
+    P_s,
+    T_s,
+    rho_s,
+    mat_id,
+    T_rho_type_id,
+    T_rho_args,
+    num_attempt=40,
+    tol=0.01,
+    verbosity=1,
 ):
     """ Finder of the total mass of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
 
         Args:
-            num_prof (int):
+            num_prof : int
                 Number of profile integration steps.
 
-            R (float):
+            R : float
                 Radii of the planet (SI).
 
-            M_max (float):
+            M_max : float
                 Upper bound for the mass of the planet (SI).
 
-            P_s (float):
+            P_s : float
                 Pressure at the surface (SI).
 
-            T_s (float):
+            T_s : float
                 Temperature at the surface (SI).
 
-            rho_s (float):
+            rho_s : float
                 Density at the surface (SI).
 
-            mat_id (int):
+            mat_id : int
                 Material id.
 
-            T_rho_type_id (int)
+            T_rho_type_id : int
                 Relation between A1_T and A1_rho to be used.
 
-            T_rho_args (list):
+            T_rho_args : [float]
                 Extra arguments to determine the relation.
+                
+            num_attempt : float
+                Maximum number of iterations to perform.
+                
+            tol : float
+                Tolerance level. Relative difference between two consecutive masses
+                
+            verbosity : int
+                Printing options.
 
         Returns:
-            M_max (float):
+            M_max : float
                 Mass of the planet (SI).
     """
+
+    # need this tolerance to avoid peaks in the centre of the planet for the density profile
+    min_tol = 1e-7
+    if tol > min_tol:
+        tol = min_tol
+
     M_min = 0.0
 
     # Try integrating the profile with the maximum mass
@@ -173,12 +308,13 @@ def L1_find_mass(
     )
 
     if A1_m_enc[-1] < 0:
-        raise Exception(
+        raise ValueError(
             "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
         )
 
     # Iterate the mass
-    while np.abs(M_min - M_max) > 1e-8 * M_min:
+    for i in range(num_attempt):
+
         M_try = (M_min + M_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
@@ -189,6 +325,30 @@ def L1_find_mass(
             M_max = M_try
         else:
             M_min = M_try
+
+        tol_reached = np.abs(M_min - M_max) / M_min
+
+        # print info (cannot do it with numba)
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return M_max
 
@@ -204,42 +364,52 @@ def L1_find_radius(
     T_rho_type_id,
     T_rho_args,
     num_attempt=40,
+    tol=0.01,
     verbosity=1,
 ):
     """ Finder of the total radius of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
 
         Args:
-            num_prof (int):
+            num_prof : int
                 Number of profile integration steps.
 
-            R (float):
+            R_max : float
                 Maximuum radius of the planet (SI).
 
-            M_max (float):
+            M : float
                 Mass of the planet (SI).
 
-            P_s (float):
+            P_s : float
                 Pressure at the surface (SI).
 
-            T_s (float):
+            T_s : float
                 Temperature at the surface (SI).
 
-            rho_s (float):
+            rho_s : float
                 Density at the surface (SI).
 
-            mat_id (int):
+            mat_id : int
                 Material id.
 
-            T_rho_type_id (int)
+            T_rho_type_id : int
                 Relation between A1_T and A1_rho to be used.
 
-            T_rho_args (list):
+            T_rho_args : [float]
                 Extra arguments to determine the relation.
+                
+            num_attempt : float
+                Maximum number of iterations to perform.
+                
+            tol : float
+                Tolerance level. Relative difference between two consecutive radius
+                
+            verbosity : int
+                Printing options.
 
         Returns:
-            M_max (float):
-                Mass of the planet (SI).
+            R_min : float
+                Radius of the planet (SI).
     """
     R_min = 0.0
 
@@ -249,12 +419,13 @@ def L1_find_radius(
     )
 
     if A1_m_enc[-1] != 0:
-        raise Exception(
+        raise ValueError(
             "R_max is too low, did not ran out of mass in first iteration.\nPlease increase R_max.\n"
         )
 
     # Iterate the radius
-    for i in tqdm(range(num_attempt), desc="Finding R given M", disable=verbosity == 0):
+    for i in range(num_attempt):
+
         R_try = (R_min + R_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
@@ -266,7 +437,28 @@ def L1_find_radius(
         else:
             R_max = R_try
 
-        if np.abs(R_min - R_max) < 1e-7 * R_max:
-            return R_min
+        tol_reached = np.abs(R_min - R_max) / R_max
+
+        # print info
+        if verbosity >= 1:
+
+            string = (
+                "Iteration "
+                + str(i)
+                + "/"
+                + str(num_attempt)
+                + ". Tolerance reached "
+                + "{:.2e}".format(tol_reached)
+                + "/"
+                + str(tol)
+            )
+            sys.stdout.write("\r" + string)
+
+        if tol_reached < tol:
+
+            break
+
+    if verbosity >= 1:
+        sys.stdout.write("\n")
 
     return R_min

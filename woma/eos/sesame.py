@@ -1,5 +1,5 @@
 """ 
-WoMa SESAME equations of state
+WoMa SESAME and ANEOS (in SESAME-style tables) equations of state
 """
 
 import numpy as np
@@ -169,38 +169,6 @@ def load_table_SESAME(Fp_table):
     A1_log_T_SS08_water,
     A2_log_u_SS08_water,
 ) = load_table_SESAME(gv.Fp_SS08_water)
-(
-    A2_u_SESAME_H2,
-    A2_P_SESAME_H2,
-    A2_s_SESAME_H2,
-    A1_log_rho_SESAME_H2,
-    A1_log_T_SESAME_H2,
-    A2_log_u_SESAME_H2,
-) = load_table_SESAME(gv.Fp_SESAME_H2)
-(
-    A2_u_SESAME_N2,
-    A2_P_SESAME_N2,
-    A2_s_SESAME_N2,
-    A1_log_rho_SESAME_N2,
-    A1_log_T_SESAME_N2,
-    A2_log_u_SESAME_N2,
-) = load_table_SESAME(gv.Fp_SESAME_N2)
-(
-    A2_u_SESAME_steam,
-    A2_P_SESAME_steam,
-    A2_s_SESAME_steam,
-    A1_log_rho_SESAME_steam,
-    A1_log_T_SESAME_steam,
-    A2_log_u_SESAME_steam,
-) = load_table_SESAME(gv.Fp_SESAME_steam)
-(
-    A2_u_SESAME_CO2,
-    A2_P_SESAME_CO2,
-    A2_s_SESAME_CO2,
-    A1_log_rho_SESAME_CO2,
-    A1_log_T_SESAME_CO2,
-    A2_log_u_SESAME_CO2,
-) = load_table_SESAME(gv.Fp_SESAME_CO2)
 
 # Load ANEOS as SESAME-style tables
 (
@@ -276,30 +244,6 @@ def P_u_rho(u, rho, mat_id):
             A1_log_rho_SS08_water,
             A2_log_u_SS08_water,
         )
-    elif mat_id == gv.id_SESAME_H2:
-        A2_P, A1_log_rho, A2_log_u = (
-            A2_P_SESAME_H2,
-            A1_log_rho_SESAME_H2,
-            A2_log_u_SESAME_H2,
-        )
-    elif mat_id == gv.id_SESAME_N2:
-        A2_P, A1_log_rho, A2_log_u = (
-            A2_P_SESAME_N2,
-            A1_log_rho_SESAME_N2,
-            A2_log_u_SESAME_N2,
-        )
-    elif mat_id == gv.id_SESAME_steam:
-        A2_P, A1_log_rho, A2_log_u = (
-            A2_P_SESAME_steam,
-            A1_log_rho_SESAME_steam,
-            A2_log_u_SESAME_steam,
-        )
-    elif mat_id == gv.id_SESAME_CO2:
-        A2_P, A1_log_rho, A2_log_u = (
-            A2_P_SESAME_CO2,
-            A1_log_rho_SESAME_CO2,
-            A2_log_u_SESAME_CO2,
-        )
     elif mat_id == gv.id_ANEOS_forsterite:
         A2_P, A1_log_rho, A2_log_u = (
             A2_P_ANEOS_forsterite,
@@ -351,9 +295,13 @@ def P_u_rho(u, rho, mat_id):
     P_3 = A2_P[idx_rho + 1, idx_u_2]
     P_4 = A2_P[idx_rho + 1, idx_u_2 + 1]
 
+    # If below the minimum u at this rho then just use the lowest table values
+    if idx_rho >= 0 and (intp_u_1 < 0 or intp_u_2 < 0 or P_1 > P_2 or P_3 > P_4):
+        intp_u_1 = 0
+        intp_u_2 = 0
+
     # If more than two table values are non-positive then return zero
     num_non_pos = np.sum(np.array([P_1, P_2, P_3, P_4]) < 0)
-    # num_non_pos = np.sum([int(P_i <= 0) for P_i in [P_1, P_2, P_3, P_4]])
     if num_non_pos > 2:
         return 0.0
 
@@ -433,30 +381,6 @@ def u_rho_T(rho, T, mat_id):
             A2_u_SS08_water,
             A1_log_rho_SS08_water,
             A1_log_T_SS08_water,
-        )
-    elif mat_id == gv.id_SESAME_H2:
-        A2_u, A1_log_rho, A1_log_T = (
-            A2_u_SESAME_H2,
-            A1_log_rho_SESAME_H2,
-            A1_log_T_SESAME_H2,
-        )
-    elif mat_id == gv.id_SESAME_N2:
-        A2_u, A1_log_rho, A1_log_T = (
-            A2_u_SESAME_N2,
-            A1_log_rho_SESAME_N2,
-            A1_log_T_SESAME_N2,
-        )
-    elif mat_id == gv.id_SESAME_steam:
-        A2_u, A1_log_rho, A1_log_T = (
-            A2_u_SESAME_steam,
-            A1_log_rho_SESAME_steam,
-            A1_log_T_SESAME_steam,
-        )
-    elif mat_id == gv.id_SESAME_CO2:
-        A2_u, A1_log_rho, A1_log_T = (
-            A2_u_SESAME_CO2,
-            A1_log_rho_SESAME_CO2,
-            A1_log_T_SESAME_CO2,
         )
     elif mat_id == gv.id_ANEOS_forsterite:
         A2_u, A1_log_rho, A1_log_T = (
@@ -586,30 +510,6 @@ def s_rho_T(rho, T, mat_id):
             A1_log_rho_SS08_water,
             A1_log_T_SS08_water,
         )
-    elif mat_id == gv.id_SESAME_H2:
-        A2_s, A1_log_rho, A1_log_T = (
-            A2_s_SESAME_H2,
-            A1_log_rho_SESAME_H2,
-            A1_log_T_SESAME_H2,
-        )
-    elif mat_id == gv.id_SESAME_N2:
-        A2_s, A1_log_rho, A1_log_T = (
-            A2_s_SESAME_N2,
-            A1_log_rho_SESAME_N2,
-            A1_log_T_SESAME_N2,
-        )
-    elif mat_id == gv.id_SESAME_steam:
-        A2_s, A1_log_rho, A1_log_T = (
-            A2_s_SESAME_steam,
-            A1_log_rho_SESAME_steam,
-            A1_log_T_SESAME_steam,
-        )
-    elif mat_id == gv.id_SESAME_CO2:
-        A2_s, A1_log_rho, A1_log_T = (
-            A2_s_SESAME_CO2,
-            A1_log_rho_SESAME_CO2,
-            A1_log_T_SESAME_CO2,
-        )
     elif mat_id == gv.id_ANEOS_forsterite:
         A2_s, A1_log_rho, A1_log_T = (
             A2_s_ANEOS_forsterite,
@@ -734,30 +634,6 @@ def T_rho_s(rho, s, mat_id):
             A1_log_T_SS08_water,
             A1_log_rho_SS08_water,
             A2_s_SS08_water,
-        )
-    elif mat_id == gv.id_SESAME_H2:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SESAME_H2,
-            A1_log_rho_SESAME_H2,
-            A2_s_SESAME_H2,
-        )
-    elif mat_id == gv.id_SESAME_N2:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SESAME_N2,
-            A1_log_rho_SESAME_N2,
-            A2_s_SESAME_N2,
-        )
-    elif mat_id == gv.id_SESAME_steam:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SESAME_steam,
-            A1_log_rho_SESAME_steam,
-            A2_s_SESAME_steam,
-        )
-    elif mat_id == gv.id_SESAME_CO2:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SESAME_CO2,
-            A1_log_rho_SESAME_CO2,
-            A2_s_SESAME_CO2,
         )
     elif mat_id == gv.id_ANEOS_forsterite:
         A1_log_T, A1_log_rho, A2_s = (

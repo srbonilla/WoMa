@@ -80,21 +80,17 @@ def plot_planet_profiles_alternate(planet, fig=None, ax=None):
 #                       Spherical profile examples                             #
 # ============================================================================ #
 
-
 def demo_gen_prof_L1_find_R_given_M():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_granite"],
         A1_T_rho_type   = ["power=0."],
-        A1_R_layer      = [0.988 * R_earth],
         M               = 0.8*M_earth,
         P_s             = 0,
         T_s             = 300
         )
 
-    planet.R_max = R_earth
-
-    planet.gen_prof_L1_find_R_given_M()
+    planet.gen_prof_L1_find_R_given_M(R_max=R_earth)
 
     plot_planet_profiles(planet)
 
@@ -109,9 +105,7 @@ def demo_gen_prof_L1_find_M_given_R():
         T_s             = 300,
         )
 
-    planet.M_max = M_earth
-
-    planet.gen_prof_L1_find_M_given_R()
+    planet.gen_prof_L1_find_M_given_R(M_max=M_earth)
 
     plot_planet_profiles(planet)
 
@@ -129,7 +123,7 @@ def demo_gen_prof_L2_find_R1_given_R_M():
 
     planet.gen_prof_L2_find_R1_given_R_M()
 
-    plot_planet_profiles_alternate(planet)
+    plot_planet_profiles(planet)
 
 
 def demo_gen_prof_L2_find_R_given_M_R1():
@@ -143,8 +137,7 @@ def demo_gen_prof_L2_find_R_given_M_R1():
         T_s             = 300,
         )
 
-    planet.R_max = 2*R_earth
-    planet.gen_prof_L2_find_R_given_M_R1()
+    planet.gen_prof_L2_find_R_given_M_R1(R_max=2*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -154,42 +147,26 @@ def demo_gen_prof_L2_find_M_given_R1_R():
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
         A1_T_rho_type   = ["power=0.", "power=0."],
-        A1_T_rho_args   = [[None, 0.], [None, 0.]],
         A1_R_layer      = [0.40*R_earth, R_earth],
         P_s             = 0,
         T_s             = 300,
         )
 
-    planet.M_max = 2*M_earth
-    planet.gen_prof_L2_find_M_given_R1_R()
+    planet.gen_prof_L2_find_M_given_R1_R(M_max=2*M_earth)
 
     plot_planet_profiles(planet)
-
-
-def demo_gen_prof_L3_given_prof_L2():
+    
+def demo_gen_prof_L2_find_R1_R_given_M1_M2():
     planet = woma.Planet(
         name            = "planet",
         A1_mat_layer    = ["Til_iron", "Til_granite"],
         A1_T_rho_type   = ["power=0.", "power=0."],
-        A1_R_layer      = [None, R_earth],
-        M               = 0.887*M_earth,
-        P_s             = 1e5,
-        T_s             = 2000,
-        num_attempt     = 10
+        A1_M_layer      = [0.3*M_earth, 0.7*M_earth],
+        P_s             = 0,
+        T_s             = 300,
         )
 
-    planet.gen_prof_L2_find_R1_given_R_M()
-
-    mat_id_atm = "idg_N2"
-    T_rho_type_atm = woma.gv.type_rho_pow
-    T_rho_args_atm = [None, 0]
-
-    planet.gen_prof_L3_given_prof_L2(
-        mat_id_atm,
-        T_rho_type_atm,
-        T_rho_args_atm,
-        rho_min=1e-6
-        )
+    planet.gen_prof_L2_find_R1_R_given_M1_M2(R_max=2*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -202,13 +179,11 @@ def demo_gen_prof_L3_find_R1_R2_given_R_M_I():
         A1_R_layer      = [None, None, R_earth],
         P_s             = 0,
         T_s             = 300,
-        I_MR2           = 0.3*M_earth*R_earth**2,
+        I_MR2           = 0.3,
         M               = M_earth,
-        num_attempt     = 5,
-        num_attempt_2   = 5
         )
 
-    planet.gen_prof_L3_find_R1_R2_given_R_M_I()
+    planet.gen_prof_L3_find_R1_R2_given_R_M_I(R1_min=0.45*R_earth, R1_max=0.64*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -216,9 +191,9 @@ def demo_gen_prof_L3_find_R1_R2_given_R_M_I():
 def demo_gen_prof_L3_find_R2_given_R_M_R1():
     planet = woma.Planet(
         name            = "planet",
-        A1_mat_layer    = ["Til_iron", "Til_granite", "SESAME_steam"],
+        A1_mat_layer    = ["Til_iron", "Til_granite", "Til_water"],
         A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
-        A1_R_layer      = [0.55*R_earth, None, R_earth],
+        A1_R_layer      = [0.5*R_earth, None, R_earth],
         P_s             = 1e5,
         T_s             = 300,
         M               = M_earth
@@ -252,11 +227,10 @@ def demo_gen_prof_L3_find_M_given_R_R1_R2():
         A1_T_rho_type   = ["power=0.", "power=0.", "power=0."],
         A1_R_layer      = [0.5*R_earth, 0.9*R_earth, R_earth],
         P_s             = 0,
-        T_s             = 300,
-        M_max           = 2*M_earth
+        T_s             = 300
         )
 
-    planet.gen_prof_L3_find_M_given_R_R1_R2()
+    planet.gen_prof_L3_find_M_given_R_R1_R2(M_max=2*M_earth)
 
     plot_planet_profiles(planet)
 
@@ -270,10 +244,9 @@ def demo_gen_prof_L3_find_R_given_M_R1_R2():
         P_s             = 0,
         T_s             = 300,
         M               = M_earth,
-        R_max           = 2*R_earth
         )
 
-    planet.gen_prof_L3_find_R_given_M_R1_R2()
+    planet.gen_prof_L3_find_R_given_M_R1_R2(R_max=2*R_earth)
 
     plot_planet_profiles(planet)
 
@@ -284,14 +257,12 @@ def demo_gen_uranus_prof():
         name            = "Uranus",
         A1_mat_layer    = ["HM80_rock", "HM80_ice", "HM80_HHe"],
         A1_T_rho_type   = ["power=0.", "power=0.9", "adiabatic"],
-        # M               = 14.536 * M_earth,
-        M_max           = 14.7 * M_earth,
         A1_R_layer      = [1.0 * R_earth, 3.1 * R_earth, 3.98 * R_earth],
         P_s             = 1e5,
         T_s             = 60,
         )
 
-    planet.gen_prof_L3_find_M_given_R_R1_R2()
+    planet.gen_prof_L3_find_M_given_R_R1_R2(M_max=14.7*M_earth)
 
     plot_planet_profiles_alternate(planet)
 
@@ -321,3 +292,36 @@ if __name__ == "__main__":
     demo_gen_prof_L2_find_R1_given_R_M()
     
     plt.show()
+    
+    planet = woma.Planet(
+        A1_mat_layer    = ["Til_iron", "Til_basalt"],
+        A1_T_rho_type   = ["power=2", "power=2"],
+        P_s             = 1e5,
+        T_s             = 1000,
+        M               = M_earth,
+        R               = R_earth,
+    )
+    planet.gen_prof_L2_find_R1_given_R_M()
+    
+    spin_planet = woma.SpinPlanet(
+        planet  = planet,
+        period  = 4,  # h
+    )
+    
+    planet = woma.Planet(
+        A1_mat_layer    = ["Til_basalt"],
+        A1_T_rho_type   = ["power=2"],
+        P_s             = 1e5,
+        T_s             = 1000,
+        M               = 0.5*M_earth,
+    )
+    planet.gen_prof_L1_find_R_given_M(R_max=2*R_earth)
+    
+    spin_planet = woma.SpinPlanet(
+        planet  = planet,
+        period  = 0.001,  # h
+        check_min_period=True,
+        R_max_eq=3*R_earth,
+        R_max_po=2*R_earth,
+    )
+        

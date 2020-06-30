@@ -1,15 +1,9 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
-Created on Mon Jul 29 11:32:55 2019
-
-@author: sergio
+WoMa 1 layer spinning functions 
 """
 
 import numpy as np
-from scipy.interpolate import interp1d
 from numba import njit
-from tqdm import tqdm
 
 from woma.spin_funcs import L1_spin
 from woma.spin_funcs import utils_spin as us
@@ -18,16 +12,16 @@ from woma.eos.T_rho import T_rho
 
 
 @njit
-def _fillrho3(
-    A1_r_equator,
-    V_e,
-    A1_r_pole,
-    V_p,
-    P_c,
-    P_12,
-    P_23,
+def L3_rho_eq_po_from_V(
+    A1_r_eq,
+    A1_V_eq,
+    A1_r_po,
+    A1_V_po,
+    P_0,
+    P_1,
+    P_2,
     P_s,
-    rho_c,
+    rho_0,
     rho_s,
     mat_id_L1,
     T_rho_type_id_L1,
@@ -44,190 +38,190 @@ def _fillrho3(
 
     Parameters
     ----------
-    A1_r_equator ([float]):
+    A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    V_e ([float]):
+    A1_V_eq : [float]
         Equatorial profile of potential (SI).
 
-    A1_r_pole ([float]):
+    A1_r_po : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    V_p ([float]):
+    A1_V_po : [float]
         Polar profile of potential (SI).
 
-    P_c (float):
+    P_0 : float
         Pressure at the center of the planet (SI).
 
-    P_12 (float):
+    P_1 : float
         Pressure at the boundary between layers 1 and 2 of the planet (SI).
 
-    P_23 (float):
+    P_2 : float
         Pressure at the boundary between layers 2 and 3 of the planet (SI).
 
-    P_s (float):
+    P_s : float
         Pressure at the surface of the planet (SI).
 
-    rho_c (float):
+    rho_0 : float
         Density at the center of the planet (SI).
 
-    rho_s (float):
+    rho_s : float
         Density at the surface of the planet (SI).
 
-    mat_id_L1 (int):
+    mat_id_L1 : int
         Material id for layer 1.
 
-    T_rho_type_id_L1 (int)
+    T_rho_type_id_L1 : int
         Relation between T and rho to be used in layer 1.
 
-    T_rho_args_L1 (list):
+    T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
-    mat_id_L2 (int):
+    mat_id_L2 : int
         Material id for layer 2.
 
-    T_rho_type_id_L2 (int)
+    T_rho_type_id_L2 : int
         Relation between T and rho to be used in layer 2.
 
-    T_rho_args_L2 (list):
+    T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
 
-    mat_id_L3 (int):
+    mat_id_L3 : int
         Material id for layer 3.
 
-    T_rho_type_id_L3 (int)
+    T_rho_type_id_L3 : int
         Relation between T and rho to be used in layer 3.
 
-    T_rho_args_L3 (list):
+    T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
 
 
     Returns
     -------
-    A1_rho_equator ([float]):
+    A1_rho_eq : [float]
         Equatorial profile of densities (SI).
 
-    A1_rho_pole ([float]):
+    A1_rho_po : [float]
         Polar profile of densities (SI).
     """
 
-    P_e = np.zeros(V_e.shape[0])
-    P_p = np.zeros(V_p.shape[0])
-    A1_rho_equator = np.zeros(V_e.shape[0])
-    A1_rho_pole = np.zeros(V_p.shape[0])
+    A1_P_eq = np.zeros(A1_V_eq.shape[0])
+    A1_P_po = np.zeros(A1_V_po.shape[0])
+    A1_rho_eq = np.zeros(A1_V_eq.shape[0])
+    A1_rho_po = np.zeros(A1_V_po.shape[0])
 
-    P_e[0] = P_c
-    P_p[0] = P_c
-    A1_rho_equator[0] = rho_c
-    A1_rho_pole[0] = rho_c
+    A1_P_eq[0] = P_0
+    A1_P_po[0] = P_0
+    A1_rho_eq[0] = rho_0
+    A1_rho_po[0] = rho_0
 
     # equatorial profile
-    for i in range(A1_r_equator.shape[0] - 1):
-        gradV = V_e[i + 1] - V_e[i]
-        gradP = -A1_rho_equator[i] * gradV
-        P_e[i + 1] = P_e[i] + gradP
+    for i in range(A1_r_eq.shape[0] - 1):
+        gradV = A1_V_eq[i + 1] - A1_V_eq[i]
+        gradP = -A1_rho_eq[i] * gradV
+        A1_P_eq[i + 1] = A1_P_eq[i] + gradP
 
         # avoid overspin
-        if P_e[i + 1] > P_e[i]:
-            A1_rho_equator[i + 1 :] = A1_rho_equator[i]
+        if A1_P_eq[i + 1] > A1_P_eq[i]:
+            A1_rho_eq[i + 1 :] = A1_rho_eq[i]
             break
 
         # compute density
-        if P_e[i + 1] >= P_s and P_e[i + 1] >= P_12:
-            A1_rho_equator[i + 1] = eos.find_rho(
-                P_e[i + 1],
+        if A1_P_eq[i + 1] >= P_s and A1_P_eq[i + 1] >= P_1:
+            A1_rho_eq[i + 1] = eos.find_rho(
+                A1_P_eq[i + 1],
                 mat_id_L1,
                 T_rho_type_id_L1,
                 T_rho_args_L1,
                 rho_s * 0.1,
-                A1_rho_equator[i],
+                A1_rho_eq[i],
             )
 
-        elif P_e[i + 1] >= P_s and P_e[i + 1] >= P_23:
-            A1_rho_equator[i + 1] = eos.find_rho(
-                P_e[i + 1],
+        elif A1_P_eq[i + 1] >= P_s and A1_P_eq[i + 1] >= P_2:
+            A1_rho_eq[i + 1] = eos.find_rho(
+                A1_P_eq[i + 1],
                 mat_id_L2,
                 T_rho_type_id_L2,
                 T_rho_args_L2,
                 rho_s * 0.1,
-                A1_rho_equator[i],
+                A1_rho_eq[i],
             )
 
-        elif P_e[i + 1] >= P_s:
-            A1_rho_equator[i + 1] = eos.find_rho(
-                P_e[i + 1],
+        elif A1_P_eq[i + 1] >= P_s:
+            A1_rho_eq[i + 1] = eos.find_rho(
+                A1_P_eq[i + 1],
                 mat_id_L3,
                 T_rho_type_id_L3,
                 T_rho_args_L3,
                 rho_s * 0.1,
-                A1_rho_equator[i],
+                A1_rho_eq[i],
             )
 
         else:
-            A1_rho_equator[i + 1] = 0.0
+            A1_rho_eq[i + 1] = 0.0
             break
 
     # polar profile
-    for i in range(A1_r_pole.shape[0] - 1):
-        gradV = V_p[i + 1] - V_p[i]
-        gradP = -A1_rho_pole[i] * gradV
-        P_p[i + 1] = P_p[i] + gradP
+    for i in range(A1_r_po.shape[0] - 1):
+        gradV = A1_V_po[i + 1] - A1_V_po[i]
+        gradP = -A1_rho_po[i] * gradV
+        A1_P_po[i + 1] = A1_P_po[i] + gradP
 
         # avoid overspin
-        if P_e[i + 1] > P_e[i]:
-            A1_rho_equator[i + 1 :] = A1_rho_equator[i]
+        if A1_P_eq[i + 1] > A1_P_eq[i]:
+            A1_rho_eq[i + 1 :] = A1_rho_eq[i]
             break
 
         # compute density
-        if P_p[i + 1] >= P_s and P_p[i + 1] >= P_12:
-            A1_rho_pole[i + 1] = eos.find_rho(
-                P_p[i + 1],
+        if A1_P_po[i + 1] >= P_s and A1_P_po[i + 1] >= P_1:
+            A1_rho_po[i + 1] = eos.find_rho(
+                A1_P_po[i + 1],
                 mat_id_L1,
                 T_rho_type_id_L1,
                 T_rho_args_L1,
                 rho_s * 0.1,
-                A1_rho_pole[i],
+                A1_rho_po[i],
             )
 
-        elif P_p[i + 1] >= P_s and P_p[i + 1] >= P_23:
-            A1_rho_pole[i + 1] = eos.find_rho(
-                P_p[i + 1],
+        elif A1_P_po[i + 1] >= P_s and A1_P_po[i + 1] >= P_2:
+            A1_rho_po[i + 1] = eos.find_rho(
+                A1_P_po[i + 1],
                 mat_id_L2,
                 T_rho_type_id_L2,
                 T_rho_args_L2,
                 rho_s * 0.1,
-                A1_rho_pole[i],
+                A1_rho_po[i],
             )
 
-        elif P_p[i + 1] >= P_s:
-            A1_rho_pole[i + 1] = eos.find_rho(
-                P_p[i + 1],
+        elif A1_P_po[i + 1] >= P_s:
+            A1_rho_po[i + 1] = eos.find_rho(
+                A1_P_po[i + 1],
                 mat_id_L3,
                 T_rho_type_id_L3,
                 T_rho_args_L3,
                 rho_s * 0.1,
-                A1_rho_pole[i],
+                A1_rho_po[i],
             )
 
         else:
-            A1_rho_pole[i + 1] = 0.0
+            A1_rho_po[i + 1] = 0.0
             break
 
-    return A1_rho_equator, A1_rho_pole
+    return A1_rho_eq, A1_rho_po
 
 
-def spin3layer(
+def L3_spin(
     num_attempt,
-    A1_r_equator,
-    A1_rho_equator,
-    A1_r_pole,
-    A1_rho_pole,
+    A1_r_eq,
+    A1_rho_eq,
+    A1_r_po,
+    A1_rho_po,
     period,
-    P_c,
-    P_12,
-    P_23,
+    P_0,
+    P_1,
+    P_2,
     P_s,
-    rho_c,
+    rho_0,
     rho_s,
     mat_id_L1,
     T_rho_type_id_L1,
@@ -244,101 +238,99 @@ def spin3layer(
 
     Parameters
     ----------
-    num_attempt (int):
+    num_attempt : int
         Number of num_attempt to run.
 
-    A1_r_equator ([float]):
+    A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_r_pole ([float]):
+    A1_r_po : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    radii ([float]):
+    radii : [float]
         Radii of the spherical profile (SI).
 
-    densities ([float]):
+    densities : [float]
         Densities of the spherical profile (SI).
 
-    period (float):
+    period : float
         Period of the planet (hours).
 
-    P_c (float):
+    P_0 : float
         Pressure at the center of the planet (SI).
 
-    P_12 (float):
+    P_1 : float
         Pressure at the boundary between layers 1 and 2 of the planet (SI).
 
-    P_23 (float):
+    P_2 : float
         Pressure at the boundary between layers 2 and 3 of the planet (SI).
 
-    P_s (float):
+    P_s : float
         Pressure at the surface of the planet (SI).
 
-    rho_c (float):
+    rho_0 : float
         Density at the center of the planet (SI).
 
-    rho_s (float):
+    rho_s : float
         Density at the surface of the planet (SI).
 
-    mat_id_L1 (int):
+    mat_id_L1 : int
         Material id for layer 1.
 
-    T_rho_type_id_L1 (int)
+    T_rho_type_id_L1 : int
         Relation between T and rho to be used in layer 1.
 
-    T_rho_args_L1 (list):
+    T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
-    mat_id_L2 (int):
+    mat_id_L2 : int
         Material id for layer 2.
 
-    T_rho_type_id_L2 (int)
+    T_rho_type_id_L2 : int
         Relation between T and rho to be used in layer 2.
 
-    T_rho_args_L2 (list):
+    T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
 
-    mat_id_L3 (int):
+    mat_id_L3 : int
         Material id for layer 3.
 
-    T_rho_type_id_L3 (int)
+    T_rho_type_id_L3 : int
         Relation between T and rho to be used in layer 3.
 
-    T_rho_args_L3 (list):
+    T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
 
     Returns
     -------
-    profile_e ([[float]]):
+    profile_eq ([[float]]):
         List of the num_attempt of the equatorial density profile (SI).
 
-    profile_p ([[float]]):
+    profile_po ([[float]]):
         List of the num_attempt of the polar density profile (SI).
 
     """
 
-    profile_e = []
-    profile_p = []
+    profile_eq = []
+    profile_po = []
 
-    profile_e.append(A1_rho_equator)
-    profile_p.append(A1_rho_pole)
+    profile_eq.append(A1_rho_eq)
+    profile_po.append(A1_rho_po)
 
-    for i in tqdm(
-        range(num_attempt), desc="Solving spining profile", disable=verbosity == 0
-    ):
-        V_e, V_p = L1_spin._fillV(
-            A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, period
+    for i in range(num_attempt):
+        A1_V_eq, A1_V_po = L1_spin.V_eq_po_from_rho(
+            A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period
         )
-        A1_rho_equator, A1_rho_pole = _fillrho3(
-            A1_r_equator,
-            V_e,
-            A1_r_pole,
-            V_p,
-            P_c,
-            P_12,
-            P_23,
+        A1_rho_eq, A1_rho_po = L3_rho_eq_po_from_V(
+            A1_r_eq,
+            A1_V_eq,
+            A1_r_po,
+            A1_V_po,
+            P_0,
+            P_1,
+            P_2,
             P_s,
-            rho_c,
+            rho_0,
             rho_s,
             mat_id_L1,
             T_rho_type_id_L1,
@@ -350,21 +342,21 @@ def spin3layer(
             T_rho_type_id_L3,
             T_rho_args_L3,
         )
-        profile_e.append(A1_rho_equator)
-        profile_p.append(A1_rho_pole)
+        profile_eq.append(A1_rho_eq)
+        profile_po.append(A1_rho_po)
 
-    return profile_e, profile_p
+    return profile_eq, profile_po
 
 
-def picle_placement_L3(
-    A1_r_equator,
-    A1_rho_equator,
-    A1_r_pole,
-    A1_rho_pole,
+def L3_place_particles(
+    A1_r_eq,
+    A1_rho_eq,
+    A1_r_po,
+    A1_rho_po,
     period,
     N,
-    rho_12,
-    rho_23,
+    rho_1,
+    rho_2,
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
@@ -374,105 +366,106 @@ def picle_placement_L3(
     mat_id_L3,
     T_rho_type_id_L3,
     T_rho_args_L3,
-    N_neig=48,
+    N_ngb=48,
+    verbosity=1,
 ):
     """ Particle placement for 3 layer spinning planet profile.
     
     Parameters
     ----------
-    A1_r_equator ([float]):
+    A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_rho_equator ([float]):
+    A1_rho_eq : [float]
         Equatorial profile of densities (SI).
 
-    A1_r_pole ([float]):
+    A1_r_po : [float]
         Points at equatorial profile where the solution is defined (SI).
 
-    A1_rho_pole ([float]):
+    A1_rho_po : [float]
         Polar profile of densities (SI).
 
-    period (float):
+    period : float
         Period of the planet (hours).
 
-    N (int):
+    N : int
         Number of particles.
         
-    rho_12 (float):
+    rho_1 : float
         Density at the boundary between layers 1 and 2 (SI).
 
-    rho_23 (float):
+    rho_2 : float
         Density at the boundary between layers 2 and 3 (SI).
 
-    mat_id_L1 (int):
+    mat_id_L1 : int
         Material id for layer 1.
 
-    T_rho_type_id_L1 (int)
+    T_rho_type_id_L1 : int
         Relation between T and rho to be used in layer 1.
 
-    T_rho_args_L1 (list):
+    T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
         
-    mat_id_L2 (int):
+    mat_id_L2 : int
         Material id for layer 2.
 
-    T_rho_type_id_L2 (int)
+    T_rho_type_id_L2 : int
         Relation between T and rho to be used in layer 2.
 
-    T_rho_args_L2 (list):
+    T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
         
-    mat_id_L3 (int):
+    mat_id_L3 : int
         Material id for layer 3.
 
-    T_rho_type_id_L3 (int)
+    T_rho_type_id_L3 : int
         Relation between T and rho to be used in layer 3.
 
-    T_rho_args_L3 (list):
+    T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
 
-    N_neig (int):
+    N_ngb : int
         Number of neighbors in the SPH simulation.
         
     Returns
     -------
-    A1_x ([float]):
+    A1_x : [float]
         Position x of each particle (SI).
 
-    A1_y ([float]):
+    A1_y : [float]
         Position y of each particle (SI).
 
-    A1_z ([float]):
+    A1_z : [float]
         Position z of each particle (SI).
 
-    A1_vx ([float]):
+    A1_vx : [float]
         Velocity in x of each particle (SI).
 
-    A1_vy ([float]):
+    A1_vy : [float]
         Velocity in y of each particle (SI).
 
-    A1_vz ([float]):
+    A1_vz : [float]
         Velocity in z of each particle (SI).
 
-    A1_m ([float]):
+    A1_m : [float]
         Mass of every particle (SI).
 
-    A1_rho ([float]):
+    A1_rho : [float]
         Density for every particle (SI).
         
-    A1_u ([float]):
+    A1_u : [float]
         Internal energy for every particle (SI).
 
-    A1_P ([float]):
+    A1_P : [float]
         Pressure for every particle (SI).
         
-    A1_h ([float]):
+    A1_h : [float]
         Smoothing lenght for every particle (SI).
 
-    A1_mat_id ([int]):
+    A1_mat_id : [int]
         Material id for every particle.
 
-    A1_id ([int]):
+    A1_id : [int]
         Identifier for every particle
         
     """
@@ -487,9 +480,7 @@ def picle_placement_L3(
         A1_rho,
         A1_R,
         A1_Z,
-    ) = us.picle_placement(
-        A1_r_equator, A1_rho_equator, A1_r_pole, A1_rho_pole, N, period
-    )
+    ) = us.place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity)
 
     # internal energy
     A1_u = np.zeros((A1_m.shape[0]))
@@ -497,12 +488,12 @@ def picle_placement_L3(
     A1_P = np.zeros((A1_m.shape[0],))
 
     for k in range(A1_m.shape[0]):
-        if A1_rho[k] > rho_12:
+        if A1_rho[k] > rho_1:
             T = T_rho(A1_rho[k], T_rho_type_id_L1, T_rho_args_L1, mat_id_L1)
             A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L1)
             A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L1)
 
-        elif A1_rho[k] > rho_23:
+        elif A1_rho[k] > rho_2:
             T = T_rho(A1_rho[k], T_rho_type_id_L2, T_rho_args_L2, mat_id_L2)
             A1_u[k] = eos.u_rho_T(A1_rho[k], T, mat_id_L2)
             A1_P[k] = eos.P_u_rho(A1_u[k], A1_rho[k], mat_id_L2)
@@ -514,13 +505,13 @@ def picle_placement_L3(
 
     # Smoothing lengths, crudely estimated from the densities
     w_edge = 2  # r/h at which the kernel goes to zero
-    A1_h = np.cbrt(N_neig * A1_m / (4 / 3 * np.pi * A1_rho)) / w_edge
+    A1_h = np.cbrt(N_ngb * A1_m / (4 / 3 * np.pi * A1_rho)) / w_edge
 
     A1_id = np.arange(A1_m.shape[0])
     A1_mat_id = (
-        (A1_rho > rho_12) * mat_id_L1
-        + np.logical_and(A1_rho <= rho_12, A1_rho > rho_23) * mat_id_L2
-        + (A1_rho < rho_23) * mat_id_L3
+        (A1_rho > rho_1) * mat_id_L1
+        + np.logical_and(A1_rho <= rho_1, A1_rho > rho_2) * mat_id_L2
+        + (A1_rho < rho_2) * mat_id_L3
     )
 
     return (
