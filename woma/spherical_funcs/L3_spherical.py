@@ -198,7 +198,7 @@ def L3_integrate(
 
 
 # @njit
-def L3_find_mass(
+def L3_find_M_given_R_R1_R2(
     num_prof,
     R,
     M_max,
@@ -377,7 +377,7 @@ def L3_find_mass(
     return M_max
 
 
-def L3_find_radius(
+def L3_find_R_given_M_R1_R2(
     num_prof,
     R_max,
     M,
@@ -584,7 +584,7 @@ def L3_find_radius(
     return R_min
 
 
-def L3_find_R2(
+def L3_find_R2_given_R_M_R1(
     num_prof,
     R,
     M,
@@ -735,7 +735,7 @@ def L3_find_R2(
     return R2_max
 
 
-def L3_find_R1(
+def L3_find_R1_given_R_M_R2(
     num_prof,
     R,
     M,
@@ -887,7 +887,7 @@ def L3_find_R1(
     return R1_max
 
 
-def L3_find_R1_R2(
+def L3_find_R1_R2_given_R_M_I(
     num_prof,
     R,
     M,
@@ -993,7 +993,7 @@ def L3_find_R1_R2(
     try:
         if verbosity >= 1:
             print("Creating a planet with R1_min")
-        R2_min = L3_find_R2(
+        R2_min = L3_find_R2_given_R_M_R1(
             num_prof,
             R,
             M,
@@ -1021,7 +1021,7 @@ def L3_find_R1_R2(
     try:
         if verbosity >= 1:
             print("Creating a planet with R1_max")
-        R2_max = L3_find_R2(
+        R2_max = L3_find_R2_given_R_M_R1(
             num_prof,
             R,
             M,
@@ -1125,7 +1125,7 @@ def L3_find_R1_R2(
     for i in range(num_attempt):
         R1_try = (R1_min + R1_max) * 0.5
 
-        R2_try = L3_find_R2(
+        R2_try = L3_find_R2_given_R_M_R1(
             num_prof,
             R,
             M,

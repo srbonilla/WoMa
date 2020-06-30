@@ -236,7 +236,7 @@ def L1_integrate_out(
 
 
 # @njit
-def L1_find_mass(
+def L1_find_M_given_R(
     num_prof,
     R,
     M_max,
@@ -353,7 +353,7 @@ def L1_find_mass(
     return M_max
 
 
-def L1_find_radius(
+def L1_find_R_given_M(
     num_prof,
     R_max,
     M,

@@ -517,7 +517,7 @@ class Planet:
         assert self.M is not None
         self._1_layer_input()
 
-        self.R = L1_spherical.L1_find_radius(
+        self.R = L1_spherical.L1_find_R_given_M(
             self.num_prof,
             R_max,
             self.M,
@@ -536,7 +536,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L1_spherical.L1_find_mass(
+        self.M = L1_spherical.L1_find_M_given_R(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -606,7 +606,7 @@ class Planet:
         if self.R is None:
             self.R = self.A1_R_layer[0]
 
-        self.M = L1_spherical.L1_find_mass(
+        self.M = L1_spherical.L1_find_M_given_R(
             self.num_prof,
             self.R,
             M_max,
@@ -833,7 +833,7 @@ class Planet:
         assert self.M is not None
         self._2_layer_input()
 
-        self.A1_R_layer[0] = L2_spherical.L2_find_R1(
+        self.A1_R_layer[0] = L2_spherical.L2_find_R1_given_R_M(
             self.num_prof,
             self.R,
             self.M,
@@ -854,7 +854,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L2_spherical.L2_find_mass(
+        self.M = L2_spherical.L2_find_M_given_R1_R(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -930,7 +930,7 @@ class Planet:
         assert self.A1_R_layer[0] is not None
         self._2_layer_input()
 
-        self.M = L2_spherical.L2_find_mass(
+        self.M = L2_spherical.L2_find_M_given_R1_R(
             self.num_prof,
             self.R,
             M_max,
@@ -1009,7 +1009,7 @@ class Planet:
         assert self.M is not None
         self._2_layer_input()
 
-        self.R = L2_spherical.L2_find_radius(
+        self.R = L2_spherical.L2_find_R_given_M_R1(
             self.num_prof,
             R_max,
             self.M,
@@ -1032,7 +1032,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L2_spherical.L2_find_mass(
+        self.M = L2_spherical.L2_find_M_given_R1_R(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -1116,7 +1116,7 @@ class Planet:
         else:
             self.M = self.A1_M_layer[0] + self.A1_M_layer[1]
 
-        self.A1_R_layer[0], self.R = L2_spherical.L2_find_R1_R(
+        self.A1_R_layer[0], self.R = L2_spherical.L2_find_R1_R_given_M1_M2(
             self.num_prof,
             R_max,
             self.A1_M_layer[0],
@@ -1139,7 +1139,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L2_spherical.L2_find_mass(
+        self.M = L2_spherical.L2_find_M_given_R1_R(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -1287,7 +1287,7 @@ class Planet:
         assert self.A1_R_layer[1] is not None
         self._3_layer_input()
 
-        self.M = L3_spherical.L3_find_mass(
+        self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
             self.R,
             M_max,
@@ -1374,7 +1374,7 @@ class Planet:
         assert self.M is not None
         self._3_layer_input()
 
-        self.A1_R_layer[0] = L3_spherical.L3_find_R1(
+        self.A1_R_layer[0] = L3_spherical.L3_find_R1_given_R_M_R2(
             self.num_prof,
             self.R,
             self.M,
@@ -1399,7 +1399,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L3_spherical.L3_find_mass(
+        self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -1486,7 +1486,7 @@ class Planet:
         assert self.M is not None
         self._3_layer_input()
 
-        self.A1_R_layer[1] = L3_spherical.L3_find_R2(
+        self.A1_R_layer[1] = L3_spherical.L3_find_R2_given_R_M_R1(
             self.num_prof,
             self.R,
             self.M,
@@ -1511,7 +1511,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L3_spherical.L3_find_mass(
+        self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -1600,7 +1600,7 @@ class Planet:
         assert self.M is not None
         self._3_layer_input()
 
-        self.R = L3_spherical.L3_find_radius(
+        self.R = L3_spherical.L3_find_R_given_M_R1_R2(
             self.num_prof,
             R_max,
             self.M,
@@ -1627,7 +1627,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L3_spherical.L3_find_mass(
+        self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
             self.R,
             1.05 * self.M,
@@ -1693,7 +1693,7 @@ class Planet:
         assert self.I_MR2 is not None
         self._3_layer_input()
 
-        self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2(
+        self.A1_R_layer[0], self.A1_R_layer[1] = L3_spherical.L3_find_R1_R2_given_R_M_I(
             self.num_prof,
             self.R,
             self.M,
@@ -1721,7 +1721,7 @@ class Planet:
         if verbosity >= 1:
             print("Tweaking M to avoid peaks at the center of the planet...")
 
-        self.M = L3_spherical.L3_find_mass(
+        self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
             self.R,
             1.05 * self.M,

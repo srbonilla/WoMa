@@ -170,7 +170,7 @@ def L2_integrate(
 
 
 # @njit
-def L2_find_mass(
+def L2_find_M_given_R1_R(
     num_prof,
     R,
     M_max,
@@ -328,7 +328,7 @@ def L2_find_mass(
     return M_max
 
 
-def L2_find_radius(
+def L2_find_R_given_M_R1(
     num_prof,
     R_max,
     M,
@@ -489,7 +489,7 @@ def L2_find_radius(
     return R_min
 
 
-def L2_find_R1(
+def L2_find_R1_given_R_M(
     num_prof,
     R,
     M,
@@ -643,7 +643,7 @@ def L2_find_R1(
     return R1_min
 
 
-def L2_find_R1_R(
+def L2_find_R1_R_given_M1_M2(
     num_prof,
     R_max,
     M1,
@@ -775,7 +775,7 @@ def L2_find_R1_R(
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
 
-        R1_try = L2_find_R1(
+        R1_try = L2_find_R1_given_R_M(
             num_prof,
             R_try,
             M,
