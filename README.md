@@ -46,6 +46,8 @@ Notation etc.
     `n`-dimensional array.
 
 
+
+
 Documentation
 =============
 See the `tutorial.ipynb` notebook for a full tutorial and examples.
@@ -63,8 +65,9 @@ Set `0` for no printing, `1` for standard output, or `2` for extra details.
 3. Particle placement
 
 
-1. Spherical profiles 
----------------------
+
+
+## 1. Spherical profiles 
 All profiles require 2 of the 3 surface values: `P_s`, `T_s`, `rho_s`,
 plus the material and temperature-density relation for each layer (see below):
 `A1_mat_layer` and `A1_T_rho_type`.
@@ -188,8 +191,8 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
 
 
 
-2. Spinning profiles  
---------------------
+
+## 2. Spinning profiles  
 See `tutorial.ipynb` for the main usage:
 ```python
 spherical_planet = woma.Planet( . . . ) 
@@ -212,8 +215,7 @@ and for example their masses, densities, pressures, and temperatures,
 
 
 
-3. Particle placement
----------------------
+## 3. Particle placement
 See `tutorial.ipynb` for the main usage:
 ```python
 planet = woma.Planet( . . . ) 
