@@ -252,27 +252,6 @@ def L2_find_M_given_R_R1(
 
     M_max_input = np.copy(M_max)
 
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-        num_prof,
-        R,
-        M_max,
-        P_s,
-        T_s,
-        rho_s,
-        R1,
-        mat_id_L1,
-        T_rho_type_id_L1,
-        T_rho_args_L1,
-        mat_id_L2,
-        T_rho_type_id_L2,
-        T_rho_args_L2,
-    )
-
-    if A1_m_enc[-1] < 0:
-        raise ValueError(
-            "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
-        )
-
     for i in range(num_attempt):
 
         M_try = (M_min + M_max) * 0.5
@@ -323,7 +302,7 @@ def L2_find_M_given_R_R1(
         sys.stdout.write("\n")
 
     if (M_max_input - M_max) < tol:
-        raise ValueError("Please increase M_max")
+        raise ValueError("M tends to M_max")
 
     return M_max
 
@@ -403,40 +382,7 @@ def L2_find_R_given_M_R1(
                 Mass of the planet (SI).
     """
     R_min = R1
-
-    A1_r, A1_m_enc_1, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
-        num_prof,
-        R_max,
-        M,
-        P_s,
-        T_s,
-        rho_s,
-        R1,
-        mat_id_L1,
-        T_rho_type_id_L1,
-        T_rho_args_L1,
-        mat_id_L2,
-        T_rho_type_id_L2,
-        T_rho_args_L2,
-    )
-
-    rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
-
-    A1_r, A1_m_enc_2, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
-        num_prof, R1, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_id_L1, T_rho_args_L1
-    )
-
-    if A1_m_enc_1[-1] > 0:
-        raise ValueError(
-            "R_max too low, excess of mass for R = R_max.\nPlease increase R_max.\n"
-        )
-
-    if A1_m_enc_2[-1] == 0:
-        e = (
-            "R = R1 yields a planet which already lacks mass.\n"
-            + "Try increase M or reduce R1.\n"
-        )
-        raise ValueError(e)
+    R_max_input = np.copy(R_max)
 
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
@@ -478,6 +424,12 @@ def L2_find_R_given_M_R1(
                 + str(tol)
             )
             sys.stdout.write("\r" + string)
+
+        if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
+            raise ValueError("R tends to R_max.")
+
+        if np.abs(R_min - R1) / R_min < 2 * tol:
+            raise ValueError("R tends to R1.")
 
         if tol_reached < tol:
 
@@ -560,37 +512,7 @@ def L2_find_R1_given_M_R(
                 Boundary of the planet (SI).
     """
     R1_min = 0.0
-    R1_max = R
-
-    # Check all material 2, should be too low density overall
-    rho_s_L2 = eos.rho_P_T(P_s, T_s, mat_id_L2)
-
-    A1_r, A1_m_enc_1, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
-        num_prof, R, M, P_s, T_s, rho_s_L2, mat_id_L2, T_rho_type_id_L2, T_rho_args_L2
-    )
-
-    # Check all material 1, should be too dense overall
-    rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
-
-    A1_r, A1_m_enc_2, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_spherical.L1_integrate(
-        num_prof, R, M, P_s, T_s, rho_s_L1, mat_id_L1, T_rho_type_id_L1, T_rho_args_L1
-    )
-
-    if A1_m_enc_1[-1] == 0:
-        e = (
-            "Ran out of mass for a planet made of layer 2 material %s.\n"
-            "Try increasing the mass (M) or decreasing the radius (R).\n"
-            % gv.Di_id_mat[mat_id_L2]
-        )
-        raise ValueError(e)
-
-    elif A1_m_enc_2[-1] > 0:
-        e = (
-            "Excess of mass for a planet made of layer 1 material %s.\n"
-            "Try decreasing the mass (M) or increasing the radius (R).\n"
-            % gv.Di_id_mat[mat_id_L2]
-        )
-        raise ValueError(e)
+    R1_max = np.copy(R)
 
     for i in range(num_attempt):
         R1_try = (R1_min + R1_max) * 0.5
@@ -633,6 +555,12 @@ def L2_find_R1_given_M_R(
             )
             sys.stdout.write("\r" + string)
 
+        if (R - R1_min) / R < 2 * tol or (R - R1_min) / R < 2 / (num_prof - 1):
+            raise ValueError("R1 tends to R.")
+
+        if R1_min / R < 2 * tol or R1_min / R < 2 / (num_prof - 1):
+            raise ValueError("R1 tends to 0.")
+
         if tol_reached < tol:
 
             break
@@ -645,6 +573,7 @@ def L2_find_R1_given_M_R(
 
 def L2_find_R_R1_given_M1_M2(
     num_prof,
+    R_min,
     R_max,
     M1,
     M2,
@@ -667,6 +596,9 @@ def L2_find_R_R1_given_M1_M2(
         Args:
             num_prof (int):
                 Number of profile integration steps.
+                
+            R_min (float):
+                Min. radius of the planet (SI).
 
             R_max (float):
                 Max. radius of the planet (SI).
@@ -719,58 +651,55 @@ def L2_find_R_R1_given_M1_M2(
     """
 
     M = M1 + M2
-    rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
+    # rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
 
     # Build planet made of core material
     if verbosity >= 1:
-        print("Trying to build a planet made of core material.")
+        print("Trying to build a planet with R_min with gen_prof_L2_find_R1_given_M_R.")
     try:
-        R_min = L1_spherical.L1_find_R_given_M(
+        _ = L2_find_R1_given_M_R(
             num_prof,
-            R_max,
+            R_min,
             M,
             P_s,
             T_s,
-            rho_s_L1,
+            rho_s,
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            mat_id_L2,
+            T_rho_type_id_L2,
+            T_rho_args_L2,
             tol=tol,
             num_attempt=num_attempt,
-            verbosity=verbosity,
+            verbosity=0,
         )
     except:
-        raise ValueError(
-            "Could not build a planet made of core material.\nPlease increase R_max."
-        )
+        raise ValueError("Could not build a planet with R_min.")
 
     # Build planet made of mantle material
     if verbosity >= 1:
-        print("Trying to build a planet made of mantle material.")
+        print("Trying to build a planet with R_max with gen_prof_L2_find_R1_given_M_R.")
     try:
-        R_max = L1_spherical.L1_find_R_given_M(
+        _ = L2_find_R1_given_M_R(
             num_prof,
             R_max,
             M,
             P_s,
             T_s,
             rho_s,
+            mat_id_L1,
+            T_rho_type_id_L1,
+            T_rho_args_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
             tol=tol,
             num_attempt=num_attempt,
-            verbosity=verbosity,
+            verbosity=0,
         )
     except:
-        raise ValueError(
-            "Could not build a planet made of mantle material.\nPlease increase R_max.\n"
-        )
-
-    if R_min > R_max:
-        raise ValueError(
-            "A planet made of core material is bigger than one made of mantle material.\n"
-        )
+        raise ValueError("Could not build a planet with R_max.")
 
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
@@ -839,5 +768,8 @@ def L2_find_R_R1_given_M1_M2(
 
     if verbosity >= 1:
         sys.stdout.write("\n")
+
+        if tol_reached > tol:
+            print("Tolerance level not reached. Please modify R_min and R_max.")
 
     return R1_try, R_try

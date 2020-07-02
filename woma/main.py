@@ -1084,7 +1084,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_L2_find_R_R1_given_M1_M2(
-        self, R_max, tol=0.001, num_attempt=40, verbosity=1
+        self, R_min, R_max, tol=0.001, num_attempt=40, verbosity=1
     ):
         """ 
         Compute the profile of a planet with 2 layers to find outer radii of 
@@ -1094,6 +1094,9 @@ class Planet:
         ----------
         self.A1_M_layer : [float]
             The masses of each layer (kg).
+            
+        R_min : float
+            The minimum radius to try (m).
         
         R_max : float
             The maximum radius to try (m).
@@ -1118,6 +1121,7 @@ class Planet:
 
         self.A1_R_layer[0], self.R = L2_spherical.L2_find_R_R1_given_M1_M2(
             self.num_prof,
+            R_min,
             R_max,
             self.A1_M_layer[0],
             self.A1_M_layer[1],

@@ -301,16 +301,7 @@ def L1_find_M_given_R(
         tol = min_tol
 
     M_min = 0.0
-
-    # Try integrating the profile with the maximum mass
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-        num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
-    )
-
-    if A1_m_enc[-1] < 0:
-        raise ValueError(
-            "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
-        )
+    M_max_input = np.copy(M_max)
 
     # Iterate the mass
     for i in range(num_attempt):
@@ -349,6 +340,9 @@ def L1_find_M_given_R(
 
     if verbosity >= 1:
         sys.stdout.write("\n")
+
+    if (M_max_input - M_max) < tol:
+        raise ValueError("M tends to M_max")
 
     return M_max
 
@@ -413,15 +407,7 @@ def L1_find_R_given_M(
     """
     R_min = 0.0
 
-    # Try integrating the profile with the minimum radius
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-        num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
-    )
-
-    if A1_m_enc[-1] != 0:
-        raise ValueError(
-            "R_max is too low, did not ran out of mass in first iteration.\nPlease increase R_max.\n"
-        )
+    R_max_input = np.copy(R_max)
 
     # Iterate the radius
     for i in range(num_attempt):
@@ -453,6 +439,9 @@ def L1_find_R_given_M(
                 + str(tol)
             )
             sys.stdout.write("\r" + string)
+
+        if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
+            raise ValueError("R tends to R_max.")
 
         if tol_reached < tol:
 
