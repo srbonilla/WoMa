@@ -425,18 +425,18 @@ def L2_find_R_given_M_R1(
             )
             sys.stdout.write("\r" + string)
 
-        if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
-            raise ValueError("R tends to R_max.")
-
-        if np.abs(R_min - R1) / R_min < 2 * tol:
-            raise ValueError("R tends to R1.")
-
         if tol_reached < tol:
 
             break
 
     if verbosity >= 1:
         sys.stdout.write("\n")
+        
+    if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
+        raise ValueError("R tends to R_max.")
+
+    if np.abs(R_min - R1) / R_min < 2 * tol:
+        raise ValueError("R tends to R1.")
 
     return R_min
 
@@ -555,18 +555,18 @@ def L2_find_R1_given_M_R(
             )
             sys.stdout.write("\r" + string)
 
-        if (R - R1_min) / R < 2 * tol or (R - R1_min) / R < 2 / (num_prof - 1):
-            raise ValueError("R1 tends to R.")
-
-        if R1_min / R < 2 * tol or R1_min / R < 2 / (num_prof - 1):
-            raise ValueError("R1 tends to 0.")
-
         if tol_reached < tol:
 
             break
 
     if verbosity >= 1:
         sys.stdout.write("\n")
+        
+    if (R - R1_min) / R < 2 * tol or (R - R1_min) / R < 2 / (num_prof - 1):
+        raise ValueError("R1 tends to R.")
+
+    if R1_min / R < 2 * tol or R1_min / R < 2 / (num_prof - 1):
+        raise ValueError("R1 tends to 0.")
 
     return R1_min
 

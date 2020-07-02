@@ -440,7 +440,7 @@ def L1_find_R_given_M(
             )
             sys.stdout.write("\r" + string)
 
-        if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
+        if np.abs(R_try - R_max_input) / R_max_input < 2 * tol:
             raise ValueError("R tends to R_max.")
 
         if tol_reached < tol:
