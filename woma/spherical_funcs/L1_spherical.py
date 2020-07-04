@@ -246,7 +246,7 @@ def L1_find_M_given_R(
     T_rho_type_id,
     T_rho_args,
     num_attempt=40,
-    tol=0.01,
+    tol=1e-7,
     verbosity=1,
 ):
     """ Finder of the total mass of the planet.
@@ -295,13 +295,11 @@ def L1_find_M_given_R(
     """
 
     # Need this tolerance to avoid peaks in the centre of the planet for the density profile
-    ###really? that seems weird! and if 1e-7 is the maximum (not minimum btw!)
-    ###then why is the default 1e-2?
-    min_tol = 1e-7
-    if tol > min_tol:
+    tol_max = 1e-7
+    if tol > tol_max:
         if verbosity >= 1:
-            print("Tolerance overwritten to maximum: %g" % min_tol)
-        tol = min_tol
+            print("Tolerance overwritten to maximum: %g" % tol_max)
+        tol = tol_max
 
     M_min = 0.0
     M_max_input = np.copy(M_max)
