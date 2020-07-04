@@ -1955,8 +1955,8 @@ class SpinPlanet:
     def _find_boundary_indices(self):
         """ Find the indices of the outermost elements in each layer. """
         # First index above each layer
-        A1_idx_layer_eq = np.argmax(self.A1_rho_eq == 0)
-        A1_idx_layer_po = np.argmax(self.A1_rho_po == 0)
+        A1_idx_layer_eq = np.array([np.argmax(self.A1_rho_eq == 0)])
+        A1_idx_layer_po = np.array([np.argmax(self.A1_rho_po == 0)])
         if self.num_layer >= 2:
             A1_idx_layer_eq = np.append(
                 np.argmax(self.A1_rho_eq <= self.planet.rho_1), A1_idx_layer_eq
