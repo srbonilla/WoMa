@@ -246,12 +246,15 @@ def L2_find_M_given_R_R1(
     M_max : float
         Mass of the planet (kg).
     """
-    min_tol = 1e-7
-    if tol > min_tol:
-        tol = min_tol
+    
+    # Need this tolerance to avoid peaks in the centre of the planet for the density profile
+    tol_max = 1e-7
+    if tol > tol_max:
+        if verbosity >= 1:
+            print("Tolerance overwritten to maximum: %g" % tol_max)
+        tol = tol_max
 
     M_min = 0.0
-
     M_max_input = np.copy(M_max)
 
     for i in range(num_attempt):
@@ -285,7 +288,7 @@ def L2_find_M_given_R_R1(
         if verbosity >= 1:
             print(
                 "\rIter %d(%d): M=%.5gM_E --> tol=%.2g(%.2g)"
-                % (i, num_attempt, M_try / gv.R_earth, tol_reached, tol),
+                % (i + 1, num_attempt, M_try / gv.R_earth, tol_reached, tol),
                 end="",
             )
 
@@ -294,11 +297,15 @@ def L2_find_M_given_R_R1(
                 print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print(
+             "\nConvergence not reached after %d iterations."
+              % (num_attempt))
 
-    if (M_max_input - M_max) < tol:
-        raise ValueError("M tends to M_max")
+    # Error messages
+    if (M_max_input - M_max)/M_max < tol:
+        raise ValueError("M tends to M_max. Please increase M_max")
 
     return M_max
 
@@ -412,7 +419,7 @@ def L2_find_R_given_M_R1(
         if verbosity >= 1:
             print(
                 "\rIter %d(%d): R=%.5gR_E --> tol=%.2g(%.2g)"
-                % (i, num_attempt, R_try / gv.R_earth, tol_reached, tol),
+                % (i + 1, num_attempt, R_try / gv.R_earth, tol_reached, tol),
                 end="",
             )
 
@@ -420,12 +427,19 @@ def L2_find_R_given_M_R1(
             if verbosity >= 1:
                 print("")
             break
+        
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print(
+             "\nConvergence not reached after %d iterations."
+              % (num_attempt))
 
+    # Error messages 
     if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
-        raise ValueError("R tends to R_max.")
+        raise ValueError("R tends to R_max. Please increase R_max.")
 
     if np.abs(R_min - R1) / R_min < 2 * tol:
-        raise ValueError("R tends to R1.")
+        raise ValueError("R tends to R1. Please decrease R1.")
 
     return R_min
 
@@ -535,7 +549,7 @@ def L2_find_R1_given_M_R(
         if verbosity >= 1:
             print(
                 "\rIter %d(%d): R1=%.5gR_E --> tol=%.2g(%.2g)"
-                % (i, num_attempt, R1_try / gv.R_earth, tol_reached, tol),
+                % (i + 1, num_attempt, R1_try / gv.R_earth, tol_reached, tol),
                 end="",
             )
 
@@ -543,12 +557,19 @@ def L2_find_R1_given_M_R(
             if verbosity >= 1:
                 print("")
             break
+        
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print(
+             "\nConvergence not reached after %d iterations."
+              % (num_attempt))
 
-    if (R - R1_min) / R < 2 * tol or (R - R1_min) / R < 2 / (num_prof - 1):
-        raise ValueError("R1 tends to R.")
+    # Error messages 
+    if np.abs(R - R1_min) / R < 2 * tol:
+        raise ValueError("R1 tends to R. Please increase R.")
 
-    if R1_min / R < 2 * tol or R1_min / R < 2 / (num_prof - 1):
-        raise ValueError("R1 tends to 0.")
+    if R1_min / R < 2 * tol:
+        raise ValueError("R1 tends to 0. Please decrease R.")
 
     return R1_min
 
@@ -635,7 +656,6 @@ def L2_find_R_R1_given_M1_M2(
     """
 
     M = M1 + M2
-    # rho_s_L1 = eos.rho_P_T(P_s, T_s, mat_id_L1)
 
     # Build planet made of core material
     if verbosity >= 1:
@@ -736,7 +756,7 @@ def L2_find_R_R1_given_M1_M2(
             print(
                 "\rIter %d(%d): R=%.5gR_E R1=%.5gR_E --> tol=%.2g(%.2g)"
                 % (
-                    i,
+                    i + 1,
                     num_attempt,
                     R_try / gv.R_earth,
                     R1_try / gv.R_earth,
@@ -751,7 +771,10 @@ def L2_find_R_R1_given_M1_M2(
                 print("")
             break
 
-        if tol_reached > tol:
-            print("Tolerance level not reached. Please modify R_min and R_max.")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print(
+             "\nConvergence not reached after %d iterations."
+              % (num_attempt))
 
     return R1_try, R_try
