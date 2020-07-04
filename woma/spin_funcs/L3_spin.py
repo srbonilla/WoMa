@@ -39,34 +39,34 @@ def L3_rho_eq_po_from_V(
     Parameters
     ----------
     A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_V_eq : [float]
-        Equatorial profile of potential (SI).
+        Equatorial profile of potential (J).
 
     A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_V_po : [float]
-        Polar profile of potential (SI).
+        Polar profile of potential (J).
 
     P_0 : float
-        Pressure at the center of the planet (SI).
+        Pressure at the center of the planet (Pa).
 
     P_1 : float
-        Pressure at the boundary between layers 1 and 2 of the planet (SI).
+        Pressure at the boundary between layers 1 and 2 of the planet (Pa).
 
     P_2 : float
-        Pressure at the boundary between layers 2 and 3 of the planet (SI).
+        Pressure at the boundary between layers 2 and 3 of the planet (Pa).
 
     P_s : float
-        Pressure at the surface of the planet (SI).
+        Pressure at the surface of the planet (Pa).
 
     rho_0 : float
-        Density at the center of the planet (SI).
+        Density at the center of the planet (kg m^-3).
 
     rho_s : float
-        Density at the surface of the planet (SI).
+        Density at the surface of the planet (kg m^-3).
 
     mat_id_L1 : int
         Material id for layer 1.
@@ -99,10 +99,10 @@ def L3_rho_eq_po_from_V(
     Returns
     -------
     A1_rho_eq : [float]
-        Equatorial profile of densities (SI).
+        Equatorial profile of densities (kg m^-3).
 
     A1_rho_po : [float]
-        Polar profile of densities (SI).
+        Polar profile of densities (kg m^-3).
     """
 
     A1_P_eq = np.zeros(A1_V_eq.shape[0])
@@ -242,37 +242,37 @@ def L3_spin(
         Number of num_attempt to run.
 
     A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
+
+    A1_rho_eq : [float]
+        Densitity values at corresponding A1_r_eq points (kg m^-3).
 
     A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at polar profile where the solution is defined (m).
 
-    radii : [float]
-        Radii of the spherical profile (SI).
-
-    densities : [float]
-        Densities of the spherical profile (SI).
+    A1_rho_po : [float]
+        Densitity values at corresponding A1_r_po points (kg m^-3).
 
     period : float
         Period of the planet (hours).
 
     P_0 : float
-        Pressure at the center of the planet (SI).
+        Pressure at the center of the planet (Pa).
 
     P_1 : float
-        Pressure at the boundary between layers 1 and 2 of the planet (SI).
+        Pressure at the boundary between layers 1 and 2 of the planet (Pa).
 
     P_2 : float
-        Pressure at the boundary between layers 2 and 3 of the planet (SI).
+        Pressure at the boundary between layers 2 and 3 of the planet (Pa).
 
     P_s : float
-        Pressure at the surface of the planet (SI).
+        Pressure at the surface of the planet (Pa).
 
     rho_0 : float
-        Density at the center of the planet (SI).
+        Density at the center of the planet (kg m^-3).
 
     rho_s : float
-        Density at the surface of the planet (SI).
+        Density at the surface of the planet (kg m^-3).
 
     mat_id_L1 : int
         Material id for layer 1.
@@ -303,11 +303,11 @@ def L3_spin(
 
     Returns
     -------
-    profile_eq ([[float]]):
-        List of the num_attempt of the equatorial density profile (SI).
+    profile_eq : [[float]]
+        List of the num_attempt of the equatorial density profile (kg m^-3).
 
-    profile_po ([[float]]):
-        List of the num_attempt of the polar density profile (SI).
+    profile_po : [[float]])
+        List of the num_attempt of the polar density profile (kg m^-3).
 
     """
 
@@ -374,16 +374,16 @@ def L3_place_particles(
     Parameters
     ----------
     A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_rho_eq : [float]
-        Equatorial profile of densities (SI).
+        Equatorial profile of densities (kg m^-3).
 
     A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_rho_po : [float]
-        Polar profile of densities (SI).
+        Polar profile of densities (kg m^-3).
 
     period : float
         Period of the planet (hours).
@@ -392,10 +392,10 @@ def L3_place_particles(
         Number of particles.
         
     rho_1 : float
-        Density at the boundary between layers 1 and 2 (SI).
+        Density at the boundary between layers 1 and 2 (kg m^-3).
 
     rho_2 : float
-        Density at the boundary between layers 2 and 3 (SI).
+        Density at the boundary between layers 2 and 3 (kg m^-3).
 
     mat_id_L1 : int
         Material id for layer 1.
@@ -430,37 +430,37 @@ def L3_place_particles(
     Returns
     -------
     A1_x : [float]
-        Position x of each particle (SI).
+        Position x of each particle (m).
 
     A1_y : [float]
-        Position y of each particle (SI).
+        Position y of each particle (m).
 
     A1_z : [float]
-        Position z of each particle (SI).
+        Position z of each particle (m).
 
     A1_vx : [float]
-        Velocity in x of each particle (SI).
+        Velocity in x of each particle (m s^-1).
 
     A1_vy : [float]
-        Velocity in y of each particle (SI).
+        Velocity in y of each particle (m s^-1).
 
     A1_vz : [float]
-        Velocity in z of each particle (SI).
+        Velocity in z of each particle (m s^-1).
 
     A1_m : [float]
         Mass of every particle (SI).
 
     A1_rho : [float]
-        Density for every particle (SI).
+        Density for every particle (kg m^-3).
         
     A1_u : [float]
-        Internal energy for every particle (SI).
+        Internal energy for every particle (J kg^-1).
 
     A1_P : [float]
-        Pressure for every particle (SI).
+        Pressure for every particle (Pa).
         
     A1_h : [float]
-        Smoothing lenght for every particle (SI).
+        Smoothing lenght for every particle (m).
 
     A1_mat_id : [int]
         Material id for every particle.

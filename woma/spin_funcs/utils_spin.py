@@ -21,16 +21,16 @@ def Kellogg_V_r_indef(r, R, Z, x):
     Parameters
     ----------
     r : float
-        Cylindrical r coordinate where to compute the potential (SI).
+        Cylindrical r coordinate where to compute the potential (m).
 
     R : float
-        Major axis of the oblate spheroid (SI).
+        Major axis of the oblate spheroid (m).
 
     Z : float
-        Minor axis of the oblate spheroid (SI).
+        Minor axis of the oblate spheroid (m).
 
     x : float
-        Integration variable (SI).
+        Integration variable.
         
     Returns
     -------
@@ -59,16 +59,16 @@ def Kellogg_V_z_indef(z, R, Z, x):
     Parameters
     ----------
     z : float
-        Cylindrical z coordinate where to compute the potential (SI).
+        Cylindrical z coordinate where to compute the potential (m).
 
     R : float
-        Major axis of the oblate spheroid (SI).
+        Major axis of the oblate spheroid (m).
 
     Z : float
-        Minor axis of the oblate spheroid (SI).
+        Minor axis of the oblate spheroid (m).
 
     x : float
-        Integration variable (SI).
+        Integration variable.
     
     Returns
     -------
@@ -96,21 +96,21 @@ def V_grav_eq(r, R, Z, rho):
     Parameters
     ----------
     r : float
-        Cylindrical r coordinate where to compute the potential (SI).
+        Cylindrical r coordinate where to compute the potential (m).
 
     R : float
-        Major axis of the oblate spheroid (SI).
+        Major axis of the oblate spheroid (m).
 
     Z : float
-        Minor axis of the oblate spheroid (SI).
+        Minor axis of the oblate spheroid (m).
 
     rho : float
-        Density of the spheroid (SI).
+        Density of the spheroid (kg m^-3).
 
     Returns
     -------
     V : float
-        Gravitational potential (SI).
+        Gravitational potential (J).
     """
 
     V = 0
@@ -156,21 +156,21 @@ def V_grav_po(z, R, Z, rho):
     Parameters
     ----------
     z : float
-        Cylindrical z coordinate where to compute the potential (SI).
+        Cylindrical z coordinate where to compute the potential (m).
 
     R : float
-        Major axis of the oblate spheroid (SI).
+        Major axis of the oblate spheroid (m).
 
     Z : float
-        Minor axis of the oblate spheroid (SI).
+        Minor axis of the oblate spheroid (m).
 
     rho : float
-        Density of the spheroid (SI).
+        Density of the spheroid (kg m^-3).
 
     Returns
     -------
     V : float
-        Gravitational potential (SI).
+        Gravitational potential (J).
     """
 
     V = 0
@@ -212,34 +212,33 @@ def ellipse_eqn(r, z, R, Z):
     return r ** 2 / R ** 2 + z ** 2 / Z ** 2
 
 
-# @jit(nopython=False)
 def rho_at_r_z(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
     """ Computes the density at any point r, z given a spining profile.
 
     Parameters
     ----------
     r : float
-        Cylindrical r coordinate where to compute the density (SI).
+        Cylindrical r coordinate where to compute the density (m).
 
     z : float
-        Cylindrical z coordinate where to compute the density (SI).
+        Cylindrical z coordinate where to compute the density (m).
 
     A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_rho_eq : [float]
-        Equatorial profile of densities (SI).
+        Equatorial profile of densities (kg m^-3).
 
     A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_rho_po : [float]
-        Polar profile of densities (SI).
+        Polar profile of densities (kg m^-3).
 
     Returns
     -------
     rho : float
-        Density at r, z (SI).
+        Density at r, z (kg m^-3).
     """
     z = np.abs(z)
 
@@ -314,15 +313,15 @@ def vol_spheroid(R, Z):
     Parameters
     ----------
     R : float
-        Equatorial radius (SI).
+        Equatorial radius (m).
 
     Z : float
-        Polar radius (SI).
+        Polar radius (m).
 
     Returns
     -------
     V : float
-        Volume (SI).
+        Volume (m^3).
 
     """
 
@@ -331,6 +330,25 @@ def vol_spheroid(R, Z):
 
 @njit
 def cart_to_spher(x, y, z):
+    """ Transformation from cartesian to spherical coorinates.
+
+    Parameters
+    ----------
+    x : float
+        x position (m).
+        
+    y : float
+        y position (m).
+        
+    z : float
+        z position (m).
+
+    Returns
+    -------
+    r, theta, phi : float
+        Spherical coordinates (m, rad, rad).
+
+    """
 
     r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
     theta = np.arccos(z / r)
@@ -341,6 +359,25 @@ def cart_to_spher(x, y, z):
 
 @njit
 def spher_to_cart(r, theta, phi):
+    """ Transformation from spherical to cartesian coorinates.
+
+    Parameters
+    ----------
+    r : float
+        r coordinate (m).
+        
+    theta : float
+        theta coordinate (rad).
+        
+    phi : float
+        phi coordinate (rad).
+
+    Returns
+    -------
+    x, y, z : float
+        Cartesian coordinates (m, m, m).
+
+    """
 
     x = r * np.sin(theta) * np.cos(phi)
     y = r * np.sin(theta) * np.sin(phi)
@@ -461,37 +498,37 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     Returns
     -------
     A1_x : [float]
-        Position x of each particle (SI).
+        Position x of each particle (m).
 
     A1_y : [float]
-        Position y of each particle (SI).
+        Position y of each particle (m).
 
     A1_z : [float]
-        Position z of each particle (SI).
+        Position z of each particle (m).
 
     A1_vx : [float]
-        Velocity in x of each particle (SI).
+        Velocity in x of each particle (m s^-1).
 
     A1_vy : [float]
-        Velocity in y of each particle (SI).
+        Velocity in y of each particle (m s^-1).
 
     A1_vz : [float]
-        Velocity in z of each particle (SI).
+        Velocity in z of each particle (m s^-1).
 
     A1_m : [float]
-        Mass of every particle (SI).
+        Mass of every particle (kg).
         
     A1_rho : [float]
-        Density for every particle (SI).
+        Density for every particle (kg m^-3).
 
     A1_h : [float]
-        Smoothing lenght for every particle (SI).
+        Smoothing lenght for every particle (m).
 
     A1_R : [float]
-        Semi-major axis of the elipsoid for every particle.
+        Semi-major axis of the elipsoid for every particle (m).
         
     A1_Z : [float]
-        Semi-minor axis of the elipsoid for every particle.
+        Semi-minor axis of the elipsoid for every particle (m).
 
     """
 
@@ -677,16 +714,16 @@ def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     Parameters
     ----------
     A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_rho_eq : [float]
-        Equatorial profile of densities (SI).
+        Equatorial profile of densities (kg m^-3).
 
     A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (SI).
+        Points at equatorial profile where the solution is defined (m).
 
     A1_rho_po : [float]
-        Polar profile of densities (SI).
+        Polar profile of densities (kg m^-3).
         
     period : float
         Period of the planet (hours).
@@ -694,10 +731,10 @@ def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     Returns
     -------
     v_esc_eq : [float]
-        Escape velocity at the equator (SI).
+        Escape velocity at the equator (m s^-1).
 
     v_esc_po : [float]
-        Escape velocity at the pole (SI).
+        Escape velocity at the pole (m s^-1).
 
         
     """
@@ -865,19 +902,15 @@ def find_min_period(
         tol_reached = np.abs(max_period - min_period) / min_period
 
         if verbosity >= 1:
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): T=%.5g hours --> tol=%.2g(%.2g)"
+                % (i + 1, num_attempt, min_period, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
-
-        if np.abs(max_period - min_period) / min_period < tol:
+            
+        if tol_reached < tol:
+            if verbosity >= 1:
+                print("")
             break
 
     min_period = max_period
