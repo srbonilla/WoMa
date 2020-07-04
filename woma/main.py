@@ -137,7 +137,7 @@ class Planet:
         T_2=None,
         rho_2=None,
         I_MR2=None,
-        num_prof=1000,
+        num_prof=3000,
     ):
         self.name = name
         self.A1_mat_layer = A1_mat_layer
@@ -502,7 +502,9 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L1_find_R_given_M(self, R_max, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L1_find_R_given_M(
+        self, R_max, tol=0.001, tol_M=1e-7, num_attempt=40, verbosity=1
+    ):
         """ 
         Compute the profile of a planet with 1 layer to find the radius given 
         the mass.
@@ -518,6 +520,9 @@ class Planet:
         tol : float
             The tolerance for finding unknown parameters as a fractional 
             difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
 
         num_attempt : int
             The maximum number of iteration attempts.        
@@ -543,10 +548,13 @@ class Planet:
         self.A1_R_layer[-1] = self.R
 
         if verbosity == 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L1_spherical.L1_find_M_given_R(
@@ -559,7 +567,7 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
-            tol=tol,
+            tol=tol_M,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
         )
@@ -592,7 +600,7 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L1_find_M_given_R(self, M_max, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L1_find_M_given_R(self, M_max, tol=1e-7, num_attempt=40, verbosity=1):
         """ 
         Compute the profile of a planet with 1 layer to find the mass given the 
         radius.
@@ -818,7 +826,9 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L2_find_R1_given_M_R(self, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L2_find_R1_given_M_R(
+        self, tol=0.001, tol_M=1e-7, num_attempt=40, verbosity=1
+    ):
         """ 
         Compute the profile of a planet with 2 layers to find the outer radius 
         of the first layer, given the total mass and total radius.
@@ -834,6 +844,9 @@ class Planet:
         tol : float
             The tolerance for finding unknown parameters as a fractional 
             difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
 
         num_attempt : int
             The maximum number of iteration attempts.        
@@ -862,10 +875,13 @@ class Planet:
         )
 
         if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
@@ -882,7 +898,7 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
-            tol=tol,
+            tol=tol_M,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
         )
@@ -918,7 +934,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_L2_find_M_given_R_R1(
-        self, M_max, tol=0.001, num_attempt=40, verbosity=1
+        self, M_max, tol=1e-7, num_attempt=40, verbosity=1
     ):
         """ 
         Compute the profile of a planet with 2 layers to find the total mass
@@ -993,7 +1009,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_L2_find_R_given_M_R1(
-        self, R_max, tol=0.001, num_attempt=40, verbosity=1
+        self, R_max, tol=0.001, tol_M=1e-7, num_attempt=40, verbosity=1
     ):
         """ 
         Compute the profile of a planet with 2 layers to find the total radius
@@ -1013,6 +1029,9 @@ class Planet:
         tol : float
             The tolerance for finding unknown parameters as a fractional 
             difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
 
         num_attempt : int
             The maximum number of iteration attempts.        
@@ -1043,10 +1062,13 @@ class Planet:
         self.A1_R_layer[-1] = self.R
 
         if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
@@ -1063,7 +1085,7 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
-            tol=tol,
+            tol=tol_M,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
         )
@@ -1101,7 +1123,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_L2_find_R_R1_given_M1_M2(
-        self, R_min, R_max, tol=0.001, num_attempt=40, verbosity=1
+        self, R_min, R_max, tol=0.001, tol_M=1e-7, num_attempt=40, verbosity=1
     ):
         """ 
         Compute the profile of a planet with 2 layers to find outer radii of 
@@ -1121,6 +1143,9 @@ class Planet:
         tol : float
             The tolerance for finding unknown parameters as a fractional 
             difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
 
         num_attempt : int
             The maximum number of iteration attempts.        
@@ -1158,10 +1183,13 @@ class Planet:
         self.A1_R_layer[-1] = self.R
 
         if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
@@ -1178,7 +1206,7 @@ class Planet:
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
-            tol=tol,
+            tol=tol_M,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
         )
@@ -1285,7 +1313,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_L3_find_M_given_R_R1_R2(
-        self, M_max, tol=0.001, num_attempt=40, verbosity=1
+        self, M_max, tol=1e-7, num_attempt=40, verbosity=1
     ):
         """ 
         Compute the profile of a planet with 3 layers to find the total mass
@@ -1368,7 +1396,9 @@ class Planet:
         if verbosity >= 1:
             self.print_info()
 
-    def gen_prof_L3_find_R1_given_M_R_R2(self, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L3_find_R1_given_M_R_R2(
+        self, tol=0.001, tol_M=1e-7, num_attempt=40, verbosity=1
+    ):
         """ 
         Compute the profile of a planet with 3 layers to find the outer radius 
         of the first layer, given the total mass, total radius, and outer 
@@ -1388,6 +1418,9 @@ class Planet:
         tol : float
             The tolerance for finding unknown parameters as a fractional 
             difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
 
         num_attempt : int
             The maximum number of iteration attempts.        
@@ -1421,10 +1454,13 @@ class Planet:
         )
 
         if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
@@ -1446,7 +1482,7 @@ class Planet:
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
-            tol=tol,
+            tol=tol_M,
             verbosity=verbosity_2,
         )
 
@@ -1484,7 +1520,9 @@ class Planet:
             print("Done")
             self.print_info()
 
-    def gen_prof_L3_find_R2_given_M_R_R1(self, tol=0.001, num_attempt=40, verbosity=1):
+    def gen_prof_L3_find_R2_given_M_R_R1(
+        self, tol=0.001, tol_M=1e-7, num_attempt=40, verbosity=1
+    ):
         """ 
         Compute the profile of a planet with 3 layers to find the outer radius 
         of the second layer, given the total mass, total radius, and outer 
@@ -1504,6 +1542,9 @@ class Planet:
         tol : float
             The tolerance for finding unknown parameters as a fractional 
             difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
 
         num_attempt : int
             The maximum number of iteration attempts.        
@@ -1537,10 +1578,13 @@ class Planet:
         )
 
         if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
@@ -1562,7 +1606,7 @@ class Planet:
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
-            tol=tol,
+            tol=tol_M,
             verbosity=verbosity_2,
         )
 
@@ -1601,7 +1645,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_L3_find_R_given_M_R1_R2(
-        self, R_max, tol=0.001, num_attempt=40, verbosity=1
+        self, R_max, tol=0.001, tol_M=1e-7, num_attempt=40, verbosity=1
     ):
         """ 
         Compute the profile of a planet with 3 layers to find the total radius
@@ -1622,6 +1666,9 @@ class Planet:
         tol : float
             The tolerance for finding unknown parameters as a fractional 
             difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
 
         num_attempt : int
             The maximum number of iteration attempts.        
@@ -1657,10 +1704,13 @@ class Planet:
         self.A1_R_layer[-1] = self.R
 
         if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
@@ -1682,7 +1732,7 @@ class Planet:
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
-            tol=tol,
+            tol=tol_M,
             verbosity=verbosity_2,
         )
 
@@ -1721,8 +1771,47 @@ class Planet:
             self.print_info()
 
     def gen_prof_L3_find_R1_R2_given_M_R_I(
-        self, R_1_min, R_1_max, tol=0.001, num_attempt=40, num_attempt_2=40, verbosity=1
+        self,
+        R_1_min,
+        R_1_max,
+        tol=0.001,
+        tol_M=1e-7,
+        num_attempt=40,
+        num_attempt_2=40,
+        verbosity=1,
     ):
+        """ 
+        Compute the profile of a planet with 3 layers to find the boundary core-mantle,
+        and mantle-atmosphere given the total mass, the outer radii, and
+        the moment of inertia factor.
+            
+        Parameters
+        ----------
+        self.R : float
+            The radius of the planet (m).
+        
+        self.M : float
+            The total mass (kg).
+        
+        R_1_min : float
+            The minimum boundary core-mantle to try (m).
+            
+        R_1_max : float
+            The maximum boundary core-mantle to try (m).
+
+        tol : float
+            The tolerance for finding unknown parameters as a fractional 
+            difference between two consecutive iterations.
+            
+        tol_M : float
+            The tolerance for tweaking M to avoid density peaks at the center of the planet.
+
+        num_attempt : int
+            The maximum number of iteration attempts. Outer loop.  
+        
+        num_attempt_2 : int
+            The maximum number of iteration attempts. Inner loop.  
+        """
         # Check for necessary input
         assert self.R is not None
         assert self.M is not None
@@ -1755,10 +1844,13 @@ class Planet:
         )
 
         if verbosity >= 1:
-            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            print(
+                "Tweaking M to avoid density peaks at the center of the planet... ",
+                end="",
+            )
             verbosity_2 = 0
         if verbosity >= 2:
-            print("Tweaking M to avoid peaks at the center of the planet...")
+            print("Tweaking M to avoid density peaks at the center of the planet...")
             verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
@@ -1780,7 +1872,7 @@ class Planet:
             self.A1_T_rho_type_id[2],
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
-            tol=tol,
+            tol=tol_M,
             verbosity=verbosity_2,
         )
 
@@ -1904,7 +1996,7 @@ class SpinPlanet:
         name=None,
         planet=None,
         period=None,
-        num_prof=1000,
+        num_prof=3000,
         fix_mass=True,
         R_max_eq=None,
         R_max_po=None,

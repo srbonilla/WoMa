@@ -10,7 +10,6 @@ warnings.filterwarnings("ignore")
 
 from woma.misc import glob_vars as gv
 from woma.misc import utils
-from woma.spherical_funcs import L2_spherical
 from woma.eos import eos
 from woma.eos.T_rho import T_rho, set_T_rho_args
 
@@ -291,7 +290,7 @@ def L3_find_M_given_R_R1_R2(
         Mass of the planet (kg).
 
     """
-   # Need this tolerance to avoid peaks in the centre of the planet for the density profile
+    # Need this tolerance to avoid peaks in the centre of the planet for the density profile
     tol_max = 1e-7
     if tol > tol_max:
         if verbosity >= 1:
@@ -344,15 +343,13 @@ def L3_find_M_given_R_R1_R2(
             if verbosity >= 1:
                 print("")
             break
-        
+
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print(
-             "\nConvergence not reached after %d iterations."
-              % (num_attempt))
+        print("\nConvergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
-    if (M_max_input - M_max)/M_max < tol:
+    if (M_max_input - M_max) / M_max < tol:
         raise ValueError("M tends to M_max. Please increase M_max")
 
     return M_max
@@ -500,14 +497,12 @@ def L3_find_R_given_M_R1_R2(
             if verbosity >= 1:
                 print("")
             break
-        
+
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print(
-             "\nConvergence not reached after %d iterations."
-              % (num_attempt))
+        print("\nConvergence not reached after %d iterations." % (num_attempt))
 
-    # Error messages 
+    # Error messages
     if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
         raise ValueError("R tends to R_max. Please increase R_max.")
 
@@ -655,17 +650,15 @@ def L3_find_R2_given_M_R_R1(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print(
-             "\nConvergence not reached after %d iterations."
-              % (num_attempt))
+        print("\nConvergence not reached after %d iterations." % (num_attempt))
 
-    # Error messages 
+    # Error messages
     if np.abs(R2_max - R) / R < 2 * tol:
         raise ValueError("R2 tends to R. Please increase R.")
 
     if np.abs(R2_max - R1) / R1 < 2 * tol:
         raise ValueError("R2 tends to R1. Please decrease R1.")
-    
+
     return R2_max
 
 
@@ -807,17 +800,15 @@ def L3_find_R1_given_M_R_R2(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print(
-             "\nConvergence not reached after %d iterations."
-              % (num_attempt))
+        print("\nConvergence not reached after %d iterations." % (num_attempt))
 
-    # Error messages 
+    # Error messages
     if np.abs(R1_max - R2) / R2 < 2 * tol:
         raise ValueError("R1 tends to R2. Please increase R2.")
 
     if R1_max / R < 2 * tol:
         raise ValueError("R1 tends to 0. Please decrease R1 or R.")
-        
+
     return R1_max
 
 
@@ -1138,11 +1129,9 @@ def L3_find_R1_R2_given_M_R_I(
             if verbosity >= 1:
                 print("")
             break
-        
+
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print(
-             "\nConvergence not reached after %d iterations."
-              % (num_attempt))
+        print("\nConvergence not reached after %d iterations." % (num_attempt))
 
     return R1_try, R2_try

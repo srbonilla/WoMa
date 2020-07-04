@@ -338,12 +338,10 @@ def L1_find_M_given_R(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print(
-             "\nConvergence not reached after %d iterations."
-              % (num_attempt))
+        print("\nConvergence not reached after %d iterations." % (num_attempt))
 
     # Error message is M tends to M_max
-    if (M_max_input - M_max)/M_max < tol:
+    if (M_max_input - M_max) / M_max < tol:
         raise ValueError("M tends to M_max. Please increase M_max")
 
     return M_max
@@ -441,15 +439,13 @@ def L1_find_R_given_M(
             if verbosity >= 1:
                 print("")
             break
-        
+
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print(
-             "\nConvergence not reached after %d iterations."
-              % (num_attempt))
-        
+        print("\nConvergence not reached after %d iterations." % (num_attempt))
+
     # Error message if R tends to R_max
     if np.abs(R_try - R_max_input) / R_max_input < tol:
-            raise ValueError("R tends to R_max. Please increase R_max")
+        raise ValueError("R tends to R_max. Please increase R_max")
 
     return R_min
