@@ -235,7 +235,6 @@ def L1_integrate_out(
     )
 
 
-# @njit
 def L1_find_M_given_R(
     num_prof,
     R,
@@ -295,9 +294,13 @@ def L1_find_M_given_R(
                 Mass of the planet (SI).
     """
 
-    # need this tolerance to avoid peaks in the centre of the planet for the density profile
+    # Need this tolerance to avoid peaks in the centre of the planet for the density profile
+    ###really? that seems weird! and if 1e-7 is the maximum (not minimum btw!)
+    ###then why is the default 1e-2?
     min_tol = 1e-7
     if tol > min_tol:
+        if verbosity >= 1:
+            print("Tolerance overwritten to maximum: %g" % min_tol)
         tol = min_tol
 
     M_min = 0.0
@@ -319,27 +322,20 @@ def L1_find_M_given_R(
 
         tol_reached = np.abs(M_min - M_max) / M_min
 
-        # print info (cannot do it with numba)
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): M=%.5gM_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, M_try / gv.M_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    ###what if not converged by num_attempt?
 
     if (M_max_input - M_max) < tol:
         raise ValueError("M tends to M_max")
