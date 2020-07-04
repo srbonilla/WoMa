@@ -34,7 +34,7 @@ import woma.spin_funcs.utils_spin as us
 from woma.misc import glob_vars as gv
 from woma.misc import utils, io
 from woma.eos import eos
-from woma.eos.T_rho import T_rho, set_T_rho_args, T_rho_id_and_args_from_type
+from woma.eos.T_rho import T_rho, T_rho_id_and_args_from_type
 
 
 class Planet:
@@ -363,7 +363,7 @@ class Planet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
 
-    def save_planet(self, Fp_planet, verbose=1):
+    def save_planet(self, Fp_planet, verbosity=1):
         """ Save the profiles arrays for an existing Planet object to a file. 
 
         Parameters
