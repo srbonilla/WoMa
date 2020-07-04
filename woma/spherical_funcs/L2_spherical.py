@@ -169,7 +169,6 @@ def L2_integrate(
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-# @njit
 def L2_find_M_given_R_R1(
     num_prof,
     R,
@@ -279,23 +278,17 @@ def L2_find_M_given_R_R1(
 
         tol_reached = np.abs(M_min - M_max) / M_min
 
-        # print info (cannot do it with numba)
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): M=%.5gM_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, M_try / gv.R_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
     if verbosity >= 1:
@@ -410,28 +403,19 @@ def L2_find_R_given_M_R1(
 
         tol_reached = np.abs(R_min - R_max) / R_max
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R=%.5gR_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, R_try / gv.R_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
-        
     if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
         raise ValueError("R tends to R_max.")
 
@@ -540,28 +524,19 @@ def L2_find_R1_given_M_R(
 
         tol_reached = np.abs(R1_min - R1_max) / R1_max
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R1=%.5gR_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, R1_try / gv.R_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
-        
     if (R - R1_min) / R < 2 * tol or (R - R1_min) / R < 2 / (num_prof - 1):
         raise ValueError("R1 tends to R.")
 
@@ -747,27 +722,25 @@ def L2_find_R_R1_given_M1_M2(
 
         tol_reached = np.abs(M1_try - M1) / M1
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R=%.5gR_E R1=%.5gR_E --> tol=%.2g(%.2g)"
+                % (
+                    i,
+                    num_attempt,
+                    R_try / gv.R_earth,
+                    R1_try / gv.R_earth,
+                    tol_reached,
+                    tol,
+                ),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
-
-    if verbosity >= 1:
-        sys.stdout.write("\n")
 
         if tol_reached > tol:
             print("Tolerance level not reached. Please modify R_min and R_max.")

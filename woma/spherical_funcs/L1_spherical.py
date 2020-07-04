@@ -421,29 +421,20 @@ def L1_find_R_given_M(
 
         tol_reached = np.abs(R_min - R_max) / R_max
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R=%.5gR_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, R_try / gv.R_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if np.abs(R_try - R_max_input) / R_max_input < 2 * tol:
             raise ValueError("R tends to R_max.")
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
-
-    if verbosity >= 1:
-        sys.stdout.write("\n")
 
     return R_min

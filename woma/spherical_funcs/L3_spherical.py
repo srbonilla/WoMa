@@ -197,7 +197,6 @@ def L3_integrate(
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-# @njit
 def L3_find_M_given_R_R1_R2(
     num_prof,
     R,
@@ -352,27 +351,18 @@ def L3_find_M_given_R_R1_R2(
 
         tol_reached = np.abs(M_min - M_max) / M_min
 
-        # Print info (cannot do it with numba)
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): M=%.5gM_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, M_try / gv.M_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
-
-    if verbosity >= 1:
-        sys.stdout.write("\n")
 
     return M_max
 
@@ -473,7 +463,7 @@ def L3_find_R_given_M_R1_R2(
     if R1 > R2:
         if verbosity >= 1:
             print("R1 should not be greater than R2")
-        return -1
+        return -1  ###is this an error? if so then make it an error!
 
     R_min = R2
 
@@ -559,27 +549,18 @@ def L3_find_R_given_M_R1_R2(
 
         tol_reached = np.abs(R_min - R_max) / R_max
 
-        # Print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R=%.5gR_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, R_try / gv.R_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
-
-    if verbosity >= 1:
-        sys.stdout.write("\n")
 
     return R_min
 
@@ -705,27 +686,18 @@ def L3_find_R2_given_M_R_R1(
 
         tol_reached = np.abs(R2_min - R2_max) / R2_max
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R2=%.5gR_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, R2_try / gv.R_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
-
-    if verbosity >= 1:
-        sys.stdout.write("\n")
 
     assert (
         R2_max / R > R1 / R + 2 * tol
@@ -857,27 +829,18 @@ def L3_find_R1_given_M_R_R2(
 
         tol_reached = np.abs(R1_min - R1_max) / R1_max
 
-        # Print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R1=%.5gR_E --> tol=%.2g(%.2g)"
+                % (i, num_attempt, R1_try / gv.R_earth, tol_reached, tol),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
-
-    if verbosity >= 1:
-        sys.stdout.write("\n")
 
     assert R1_max / R > 2 * tol, "Boundary not found, decrease R2 or increase M"
     assert (
@@ -1186,26 +1149,24 @@ def L3_find_R1_R2_given_M_R_I(
 
         tol_reached = np.abs(I_MR2_iter - I_MR2) / I_MR2
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R1=%.5gR_E R2=%.5gR_E --> tol=%.2g(%.2g)"
+                % (
+                    i,
+                    num_attempt,
+                    R1_try / gv.R_earth,
+                    R2_try / gv.R_earth,
+                    tol_reached,
+                    tol,
+                ),
+                end="",
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
-
-    if verbosity >= 1:
-        sys.stdout.write("\n")
 
     return R1_try, R2_try
