@@ -363,10 +363,18 @@ class Planet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
 
-    def save_planet(self, Fp_planet):
+    def save_planet(self, Fp_planet, verbose=1):
+        """ Save the profiles arrays for an existing Planet object to a file. 
+
+        Parameters
+        ----------
+        Fp_planet : str
+            The object data file path.
+        """
         Fp_planet = utils.check_end(Fp_planet, ".hdf5")
 
-        print('Saving "%s"... ' % Fp_planet[-60:], end="")
+        if verbosity >= 1:
+            print('Saving "%s"... ' % Fp_planet[-60:], end="")
         sys.stdout.flush()
 
         with h5py.File(Fp_planet, "w") as f:
@@ -406,7 +414,8 @@ class Planet:
                 io.Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
             )
 
-        print("Done")
+        if verbosity >= 1:
+            print("Done")
 
     def load_planet_profiles(self, Fp_planet, verbosity=1):
         """ Load the profiles arrays for an existing Planet object from a file. 
@@ -533,8 +542,12 @@ class Planet:
         )
         self.A1_R_layer[-1] = self.R
 
-        if verbosity >= 1:
+        if verbosity == 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L1_spherical.L1_find_M_given_R(
             self.num_prof,
@@ -548,11 +561,11 @@ class Planet:
             self.A1_T_rho_args[0],
             tol=tol,
             num_attempt=num_attempt,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
 
         # Integrate the profiles
         (
@@ -620,9 +633,6 @@ class Planet:
             num_attempt=num_attempt,
             verbosity=verbosity,
         )
-
-        if verbosity >= 1:
-            print("Done!")
 
         # Integrate the profiles
         (
@@ -852,7 +862,11 @@ class Planet:
         )
 
         if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
@@ -870,7 +884,7 @@ class Planet:
             self.A1_T_rho_args[1],
             tol=tol,
             num_attempt=num_attempt,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         (
@@ -900,7 +914,7 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
             self.print_info()
 
     def gen_prof_L2_find_M_given_R_R1(
@@ -976,7 +990,6 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
             self.print_info()
 
     def gen_prof_L2_find_R_given_M_R1(
@@ -1030,7 +1043,11 @@ class Planet:
         self.A1_R_layer[-1] = self.R
 
         if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
@@ -1048,11 +1065,11 @@ class Planet:
             self.A1_T_rho_args[1],
             tol=tol,
             num_attempt=num_attempt,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
 
         (
             self.A1_r,
@@ -1141,7 +1158,11 @@ class Planet:
         self.A1_R_layer[-1] = self.R
 
         if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
@@ -1159,11 +1180,11 @@ class Planet:
             self.A1_T_rho_args[1],
             tol=tol,
             num_attempt=num_attempt,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
 
         (
             self.A1_r,
@@ -1345,7 +1366,6 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
             self.print_info()
 
     def gen_prof_L3_find_R1_given_M_R_R2(self, tol=0.001, num_attempt=40, verbosity=1):
@@ -1401,7 +1421,11 @@ class Planet:
         )
 
         if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1423,7 +1447,7 @@ class Planet:
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
             tol=tol,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         (
@@ -1457,7 +1481,7 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
             self.print_info()
 
     def gen_prof_L3_find_R2_given_M_R_R1(self, tol=0.001, num_attempt=40, verbosity=1):
@@ -1513,7 +1537,11 @@ class Planet:
         )
 
         if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1535,7 +1563,7 @@ class Planet:
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
             tol=tol,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         (
@@ -1569,7 +1597,7 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
             self.print_info()
 
     def gen_prof_L3_find_R_given_M_R1_R2(
@@ -1629,7 +1657,11 @@ class Planet:
         self.A1_R_layer[-1] = self.R
 
         if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1651,7 +1683,7 @@ class Planet:
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
             tol=tol,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         (
@@ -1685,7 +1717,7 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
             self.print_info()
 
     def gen_prof_L3_find_R1_R2_given_M_R_I(
@@ -1723,7 +1755,11 @@ class Planet:
         )
 
         if verbosity >= 1:
+            print("Tweaking M to avoid peaks at the center of the planet... ", end="")
+            verbosity_2 = 0
+        if verbosity >= 2:
             print("Tweaking M to avoid peaks at the center of the planet...")
+            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1745,7 +1781,7 @@ class Planet:
             self.A1_T_rho_args[2],
             num_attempt=num_attempt,
             tol=tol,
-            verbosity=verbosity,
+            verbosity=verbosity_2,
         )
 
         (
@@ -1779,7 +1815,7 @@ class Planet:
         self.update_attributes()
 
         if verbosity >= 1:
-            print("Done!")
+            print("Done")
             self.print_info()
 
     def gen_prof_L3_find_R_R1_R2_given_M_M1_M2(self):  ### WIP
