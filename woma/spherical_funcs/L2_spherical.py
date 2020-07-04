@@ -10,7 +10,6 @@ import warnings
 warnings.filterwarnings("ignore")
 
 from woma.misc import glob_vars as gv
-from woma.spherical_funcs import L1_spherical
 from woma.eos import eos
 from woma.eos.T_rho import T_rho, set_T_rho_args
 
@@ -33,67 +32,69 @@ def L2_integrate(
 ):
     """ Integration of a 2 layer spherical planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R1 (float):
-                Boundary between layers 1 and 2 (SI).
+    R1 : float
+        Boundary between layers 1 and 2 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-        Returns:
-            A1_r ([float]):
-                Array of radii (SI).
+    Returns
+    -------
+    A1_r : [float]
+        The profile radii, in increasing order (m).
 
-            A1_m_enc ([float]):
-                Array of cumulative mass (SI).
+    A1_m_enc : [float]
+        The cummulative mass at each profile radius (kg).
 
-            A1_P ([float]):
-                Array of pressures (SI).
+    A1_P : [float]
+        The pressure at each profile radius (Pa).
 
-            A1_T ([float]):
-                Array of temperatures (SI).
+    A1_T : [float]
+        The temperature at each profile radius (K).
 
-            A1_rho ([float]):
-                Array of densities (SI).
+    A1_rho : [float]
+        The density at each profile radius (kg m^-3).
 
-            A1_u ([float]):
-                Array of internal energy (SI).
+    A1_u : [float]
+        The specific internal energy at each profile radius (J kg^-1).
 
-            A1_mat_id ([float]):
-                Array of material ids (SI).
+    A1_mat_id : [float]
+        The ID of the material at each profile radius.
     """
     A1_r = np.linspace(R, 0, int(num_prof))
     A1_m_enc = np.zeros(A1_r.shape)
@@ -190,58 +191,60 @@ def L2_find_M_given_R_R1(
     """ Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M_max (float):
-                Upper bound for the mass of the planet (SI).
+    M_max : float
+        Upper bound for the mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R1 (float):
-                Boundary between layers 1 and 2 (SI).
+    R1 : float
+        Boundary between layers 1 and 2 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive masses.
-                
-            verbosity (int):
-                Printing options.
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive masses.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            M_max ([float]):
-                Mass of the planet (SI).
+    Returns
+    -------
+    M_max : float
+        Mass of the planet (kg).
     """
     min_tol = 1e-7
     if tol > min_tol:
@@ -321,58 +324,60 @@ def L2_find_R_given_M_R1(
     """ Finder of the total radius of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R_max (float):
-                Maximum radius of the planet (SI).
+    R_max : float
+        Maximum radius of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R1 (float):
-                Boundary between layers 1 and 2 (SI).
+    R1 : float
+        Boundary between layers 1 and 2 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
-                
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive radius.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive radius.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            M_max ([float]):
-                Mass of the planet (SI).
+    Returns
+    -------
+    R_min : float
+        Radius of the planet (m).
     """
     R_min = R1
     R_max_input = np.copy(R_max)
@@ -445,55 +450,57 @@ def L2_find_R1_given_M_R(
     """ Finder of the boundary of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Temperature at the surface (SI).
+    rho_s : float
+        Temperature at the surface (kg m^-3).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
-            
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive radius.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
+    
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive radius.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            R1_min ([float]):
-                Boundary of the planet (SI).
+    Returns
+    -------
+    R1_min : [float]
+        Boundary between core and mantle of the planet (m).
     """
     R1_min = 0.0
     R1_max = np.copy(R)
@@ -568,61 +575,63 @@ def L2_find_R_R1_given_M1_M2(
     """ Finder of the boundary and radius of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
-                
-            R_min (float):
-                Min. radius of the planet (SI).
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
+        
+    R_min : float
+        Min. radius of the planet (m).
 
-            R_max (float):
-                Max. radius of the planet (SI).
+    R_max : float
+        Max. radius of the planet (m).
 
-            M1 (float):
-                Mass of the core (SI).
-                
-            M2 (float):
-                Mass of the mantle (SI).
+    M1 : float
+        Mass of the core (kg).
+        
+    M2 : float
+        Mass of the mantle (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Temperature at the surface (SI).
+    rho_s : float
+        Temperature at the surface (kg m^-3).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
-                
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive radius.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive radius.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            R1_min ([float]):
-                Boundary of the planet (SI).
+    Returns
+    -------
+    R1, R : [float]
+        Boundary of the planet, and radius of the planet (m).
     """
 
     M = M1 + M2
