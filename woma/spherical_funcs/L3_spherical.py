@@ -347,7 +347,7 @@ def L3_find_M_given_R_R1_R2(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
     if (M_max_input - M_max) / M_max < tol:
@@ -502,7 +502,7 @@ def L3_find_R_given_M_R1_R2(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
     if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
@@ -653,7 +653,7 @@ def L3_find_R2_given_M_R_R1(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
     if np.abs(R2_max - R) / R < 2 * tol:
@@ -804,7 +804,7 @@ def L3_find_R1_given_M_R_R2(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
     if np.abs(R1_max - R2) / R2 < 2 * tol:
@@ -1137,6 +1137,6 @@ def L3_find_R1_R2_given_M_R_I(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     return R1_try, R2_try

@@ -190,6 +190,14 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Minimum density at which the new layer will stop: `rho_min`
     + Minimum pressure at which the new layer will stop: `P_min`
 
+#### Additional parameters
+See the `main.py` and other docstrings for full details.
+
+The class's `num_prof` parameter sets the number of radial profile steps,
+while the profile generating functions take arguments like `tol`
+and/or `num_attempt` that control the convergence criterion and 
+maximum number of iterations to do to find the unknown parameters.
+
 
 
 
@@ -213,6 +221,8 @@ including their equatorial and polar radii (semi-major and semi-minor axes),
 and for example their masses, densities, pressures, and temperatures, 
 `A1_m`, `A1_rho`, `A1_P`, and `A1_T`.
 
+Additional parameters are similar to the spherical case mentioned above.
+See the docstrings for full details.
 
 
 

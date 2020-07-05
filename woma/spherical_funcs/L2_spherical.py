@@ -299,7 +299,7 @@ def L2_find_M_given_R_R1(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
     if (M_max_input - M_max) / M_max < tol:
@@ -429,7 +429,7 @@ def L2_find_R_given_M_R1(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
     if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
@@ -558,7 +558,7 @@ def L2_find_R1_given_M_R(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     # Error messages
     if np.abs(R - R1_min) / R < 2 * tol:
@@ -655,7 +655,7 @@ def L2_find_R_R1_given_M1_M2(
 
     # Build planet with R=R_min
     if verbosity >= 1:
-        print("Trying to build a planet with R=R_min.")
+        print("Trying to build a planet with R=R_min...", end=" ", flush=True)
     try:
         _ = L2_find_R1_given_M_R(
             num_prof,
@@ -674,12 +674,14 @@ def L2_find_R_R1_given_M1_M2(
             num_attempt=num_attempt,
             verbosity=0,
         )
+        if verbosity >= 1:
+            print("Success")
     except:
         raise ValueError("Could not build a planet with R=R_min.")
 
     # Build planet with R=R_max
     if verbosity >= 1:
-        print("Trying to build a planet with R=R_max.")
+        print("Trying to build a planet with R=R_max...", end=" ", flush=True)
     try:
         _ = L2_find_R1_given_M_R(
             num_prof,
@@ -698,6 +700,8 @@ def L2_find_R_R1_given_M1_M2(
             num_attempt=num_attempt,
             verbosity=0,
         )
+        if verbosity >= 1:
+            print("Success")
     except:
         raise ValueError("Could not build a planet with R=R_max.")
 
@@ -770,6 +774,6 @@ def L2_find_R_R1_given_M1_M2(
 
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
-        print("\nConvergence not reached after %d iterations." % (num_attempt))
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     return R1_try, R_try
