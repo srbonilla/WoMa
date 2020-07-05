@@ -197,7 +197,6 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
         return rho_max
     else:
         e = "Critical error in find_rho."
-
         raise ValueError(e)
 
 

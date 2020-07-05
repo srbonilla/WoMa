@@ -39,6 +39,12 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
         K = T_rho_args[0]
         alpha = T_rho_args[1]
         T = K * np.power(rho, alpha)
+        if np.isinf(T) or np.isnan(T):
+            e = (
+                "Numerical result out of range.\n"
+                "Please decrease alpha."
+                )
+            raise ValueError(e)
         return T
 
     # Adiabatic, T_rho_args = [s_adb], [rho_prv, T_prv], or [T rho^(1-gamma)]
