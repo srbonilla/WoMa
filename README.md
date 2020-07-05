@@ -68,12 +68,13 @@ Set `0` for no printing, `1` for standard output, or `2` for extra details.
 
 
 ## 1. Spherical profiles 
-All profiles require 2 of the 3 surface values: `P_s`, `T_s`, `rho_s`,
+All profiles require the temperature and either the pressure or density at the 
+surface: `T_s` and `P_s` or `rho_s`,
 plus the material and temperature-density relation for each layer (see below):
 `A1_mat_layer` and `A1_T_rho_type`.
 
 The optional parameter `num_prof` sets the number of profile integration steps.
-Default 1000.
+Default 3000.
 
 
 ### Equations of state (EoS) 
@@ -148,10 +149,10 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Maximum mass: `M_max`
 
 #### 2 layers
-+ `gen_prof_L2_find_R1_given_R_M()`, requires:
++ `gen_prof_L2_find_R1_given_M_R()`, requires:
     + Total radius: `self.R`
     + Total mass: `self.M`
-+ `gen_prof_L2_find_M_given_R1_R()`, requires:
++ `gen_prof_L2_find_M_given_R_R1()`, requires:
     + Total radius: `self.R`
     + Layer 1 outer radius: `self.A1_R_layer[0]`
     + Maximum mass: `M_max`
@@ -159,25 +160,25 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Total mass: `self.M`
     + Layer 1 outer radius: `self.A1_R_layer[0]`
     + Maximum radius: `R_max`
-+ `gen_prof_L2_find_R1_R_given_M1_M2()`, requires:
++ `gen_prof_L2_find_R_R1_given_M1_M2()`, requires:
     + Layer 1 and 2 masses: `self.A1_M_layer`
-    + Maximum radius: `R_max`
+    + Minimum and maximum radii: `R_min`, `R_max`
     
 #### 3 layers
 + `gen_prof_L3_find_M_given_R_R1_R2()`, requires:
     + Layer 1, 2, and 3 outer radii: `self.A1_R_layer`
-+ `gen_prof_L3_find_R1_given_R_M_R2()`, requires:
++ `gen_prof_L3_find_R1_given_M_R_R2()`, requires:
     + Total mass: `self.M`
     + Total radius: `self.R`
     + Layer 2 outer radius: `self.A1_R_layer[1]`
-+ `gen_prof_L3_find_R2_given_R_M_R1()`, requires:
++ `gen_prof_L3_find_R2_given_M_R_R1()`, requires:
     + Total mass: `self.M`
     + Total radius: `self.R`
     + Layer 1 outer radius: `self.A1_R_layer[0]`
 + `gen_prof_L3_find_R_given_M_R1_R2()`, requires:
     + Total mass: `self.M`
     + Layer 1 and 2 outer radii: `self.A1_R_layer[0]`, `[1]`
-+ `gen_prof_L3_find_R1_R2_given_R_M_I()`, requires:
++ `gen_prof_L3_find_R1_R2_given_M_R_I()`, requires:
     + Total mass: `self.M`
 
 #### Adding layers
@@ -188,6 +189,14 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Temperature-density relation in the new layer: `T_rho_type`
     + Minimum density at which the new layer will stop: `rho_min`
     + Minimum pressure at which the new layer will stop: `P_min`
+
+#### Additional parameters
+See the `main.py` and other docstrings for full details.
+
+The class's `num_prof` parameter sets the number of radial profile steps,
+while the profile generating functions take arguments like `tol`
+and/or `num_attempt` that control the convergence criterion and 
+maximum number of iterations to do to find the unknown parameters.
 
 
 
@@ -212,6 +221,8 @@ including their equatorial and polar radii (semi-major and semi-minor axes),
 and for example their masses, densities, pressures, and temperatures, 
 `A1_m`, `A1_rho`, `A1_P`, and `A1_T`.
 
+Additional parameters are similar to the spherical case mentioned above.
+See the docstrings for full details.
 
 
 

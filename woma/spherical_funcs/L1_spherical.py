@@ -4,7 +4,6 @@ WoMa 1 layer spherical functions
 
 import numpy as np
 from numba import njit
-import sys
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -18,55 +17,57 @@ from woma.eos.T_rho import T_rho, set_T_rho_args
 def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args):
     """ Integration of a 1 layer spherical planet.
 
-        Args:
-            num_prof : int
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R : float
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M : float
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s : float
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s : float
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s : float
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            mat_id : int
-                Material id.
+    mat_id : int
+        Material id.
 
-            T_rho_type_id : int
-                Relation between A1_T and A1_rho to be used.
+    T_rho_type_id : int
+        Relation between A1_T and A1_rho to be used.
 
-            T_rho_args : [float]
-                Extra arguments to determine the relation.
+    T_rho_args : [float]
+        Extra arguments to determine the relation.
 
-        Returns:
-            A1_r : [float]
-                Array of radii (SI).
+    Returns
+    -------
+    A1_r : [float]
+        The profile radii, in increasing order (m).
 
-            A1_m_enc : [float]
-                Array of cumulative mass (SI).
+    A1_m_enc : [float]
+        The cummulative mass at each profile radius (kg).
 
-            A1_P : [float]
-                Array of pressures (SI).
+    A1_P : [float]
+        The pressure at each profile radius (Pa).
 
-            A1_T : [float]
-                Array of temperatures (SI).
+    A1_T : [float]
+        The temperature at each profile radius (K).
 
-            A1_rho : [float]
-                Array of densities (SI).
+    A1_rho : [float]
+        The density at each profile radius (kg m^-3).
 
-            A1_u : [float]
-                Array of internal energy (SI).
+    A1_u : [float]
+        The specific internal energy at each profile radius (J kg^-1).
 
-            A1_mat_id : [float]
-                Array of material ids (SI).
+    A1_mat_id : [float]
+        The ID of the material at each profile radius.
     """
     # Initialise the profile arrays
     A1_r = np.linspace(R, 0, int(num_prof))
@@ -166,25 +167,25 @@ def L1_integrate_out(
     Returns
     -------
     A1_r : [float]
-        Array of radii (SI).
+        The profile radii, in increasing order (m).
 
     A1_m_enc : [float]
-        Array of cumulative mass (SI).
+        The cummulative mass at each profile radius (kg).
 
     A1_P : [float]
-        Array of pressures (SI).
+        The pressure at each profile radius (Pa).
 
     A1_T : [float]
-        Array of temperatures (SI).
+        The temperature at each profile radius (K).
 
     A1_rho : [float]
-        Array of densities (SI).
+        The density at each profile radius (kg m^-3).
 
     A1_u : [float]
-        Array of internal energy (SI).
+        The specific internal energy at each profile radius (J kg^-1).
 
     A1_mat_id : [float]
-        Array of material ids (SI).
+        The ID of the material at each profile radius.
     """
     # Initialise the profile arrays
     A1_r = [r]
@@ -235,8 +236,7 @@ def L1_integrate_out(
     )
 
 
-# @njit
-def L1_find_mass(
+def L1_find_M_given_R(
     num_prof,
     R,
     M_max,
@@ -247,70 +247,65 @@ def L1_find_mass(
     T_rho_type_id,
     T_rho_args,
     num_attempt=40,
-    tol=0.01,
+    tol=1e-7,
     verbosity=1,
 ):
     """ Finder of the total mass of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof : int
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R : float
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M_max : float
-                Upper bound for the mass of the planet (SI).
+    M_max : float
+        Upper bound for the mass of the planet (kg).
 
-            P_s : float
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s : float
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s : float
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            mat_id : int
-                Material id.
+    mat_id : int
+        Material id.
 
-            T_rho_type_id : int
-                Relation between A1_T and A1_rho to be used.
+    T_rho_type_id : int
+        Relation between A1_T and A1_rho to be used.
 
-            T_rho_args : [float]
-                Extra arguments to determine the relation.
-                
-            num_attempt : float
-                Maximum number of iterations to perform.
-                
-            tol : float
-                Tolerance level. Relative difference between two consecutive masses
-                
-            verbosity : int
-                Printing options.
+    T_rho_args : [float]
+        Extra arguments to determine the relation.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between consecutive masses.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            M_max : float
-                Mass of the planet (SI).
+    Returns
+    -------
+    M_max : float
+        Mass of the planet (kg).
     """
 
-    # need this tolerance to avoid peaks in the centre of the planet for the density profile
-    min_tol = 1e-7
-    if tol > min_tol:
-        tol = min_tol
+    # Need this tolerance to avoid peaks in the centre of the planet for the density profile
+    tol_max = 1e-7
+    if tol > tol_max:
+        if verbosity >= 1:
+            print("Tolerance overwritten to maximum: %g" % tol_max)
+        tol = tol_max
 
     M_min = 0.0
-
-    # Try integrating the profile with the maximum mass
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-        num_prof, R, M_max, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
-    )
-
-    if A1_m_enc[-1] < 0:
-        raise ValueError(
-            "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
-        )
+    M_max_input = np.copy(M_max)
 
     # Iterate the mass
     for i in range(num_attempt):
@@ -328,32 +323,32 @@ def L1_find_mass(
 
         tol_reached = np.abs(M_min - M_max) / M_min
 
-        # print info (cannot do it with numba)
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): M=%.5gM_E: tol=%.2g(%.2g)"
+                % (i + 1, num_attempt, M_try / gv.M_earth, tol_reached, tol),
+                end="  ",
+                flush=True,
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
+
+    # Error message is M tends to M_max
+    if (M_max_input - M_max) / M_max < tol:
+        raise ValueError("M tends to M_max. Please increase M_max")
 
     return M_max
 
 
-def L1_find_radius(
+def L1_find_R_given_M(
     num_prof,
     R_max,
     M,
@@ -370,58 +365,52 @@ def L1_find_radius(
     """ Finder of the total radius of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof : int
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R_max : float
-                Maximuum radius of the planet (SI).
+    R_max : float
+        Maximuum radius of the planet (m).
 
-            M : float
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s : float
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s : float
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s : float
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            mat_id : int
-                Material id.
+    mat_id : int
+        Material id.
 
-            T_rho_type_id : int
-                Relation between A1_T and A1_rho to be used.
+    T_rho_type_id : int
+        Relation between A1_T and A1_rho to be used.
 
-            T_rho_args : [float]
-                Extra arguments to determine the relation.
-                
-            num_attempt : float
-                Maximum number of iterations to perform.
-                
-            tol : float
-                Tolerance level. Relative difference between two consecutive radius
-                
-            verbosity : int
-                Printing options.
+    T_rho_args : [float]
+        Extra arguments to determine the relation.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive radius
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            R_min : float
-                Radius of the planet (SI).
+    Returns
+    -------
+    R_min : float
+        Radius of the planet (m).
     """
     R_min = 0.0
 
-    # Try integrating the profile with the minimum radius
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-        num_prof, R_max, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
-    )
-
-    if A1_m_enc[-1] != 0:
-        raise ValueError(
-            "R_max is too low, did not ran out of mass in first iteration.\nPlease increase R_max.\n"
-        )
+    R_max_input = np.copy(R_max)
 
     # Iterate the radius
     for i in range(num_attempt):
@@ -439,26 +428,26 @@ def L1_find_radius(
 
         tol_reached = np.abs(R_min - R_max) / R_max
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R=%.5gR_E: tol=%.2g(%.2g)"
+                % (i + 1, num_attempt, R_try / gv.R_earth, tol_reached, tol),
+                end="  ",
+                flush=True,
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
+
+    # Error message if R tends to R_max
+    if np.abs(R_try - R_max_input) / R_max_input < tol:
+        raise ValueError("R tends to R_max. Please increase R_max")
 
     return R_min

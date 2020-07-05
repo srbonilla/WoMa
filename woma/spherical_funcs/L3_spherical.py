@@ -4,14 +4,12 @@ WoMa 3 layer spherical functions
 
 import numpy as np
 from numba import njit
-import sys
 import warnings
 
 warnings.filterwarnings("ignore")
 
 from woma.misc import glob_vars as gv
 from woma.misc import utils
-from woma.spherical_funcs import L2_spherical
 from woma.eos import eos
 from woma.eos.T_rho import T_rho, set_T_rho_args
 
@@ -38,79 +36,81 @@ def L3_integrate(
 ):
     """ Integration of a 2 layer spherical planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R1 (float):
-                Boundary between layers 1 and 2 (SI).
+    R1 : float
+        Boundary between layers 1 and 2 (m).
 
-            R2 (float):
-                Boundary between layers 2 and 3 (SI).
+    R2 : float
+        Boundary between layers 2 and 3 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    mat_id_L3 : int
+        Material id for layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between A1_T and A1_rho to be used in layer 3.
+    T_rho_type_id_L3 : int
+        Relation between A1_T and A1_rho to be used in layer 3.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
+    T_rho_args_L3 : [float]
+        Extra arguments to determine the relation in layer 3.
 
-        Returns:
-            A1_r ([float]):
-                Array of radii (SI).
+    Returns
+    -------
+    A1_r : [float]
+        The profile radii, in increasing order (m).
 
-            A1_m_enc ([float]):
-                Array of cumulative mass (SI).
+    A1_m_enc : [float]
+        The cummulative mass at each profile radius (kg).
 
-            A1_P ([float]):
-                Array of pressures (SI).
+    A1_P : [float]
+        The pressure at each profile radius (Pa).
 
-            A1_T ([float]):
-                Array of temperatures (SI).
+    A1_T : [float]
+        The temperature at each profile radius (K).
 
-            A1_rho ([float]):
-                Array of densities (SI).
+    A1_rho : [float]
+        The density at each profile radius (kg m^-3).
 
-            A1_u ([float]):
-                Array of internal energy (SI).
+    A1_u : [float]
+        The specific internal energy at each profile radius (J kg^-1).
 
-            A1_mat_id ([float]):
-                Array of material ids (SI).
+    A1_mat_id : [float]
+        The ID of the material at each profile radius.
     """
     A1_r = np.linspace(R, 0, int(num_prof))
     A1_m_enc = np.zeros(A1_r.shape)
@@ -197,8 +197,7 @@ def L3_integrate(
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
 
-# @njit
-def L3_find_mass(
+def L3_find_M_given_R_R1_R2(
     num_prof,
     R,
     M_max,
@@ -223,103 +222,83 @@ def L3_find_mass(
     """ Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R1 (float):
-                Boundary between layers 1 and 2 (SI).
+    R1 : float
+        Boundary between layers 1 and 2 (m).
 
-            R2 (float):
-                Boundary between layers 2 and 3 (SI).
+    R2 : float
+        Boundary between layers 2 and 3 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    mat_id_L3 : int
+        Material id for layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between A1_T and A1_rho to be used in layer 3.
+    T_rho_type_id_L3 : int
+        Relation between A1_T and A1_rho to be used in layer 3.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
-                
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive masses.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L3 : [float]
+        Extra arguments to determine the relation in layer 3.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive masses.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-
-            M_max ([float]):
-                Mass of the planet (SI).
+    Returns
+    -------
+    M_max : float
+        Mass of the planet (kg).
 
     """
-    min_tol = 1e-7
-    if tol > min_tol:
-        tol = min_tol
+    # Need this tolerance to avoid peaks in the centre of the planet for the density profile
+    tol_max = 1e-7
+    if tol > tol_max:
+        if verbosity >= 1:
+            print("Tolerance overwritten to maximum: %g" % tol_max)
+        tol = tol_max
 
     M_min = 0.0
-
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
-        num_prof,
-        R,
-        M_max,
-        P_s,
-        T_s,
-        rho_s,
-        R1,
-        R2,
-        mat_id_L1,
-        T_rho_type_id_L1,
-        T_rho_args_L1,
-        mat_id_L2,
-        T_rho_type_id_L2,
-        T_rho_args_L2,
-        mat_id_L3,
-        T_rho_type_id_L3,
-        T_rho_args_L3,
-    )
-
-    if A1_m_enc[-1] < 0:
-        raise ValueError(
-            "M_max is too low, ran out of mass in first iteration.\nPlease increase M_max.\n"
-        )
+    M_max_input = np.copy(M_max)
 
     for i in range(num_attempt):
 
@@ -352,32 +331,32 @@ def L3_find_mass(
 
         tol_reached = np.abs(M_min - M_max) / M_min
 
-        # Print info (cannot do it with numba)
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): M=%.5gM_E: tol=%.2g(%.2g)"
+                % (i + 1, num_attempt, M_try / gv.M_earth, tol_reached, tol),
+                end="  ",
+                flush=True,
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
+
+    # Error messages
+    if (M_max_input - M_max) / M_max < tol:
+        raise ValueError("M tends to M_max. Please increase M_max")
 
     return M_max
 
 
-def L3_find_radius(
+def L3_find_R_given_M_R1_R2(
     num_prof,
     R_max,
     M,
@@ -402,132 +381,80 @@ def L3_find_radius(
     """ Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R_max (float):
-                Maximum radius of the planet (SI).
+    R_max : float
+        Maximum radius of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R1 (float):
-                Boundary between layers 1 and 2 (SI).
+    R1 : float
+        Boundary between layers 1 and 2 (m).
 
-            R2 (float):
-                Boundary between layers 2 and 3 (SI).
+    R2 : float
+        Boundary between layers 2 and 3 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    mat_id_L3 : int
+        Material id for layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between A1_T and A1_rho to be used in layer 3.
+    T_rho_type_id_L3 : int
+        Relation between A1_T and A1_rho to be used in layer 3.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
-                
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive masses or radius.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L3 : [float]
+        Extra arguments to determine the relation in layer 3.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive masses or radius.
+        
+    verbosity : int
+        Printing options.
 
-
-        Returns:
-
-            M_max ([float]):
-                Mass of the planet (SI).
+    Returns
+    -------
+    R_min : float
+        Mass of the planet (m).
 
     """
     if R1 > R2:
-        if verbosity >= 1:
-            print("R1 should not be greater than R2")
-        return -1
+        e = "R1 should not be greater than R2"
+        raise ValueError(e)
 
     R_min = R2
-
-    rho_s_L2 = eos.rho_P_T(P_s, T_s, mat_id_L2)
-
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_spherical.L2_integrate(
-        num_prof,
-        R2,
-        M,
-        P_s,
-        T_s,
-        rho_s_L2,
-        R1,
-        mat_id_L1,
-        T_rho_type_id_L1,
-        T_rho_args_L1,
-        mat_id_L2,
-        T_rho_type_id_L2,
-        T_rho_args_L2,
-    )
-
-    if A1_m_enc[-1] == 0:
-        e = (
-            "Ran out of mass for a 2 layer planet.\n"
-            + "Try increase the mass or reduce R1.\n"
-        )
-        raise ValueError(e)
-
-    A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L3_integrate(
-        num_prof,
-        R_max,
-        M,
-        P_s,
-        T_s,
-        rho_s,
-        R1,
-        R2,
-        mat_id_L1,
-        T_rho_type_id_L1,
-        T_rho_args_L1,
-        mat_id_L2,
-        T_rho_type_id_L2,
-        T_rho_args_L2,
-        mat_id_L3,
-        T_rho_type_id_L3,
-        T_rho_args_L3,
-    )
-
-    if A1_m_enc[-1] > 0:
-        e = (
-            "Excess of mass for a 3 layer planet with R = R_max.\n"
-            + "Try reduce the mass or increase R_max.\n"
-        )
-        raise ValueError(e)
+    R_max_input = np.copy(R_max)
 
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
@@ -559,32 +486,35 @@ def L3_find_radius(
 
         tol_reached = np.abs(R_min - R_max) / R_max
 
-        # Print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R=%.5gR_E: tol=%.2g(%.2g)"
+                % (i + 1, num_attempt, R_try / gv.R_earth, tol_reached, tol),
+                end="  ",
+                flush=True,
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
+
+    # Error messages
+    if np.abs(R_min - R_max_input) / R_max_input < 2 * tol:
+        raise ValueError("R tends to R_max. Please increase R_max.")
+
+    if np.abs(R_min - R2) / R_min < 2 * tol:
+        raise ValueError("R tends to R2. Please decrease R2.")
 
     return R_min
 
 
-def L3_find_R2(
+def L3_find_R2_given_M_R_R1(
     num_prof,
     R,
     M,
@@ -609,67 +539,69 @@ def L3_find_R2(
         fixed boundary between layers 1 and 2.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R1 (float):
-                Boundary between layers 1 and 2 (SI).
+    R1 : float
+        Boundary between layers 1 and 2 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    mat_id_L3 : int
+        Material id for layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between A1_T and A1_rho to be used in layer 3.
+    T_rho_type_id_L3 : int
+        Relation between A1_T and A1_rho to be used in layer 3.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
-                
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive masses or radius.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L3 : [float]
+        Extra arguments to determine the relation in layer 3.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive masses or radius.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            R2_max ([float]):
-                Boundary between layers 2 and 3 of the planet (SI).
+    Returns
+    -------
+    R2_max : float
+        Boundary between layers 2 and 3 of the planet (m).
     """
     R2_min = R1
     R2_max = R
@@ -705,37 +637,35 @@ def L3_find_R2(
 
         tol_reached = np.abs(R2_min - R2_max) / R2_max
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R2=%.5gR_E: tol=%.2g(%.2g)"
+                % (i + 1, num_attempt, R2_try / gv.R_earth, tol_reached, tol),
+                end="  ",
+                flush=True,
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
-    assert (
-        R2_max / R > R1 / R + 2 * tol
-    ), "Boundary not found, decrease R1 or increase M"
-    assert R2_max / R < R / R - 2 * tol, "Boundary not found, increase R1 or decrease M"
+    # Error messages
+    if np.abs(R2_max - R) / R < 2 * tol:
+        raise ValueError("R2 tends to R. Please increase R.")
+
+    if np.abs(R2_max - R1) / R1 < 2 * tol:
+        raise ValueError("R2 tends to R1. Please decrease R1.")
 
     return R2_max
 
 
-def L3_find_R1(
+def L3_find_R1_given_M_R_R2(
     num_prof,
     R,
     M,
@@ -760,68 +690,69 @@ def L3_find_R1(
         fixed boundary between layers 1 and 2.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            R2 (float):
-                Boundary between layers 2 and 3 (SI).
+    R2 : float
+        Boundary between layers 2 and 3 (m).
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    mat_id_L3 : int
+        Material id for layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between A1_T and A1_rho to be used in layer 3.
+    T_rho_type_id_L3 : int
+        Relation between A1_T and A1_rho to be used in layer 3.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
-                
-            num_attempt (float):
-                Maximum number of iterations to perform.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive masses or radius.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L3 : [float]
+        Extra arguments to determine the relation in layer 3.
+        
+    num_attempt : float
+        Maximum number of iterations to perform.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive masses or radius.
+        
+    verbosity : int
+        Printing options.
 
-
-        Returns:
-            R2_max ([float]):
-                Boundary between layers 2 and 3 of the planet (SI).
+    Returns
+    -------
+    R1_max : float
+        Boundary between layers 1 and 2 of the planet (m).
     """
     R1_min = 0.0
     R1_max = R2
@@ -857,37 +788,35 @@ def L3_find_R1(
 
         tol_reached = np.abs(R1_min - R1_max) / R1_max
 
-        # Print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R1=%.5gR_E: tol=%.2g(%.2g)"
+                % (i + 1, num_attempt, R1_try / gv.R_earth, tol_reached, tol),
+                end="  ",
+                flush=True,
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
-    assert R1_max / R > 2 * tol, "Boundary not found, decrease R2 or increase M"
-    assert (
-        R1_max / R < R2 / R - 2 * tol
-    ), "Boundary not found, increase R2 or decrease M"
+    # Error messages
+    if np.abs(R1_max - R2) / R2 < 2 * tol:
+        raise ValueError("R1 tends to R2. Please increase R2.")
+
+    if R1_max / R < 2 * tol:
+        raise ValueError("R1 tends to 0. Please decrease R1 or R.")
 
     return R1_max
 
 
-def L3_find_R1_R2(
+def L3_find_R1_R2_given_M_R_I(
     num_prof,
     R,
     M,
@@ -915,77 +844,79 @@ def L3_find_R1_R2(
         fixed moment of inertia factor.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
-        Args:
-            num_prof (int):
-                Number of profile integration steps.
+    Parameters
+    ----------
+    num_prof : int
+        Number of profile integration steps.
 
-            R (float):
-                Radii of the planet (SI).
+    R : float
+        Radii of the planet (m).
 
-            M (float):
-                Mass of the planet (SI).
+    M : float
+        Mass of the planet (kg).
 
-            P_s (float):
-                Pressure at the surface (SI).
+    P_s : float
+        Pressure at the surface (Pa).
 
-            T_s (float):
-                Temperature at the surface (SI).
+    T_s : float
+        Temperature at the surface (K).
 
-            rho_s (float):
-                Density at the surface (SI).
+    rho_s : float
+        Density at the surface (kg m^-3).
 
-            I_MR2 (float):
-                Moment of inertia factor.
+    I_MR2 : float
+        Moment of inertia factor.
 
-            mat_id_L1 (int):
-                Material id for layer 1.
+    mat_id_L1 : int
+        Material id for layer 1.
 
-            T_rho_type_id_L1 (int)
-                Relation between A1_T and A1_rho to be used in layer 1.
+    T_rho_type_id_L1 : int
+        Relation between A1_T and A1_rho to be used in layer 1.
 
-            T_rho_args_L1 (list):
-                Extra arguments to determine the relation in layer 1.
+    T_rho_args_L1 : [float]
+        Extra arguments to determine the relation in layer 1.
 
-            mat_id_L2 (int):
-                Material id for layer 2.
+    mat_id_L2 : int
+        Material id for layer 2.
 
-            T_rho_type_id_L2 (int)
-                Relation between A1_T and A1_rho to be used in layer 2.
+    T_rho_type_id_L2 : int
+        Relation between A1_T and A1_rho to be used in layer 2.
 
-            T_rho_args_L2 (list):
-                Extra arguments to determine the relation in layer 2.
+    T_rho_args_L2 : [float]
+        Extra arguments to determine the relation in layer 2.
 
-            mat_id_L3 (int):
-                Material id for layer 3.
+    mat_id_L3 : int
+        Material id for layer 3.
 
-            T_rho_type_id_L3 (int)
-                Relation between A1_T and A1_rho to be used in layer 3.
+    T_rho_type_id_L3 : int
+        Relation between A1_T and A1_rho to be used in layer 3.
 
-            T_rho_args_L3 (list):
-                Extra arguments to determine the relation in layer 3.
-                
-            R1_min (float):
-                Minimum core-mantle boundary to consider (m).
-                
-            R1_max (float):
-                Maximum core-mantle boundary to consider (m).
-                
-            num_attempt (float):
-                Maximum number of iterations to perform. Outer loop.
-                
-            num_attempt_2 (float):
-                Maximum number of iterations to perform. Inner loop.
-                
-            tol (float):
-                Tolerance level. Relative difference between two consecutive masses or radius.
-                
-            verbosity (int):
-                Printing options.
+    T_rho_args_L3 : [float]
+        Extra arguments to determine the relation in layer 3.
+        
+    R1_min : float
+        Minimum core-mantle boundary to consider (m).
+        
+    R1_max : float
+        Maximum core-mantle boundary to consider (m).
+        
+    num_attempt : float
+        Maximum number of iterations to perform. Outer loop.
+        
+    num_attempt_2 : float
+        Maximum number of iterations to perform. Inner loop.
+        
+    tol : float
+        Tolerance level. Relative difference between two consecutive masses or radius.
+        
+    verbosity : int
+        Printing options.
 
-        Returns:
-            R1, R2 ([float]):
-                Boundaries between layers 1 and 2 and between layers 2 and 3 of
-                the planet (SI).
+    Returns
+    -------
+    R1, R2 : [float]
+        Boundaries between layers 1 and 2 and between layers 2 and 3 of
+        the planet (m).
     """
     # Normalisation for moment of inertia factor
     MR2 = M * R ** 2
@@ -993,7 +924,7 @@ def L3_find_R1_R2(
     try:
         if verbosity >= 1:
             print("Creating a planet with R1_min")
-        R2_min = L3_find_R2(
+        R2_min = L3_find_R2_given_M_R_R1(
             num_prof,
             R,
             M,
@@ -1021,7 +952,7 @@ def L3_find_R1_R2(
     try:
         if verbosity >= 1:
             print("Creating a planet with R1_max")
-        R2_max = L3_find_R2(
+        R2_max = L3_find_R2_given_M_R_R1(
             num_prof,
             R,
             M,
@@ -1125,7 +1056,7 @@ def L3_find_R1_R2(
     for i in range(num_attempt):
         R1_try = (R1_min + R1_max) * 0.5
 
-        R2_try = L3_find_R2(
+        R2_try = L3_find_R2_given_M_R_R1(
             num_prof,
             R,
             M,
@@ -1175,37 +1106,37 @@ def L3_find_R1_R2(
             else:
                 R1_min = R1_try
 
-        elif I_MR2_R1_min == I_MR2_min:
+        else:
             if I_MR2_iter > I_MR2:
                 R1_max = R1_try
             else:
                 R1_min = R1_try
 
-        else:
-            raise ValueError("Something unexpected occured. Please report it!")
-
         tol_reached = np.abs(I_MR2_iter - I_MR2) / I_MR2
 
-        # print info
+        # Print progress
         if verbosity >= 1:
-
-            string = (
-                "Iteration "
-                + str(i)
-                + "/"
-                + str(num_attempt)
-                + ". Tolerance reached "
-                + "{:.2e}".format(tol_reached)
-                + "/"
-                + str(tol)
+            print(
+                "\rIter %d(%d): R1=%.5gR_E R2=%.5gR_E: tol=%.2g(%.2g)"
+                % (
+                    i,
+                    num_attempt,
+                    R1_try / gv.R_earth,
+                    R2_try / gv.R_earth,
+                    tol_reached,
+                    tol,
+                ),
+                end="  ",
+                flush=True,
             )
-            sys.stdout.write("\r" + string)
 
         if tol_reached < tol:
-
+            if verbosity >= 1:
+                print("")
             break
 
-    if verbosity >= 1:
-        sys.stdout.write("\n")
+    # Message if there is not convergence after num_attempt iterations
+    if i == num_attempt - 1 and verbosity >= 1:
+        print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
 
     return R1_try, R2_try
