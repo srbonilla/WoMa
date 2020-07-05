@@ -2614,11 +2614,11 @@ class SpinPlanet:
 
             # Initialise the bounds
             if self.M > M_fixed:
-                R_min = self.A1_R_layer_original[0]
-                R_max = self.A1_R_layer_original[1]
+                R_min = self.planet.A1_R_layer[0]
+                R_max = self.planet.A1_R_layer[1]
             else:
-                R_min = self.A1_R_layer_original[1]
-                R_max = 1.1 * self.A1_R_layer_original[1]
+                R_min = self.planet.A1_R_layer[1]
+                R_max = 1.2 * self.planet.A1_R_layer[1]
 
             # Vary the outer radius to fix the spinning total mass
             for j in range(num_attempt_2):
@@ -2656,7 +2656,7 @@ class SpinPlanet:
                             i + 1,
                             num_attempt,
                             j + 1,
-                            num_attempt_2,
+                            2*num_attempt_2,
                             self.planet.R / gv.R_earth,
                             self.planet.A1_R_layer[0] / gv.R_earth,
                             tol_1,
@@ -2734,8 +2734,8 @@ class SpinPlanet:
                         % (
                             i + 1,
                             num_attempt,
-                            j + 1,
-                            num_attempt_2,
+                            num_attempt + j + 1,
+                            2*num_attempt_2,
                             self.planet.R / gv.R_earth,
                             self.planet.A1_R_layer[0] / gv.R_earth,
                             tol_1,
