@@ -68,12 +68,13 @@ Set `0` for no printing, `1` for standard output, or `2` for extra details.
 
 
 ## 1. Spherical profiles 
-All profiles require 2 of the 3 surface values: `P_s`, `T_s`, `rho_s`,
+All profiles require the temperature and either the pressure or density at the 
+surface: `T_s` and `P_s` or `rho_s`,
 plus the material and temperature-density relation for each layer (see below):
 `A1_mat_layer` and `A1_T_rho_type`.
 
 The optional parameter `num_prof` sets the number of profile integration steps.
-Default 1000.
+Default 3000.
 
 
 ### Equations of state (EoS) 
@@ -161,7 +162,7 @@ then the unknown elements in the input arrays can be left as `None`, e.g.:
     + Maximum radius: `R_max`
 + `gen_prof_L2_find_R_R1_given_M1_M2()`, requires:
     + Layer 1 and 2 masses: `self.A1_M_layer`
-    + Maximum radius: `R_max`
+    + Minimum and maximum radii: `R_min`, `R_max`
     
 #### 3 layers
 + `gen_prof_L3_find_M_given_R_R1_R2()`, requires:
