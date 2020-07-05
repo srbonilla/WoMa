@@ -2140,9 +2140,17 @@ class SpinPlanet:
         self.A1_idx_layer_eq, self.A1_idx_layer_po = self._find_boundary_indices()
 
         # Enclosed, total, and layer masses
-        self.A1_m = us.spheroid_masses(
-            self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po
-        )
+        try:
+            self.A1_m = us.spheroid_masses(
+                self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po
+            )
+        except:
+            e = (
+                "Period too low. Please consider the following:\n"
+                "increase period, increase R_max_eq, "
+                "increase R_max_po, enable check_min_period=True"
+            )
+            raise ValueError(e)
         self.M = np.sum(self.A1_m)
 
         self.A1_M_layer = np.array(
@@ -2656,7 +2664,7 @@ class SpinPlanet:
                             i + 1,
                             num_attempt,
                             j + 1,
-                            2*num_attempt_2,
+                            2 * num_attempt_2,
                             self.planet.R / gv.R_earth,
                             self.planet.A1_R_layer[0] / gv.R_earth,
                             tol_1,
@@ -2735,7 +2743,7 @@ class SpinPlanet:
                             i + 1,
                             num_attempt,
                             num_attempt + j + 1,
-                            2*num_attempt_2,
+                            2 * num_attempt_2,
                             self.planet.R / gv.R_earth,
                             self.planet.A1_R_layer[0] / gv.R_earth,
                             tol_1,
