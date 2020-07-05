@@ -374,7 +374,7 @@ class Planet:
         Fp_planet = utils.check_end(Fp_planet, ".hdf5")
 
         if verbosity >= 1:
-            print('Saving "%s"... ' % Fp_planet[-60:], end="")
+            print('Saving "%s"... ' % Fp_planet[-60:], end="  ", flush=True)
         sys.stdout.flush()
 
         with h5py.File(Fp_planet, "w") as f:
@@ -428,7 +428,7 @@ class Planet:
         Fp_planet = utils.check_end(Fp_planet, ".hdf5")
 
         if verbosity >= 1:
-            print('Loading "%s"... ' % Fp_planet[-60:], end="")
+            print('Loading "%s"... ' % Fp_planet[-60:], end="  ", flush=True)
             sys.stdout.flush()
 
         with h5py.File(Fp_planet, "r") as f:
@@ -547,15 +547,18 @@ class Planet:
         )
         self.A1_R_layer[-1] = self.R
 
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
         if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L1_spherical.L1_find_M_given_R(
             self.num_prof,
@@ -874,15 +877,18 @@ class Planet:
             verbosity=verbosity,
         )
 
-        if verbosity >= 1:
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
+        if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
@@ -1061,15 +1067,18 @@ class Planet:
         )
         self.A1_R_layer[-1] = self.R
 
-        if verbosity >= 1:
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
+        if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
@@ -1182,15 +1191,18 @@ class Planet:
         )
         self.A1_R_layer[-1] = self.R
 
-        if verbosity >= 1:
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
+        if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
             self.num_prof,
@@ -1453,15 +1465,18 @@ class Planet:
             verbosity=verbosity,
         )
 
-        if verbosity >= 1:
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
+        if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1577,15 +1592,18 @@ class Planet:
             verbosity=verbosity,
         )
 
-        if verbosity >= 1:
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
+        if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1703,15 +1721,18 @@ class Planet:
         )
         self.A1_R_layer[-1] = self.R
 
-        if verbosity >= 1:
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
+        if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1843,15 +1864,18 @@ class Planet:
             verbosity=verbosity,
         )
 
-        if verbosity >= 1:
+        if verbosity < 2:
+            verbosity_2 = 0
+        else:
+            verbosity_2 = verbosity
+        if verbosity == 1:
             print(
                 "Tweaking M to avoid density peaks at the center of the planet... ",
-                end="",
+                end="  ",
+                flush=True,
             )
-            verbosity_2 = 0
         if verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
-            verbosity_2 = verbosity
 
         self.M = L3_spherical.L3_find_M_given_R_R1_R2(
             self.num_prof,
@@ -1910,7 +1934,7 @@ class Planet:
             print("Done")
             self.print_info()
 
-    def gen_prof_L3_find_R_R1_R2_given_M_M1_M2(self):  ### WIP
+    def gen_prof_L3_find_R_R1_R2_given_M1_M2_M3(self):  ### WIP
         return None
 
 
@@ -2404,19 +2428,14 @@ class SpinPlanet:
             # Check the fractional change in the density profile for convergence
             tol_reached = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
 
+            # Print progress
             if verbosity >= 1:
-
-                string = (
-                    "Iteration "
-                    + str(i)
-                    + "/"
-                    + str(num_attempt)
-                    + ". Tolerance reached "
-                    + "{:.2e}".format(tol_reached)
-                    + "/"
-                    + str(tol_density_profile)
+                print(
+                    "\rIter %d(%d): tol=%.2g(%.2g)"
+                    % (i + 1, num_attempt, tol_reached, tol_density_profile),
+                    end="  ",
+                    flush=True,
                 )
-                sys.stdout.write("\r" + string)
 
             # Save results
             self.A1_rho_eq = A1_rho_eq
@@ -2425,7 +2444,7 @@ class SpinPlanet:
             # Stop once converged
             if tol_reached < tol_density_profile:
                 if verbosity >= 1:
-                    print("\nConvergence criterion reached.")
+                    print("")
                 break
 
         if self.period_input < period_iter:
@@ -2510,22 +2529,25 @@ class SpinPlanet:
             # Check the fractional error in the mass for convergence
             tol_reached = np.abs(self.M - M_fixed) / M_fixed
 
+            # Print progress
             if verbosity >= 1:
-
-                string = (
-                    "Iteration "
-                    + str(i)
-                    + "/"
-                    + str(num_attempt)
-                    + ". Tolerance reached "
-                    + "{:.2e}".format(tol_reached)
-                    + "/"
-                    + str(tol_layer_masses)
+                print(
+                    "\rIter %d(%d): R_spher=%.5gR_E: tol=%.2g(%.2g)"
+                    % (
+                        i + 1,
+                        num_attempt,
+                        self.planet.R / gv.R_earth,
+                        tol_reached,
+                        tol_layer_masses,
+                    ),
+                    end="  ",
+                    flush=True,
                 )
-                sys.stdout.write("\r" + string)
 
             # Stop once converged
             if tol_reached < tol_layer_masses:
+                if verbosity >= 1:
+                    print("")
                 break
 
             # Update the bounds
@@ -2617,25 +2639,30 @@ class SpinPlanet:
                 tol_1 = np.abs(self.M - M_fixed) / M_fixed
                 tol_2 = np.abs(self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
 
+                # Print progress
+                if verbosity >= 1:
+                    print(
+                        "\rIter %d(%d),%d(%d): R=%.3gR_E R1=%.3gR_E: tol=%.2g(%.2g),%.2g(%.2g)"
+                        % (
+                            i + 1,
+                            num_attempt,
+                            j + 1,
+                            num_attempt_2,
+                            self.planet.R / gv.R_earth,
+                            self.planet.A1_R_layer[0] / gv.R_earth,
+                            tol_1,
+                            tol_layer_masses,
+                            tol_2,
+                            tol_layer_masses,
+                        ),
+                        end="  ",
+                        flush=True,
+                    )
+
                 # Stop once converged
                 if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
                     if verbosity >= 1:
-                        string = (
-                            "Iteration "
-                            + str(i)
-                            + "/"
-                            + str(num_attempt)
-                            + ". Tolerances reached "
-                            + "{:.2e}".format(tol_1)
-                            + "/"
-                            + str(tol_layer_masses)
-                            + " and {:.2e}".format(tol_2)
-                            + "/"
-                            + str(tol_layer_masses)
-                        )
-                        sys.stdout.write("\r" + string)
-                        print("\nTolerance level criteria reached.")
-
+                        print("")
                     if verbosity >= 2:
                         self.print_info()
 
@@ -2691,25 +2718,30 @@ class SpinPlanet:
                 tol_1 = np.abs(self.M - M_fixed) / M_fixed
                 tol_2 = np.abs(self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
 
+                # Print progress
+                if verbosity >= 1:
+                    print(
+                        "\rIter %d(%d),%d(%d): R=%.3gR_E R1=%.3gR_E: tol=%.2g(%.2g),%.2g(%.2g)"
+                        % (
+                            i + 1,
+                            num_attempt,
+                            j + 1,
+                            num_attempt_2,
+                            self.planet.R / gv.R_earth,
+                            self.planet.A1_R_layer[0] / gv.R_earth,
+                            tol_1,
+                            tol_layer_masses,
+                            tol_2,
+                            tol_layer_masses,
+                        ),
+                        end="  ",
+                        flush=True,
+                    )
+
                 # Stop once converged
                 if tol_1 < tol_layer_masses and tol_2 < tol_layer_masses:
                     if verbosity >= 1:
-                        string = (
-                            "Iteration "
-                            + str(i)
-                            + "/"
-                            + str(num_attempt)
-                            + ". Tolerances reached "
-                            + "{:.2e}".format(tol_1)
-                            + "/"
-                            + str(tol_layer_masses)
-                            + " and {:.2e}".format(tol_2)
-                            + "/"
-                            + str(tol_layer_masses)
-                        )
-                        sys.stdout.write("\r" + string)
-                        print("\nTolerance level criteria reached.")
-
+                        print("")
                     if verbosity >= 2:
                         self.print_info()
 
@@ -2724,21 +2756,23 @@ class SpinPlanet:
                 else:
                     R_1_min = R_1
 
+            # Print progress
             if verbosity >= 1:
-                string = (
-                    "Iteration "
-                    + str(i)
-                    + "/"
-                    + str(num_attempt)
-                    + ". Tolerances reached "
-                    + "{:.2e}".format(tol_1)
-                    + "/"
-                    + str(tol_layer_masses)
-                    + " and {:.2e}".format(tol_2)
-                    + "/"
-                    + str(tol_layer_masses)
+                print(
+                    "\rIter %d(%d): R=%.3gR_E R1=%.3gR_E: tol=%.2g(%.2g),%.2g(%.2g)"
+                    % (
+                        i + 1,
+                        num_attempt,
+                        self.planet.R / gv.R_earth,
+                        self.planet.A1_R_layer[0] / gv.R_earth,
+                        tol_1,
+                        tol_layer_masses,
+                        tol_2,
+                        tol_layer_masses,
+                    ),
+                    end="  ",
+                    flush=True,
                 )
-                sys.stdout.write("\r" + string)
 
     def spin(
         self,

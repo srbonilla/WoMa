@@ -334,9 +334,10 @@ def L3_find_M_given_R_R1_R2(
         # Print progress
         if verbosity >= 1:
             print(
-                "\rIter %d(%d): M=%.5gM_E --> tol=%.2g(%.2g)"
+                "\rIter %d(%d): M=%.5gM_E: tol=%.2g(%.2g)"
                 % (i + 1, num_attempt, M_try / gv.M_earth, tol_reached, tol),
-                end="",
+                end="  ",
+                flush=True,
             )
 
         if tol_reached < tol:
@@ -488,9 +489,10 @@ def L3_find_R_given_M_R1_R2(
         # Print progress
         if verbosity >= 1:
             print(
-                "\rIter %d(%d): R=%.5gR_E --> tol=%.2g(%.2g)"
+                "\rIter %d(%d): R=%.5gR_E: tol=%.2g(%.2g)"
                 % (i + 1, num_attempt, R_try / gv.R_earth, tol_reached, tol),
-                end="",
+                end="  ",
+                flush=True,
             )
 
         if tol_reached < tol:
@@ -638,9 +640,10 @@ def L3_find_R2_given_M_R_R1(
         # Print progress
         if verbosity >= 1:
             print(
-                "\rIter %d(%d): R2=%.5gR_E --> tol=%.2g(%.2g)"
+                "\rIter %d(%d): R2=%.5gR_E: tol=%.2g(%.2g)"
                 % (i + 1, num_attempt, R2_try / gv.R_earth, tol_reached, tol),
-                end="",
+                end="  ",
+                flush=True,
             )
 
         if tol_reached < tol:
@@ -788,9 +791,10 @@ def L3_find_R1_given_M_R_R2(
         # Print progress
         if verbosity >= 1:
             print(
-                "\rIter %d(%d): R1=%.5gR_E --> tol=%.2g(%.2g)"
+                "\rIter %d(%d): R1=%.5gR_E: tol=%.2g(%.2g)"
                 % (i + 1, num_attempt, R1_try / gv.R_earth, tol_reached, tol),
-                end="",
+                end="  ",
+                flush=True,
             )
 
         if tol_reached < tol:
@@ -1113,7 +1117,7 @@ def L3_find_R1_R2_given_M_R_I(
         # Print progress
         if verbosity >= 1:
             print(
-                "\rIter %d(%d): R1=%.5gR_E R2=%.5gR_E --> tol=%.2g(%.2g)"
+                "\rIter %d(%d): R1=%.5gR_E R2=%.5gR_E: tol=%.2g(%.2g)"
                 % (
                     i,
                     num_attempt,
@@ -1122,7 +1126,8 @@ def L3_find_R1_R2_given_M_R_I(
                     tol_reached,
                     tol,
                 ),
-                end="",
+                end="  ",
+                flush=True,
             )
 
         if tol_reached < tol:
