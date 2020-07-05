@@ -2038,9 +2038,9 @@ class SpinPlanet:
 
     def __init__(
         self,
+        planet,
+        period,
         name=None,
-        planet=None,
-        period=None,
         num_prof=1000,
         fix_mass=True,
         R_max_eq=None,
@@ -2161,7 +2161,7 @@ class SpinPlanet:
             e = (
                 "Period too low. Please consider the following:\n"
                 "increase period, increase R_max_eq, "
-                "increase R_max_po, enable check_min_period=True"
+                "or enable check_min_period=True."
             )
             raise ValueError(e)
         self.M = np.sum(self.A1_m)
