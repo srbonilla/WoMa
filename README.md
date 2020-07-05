@@ -74,7 +74,7 @@ plus the material and temperature-density relation for each layer (see below):
 `A1_mat_layer` and `A1_T_rho_type`.
 
 The optional parameter `num_prof` sets the number of profile integration steps.
-Default 3000.
+Default 1000.
 
 
 ### Equations of state (EoS) 
@@ -221,8 +221,8 @@ including their equatorial and polar radii (semi-major and semi-minor axes),
 and for example their masses, densities, pressures, and temperatures, 
 `A1_m`, `A1_rho`, `A1_P`, and `A1_T`.
 
-Additional parameters are similar to the spherical case mentioned above.
-See the docstrings for full details.
+Additional parameters are similar to those in the spherical case mentioned 
+above. See the docstrings for full details.
 
 
 

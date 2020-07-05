@@ -137,7 +137,7 @@ class Planet:
         T_2=None,
         rho_2=None,
         I_MR2=None,
-        num_prof=3000,
+        num_prof=1000,
     ):
         self.name = name
         self.A1_mat_layer = A1_mat_layer
@@ -2028,7 +2028,7 @@ class SpinPlanet:
         name=None,
         planet=None,
         period=None,
-        num_prof=3000,
+        num_prof=1000,
         fix_mass=True,
         R_max_eq=None,
         R_max_po=None,
