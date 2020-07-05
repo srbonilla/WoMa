@@ -422,6 +422,13 @@ def L2_find_R_given_M_R1(
                 flush=True,
             )
 
+        # Error messages
+        if np.abs(R_try - R1) / R_try < 1 / (num_prof - 1):
+            raise ValueError("R tends to R1. Please decrease R1.")
+
+        if np.abs(R_try - R_max_input) / R_try < 1 / (num_prof - 1):
+            raise ValueError("R tends to R_max. Please increase R_max.")
+
         if tol_reached < tol:
             if verbosity >= 1:
                 print("")
@@ -550,6 +557,13 @@ def L2_find_R1_given_M_R(
                 end="  ",
                 flush=True,
             )
+
+        # Error messages
+        if np.abs(R - R1_try) / R < 1 / (num_prof - 1):
+            raise ValueError("R1 tends to R. Please increase R.")
+
+        if R1_try / R < 1 / (num_prof - 1):
+            raise ValueError("R1 tends to 0. Please decrease R.")
 
         if tol_reached < tol:
             if verbosity >= 1:

@@ -437,6 +437,10 @@ def L1_find_R_given_M(
                 flush=True,
             )
 
+        # Error messages
+        if np.abs(R_try - R_max_input) / R_try < 1 / (num_prof - 1):
+            raise ValueError("R tends to R_max. Please increase R_max.")
+
         if tol_reached < tol:
             if verbosity >= 1:
                 print("")

@@ -40,10 +40,7 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
         alpha = T_rho_args[1]
         T = K * np.power(rho, alpha)
         if np.isinf(T) or np.isnan(T):
-            e = (
-                "Numerical result out of range.\n"
-                "Please decrease alpha."
-                )
+            e = "Numerical result out of range.\n" "Please decrease alpha."
             raise ValueError(e)
         return T
 
