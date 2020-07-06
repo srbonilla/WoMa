@@ -22,3 +22,6 @@
 *~
 
 .ipynb_checkpoints/
+build/
+dist/
+woma.egg-info/

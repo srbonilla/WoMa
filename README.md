@@ -5,13 +5,14 @@ equations for hydrostatic equilibrium, and create initial conditions for e.g.
 smoothed particle hydrodynamics (SPH) simulations by placing particles that
 precisely match the planet's profiles.
 
-See the `tutorial.ipynb` notebook for a full tutorial and examples (at 
-github.com/srbonilla/WoMa), with additional documentation in this file, below.
+See the `tutorial.ipynb` notebook for a full tutorial and examples 
+(https://github.com/srbonilla/WoMa), with additional documentation in this 
+file, below.
 
-Presented in Ruiz-Bonilla et al. (2020), arxiv...
+Presented in Ruiz-Bonilla et al. (2020), ...
 
-Includes SEAGen (github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 487:4) 
-with modifications for spinning planets.
+Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 
+487:4) with modifications for spinning planets.
 
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
 Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
@@ -25,18 +26,21 @@ Files
 + `tutorial.ipynb` Jupyter notebook tutorial and examples.
 + `woma/` Code directory.
     + `main.py` The main program classes and functions.
-    + `data/` Data folder for equation of state (EoS) tables. 
+    + `data/` Data for equation of state (EoS) tables. 
     + `eos/` EoS and temperature-density relations.
-    + `spherical_funcs/` Functions for spherical planets.
-    + `spin_funcs/` Functions for spinning planets.
-    + `misc/` Miscellaneous functions.
+    + `spherical_funcs/` Functions for spherical profiles.
+    + `spin_funcs/` Functions for spinning profiles.
+    + `misc/` Miscellaneous functions and constants.
 + `README.md` This file. General info and documentation.
 + `LICENSE.txt` GNU general public license v3+.
++ `setup.py`, `setup.cfg`, `MANIFEST.in` PyPI package files.
 
 
 Requirements
 ------------
-+ Python 3 (tested with 3.6.0).
++ Python 3 (tested with 3.6.9).
++ `PyPI`: Automatically install the package with `pip install woma`, see
+    https://pypi.org/project/woma/
 
 
 Notation etc.
@@ -89,7 +93,7 @@ using the following material names,
 which are converted internally into material IDs,
 set by a base type ID (multiplied by 100) plus a minor type:
 
-+ Tillotson (Melosh 2007; Benz & Asphaug 1999): `1`
++ Tillotson (Melosh 1989; Benz & Asphaug 1999): `1`
     + Iron: `Til_iron` : `100`
     + Granite: `Til_granite` : `101`
     + Water: `Til_water` : `102`
@@ -128,11 +132,12 @@ parameter(s) to find a valid planet in hydrostatic equilibrium that satisfies
 the set attribute values.
 
 The additional function arguments like `R_max` set things like the upper bound
-for an iteration so do not need to be precise.
+for an iteration so usually do not need to be precise.
 
 Optional arguments for these functions (in addition to the `verbosity`) set:
 + `tol`: The tolerance for finding unknown parameters as a fractional 
-    difference between two consecutive iterations. Default 0.001.
+    difference between two consecutive iterations. Default usually 0.001, 
+    depending on the method.
 + `num_attempt`: The maximum number of iteration attempts if the tolerance has 
     still not been reached. Default usually 40, depending on the method.
 
