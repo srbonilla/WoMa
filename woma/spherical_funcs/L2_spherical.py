@@ -666,6 +666,8 @@ def L2_find_R_R1_given_M1_M2(
     """
 
     M = M1 + M2
+    R_max_input = np.copy(R_max)
+    R_min_input = np.copy(R_min)
 
     # Build planet with R=R_min
     if verbosity >= 1:
@@ -789,5 +791,12 @@ def L2_find_R_R1_given_M1_M2(
     # Message if there is not convergence after num_attempt iterations
     if i == num_attempt - 1 and verbosity >= 1:
         print("\nWarning: Convergence not reached after %d iterations." % (num_attempt))
+
+    # Error messages
+    if np.abs(R_try - R_max_input) / R_try < 1 / (num_prof - 1):
+        raise ValueError("R tends to R_max. Please increase R_max.")
+
+    if np.abs(R_try - R_min_input) / R_try < 1 / (num_prof - 1):
+        raise ValueError("R tends to R_min. Please decrease R_min.")
 
     return R1_try, R_try
