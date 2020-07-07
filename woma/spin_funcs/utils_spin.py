@@ -710,7 +710,7 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     for i in range(N_shell.shape[0]):
 
         if verbosity >= 1:
-            string = "Creating spheroidal shell {}/{}".format(i, N_shell.shape[0])
+            string = "Creating spheroidal shell {}/{}".format(i + 1, N_shell.shape[0])
             sys.stdout.write("\r" + string)
 
         # First shell

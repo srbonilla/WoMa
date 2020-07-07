@@ -2940,7 +2940,7 @@ class ParticlePlanet:
         The material ID of each particle. (See the README.md documentation.)      
     """
 
-    def __init__(self, planet=None, N_particles=None, N_ngb=48, verbosity=1):
+    def __init__(self, planet, N_particles, N_ngb=48, verbosity=1):
         self.N_particles = N_particles
         self.N_ngb = N_ngb
 
