@@ -9,7 +9,7 @@ See the `tutorial.ipynb` notebook for a full tutorial and examples
 (https://github.com/srbonilla/WoMa), with additional documentation in this 
 file, below.
 
-Presented in Ruiz-Bonilla et al. (2020), ...
+Presented in Ruiz-Bonilla et al. (2020, https://arxiv.org/abs/2007.02965).
 
 Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 
 487:4) with modifications for spinning planets.
