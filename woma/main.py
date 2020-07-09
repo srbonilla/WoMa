@@ -38,7 +38,9 @@ from woma.eos.T_rho import T_rho, T_rho_id_and_args_from_type
 
 
 class Planet:
-    """ Planet class ...
+    """ Create model profiles of a spherical body in hydrostatic equilibrium.
+    
+    See also README.md and tutorial.ipynb.
 
     Parameters
     ----------
@@ -2009,7 +2011,9 @@ class Planet:
 
 
 class SpinPlanet:
-    """ Spinning planet class ...
+    """ Create nested-spheroid profiles of a spinning body in equilibrium.
+    
+    See also README.md and tutorial.ipynb.
 
     Parameters
     ----------
@@ -3150,7 +3154,9 @@ class SpinPlanet:
 
 
 class ParticlePlanet:
-    """ Arrange particles to precisely match a spinning or spherical planetary profile.
+    """ Place particles to precisely match spinning or spherical body profiles.
+    
+    See also README.md and tutorial.ipynb.
 
     Parameters
     ----------
