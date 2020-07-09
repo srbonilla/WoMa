@@ -79,6 +79,9 @@ class Planet:
     num_prof : int
         The number of profile integration steps.
         
+    load_file : str (opt.)
+        If provided, then load the attributes and profiles from an HDF5 file.
+        See woma.Planet.save() and .load().
 
     Attributes (in addition to the input parameters)
     ----------
@@ -138,6 +141,8 @@ class Planet:
         rho_2=None,
         I_MR2=None,
         num_prof=1000,
+        load_file=None,
+        verbosity=1,
     ):
         self.name = name
         self.A1_mat_layer = A1_mat_layer
@@ -162,8 +167,12 @@ class Planet:
         self.I_MR2 = I_MR2
         self.num_prof = num_prof
 
-        # Derived or default attributes
+        # Load from file
+        if load_file is not None:
+            self.load(load_file, verbosity=verbosity)
+            return
 
+        # Derived or default attributes
         # Number of layers
         if self.A1_mat_layer is not None:
             self.num_layer = len(self.A1_mat_layer)
@@ -378,33 +387,29 @@ class Planet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
 
-    def save_planet(self, Fp_planet, verbosity=1):
-        """ Save the profiles arrays for an existing Planet object to a file. 
+    def save(self, filename, verbosity=1):
+        """ Save the attributes and profiles to an HDF5 file. 
 
         Parameters
         ----------
-        Fp_planet : str
-            The object data file path.
+        filename : str
+            The data file path.
         """
-        Fp_planet = utils.check_end(Fp_planet, ".hdf5")
+        filename = utils.check_end(filename, ".hdf5")
 
         if verbosity >= 1:
-            print('Saving "%s"... ' % Fp_planet[-60:], end="  ", flush=True)
-        sys.stdout.flush()
+            print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
 
-        with h5py.File(Fp_planet, "w") as f:
+        with h5py.File(filename, "w") as f:
             # Group
             grp = f.create_group("/planet")
-
-            # Lists not numpy for attributes
-            if type(self.A1_mat_layer).__module__ == np.__name__:
-                self.A1_mat_layer = self.A1_mat_layer.tolist()
-
             # Attributes
             grp.attrs[io.Di_hdf5_planet_label["num_layer"]] = self.num_layer
             grp.attrs[io.Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
             grp.attrs[io.Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
             grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
+            grp.attrs[io.Di_hdf5_planet_label["T_rho_type_id"]] = self.A1_T_rho_type_id
+            grp.attrs[io.Di_hdf5_planet_label["T_rho_args"]] = self.A1_T_rho_args
             grp.attrs[io.Di_hdf5_planet_label["R_layer"]] = self.A1_R_layer
             grp.attrs[io.Di_hdf5_planet_label["M_layer"]] = self.A1_M_layer
             grp.attrs[io.Di_hdf5_planet_label["M"]] = self.M
@@ -413,8 +418,7 @@ class Planet:
             grp.attrs[io.Di_hdf5_planet_label["P_s"]] = self.P_s
             grp.attrs[io.Di_hdf5_planet_label["T_s"]] = self.T_s
             grp.attrs[io.Di_hdf5_planet_label["rho_s"]] = self.rho_s
-
-            # Arrays
+            # Profiles
             grp.create_dataset(io.Di_hdf5_planet_label["r"], data=self.A1_r, dtype="d")
             grp.create_dataset(
                 io.Di_hdf5_planet_label["m_enc"], data=self.A1_m_enc, dtype="d"
@@ -432,22 +436,37 @@ class Planet:
         if verbosity >= 1:
             print("Done")
 
-    def load_planet_profiles(self, Fp_planet, verbosity=1):
-        """ Load the profiles arrays for an existing Planet object from a file. 
+    def load(self, filename, verbosity=1):
+        """ Load the attributes and profiles from an HDF5 file. 
 
         Parameters
         ----------
-        Fp_planet : str
-            The object data file path.
+        filename : str
+            The data file path.
         """
-        Fp_planet = utils.check_end(Fp_planet, ".hdf5")
+        filename = utils.check_end(filename, ".hdf5")
 
         if verbosity >= 1:
-            print('Loading "%s"... ' % Fp_planet[-60:], end="  ", flush=True)
-            sys.stdout.flush()
+            print('Loading "%s"...' % filename[-60:], end=" ", flush=True)
 
-        with h5py.File(Fp_planet, "r") as f:
+        with h5py.File(filename, "r") as f:
             (
+                # Attributes
+                self.num_layer,
+                self.A1_mat_layer,
+                self.A1_mat_id_layer,
+                self.A1_T_rho_type,
+                self.A1_T_rho_type_id,
+                self.A1_T_rho_args,
+                self.A1_R_layer,
+                self.A1_M_layer,
+                self.M,
+                self.R,
+                self.A1_idx_layer,
+                self.P_s,
+                self.T_s,
+                self.rho_s,
+                # Profiles
                 self.A1_r,
                 self.A1_m_enc,
                 self.A1_rho,
@@ -456,8 +475,35 @@ class Planet:
                 self.A1_u,
                 self.A1_mat_id,
             ) = io.multi_get_planet_data(
-                f, ["r", "m_enc", "rho", "T", "P", "u", "mat_id"]
+                f,
+                [
+                    # Attributes
+                    "num_layer",
+                    "mat_layer",
+                    "mat_id_layer",
+                    "T_rho_type",
+                    "T_rho_type_id",
+                    "T_rho_args",
+                    "R_layer",
+                    "M_layer",
+                    "M",
+                    "R",
+                    "idx_layer",
+                    "P_s",
+                    "T_s",
+                    "rho_s",
+                    # Profiles
+                    "r",
+                    "m_enc",
+                    "rho",
+                    "T",
+                    "P",
+                    "u",
+                    "mat_id",
+                ],
             )
+
+        self.update_attributes()
 
         if verbosity >= 1:
             print("Done")
@@ -2007,6 +2053,10 @@ class SpinPlanet:
     num_attempt_2: int
         Maximum number of iterations allowed. Outer loop.
         
+    load_file : str (opt.)
+        If provided, then load the attributes and profiles from an HDF5 file.
+        See woma.SpinPlanet.save() and .load().
+        
     
     Attributes (in addition to the input parameters)
     ----------
@@ -2041,8 +2091,8 @@ class SpinPlanet:
 
     def __init__(
         self,
-        planet,
-        period,
+        planet=None,
+        period=None,
         name=None,
         num_prof=1000,
         fix_mass=True,
@@ -2053,8 +2103,18 @@ class SpinPlanet:
         tol_layer_masses=0.01,
         num_attempt=15,
         num_attempt_2=15,
+        load_file=None,
         verbosity=1,
     ):
+        # Load from file
+        if load_file is not None:
+            self.load(load_file)
+            return
+        # Otherwise, require planet and period inputs
+        else:
+            assert isinstance(planet, Planet)
+            assert period is not None
+
         self.name = name
         self.planet = deepcopy(planet)
         self.period = period
@@ -2090,10 +2150,6 @@ class SpinPlanet:
             self.P_2 = self.planet.P_2
             self.T_2 = self.planet.T_2
             self.rho_2 = self.planet.rho_2
-        self.A1_R_layer_original = planet.A1_R_layer
-        self.R_original = planet.R
-        self.period_input = period
-        self.planet.num_prof = self.num_prof
 
         # Make the spinning profiles!
         self.spin(
@@ -2368,6 +2424,205 @@ class SpinPlanet:
         print_try(
             "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_0", space), self.rho_0)
         )
+
+    def save(self, filename, verbosity=1):
+        """ Save the attributes and profiles to an HDF5 file. 
+
+        Parameters
+        ----------
+        filename : str
+            The data file path.
+        """
+        filename = utils.check_end(filename, ".hdf5")
+
+        if verbosity >= 1:
+            print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
+
+        with h5py.File(filename, "w") as f:
+            # Spherical planet group
+            grp = f.create_group("/planet")
+            # Attributes
+            grp.attrs[io.Di_hdf5_planet_label["num_layer"]] = self.planet.num_layer
+            grp.attrs[io.Di_hdf5_planet_label["mat_layer"]] = self.planet.A1_mat_layer
+            grp.attrs[
+                io.Di_hdf5_planet_label["mat_id_layer"]
+            ] = self.planet.A1_mat_id_layer
+            grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.planet.A1_T_rho_type
+            grp.attrs[
+                io.Di_hdf5_planet_label["T_rho_type_id"]
+            ] = self.planet.A1_T_rho_type_id
+            grp.attrs[io.Di_hdf5_planet_label["T_rho_args"]] = self.planet.A1_T_rho_args
+            grp.attrs[io.Di_hdf5_planet_label["R_layer"]] = self.planet.A1_R_layer
+            grp.attrs[io.Di_hdf5_planet_label["M_layer"]] = self.planet.A1_M_layer
+            grp.attrs[io.Di_hdf5_planet_label["M"]] = self.planet.M
+            grp.attrs[io.Di_hdf5_planet_label["R"]] = self.planet.R
+            grp.attrs[io.Di_hdf5_planet_label["idx_layer"]] = self.planet.A1_idx_layer
+            grp.attrs[io.Di_hdf5_planet_label["P_s"]] = self.planet.P_s
+            grp.attrs[io.Di_hdf5_planet_label["T_s"]] = self.planet.T_s
+            grp.attrs[io.Di_hdf5_planet_label["rho_s"]] = self.planet.rho_s
+            # Profiles
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["r"], data=self.planet.A1_r, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["m_enc"], data=self.planet.A1_m_enc, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["rho"], data=self.planet.A1_rho, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["T"], data=self.planet.A1_T, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["P"], data=self.planet.A1_P, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["u"], data=self.planet.A1_u, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["mat_id"], data=self.planet.A1_mat_id, dtype="i"
+            )
+
+            # Spinning planet group
+            grp = f.create_group("/spin_planet")
+            # Attributes
+            grp.attrs[io.Di_hdf5_spin_label["period"]] = self.period
+            grp.attrs[io.Di_hdf5_spin_label["num_layer"]] = self.num_layer
+            grp.attrs[io.Di_hdf5_spin_label["mat_layer"]] = self.A1_mat_layer
+            grp.attrs[io.Di_hdf5_spin_label["mat_id_layer"]] = self.A1_mat_id_layer
+            grp.attrs[io.Di_hdf5_spin_label["T_rho_type"]] = self.A1_T_rho_type
+            grp.attrs[io.Di_hdf5_spin_label["T_rho_type_id"]] = self.A1_T_rho_type_id
+            grp.attrs[io.Di_hdf5_spin_label["T_rho_args"]] = self.A1_T_rho_args
+            grp.attrs[io.Di_hdf5_spin_label["R_layer"]] = self.A1_R_layer
+            grp.attrs[io.Di_hdf5_spin_label["Z_layer"]] = self.A1_Z_layer
+            grp.attrs[io.Di_hdf5_spin_label["M_layer"]] = self.A1_M_layer
+            grp.attrs[io.Di_hdf5_spin_label["M"]] = self.M
+            grp.attrs[io.Di_hdf5_spin_label["R_eq"]] = self.R_eq
+            grp.attrs[io.Di_hdf5_spin_label["R_po"]] = self.R_po
+            grp.attrs[io.Di_hdf5_spin_label["idx_layer"]] = self.A1_idx_layer_eq
+            grp.attrs[io.Di_hdf5_spin_label["P_s"]] = self.P_s
+            grp.attrs[io.Di_hdf5_spin_label["T_s"]] = self.T_s
+            grp.attrs[io.Di_hdf5_spin_label["rho_s"]] = self.rho_s
+            # Spheroid profiles
+            grp.create_dataset(
+                io.Di_hdf5_spin_label["r_eq"], data=self.A1_r_eq, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_spin_label["r_po"], data=self.A1_r_po, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_spin_label["rho_eq"], data=self.A1_rho_eq, dtype="d"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_spin_label["rho_po"], data=self.A1_rho_po, dtype="d"
+            )
+            grp.create_dataset(io.Di_hdf5_spin_label["R"], data=self.A1_R, dtype="d")
+            grp.create_dataset(io.Di_hdf5_spin_label["Z"], data=self.A1_Z, dtype="d")
+            grp.create_dataset(io.Di_hdf5_spin_label["m"], data=self.A1_m, dtype="d")
+            grp.create_dataset(
+                io.Di_hdf5_spin_label["rho"], data=self.A1_rho, dtype="d"
+            )
+            grp.create_dataset(io.Di_hdf5_spin_label["T"], data=self.A1_T, dtype="d")
+            grp.create_dataset(io.Di_hdf5_spin_label["P"], data=self.A1_P, dtype="d")
+            grp.create_dataset(io.Di_hdf5_spin_label["u"], data=self.A1_u, dtype="d")
+            grp.create_dataset(
+                io.Di_hdf5_spin_label["mat_id"], data=self.A1_mat_id, dtype="i"
+            )
+
+        if verbosity >= 1:
+            print("Done")
+
+    def load(self, filename, verbosity=1):
+        """ Load the attributes and profiles from an HDF5 file. 
+
+        Parameters
+        ----------
+        filename : str
+            The data file path.
+        """
+        filename = utils.check_end(filename, ".hdf5")
+
+        if verbosity >= 1:
+            print('Loading "%s"...' % filename[-60:], end=" ", flush=True)
+
+        # Spherical planet
+        self.planet = Planet(load_file=filename, verbosity=0)
+
+        # Spinning planet
+        with h5py.File(filename, "r") as f:
+            (
+                # Attributes
+                self.period,
+                self.num_layer,
+                self.A1_mat_layer,
+                self.A1_mat_id_layer,
+                self.A1_T_rho_type,
+                self.A1_T_rho_type_id,
+                self.A1_T_rho_args,
+                self.A1_R_layer,
+                self.A1_Z_layer,
+                self.A1_M_layer,
+                self.M,
+                self.R_eq,
+                self.R_po,
+                self.A1_idx_layer_eq,
+                self.P_s,
+                self.T_s,
+                self.rho_s,
+                # Spheroid profiles
+                self.A1_r_eq,
+                self.A1_r_po,
+                self.A1_rho_eq,
+                self.A1_rho_po,
+                self.A1_R,
+                self.A1_Z,
+                self.A1_m,
+                self.A1_rho,
+                self.A1_T,
+                self.A1_P,
+                self.A1_u,
+                self.A1_mat_id,
+            ) = io.multi_get_spin_planet_data(
+                f,
+                [
+                    # Attributes
+                    "period",
+                    "num_layer",
+                    "mat_layer",
+                    "mat_id_layer",
+                    "T_rho_type",
+                    "T_rho_type_id",
+                    "T_rho_args",
+                    "R_layer",
+                    "Z_layer",
+                    "M_layer",
+                    "M",
+                    "R_eq",
+                    "R_po",
+                    "idx_layer",
+                    "P_s",
+                    "T_s",
+                    "rho_s",
+                    # Profiles
+                    "r_eq",
+                    "r_po",
+                    "rho_eq",
+                    "rho_po",
+                    "R",
+                    "Z",
+                    "m",
+                    "rho",
+                    "T",
+                    "P",
+                    "u",
+                    "mat_id",
+                ],
+            )
+
+        self.update_attributes()
+
+        if verbosity >= 1:
+            print("Done")
 
     def _prep_spin_profile_arrays(self, R_max_eq, R_max_po):
         # Initialize A1_rho_eq and A1_rho_po with the spherical profile
@@ -2837,6 +3092,12 @@ class SpinPlanet:
         num_attempt_2 : int
             Maximum number of iterations allowed. Outer loop.
         """
+        # Initial values from the spherical planet
+        self.A1_R_layer_original = self.planet.A1_R_layer
+        self.R_original = self.planet.R
+        self.period_input = self.period
+        self.planet.num_prof = self.num_prof
+
         # Check for necessary input
         self._check_input()
 
