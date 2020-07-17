@@ -2015,6 +2015,7 @@ class Planet:
 
 class SpinPlanet:
     """ Create nested-spheroid profiles of a spinning body in equilibrium.
+    The planet spins with positive z-axis angular velocity.
     
     See also README.md and tutorial.ipynb.
 
