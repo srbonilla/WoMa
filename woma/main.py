@@ -26,7 +26,6 @@ import h5py
 from scipy.interpolate import interp1d
 from copy import deepcopy
 import seagen
-import sys
 
 from woma.spherical_funcs import L1_spherical, L2_spherical, L3_spherical
 from woma.spin_funcs import L1_spin, L2_spin, L3_spin
@@ -2326,6 +2325,22 @@ class SpinPlanet:
             self.P_2 = self.A1_P[self.A1_idx_layer_eq[1]]
             self.T_2 = self.A1_T[self.A1_idx_layer_eq[1]]
             self.rho_2 = self.A1_rho[self.A1_idx_layer_eq[1]]
+            
+        # Moment of inertia
+        # I_z = int dm*(x^2 + y^2) = int rho r_{xy}^3 dr_{xy} dphi dz
+        # compute for constant-density spheroids with density d_rho,
+        # then sum for every spheroid
+        # int r_{xy}^3 dr_{xy} dz = 8/15*pi*R^4*Z
+        A1_drho = np.append(self.A1_rho, 0)
+        A1_drho = A1_drho[:-1] - A1_drho[1:]
+        
+        self.I_MR2 = np.sum(8/15*np.pi*A1_drho*self.A1_R**4*self.A1_Z)
+        self.I_MR2 /= self.M*self.R_eq**2
+        
+        # Angular momentum
+        hours_to_sec = 60*60
+        w = 2*np.pi/self.period/hours_to_sec
+        self.L = self.I_MR2*self.M*self.R_eq**2*w
 
     def print_info(self):
         """ Print the main properties. """
@@ -2431,6 +2446,14 @@ class SpinPlanet:
         print_try("    %s = %.5g  K", (utils.add_whitespace("T_0", space), self.T_0))
         print_try(
             "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_0", space), self.rho_0)
+        )
+        print_try(
+            "    %s = %.5g  M_tot*R_eq^2",
+            (utils.add_whitespace("I_MR2", space), self.I_MR2),
+        )
+        print_try(
+            "    %s = %.5g  L_em",
+            (utils.add_whitespace("L", space), self.L/gv.L_em),
         )
 
     def save(self, filename, verbosity=1):
