@@ -6,14 +6,13 @@ with open("README.md", "r") as f:
 setuptools.setup(
     name="woma",
     packages=setuptools.find_packages(),
-    version="1.0",
+    version="1.1",
     description="WorldMaker",
     long_description=long_description,
     long_description_content_type="text/markdown",
     author="Sergio Ruiz-Bonilla, Jacob Kegerreis",
     author_email="sergio.ruiz-bonilla@durham.ac.uk",
     url="https://github.com/srbonilla/WoMa",
-    download_url="https://github.com/srbonilla/WoMa/archive/1.0.tar.gz",
     project_urls={
         "Paper": "https://arxiv.org/abs/2007.02965",
         "Group": "http://icc.dur.ac.uk/giant_impacts",
