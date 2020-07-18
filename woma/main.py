@@ -182,8 +182,7 @@ class Planet:
             # Placeholder
             self.num_layer = 1
 
-        # T and, P or rho must be provided at the surface to calculate the
-        # third. If all three are provided then rho is overwritten.
+        # T and P or rho must be provided at the surface to calculate the third.
         if self.P_s is not None and self.P_s <= 0:
             e = "Pressure at surface must be > 0."
             raise ValueError(e)
@@ -194,18 +193,21 @@ class Planet:
             e = "Density at surface must be > 0."
             raise ValueError(e)
         if self.T_s is None:
-            e = "Temperature at surface must me provided."
+            e = "Temperature at surface must be provided."
             raise ValueError(e)
-        if self.P_s is not None and self.T_s is not None:
+        if self.P_s is not None:
             self.rho_s = eos.rho_P_T(self.P_s, self.T_s, self.A1_mat_id_layer[-1])
-        elif self.rho_s is not None and self.T_s is not None:
+        elif self.rho_s is not None:
             self.P_s = eos.P_T_rho(self.T_s, self.rho_s, self.A1_mat_id_layer[-1])
             if self.P_s <= 0:
                 e = (
-                    "Pressure at surface computed is equal to 0.\n"
+                    "Pressure at surface computed is not positive.\n"
                     "Please modify temperature and/or density at surface."
                 )
                 raise ValueError(e)
+        else:
+            e = "Temperature and pressure or density at surface must be provided."
+            raise ValueError(e)
 
         # Temperature--density relation
         if self.A1_T_rho_type is not None:
