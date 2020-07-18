@@ -2094,6 +2094,12 @@ class SpinPlanet:
     P_0, P_1, ... P_s;  T_0, ..., T_s;  rho_0, ..., rho_s : float
         The pressure (Pa), temperature (K), and density (kg m^-3) at each layer 
         boundary, from the centre (_0) up to the surface (_s).
+
+    I_MR2 : float
+        The moment of inertia factor using the equatorial radius.
+
+    L : float
+        The rotational angular momentum (kg m^2 s^-1).
     """
 
     def __init__(
@@ -2330,7 +2336,7 @@ class SpinPlanet:
         # I_z = int dm*(x^2 + y^2) = int rho r_{xy}^3 dr_{xy} dphi dz
         # compute for constant-density spheroids with density d_rho,
         # then sum for every spheroid
-        # int r_{xy}^3 dr_{xy} dz = 8/15*pi*R^4*Z
+        # int r_{xy}^3 dr_{xy} dz = 8/15 pi R^4 Z
         A1_drho = np.append(self.A1_rho, 0)
         A1_drho = A1_drho[:-1] - A1_drho[1:]
 
@@ -2448,11 +2454,11 @@ class SpinPlanet:
             "    %s = %.5g  kg m^-3", (utils.add_whitespace("rho_0", space), self.rho_0)
         )
         print_try(
-            "    %s = %.5g  M_tot*R_eq^2",
+            "    %s = %.5g  M_tot R_eq^2",
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
         print_try(
-            "    %s = %.5g  L_em", (utils.add_whitespace("L", space), self.L / gv.L_em),
+            "    %s = %.5g  kg m^2 s^−1", (utils.add_whitespace("L", space), self.L),
         )
 
     def save(self, filename, verbosity=1):
