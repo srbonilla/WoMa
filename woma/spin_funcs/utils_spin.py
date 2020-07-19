@@ -652,13 +652,13 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
         Density for every particle (kg m^-3).
 
     A1_h : [float]
-        Smoothing lenght for every particle (m).
+        Smoothing length for every particle (m).
 
     A1_R : [float]
-        Semi-major axis of the elipsoid for every particle (m).
+        Semi-major axis of the spheroid for every particle (m).
         
     A1_Z : [float]
-        Semi-minor axis of the elipsoid for every particle (m).
+        Semi-minor axis of the spheroid for every particle (m).
 
     """
 
@@ -668,7 +668,7 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     # mass of the model planet
     M = M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
 
-    # Equatorial and polar radius radius
+    # Equatorial and polar radius
     R_eq = np.max(A1_r_eq[A1_rho_eq > 0])
     R_po = np.max(A1_r_po[A1_rho_po > 0])
 
@@ -676,17 +676,20 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     radii = np.arange(0, R_eq, R_eq / 1000000)
     rho_model_eq = interp1d(A1_r_eq, A1_rho_eq)
     densities = rho_model_eq(radii)
-    particles = seagen.GenSphere(N, radii[1:], densities[1:], verbosity=0,)
+    if verbosity < 2:
+        verbosity_2 = 0
+    else:
+        verbosity_2 = verbosity
+    particles = seagen.GenSphere(N, radii[1:], densities[1:], verbosity=verbosity_2)
 
     index = np.where(A1_rho_po == 0)[0][0] + 1
     rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
 
     A1_R_shell = np.unique(particles.A1_r)
-    # R_shell_outer = particles.A1_r_outer.copy()
     rho_shell = rho_model_eq(A1_R_shell)
     Z_shell = rho_model_po_inv(rho_shell)
 
-    # Get picle mass of final configuration
+    # Get particle mass of final configuration
     m_picle = M / N
 
     A1_M_shell = picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
@@ -694,7 +697,7 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     # Number of particles per shell
     N_shell = np.round(A1_M_shell / m_picle).astype(int)
 
-    # Tweek mass picle per shell to match total mass
+    # Tweak particle mass per shell to match total mass
     m_picle_shell = A1_M_shell / N_shell
 
     # Generate shells and make adjustments
@@ -1053,7 +1056,7 @@ def find_min_period(
     P_2=None,
     max_period=10,
     num_attempt=30,
-    tol=0.00001,
+    tol=0.01,
     verbosity=1,
 ):
     """ Compute the minimum period available for a given profile.
@@ -1106,10 +1109,11 @@ def find_min_period(
         Maximum period to consider (hours).
         
     num_attempts : int
-        Number of iterations to perform.
+        The maximum number of iterations to perform.
         
     tol : float
-        Tolerance level to convergence.
+        The tolerance for the minimum period as a fractional difference between
+        two consecutive iterations.
         
     verbosity : int
         Printing options.
@@ -1153,9 +1157,10 @@ def find_min_period(
 
         if verbosity >= 1:
             print(
-                "\rIter %d(%d): T=%.5g hours --> tol=%.2g(%.2g)"
+                "\rIter %d(%d): T=%.5g h, tol=%.2g(%.2g)"
                 % (i + 1, num_attempt, min_period, tol_reached, tol),
-                end="",
+                end="  ", 
+                flush=True,
             )
 
         if tol_reached < tol:
@@ -1166,6 +1171,6 @@ def find_min_period(
     min_period = max_period
 
     if verbosity >= 1:
-        print("Minimum period: %.3f hours" % (min_period))
+        print("Minimum period: %.3g hours" % (min_period))
 
     return min_period

@@ -2460,7 +2460,7 @@ class SpinPlanet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
         print_try(
-            "    %s = %.5g  kg m^2 s^−1", (utils.add_whitespace("L", space), self.L),
+            "    %s = %.5g  kg m^2 s^-1", (utils.add_whitespace("L", space), self.L),
         )
 
     def save(self, filename, verbosity=1):
@@ -2674,7 +2674,7 @@ class SpinPlanet:
         self.A1_rho_eq = rho_model(self.A1_r_eq)
         self.A1_rho_po = rho_model(self.A1_r_po)
 
-    def find_min_period(self, max_period=10, tol=0.001, num_attempt=20, verbosity=1):
+    def find_min_period(self, max_period=10, tol=0.01, num_attempt=20, verbosity=1):
         ### Need to pass arguments on from spin functions
         min_period = us.find_min_period(
             self.num_layer,
@@ -2720,7 +2720,7 @@ class SpinPlanet:
             # Check the current period is not below the minimum
             if check_min_period:
                 self.find_min_period(
-                    num_attempt=num_attempt_find_min_period, verbosity=0
+                    num_attempt=num_attempt_find_min_period, verbosity=verbosity
                 )
 
                 # Select period for this iteration
