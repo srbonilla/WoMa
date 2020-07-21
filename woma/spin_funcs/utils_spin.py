@@ -1159,7 +1159,7 @@ def find_min_period(
             print(
                 "\rIter %d(%d): T=%.5g h, tol=%.2g(%.2g)"
                 % (i + 1, num_attempt, min_period, tol_reached, tol),
-                end="  ", 
+                end="  ",
                 flush=True,
             )
 

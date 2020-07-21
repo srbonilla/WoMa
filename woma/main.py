@@ -3403,7 +3403,7 @@ class ParticlePlanet:
         # 2D position and velocity arrays
         self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
         self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
-        
+
     def save(self, filename, boxsize, verbosity=1):
         """ Save the particle configuration to an HDF5 file. 
 
@@ -3415,15 +3415,25 @@ class ParticlePlanet:
         boxsize : float
             Length of the simulation box (m).
         """
-        
+
         filename = utils.check_end(filename, ".hdf5")
 
         if verbosity >= 1:
             print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
-        
-        with h5py.File(filename, 'w') as f:
-            io.save_picle_data(f, self.A2_pos, self.A2_vel,
-                             self.A1_m, self.A1_h,
-                             self.A1_rho, self.A1_P, self.A1_u,
-                             self.A1_id, self.A1_mat_id,
-                             boxsize, io.SI_to_SI, verbosity) 
+
+        with h5py.File(filename, "w") as f:
+            io.save_picle_data(
+                f,
+                self.A2_pos,
+                self.A2_vel,
+                self.A1_m,
+                self.A1_h,
+                self.A1_rho,
+                self.A1_P,
+                self.A1_u,
+                self.A1_id,
+                self.A1_mat_id,
+                boxsize,
+                io.SI_to_SI,
+                verbosity,
+            )
