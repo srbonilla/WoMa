@@ -10,7 +10,7 @@ ParticlePlanet classes.
 import numpy as np
 import sys
 
-from woma import glob_vars as gv
+from woma.misc import glob_vars as gv
 
 
 # HDF5 labels
@@ -301,7 +301,7 @@ def save_picle_data(
     if verbosity >= 1:
         print("")
         print("num_picle    = %d" % num_picle)
-        print("boxsize      = %g R_E" % boxsize)
+        print("boxsize      = %.2g R_E" % (boxsize / gv.R_earth))
         print("mat_id       = ", end="")
         for mat_id in np.unique(A1_mat_id):
             print("%d " % mat_id, end="")
