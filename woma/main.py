@@ -182,8 +182,7 @@ class Planet:
             # Placeholder
             self.num_layer = 1
 
-        # T and, P or rho must be provided at the surface to calculate the
-        # third. If all three are provided then rho is overwritten.
+        # T and P or rho must be provided at the surface to calculate the third.
         if self.P_s is not None and self.P_s <= 0:
             e = "Pressure at surface must be > 0."
             raise ValueError(e)
@@ -194,18 +193,21 @@ class Planet:
             e = "Density at surface must be > 0."
             raise ValueError(e)
         if self.T_s is None:
-            e = "Temperature at surface must me provided."
+            e = "Temperature at surface must be provided."
             raise ValueError(e)
-        if self.P_s is not None and self.T_s is not None:
+        if self.P_s is not None:
             self.rho_s = eos.rho_P_T(self.P_s, self.T_s, self.A1_mat_id_layer[-1])
-        elif self.rho_s is not None and self.T_s is not None:
+        elif self.rho_s is not None:
             self.P_s = eos.P_T_rho(self.T_s, self.rho_s, self.A1_mat_id_layer[-1])
             if self.P_s <= 0:
                 e = (
-                    "Pressure at surface computed is equal to 0.\n"
+                    "Pressure at surface computed is not positive.\n"
                     "Please modify temperature and/or density at surface."
                 )
                 raise ValueError(e)
+        else:
+            e = "Temperature and pressure or density at surface must be provided."
+            raise ValueError(e)
 
         # Temperature--density relation
         if self.A1_T_rho_type is not None:
@@ -2295,26 +2297,28 @@ class SpinPlanet:
             for i, rho in enumerate(
                 self.A1_rho[self.A1_idx_layer_eq[0] + 1 : self.A1_idx_layer_eq[1] + 1]
             ):
-                self.A1_T[i] = T_rho(
+                j = self.A1_idx_layer_eq[0] + 1 + i
+                self.A1_T[j] = T_rho(
                     rho,
                     self.A1_T_rho_type_id[1],
                     self.A1_T_rho_args[1],
                     self.A1_mat_id_layer[1],
                 )
-                self.A1_u[i] = eos.u_rho_T(rho, self.A1_T[i], self.A1_mat_id_layer[1])
-                self.A1_P[i] = eos.P_u_rho(self.A1_u[i], rho, self.A1_mat_id_layer[1])
+                self.A1_u[j] = eos.u_rho_T(rho, self.A1_T[j], self.A1_mat_id_layer[1])
+                self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id_layer[1])
         if self.num_layer >= 3:
             for i, rho in enumerate(
                 self.A1_rho[self.A1_idx_layer_eq[1] + 1 : self.A1_idx_layer_eq[2] + 1]
             ):
-                self.A1_T[i] = T_rho(
+                j = self.A1_idx_layer_eq[1] + 1 + i
+                self.A1_T[j] = T_rho(
                     rho,
                     self.A1_T_rho_type_id[2],
                     self.A1_T_rho_args[2],
                     self.A1_mat_id_layer[2],
                 )
-                self.A1_u[i] = eos.u_rho_T(rho, self.A1_T[i], self.A1_mat_id_layer[2])
-                self.A1_P[i] = eos.P_u_rho(self.A1_u[i], rho, self.A1_mat_id_layer[2])
+                self.A1_u[j] = eos.u_rho_T(rho, self.A1_T[j], self.A1_mat_id_layer[2])
+                self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id_layer[2])
 
         # Boundary values
         self.P_0 = self.A1_P[0]
@@ -2458,7 +2462,7 @@ class SpinPlanet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
         print_try(
-            "    %s = %.5g  kg m^2 s^−1", (utils.add_whitespace("L", space), self.L),
+            "    %s = %.5g  kg m^2 s^-1", (utils.add_whitespace("L", space), self.L),
         )
 
     def save(self, filename, verbosity=1):
@@ -2672,7 +2676,7 @@ class SpinPlanet:
         self.A1_rho_eq = rho_model(self.A1_r_eq)
         self.A1_rho_po = rho_model(self.A1_r_po)
 
-    def find_min_period(self, max_period=10, tol=0.001, num_attempt=20, verbosity=1):
+    def find_min_period(self, max_period=10, tol=0.01, num_attempt=20, verbosity=1):
         ### Need to pass arguments on from spin functions
         min_period = us.find_min_period(
             self.num_layer,
@@ -2718,7 +2722,7 @@ class SpinPlanet:
             # Check the current period is not below the minimum
             if check_min_period:
                 self.find_min_period(
-                    num_attempt=num_attempt_find_min_period, verbosity=0
+                    num_attempt=num_attempt_find_min_period, verbosity=verbosity
                 )
 
                 # Select period for this iteration
@@ -3399,3 +3403,37 @@ class ParticlePlanet:
         # 2D position and velocity arrays
         self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
         self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
+
+    def save(self, filename, boxsize, verbosity=1):
+        """ Save the particle configuration to an HDF5 file. 
+
+        Parameters
+        ----------
+        filename : str
+            The data file path.
+            
+        boxsize : float
+            Length of the simulation box (m).
+        """
+
+        filename = utils.check_end(filename, ".hdf5")
+
+        if verbosity >= 1:
+            print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
+
+        with h5py.File(filename, "w") as f:
+            io.save_picle_data(
+                f,
+                self.A2_pos,
+                self.A2_vel,
+                self.A1_m,
+                self.A1_h,
+                self.A1_rho,
+                self.A1_P,
+                self.A1_u,
+                self.A1_id,
+                self.A1_mat_id,
+                boxsize,
+                io.SI_to_SI,
+                verbosity,
+            )

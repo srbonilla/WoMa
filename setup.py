@@ -6,7 +6,7 @@ with open("README.md", "r") as f:
 setuptools.setup(
     name="woma",
     packages=setuptools.find_packages(),
-    version="1.1.1",
+    version="1.1.2",
     description="WorldMaker",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,7 +25,7 @@ setuptools.setup(
         "Development Status :: 4 - Beta",
     ],
     python_requires=">=3",
-    install_requires=["seagen", "numpy", "numba", "h5py"],
+    install_requires=["seagen>=1.4.1", "numpy", "numba>=0.50.1", "h5py"],
     package_data={"woma": ["data/*.txt", "data/*.npy"]},
     keywords=[
         "profile spinning rotating planet interior particle SPH initial conditions"
