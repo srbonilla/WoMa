@@ -471,22 +471,17 @@ def frac_vol_theta_analytical(theta, R_in, Z_in, R_out, Z_out):
 
 
 @jit(nopython=False)
-def spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
+def spheroid_masses(A1_R, A1_Z, A1_rho):
     """ Computes the mass of every spheroidal shell of a spinning planet.
 
     Parameters
     ----------
-    A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (m).
+    A1_R, A1_Z : [float]
+        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        nested spheroids (m).
 
-    A1_rho_eq : [float]
-        Equatorial profile of densities (kg m^-3).
-
-    A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (m).
-
-    A1_rho_po : [float]
-        Polar profile of densities (kg m^-3).
+    A1_rho : [float]
+        The density (kg m^-3) of each spheroid.
 
     Returns
     -------
@@ -494,43 +489,30 @@ def spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
         Mass of every spheroid of the spinning planet (kg).
     """
 
-    index = np.where(A1_rho_po == 0)[0][0] + 1
-    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
-    A1_R = A1_r_eq
-    Z_array = rho_model_po_inv(A1_rho_eq)
-
     A1_M = np.zeros_like(A1_R)
 
     for i in range(1, A1_R.shape[0]):
 
-        if A1_rho_eq[i] == 0:
-            break
-
-        dvol = vol_spheroid(A1_R[i], Z_array[i]) - vol_spheroid(
-            A1_R[i - 1], Z_array[i - 1]
+        dvol = vol_spheroid(A1_R[i], A1_Z[i]) - vol_spheroid(
+            A1_R[i - 1], A1_Z[i - 1]
         )
-        A1_M[i] = A1_rho_eq[i] * dvol
+        A1_M[i] = A1_rho[i] * dvol
 
     return A1_M
 
 
 @jit(nopython=False)
-def M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
+def M_spin_planet(A1_R, A1_Z, A1_rho):
     """ Computes the mass of a spinning planet.
 
     Parameters
     ----------
-    A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (m).
+    A1_R, A1_Z : [float]
+        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        nested spheroids (m).
 
-    A1_rho_eq : [float]
-        Equatorial profile of densities (kg m^-3).
-
-    A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (m).
-
-    A1_rho_po : [float]
-        Polar profile of densities (kg m^-3).
+    A1_rho : [float]
+        The density (kg m^-3) of each spheroid.
 
     Returns
     -------
@@ -538,28 +520,28 @@ def M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
         Mass of the planet (kg).
     """
 
-    return np.sum(spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po))
+    return np.sum(spheroid_masses(A1_R, A1_Z, A1_rho))
 
 
-def picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
+def picle_shell_masses(A1_R, A1_Z, A1_rho, 
+                       A1_R_shell, A1_R_shell_outer
+                       ):
     """ Computes the mass of every spheroidal shell of particles.
 
     Parameters
     ----------
+    A1_R, A1_Z : [float]
+        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        nested spheroids (m).
+
+    A1_rho : [float]
+        The density (kg m^-3) of each spheroid.
+    
     A1_R_shell : [float]
         Array of semi-major axis where the particles are located (m).
     
-    A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (m).
-
-    A1_rho_eq : [float]
-        Equatorial profile of densities (kg m^-3).
-
-    A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (m).
-
-    A1_rho_po : [float]
-        Polar profile of densities (kg m^-3).
+    A1_R_shell_outer : [float]
+        Array of semi-major axis where the solid spheroidal shells end (m).
 
     Returns
     -------
@@ -567,63 +549,51 @@ def picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
         Mass of every particle shell (kg).
     """
 
-    R_eq = np.max(A1_r_eq[A1_rho_eq > 0])
-
     A1_M_shell = np.zeros_like(A1_R_shell)
-    A1_M_cum = np.cumsum(spheroid_masses(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po))
-    get_M_cum_model = interp1d(A1_r_eq, A1_M_cum)
+    A1_M_cum = np.cumsum(spheroid_masses(A1_R, A1_Z, A1_rho))
+    M_cum_model = interp1d(A1_R, A1_M_cum)
 
     for i in range(A1_M_shell.shape[0]):
         if i == 0:
 
             R_in = 1e-5
-            R_0 = A1_R_shell[i]
-            R_out = A1_R_shell[i + 1]
-            R_out = (R_out + R_0) / 2
-
-        elif i == A1_M_shell.shape[0] - 1:
-
-            R_in = A1_R_shell[i - 1]
-            R_out = R_eq
-            R_0 = A1_R_shell[i]
-            R_in = (R_in + R_0) / 2
+            R_out = A1_R_shell_outer[i]
 
         else:
 
-            R_in = A1_R_shell[i - 1]
-            R_out = A1_R_shell[i + 1]
-            R_0 = A1_R_shell[i]
-            R_in = (R_in + R_0) / 2
-            R_out = (R_out + R_0) / 2
+            R_in = A1_R_shell_outer[i - 1]
+            R_out = A1_R_shell_outer[i]
 
-        A1_M_shell[i] = get_M_cum_model(R_out) - get_M_cum_model(R_in)
+        A1_M_shell[i] = M_cum_model(R_out) - M_cum_model(R_in)
 
     return A1_M_shell
 
 
-def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity=1):
+def place_particles(A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, N_ngb=48, verbosity=1):
 
     """ Particle placement for a spining profile.
 
     Parameters
     ----------
-    A1_r_eq : [float]
-        Points at equatorial profile where the solution is defined (SI).
+    A1_R, A1_Z : [float]
+        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        nested spheroids (m).
 
-    A1_rho_eq : [float]
-        Equatorial profile of densities (SI).
-
-    A1_r_po : [float]
-        Points at equatorial profile where the solution is defined (SI).
-
-    A1_rho_po : [float]
-        Polar profile of densities (SI).
+    A1_rho, A1_P, A1_T, A1_u : [float]
+        The pressure (Pa), density (kg m^-3), temperature (K), and specific 
+        internal energy (J kg^-1) of each spheroid.
+        
+    A1_mat_id : [int]
+        The material ID of each spheroid. (See the README.md documentation.)
 
     N (int):
         Number of particles.
         
     period : float
         Period of the planet (hours).
+        
+    N_ngb : int
+        Number of neighbors in the SPH simulation.
 
     Returns
     -------
@@ -662,43 +632,47 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
 
     """
 
-    assert len(A1_r_eq) == len(A1_rho_eq)
-    assert len(A1_r_po) == len(A1_rho_po)
+    assert len(A1_R) == len(A1_Z)
+    assert len(A1_R) == len(A1_rho)
+    assert len(A1_R) == len(A1_mat_id)
 
     # mass of the model planet
-    M = M_spin_planet(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
+    M = M_spin_planet(A1_R, A1_Z, A1_rho)
 
-    # Equatorial and polar radius
-    R_eq = np.max(A1_r_eq[A1_rho_eq > 0])
-    R_po = np.max(A1_r_po[A1_rho_po > 0])
-
-    # First model - spherical planet from equatorial profile
-    radii = np.arange(0, R_eq, R_eq / 1000000)
-    rho_model_eq = interp1d(A1_r_eq, A1_rho_eq)
-    densities = rho_model_eq(radii)
     if verbosity < 2:
         verbosity_2 = 0
     else:
         verbosity_2 = verbosity
-    particles = seagen.GenSphere(N, radii[1:], densities[1:], verbosity=verbosity_2)
+        
+    particles = seagen.GenSphere(N, A1_R[1:], A1_rho[1:], A1_mat_id[1:], verbosity=verbosity_2)
 
-    index = np.where(A1_rho_po == 0)[0][0] + 1
-    rho_model_po_inv = interp1d(A1_rho_po[:index], A1_r_po[:index])
+    rho_model_eq     = interp1d(A1_R, A1_rho)
+    rho_model_po_inv = interp1d(A1_rho, A1_Z)
+    T_model_eq = interp1d(A1_R, A1_T)
+    u_model_eq = interp1d(A1_R, A1_u)
+    P_model_eq = interp1d(A1_R, A1_P)
+    mat_id_model_eq = interp1d(A1_R, A1_mat_id)
 
     A1_R_shell = np.unique(particles.A1_r)
-    rho_shell = rho_model_eq(A1_R_shell)
-    Z_shell = rho_model_po_inv(rho_shell)
+    A1_R_shell_outer = particles.A1_r_outer
+    A1_rho_shell = rho_model_eq(A1_R_shell)
+    A1_Z_shell = rho_model_po_inv(A1_rho_shell)
+    A1_Z_shell_outer = rho_model_po_inv(rho_model_eq(A1_R_shell_outer))
+    A1_T_shell = T_model_eq(A1_R_shell)
+    A1_P_shell = P_model_eq(A1_R_shell)
+    A1_u_shell = u_model_eq(A1_R_shell)
+    A1_mat_id_shell = np.round(mat_id_model_eq(A1_R_shell)).astype('int')
 
     # Get particle mass of final configuration
     m_picle = M / N
 
-    A1_M_shell = picle_shell_masses(A1_R_shell, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po)
+    A1_M_shell = picle_shell_masses(A1_R, A1_Z, A1_rho, A1_R_shell, A1_R_shell_outer)
 
     # Number of particles per shell
-    N_shell = np.round(A1_M_shell / m_picle).astype(int)
+    A1_N_shell = np.round(A1_M_shell / m_picle).astype(int)
 
     # Tweak particle mass per shell to match total mass
-    m_picle_shell = A1_M_shell / N_shell
+    A1_m_picle_shell = A1_M_shell / A1_N_shell
 
     # Generate shells and make adjustments
     A1_x = []
@@ -708,12 +682,16 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     A1_m = []
     A1_R = []
     A1_Z = []
+    A1_P = []
+    A1_T = []
+    A1_u = []
+    A1_mat_id = []
 
     # all layers but first and last
-    for i in range(N_shell.shape[0]):
+    for i in range(A1_N_shell.shape[0]):
 
         if verbosity >= 1:
-            string = "Creating spheroidal shell {}/{}".format(i + 1, N_shell.shape[0])
+            string = "Creating spheroidal shell {}/{}".format(i + 1, A1_N_shell.shape[0])
             sys.stdout.write("\r" + string)
 
         # First shell
@@ -721,66 +699,33 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
             # Create analitical model for the shell
             theta_elip = np.linspace(0, np.pi, 100000)
 
-            particles = seagen.GenShell(N_shell[i], A1_R_shell[i])
+            particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i])
 
             R_0 = A1_R_shell[i]
-            Z_0 = Z_shell[i]
-            R_out = A1_R_shell[i + 1]
-            Z_out = Z_shell[i + 1]
+            Z_0 = A1_Z_shell[i]
+            R_out = A1_R_shell_outer[i]
+            Z_out = A1_Z_shell_outer[i]
 
             R_in = 1e-5
             Z_in = 1e-5
-            R_out = (R_out + R_0) / 2
-            Z_out = (Z_out + Z_0) / 2
 
             n_theta_elip = frac_vol_theta_analytical(
                 theta_elip, R_in, Z_in, R_out, Z_out
             )
-
-        # Last shell
-        elif i == N_shell.shape[0] - 1:
-
-            if N_shell[-1] > 0:
-                # Create analitical model for the shell
-                theta_elip = np.linspace(0, np.pi, 100000)
-
-                particles = seagen.GenShell(N_shell[i], A1_R_shell[i])
-
-                R_0 = A1_R_shell[i]
-                Z_0 = Z_shell[i]
-                R_in = A1_R_shell[i - 1]
-                Z_in = Z_shell[i - 1]
-
-                R_in = (R_in + R_0) / 2
-                Z_in = (Z_in + Z_0) / 2
-                R_out = R_eq
-                Z_out = R_po
-
-                n_theta_elip = frac_vol_theta_analytical(
-                    theta_elip, R_in, Z_in, R_out, Z_out
-                )
-
-            else:
-                break
 
         # Rest of shells
         else:
             # Create analitical model for the shell
             theta_elip = np.linspace(0, np.pi, 100000)
 
-            particles = seagen.GenShell(N_shell[i], A1_R_shell[i])
+            particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i])
 
             R_0 = A1_R_shell[i]
-            Z_0 = Z_shell[i]
-            R_in = A1_R_shell[i - 1]
-            Z_in = Z_shell[i - 1]
-            R_out = A1_R_shell[i + 1]
-            Z_out = Z_shell[i + 1]
-
-            R_in = (R_in + R_0) / 2
-            Z_in = (Z_in + Z_0) / 2
-            R_out = (R_out + R_0) / 2
-            Z_out = (Z_out + Z_0) / 2
+            Z_0 = A1_Z_shell[i]
+            R_in = A1_R_shell_outer[i - 1]
+            Z_in = A1_Z_shell_outer[i - 1]
+            R_out = A1_R_shell_outer[i]
+            Z_out = A1_Z_shell_outer[i]
 
             n_theta_elip = frac_vol_theta_analytical(
                 theta_elip, R_in, Z_in, R_out, Z_out
@@ -810,10 +755,14 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
         A1_y.append(y)
         A1_z.append(z)
 
-        A1_rho.append(rho_shell[i] * np.ones(N_shell[i]))
-        A1_m.append(m_picle_shell[i] * np.ones(N_shell[i]))
-        A1_R.append(A1_R_shell[i] * np.ones(N_shell[i]))
-        A1_Z.append(Z_shell[i] * np.ones(N_shell[i]))
+        A1_rho.append(A1_rho_shell[i] * np.ones(A1_N_shell[i]))
+        A1_m.append(A1_m_picle_shell[i] * np.ones(A1_N_shell[i]))
+        A1_R.append(A1_R_shell[i] * np.ones(A1_N_shell[i]))
+        A1_Z.append(A1_Z_shell[i] * np.ones(A1_N_shell[i]))
+        A1_P.append(A1_P_shell[i] * np.ones(A1_N_shell[i]))
+        A1_T.append(A1_T_shell[i] * np.ones(A1_N_shell[i]))
+        A1_u.append(A1_u_shell[i] * np.ones(A1_N_shell[i]))
+        A1_mat_id.append(A1_mat_id_shell[i] * np.ones(A1_N_shell[i]))
 
     if verbosity >= 1:
         sys.stdout.write("\n")
@@ -826,6 +775,10 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
     A1_m = np.concatenate(A1_m)
     A1_R = np.concatenate(A1_R)
     A1_Z = np.concatenate(A1_Z)
+    A1_P = np.concatenate(A1_P)
+    A1_T = np.concatenate(A1_T)
+    A1_u = np.concatenate(A1_u)
+    A1_mat_id = np.concatenate(A1_mat_id)
 
     # Compute velocities (T_w in hours)
     A1_vx = np.zeros(A1_m.shape[0])
@@ -837,9 +790,28 @@ def place_particles(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, N, period, verbosity
 
     A1_vx = -A1_y * wz
     A1_vy = A1_x * wz
+    
+    # Smoothing lengths, crudely estimated from the densities
+    w_edge = 2  # r/h at which the kernel goes to zero
+    A1_h = np.cbrt(N_ngb * A1_m / (4 / 3 * np.pi * A1_rho)) / w_edge
 
-    return A1_x, A1_y, A1_z, A1_vx, A1_vy, A1_vz, A1_m, A1_rho, A1_R, A1_Z
+    A1_id = np.arange(A1_m.shape[0])
 
+    return (
+        A1_x,
+        A1_y,
+        A1_z,
+        A1_vx,
+        A1_vy,
+        A1_vz,
+        A1_m,
+        A1_rho,
+        A1_u,
+        A1_P,
+        A1_h,
+        A1_mat_id,
+        A1_id,
+    )
 
 def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     """ Computes the escape velocity for a spining planet.
