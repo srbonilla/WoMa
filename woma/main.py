@@ -2225,11 +2225,18 @@ class SpinPlanet:
     def _update_internal_attributes(self):
         """ Update the attributes required for the internal iterations. """
         self.A1_idx_layer_eq, self.A1_idx_layer_po = self._find_boundary_indices()
+        
+        # Nested spheroid properties
+        self.A1_rho = self.A1_rho_eq[: self.A1_idx_layer_eq[-1] + 1]
+        self.A1_R = self.A1_r_eq[: self.A1_idx_layer_eq[-1] + 1]
+        # Find polar radii by interpolating between the polar densities
+        rho_model_po_inv = interp1d(self.A1_rho_po, self.A1_r_po)
+        self.A1_Z = rho_model_po_inv(self.A1_rho)
 
         # Enclosed, total, and layer masses
         try:
             self.A1_m = us.spheroid_masses(
-                self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po
+                self.A1_R, self.A1_Z, self.A1_rho
             )
         except:
             e = (
@@ -3285,121 +3292,36 @@ class ParticlePlanet:
             self.N_particles = particles.A1_x.shape[0]
 
         if isinstance(planet, SpinPlanet):
-            if planet.num_layer == 1:
 
-                (
-                    self.A1_x,
-                    self.A1_y,
-                    self.A1_z,
-                    self.A1_vx,
-                    self.A1_vy,
-                    self.A1_vz,
-                    self.A1_m,
-                    self.A1_rho,
-                    self.A1_u,
-                    self.A1_P,
-                    self.A1_h,
-                    self.A1_mat_id,
-                    self.A1_id,
-                ) = L1_spin.L1_place_particles(
-                    planet.A1_r_eq,
-                    planet.A1_rho_eq,
-                    planet.A1_r_po,
-                    planet.A1_rho_po,
-                    planet.period,
-                    self.N_particles,
-                    planet.A1_mat_id_layer[0],
-                    planet.A1_T_rho_type_id[0],
-                    planet.A1_T_rho_args[0],
-                    self.N_ngb,
-                    verbosity=verbosity,
-                )
+            (
+                self.A1_x,
+                self.A1_y,
+                self.A1_z,
+                self.A1_vx,
+                self.A1_vy,
+                self.A1_vz,
+                self.A1_m,
+                self.A1_rho,
+                self.A1_u,
+                self.A1_P,
+                self.A1_h,
+                self.A1_mat_id,
+                self.A1_id,
+            ) = us.place_particles(planet.A1_R,
+                                planet.A1_Z,
+                                planet.A1_rho,
+                                planet.A1_mat_id,
+                                planet.A1_u,
+                                planet.A1_T,
+                                planet.A1_P,
+                                N_particles,
+                                planet.period,
+                                N_ngb=self.N_ngb,
+                                verbosity=verbosity)
 
-                self.N_particles = self.A1_x.shape[0]
+            self.N_particles = self.A1_x.shape[0]
 
-            elif planet.num_layer == 2:
-
-                rho_P_model = interp1d(planet.A1_P, planet.A1_rho)
-                rho_1 = rho_P_model(planet.P_1)
-
-                (
-                    self.A1_x,
-                    self.A1_y,
-                    self.A1_z,
-                    self.A1_vx,
-                    self.A1_vy,
-                    self.A1_vz,
-                    self.A1_m,
-                    self.A1_rho,
-                    self.A1_u,
-                    self.A1_P,
-                    self.A1_h,
-                    self.A1_mat_id,
-                    self.A1_id,
-                ) = L2_spin.L2_place_particles(
-                    planet.A1_r_eq,
-                    planet.A1_rho_eq,
-                    planet.A1_r_po,
-                    planet.A1_rho_po,
-                    planet.period,
-                    self.N_particles,
-                    rho_1,
-                    planet.A1_mat_id_layer[0],
-                    planet.A1_T_rho_type_id[0],
-                    planet.A1_T_rho_args[0],
-                    planet.A1_mat_id_layer[1],
-                    planet.A1_T_rho_type_id[1],
-                    planet.A1_T_rho_args[1],
-                    self.N_ngb,
-                    verbosity=verbosity,
-                )
-
-                self.N_particles = self.A1_x.shape[0]
-
-            elif planet.num_layer == 3:
-
-                rho_P_model = interp1d(planet.A1_P, planet.A1_rho)
-                rho_1 = rho_P_model(planet.P_1)
-                rho_2 = rho_P_model(planet.P_2)
-
-                (
-                    self.A1_x,
-                    self.A1_y,
-                    self.A1_z,
-                    self.A1_vx,
-                    self.A1_vy,
-                    self.A1_vz,
-                    self.A1_m,
-                    self.A1_rho,
-                    self.A1_u,
-                    self.A1_P,
-                    self.A1_h,
-                    self.A1_mat_id,
-                    self.A1_id,
-                ) = L3_spin.L3_place_particles(
-                    planet.A1_r_eq,
-                    planet.A1_rho_eq,
-                    planet.A1_r_po,
-                    planet.A1_rho_po,
-                    planet.period,
-                    planet.N_particles,
-                    rho_1,
-                    rho_2,
-                    planet.A1_mat_id_layer[0],
-                    planet.A1_T_rho_type_id[0],
-                    planet.A1_T_rho_args[0],
-                    planet.A1_mat_id_layer[1],
-                    planet.A1_T_rho_type_id[1],
-                    planet.A1_T_rho_args[1],
-                    planet.A1_mat_id_layer[2],
-                    planet.A1_T_rho_type_id[2],
-                    planet.A1_T_rho_args[2],
-                    self.N_ngb,
-                    verbosity=verbosity,
-                )
-
-                self.N_particles = self.A1_x.shape[0]
-
+          
         # 2D position and velocity arrays
         self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
         self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
