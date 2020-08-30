@@ -293,4 +293,3 @@ def L1_spin(
         profile_po.append(A1_rho_po)
 
     return profile_eq, profile_po
-

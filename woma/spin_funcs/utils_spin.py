@@ -493,9 +493,7 @@ def spheroid_masses(A1_R, A1_Z, A1_rho):
 
     for i in range(1, A1_R.shape[0]):
 
-        dvol = vol_spheroid(A1_R[i], A1_Z[i]) - vol_spheroid(
-            A1_R[i - 1], A1_Z[i - 1]
-        )
+        dvol = vol_spheroid(A1_R[i], A1_Z[i]) - vol_spheroid(A1_R[i - 1], A1_Z[i - 1])
         A1_M[i] = A1_rho[i] * dvol
 
     return A1_M
@@ -523,9 +521,7 @@ def M_spin_planet(A1_R, A1_Z, A1_rho):
     return np.sum(spheroid_masses(A1_R, A1_Z, A1_rho))
 
 
-def picle_shell_masses(A1_R, A1_Z, A1_rho, 
-                       A1_R_shell, A1_R_shell_outer
-                       ):
+def picle_shell_masses(A1_R, A1_Z, A1_rho, A1_R_shell, A1_R_shell_outer):
     """ Computes the mass of every spheroidal shell of particles.
 
     Parameters
@@ -569,7 +565,9 @@ def picle_shell_masses(A1_R, A1_Z, A1_rho,
     return A1_M_shell
 
 
-def place_particles(A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, N_ngb=48, verbosity=1):
+def place_particles(
+    A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, N_ngb=48, verbosity=1
+):
 
     """ Particle placement for a spining profile.
 
@@ -643,10 +641,12 @@ def place_particles(A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, 
         verbosity_2 = 0
     else:
         verbosity_2 = verbosity
-        
-    particles = seagen.GenSphere(N, A1_R[1:], A1_rho[1:], A1_mat_id[1:], verbosity=verbosity_2)
 
-    rho_model_eq     = interp1d(A1_R, A1_rho)
+    particles = seagen.GenSphere(
+        N, A1_R[1:], A1_rho[1:], A1_mat_id[1:], verbosity=verbosity_2
+    )
+
+    rho_model_eq = interp1d(A1_R, A1_rho)
     rho_model_po_inv = interp1d(A1_rho, A1_Z)
     T_model_eq = interp1d(A1_R, A1_T)
     u_model_eq = interp1d(A1_R, A1_u)
@@ -661,7 +661,7 @@ def place_particles(A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, 
     A1_T_shell = T_model_eq(A1_R_shell)
     A1_P_shell = P_model_eq(A1_R_shell)
     A1_u_shell = u_model_eq(A1_R_shell)
-    A1_mat_id_shell = np.round(mat_id_model_eq(A1_R_shell)).astype('int')
+    A1_mat_id_shell = np.round(mat_id_model_eq(A1_R_shell)).astype("int")
 
     # Get particle mass of final configuration
     m_picle = M / N
@@ -691,7 +691,9 @@ def place_particles(A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, 
     for i in range(A1_N_shell.shape[0]):
 
         if verbosity >= 1:
-            string = "Creating spheroidal shell {}/{}".format(i + 1, A1_N_shell.shape[0])
+            string = "Creating spheroidal shell {}/{}".format(
+                i + 1, A1_N_shell.shape[0]
+            )
             sys.stdout.write("\r" + string)
 
         # First shell
@@ -790,7 +792,7 @@ def place_particles(A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, 
 
     A1_vx = -A1_y * wz
     A1_vy = A1_x * wz
-    
+
     # Smoothing lengths, crudely estimated from the densities
     w_edge = 2  # r/h at which the kernel goes to zero
     A1_h = np.cbrt(N_ngb * A1_m / (4 / 3 * np.pi * A1_rho)) / w_edge
@@ -812,6 +814,7 @@ def place_particles(A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, 
         A1_mat_id,
         A1_id,
     )
+
 
 def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     """ Computes the escape velocity for a spining planet.

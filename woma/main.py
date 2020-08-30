@@ -2225,7 +2225,7 @@ class SpinPlanet:
     def _update_internal_attributes(self):
         """ Update the attributes required for the internal iterations. """
         self.A1_idx_layer_eq, self.A1_idx_layer_po = self._find_boundary_indices()
-        
+
         # Nested spheroid properties
         self.A1_rho = self.A1_rho_eq[: self.A1_idx_layer_eq[-1] + 1]
         self.A1_R = self.A1_r_eq[: self.A1_idx_layer_eq[-1] + 1]
@@ -2235,9 +2235,7 @@ class SpinPlanet:
 
         # Enclosed, total, and layer masses
         try:
-            self.A1_m = us.spheroid_masses(
-                self.A1_R, self.A1_Z, self.A1_rho
-            )
+            self.A1_m = us.spheroid_masses(self.A1_R, self.A1_Z, self.A1_rho)
         except:
             e = (
                 "Period too low. Please consider the following:\n"
@@ -3307,21 +3305,22 @@ class ParticlePlanet:
                 self.A1_h,
                 self.A1_mat_id,
                 self.A1_id,
-            ) = us.place_particles(planet.A1_R,
-                                planet.A1_Z,
-                                planet.A1_rho,
-                                planet.A1_mat_id,
-                                planet.A1_u,
-                                planet.A1_T,
-                                planet.A1_P,
-                                N_particles,
-                                planet.period,
-                                N_ngb=self.N_ngb,
-                                verbosity=verbosity)
+            ) = us.place_particles(
+                planet.A1_R,
+                planet.A1_Z,
+                planet.A1_rho,
+                planet.A1_mat_id,
+                planet.A1_u,
+                planet.A1_T,
+                planet.A1_P,
+                N_particles,
+                planet.period,
+                N_ngb=self.N_ngb,
+                verbosity=verbosity,
+            )
 
             self.N_particles = self.A1_x.shape[0]
 
-          
         # 2D position and velocity arrays
         self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
         self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
