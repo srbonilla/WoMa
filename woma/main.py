@@ -3358,6 +3358,6 @@ class ParticlePlanet:
                 self.A1_mat_id,
                 A1_id=None,
                 boxsize=boxsize,
-                file_to_SI=io.SI_to_SI,
+                file_to_SI=utils.SI_to_SI,
                 verbosity=verbosity,
             )

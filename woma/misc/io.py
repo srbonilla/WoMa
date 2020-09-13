@@ -11,6 +11,7 @@ import numpy as np
 import sys
 
 from woma.misc import glob_vars as gv
+from woma.misc.utils import SI_to_SI, SI_to_cgs
 
 
 # HDF5 labels
@@ -192,73 +193,6 @@ def multi_get_spin_planet_data(f, A1_param):
         A1_data.append(get_spin_planet_data(f, param))
 
     return A1_data
-
-
-class Conversions:
-    """ Class to store conversions from one set of units to another, derived
-        using the base mass-, length-, and time-unit relations.
-
-    Usage e.g.
-    ----------
-    cgs_to_SI   = Conversions(1e-3, 1e-2, 1)
-    SI_to_cgs   = cgs_to_SI.inv()
-
-    rho_SI  = rho_cgs * cgs_to_SI.rho
-    G_cgs   = 6.67e-11 * SI_to_cgs.G
-
-    Parameters
-    ----------
-    m : float
-       Value to convert mass from the first units to the second.
-
-    l : float
-       Value to convert length from the first units to the second.
-
-    t : float
-       Value to convert time from the first units to the second.
-
-    Attributes (all : float)
-    m           Mass
-    l           Length
-    t           Time
-    v           Velocity
-    a           Acceleration
-    rho         Density
-    drho_dt     Rate of change of density
-    P           Pressure
-    u           Specific energy
-    du_dt       Rate of change of specific energy
-    E           Energy
-    s           Specific entropy
-    G           Gravitational constant
-    """
-
-    def __init__(self, m, l, t):
-        # Input conversions
-        self.m = m
-        self.l = l
-        self.t = t
-        # Derived conversions
-        self.v = l * t ** -1
-        self.a = l * t ** -2
-        self.rho = m * l ** -3
-        self.drho_dt = m * l ** -4
-        self.P = m * l ** -1 * t ** -2
-        self.u = l ** 2 * t ** -2
-        self.du_dt = l ** 2 * t ** -3
-        self.E = m * l ** 2 * t ** -2
-        self.s = l ** 2 * t ** -2
-        self.G = m ** -1 * l ** 3 * t ** -2
-
-    def inv(self):
-        """ Return the inverse to this conversion """
-        return Conversions(1 / self.m, 1 / self.l, 1 / self.t)
-
-
-# Standard unit conversions
-SI_to_SI = Conversions(1, 1, 1)  # No-op
-cgs_to_SI = Conversions(1e-3, 1e-2, 1)
-SI_to_cgs = cgs_to_SI.inv()
 
 
 def save_particle_data(
