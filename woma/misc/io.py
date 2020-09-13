@@ -72,8 +72,7 @@ Di_hdf5_spin_label = {
     "P": "Spheroid Pressures",
     "mat_id": "Spheroid Material IDs",
 }
-
-Di_hdf5_picle_label = {  # Type
+Di_hdf5_particle_label = {  # Type
     "pos": "Coordinates",  # d
     "vel": "Velocities",  # f
     "m": "Masses",  # f
@@ -197,40 +196,42 @@ def multi_get_spin_planet_data(f, A1_param):
 
 class Conversions:
     """ Class to store conversions from one set of units to another, derived
-       using the base mass-, length-, and time-unit relations.
+        using the base mass-, length-, and time-unit relations.
 
-       Usage e.g.:
-           cgs_to_SI   = Conversions(1e-3, 1e-2, 1)
-           SI_to_cgs   = cgs_to_SI.inv()
+    Usage e.g.
+    ----------
+    cgs_to_SI   = Conversions(1e-3, 1e-2, 1)
+    SI_to_cgs   = cgs_to_SI.inv()
 
-           rho_SI  = rho_cgs * cgs_to_SI.rho
-           G_cgs   = 6.67e-11 * SI_to_cgs.G
+    rho_SI  = rho_cgs * cgs_to_SI.rho
+    G_cgs   = 6.67e-11 * SI_to_cgs.G
 
-       Args:
-           m (float)
-               Value to convert mass from the first units to the second.
+    Parameters
+    ----------
+    m : float
+       Value to convert mass from the first units to the second.
 
-           l (float)
-               Value to convert length from the first units to the second.
+    l : float
+       Value to convert length from the first units to the second.
 
-           t (float)
-               Value to convert time from the first units to the second.
+    t : float
+       Value to convert time from the first units to the second.
 
-       Attrs: (all floats)
-           m           Mass
-           l           Length
-           t           Time
-           v           Velocity
-           a           Acceleration
-           rho         Density
-           drho_dt     Rate of change of density
-           P           Pressure
-           u           Specific energy
-           du_dt       Rate of change of specific energy
-           E           Energy
-           s           Specific entropy
-           G           Gravitational constant
-   """
+    Attributes (all : float)
+    m           Mass
+    l           Length
+    t           Time
+    v           Velocity
+    a           Acceleration
+    rho         Density
+    drho_dt     Rate of change of density
+    P           Pressure
+    u           Specific energy
+    du_dt       Rate of change of specific energy
+    E           Energy
+    s           Specific entropy
+    G           Gravitational constant
+    """
 
     def __init__(self, m, l, t):
         # Input conversions
@@ -254,15 +255,13 @@ class Conversions:
         return Conversions(1 / self.m, 1 / self.l, 1 / self.t)
 
 
+# Standard unit conversions
 SI_to_SI = Conversions(1, 1, 1)  # No-op
-swift_to_SI = Conversions(
-    gv.M_earth, gv.R_earth, 1
-)  # normal units for planetary impacts
 cgs_to_SI = Conversions(1e-3, 1e-2, 1)
 SI_to_cgs = cgs_to_SI.inv()
 
 
-def save_picle_data(
+def save_particle_data(
     f,
     A2_pos,
     A2_vel,
@@ -271,37 +270,48 @@ def save_picle_data(
     A1_rho,
     A1_P,
     A1_u,
-    A1_id,
     A1_mat_id,
-    boxsize,
-    file_to_SI,
+    A1_id=None,
+    boxsize=0,
+    file_to_SI=SI_to_SI,
     verbosity=1,
 ):
-    """ Print checks and save particle data to an hdf5 file.
+    """ Save particle data to an hdf5 file.
+    
+    Uses the same format as the SWIFT simulation code (www.swiftsim.com).
 
-        Args:
-            f (h5py File)
-                The opened hdf5 data file (with 'w').
+    Parameters
+    ----------
+    f : h5py File
+        The opened hdf5 data file (with "w").
 
-            A2_pos, A2_vel, A1_m, A1_h, A1_rho, A1_P, A1_u, A1_id, A1_mat_id:
-                The particle data arrays (std units). See Di_hdf5_label for
-                details.
+    A2_pos, A2_vel, A1_m, A1_h, A1_rho, A1_P, A1_u, A1_mat_id 
+        : [float] or [int]
+        The particle data arrays. See Di_hdf5_particle_label for details.
+        
+    A1_id : [int] (opt.)
+        The particle IDs. Defaults to the order in which they're provided.
 
-            boxsize (float)
-                The simulation box side length (std units).
+    boxsize : float (opt.)
+        The simulation box side length (m). If provided, then the origin will be 
+        shifted to the centre of the box.
 
-            file_to_SI (Conversions)
-                Unit conversion object from the file's units to SI.
+    file_to_SI : Conversions (opt.)
+        Unit conversion object from the file's units to SI. Defaults to staying 
+        in SI.
     """
-    num_picle = len(A1_id)
+    num_particle = len(A1_m)
+    if A1_id is None:
+        A1_id = np.arange(num_particle)
 
     SI_to_file = file_to_SI.inv()
+    boxsize *= SI_to_file.l
 
-    # Print info to double check
+    # Print info
     if verbosity >= 1:
         print("")
-        print("num_picle    = %d" % num_picle)
-        print("boxsize      = %.2g R_E" % (boxsize / gv.R_earth))
+        print("num_particle = %d" % num_particle)
+        print("boxsize      = %.2g" % boxsize)
         print("mat_id       = ", end="")
         for mat_id in np.unique(A1_mat_id):
             print("%d " % mat_id, end="")
@@ -322,9 +332,6 @@ def save_picle_data(
                 np.amax(A2_pos[:, 2]),
             )
         )
-        if np.amax(abs((A2_pos + boxsize / 2.0) * SI_to_file.l)) > boxsize:
-            print("# Particles are outside the box!")
-            sys.exit()
         print(
             "  vel = [%.5g, %.5g,    %.5g, %.5g,    %.5g, %.5g]"
             % (
@@ -346,9 +353,9 @@ def save_picle_data(
     # Header
     grp = f.create_group("/Header")
     grp.attrs["BoxSize"] = [boxsize] * 3
-    grp.attrs["NumPart_Total"] = [num_picle, 0, 0, 0, 0, 0]
+    grp.attrs["NumPart_Total"] = [num_particle, 0, 0, 0, 0, 0]
     grp.attrs["NumPart_Total_HighWord"] = [0, 0, 0, 0, 0, 0]
-    grp.attrs["NumPart_ThisFile"] = [num_picle, 0, 0, 0, 0, 0]
+    grp.attrs["NumPart_ThisFile"] = [num_particle, 0, 0, 0, 0, 0]
     grp.attrs["Time"] = 0.0
     grp.attrs["NumFilesPerSnapshot"] = 1
     grp.attrs["MassTable"] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
@@ -370,21 +377,22 @@ def save_picle_data(
     # Particles
     grp = f.create_group("/PartType0")
     grp.create_dataset(
-        Di_hdf5_picle_label["pos"],
+        Di_hdf5_particle_label["pos"],
         data=(A2_pos + boxsize / 2.0) * SI_to_file.l,
         dtype="d",
     )
     grp.create_dataset(
-        Di_hdf5_picle_label["vel"], data=A2_vel * SI_to_file.v, dtype="f"
+        Di_hdf5_particle_label["vel"], data=A2_vel * SI_to_file.v, dtype="f"
     )
-    grp.create_dataset(Di_hdf5_picle_label["m"], data=A1_m * SI_to_file.m, dtype="f")
-    grp.create_dataset(Di_hdf5_picle_label["h"], data=A1_h * SI_to_file.l, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["m"], data=A1_m * SI_to_file.m, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["h"], data=A1_h * SI_to_file.l, dtype="f")
     grp.create_dataset(
-        Di_hdf5_picle_label["rho"], data=A1_rho * SI_to_file.rho, dtype="f"
+        Di_hdf5_particle_label["rho"], data=A1_rho * SI_to_file.rho, dtype="f"
     )
-    grp.create_dataset(Di_hdf5_picle_label["P"], data=A1_P * SI_to_file.P, dtype="f")
-    grp.create_dataset(Di_hdf5_picle_label["u"], data=A1_u * SI_to_file.u, dtype="f")
-    grp.create_dataset(Di_hdf5_picle_label["id"], data=A1_id, dtype="L")
-    grp.create_dataset(Di_hdf5_picle_label["mat_id"], data=A1_mat_id, dtype="i")
+    grp.create_dataset(Di_hdf5_particle_label["P"], data=A1_P * SI_to_file.P, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["u"], data=A1_u * SI_to_file.u, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["id"], data=A1_id, dtype="L")
+    grp.create_dataset(Di_hdf5_particle_label["mat_id"], data=A1_mat_id, dtype="i")
 
-    print('Saved "%s"' % f.filename[-64:])
+    if verbosity >= 1:
+        print('Saved "%s"' % f.filename[-64:])

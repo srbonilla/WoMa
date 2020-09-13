@@ -3325,16 +3325,19 @@ class ParticlePlanet:
         self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
         self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
 
-    def save(self, filename, boxsize, verbosity=1):
-        """ Save the particle configuration to an HDF5 file. 
+    def save(self, filename, boxsize=0, verbosity=1):
+        """ Save the particle configuration to an HDF5 file.
+        
+        Uses the same format as the SWIFT simulation code (www.swiftsim.com). 
 
         Parameters
         ----------
         filename : str
             The data file path.
             
-        boxsize : float
-            Length of the simulation box (m).
+        boxsize : float (opt.)
+            The simulation box side length (m). If provided, then the origin 
+            will be shifted to the centre of the box.
         """
 
         filename = utils.check_end(filename, ".hdf5")
@@ -3343,7 +3346,7 @@ class ParticlePlanet:
             print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
 
         with h5py.File(filename, "w") as f:
-            io.save_picle_data(
+            io.save_particle_data(
                 f,
                 self.A2_pos,
                 self.A2_vel,
@@ -3352,9 +3355,9 @@ class ParticlePlanet:
                 self.A1_rho,
                 self.A1_P,
                 self.A1_u,
-                self.A1_id,
                 self.A1_mat_id,
-                boxsize,
-                io.SI_to_SI,
-                verbosity,
+                A1_id=None,
+                boxsize=boxsize,
+                file_to_SI=io.SI_to_SI,
+                verbosity=verbosity,
             )
