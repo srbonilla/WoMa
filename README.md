@@ -1,5 +1,7 @@
 ![WoMa](http://astro.dur.ac.uk/~cklv53/woma_logo.png "WoMa")
 
+TEST TEST TEST
+
 Create models of rotating and non-rotating planets by solving the differential 
 equations for hydrostatic equilibrium, and create initial conditions for e.g. 
 smoothed particle hydrodynamics (SPH) simulations by placing particles that
