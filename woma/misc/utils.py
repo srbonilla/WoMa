@@ -507,3 +507,89 @@ def impact_pos_vel_b_v_c_t(
     return impact_pos_vel_b_v_c_r(
         b, v_c, r, R_t, R_i, M_t, M_i, units_b=units_b, units_v_c=units_v_c
     )
+
+def compute_W(A2_pos, A2_vel):
+    """
+    Compute angular velocity vector given
+    the positions and velocities of a planet particle configuration.
+
+    Parameters
+    ----------
+    A2_pos : [float]
+        Position of the particles (m).
+    A2_vel : [float]
+        Velocities of the particles (m/s).
+
+    Returns
+    -------
+    W : [float]
+        Angular velocity vector (rad/s).
+
+    """
+    
+    # Check for right dimensions
+    assert A2_pos.shape[0] == A2_vel.shape[0]
+    assert A2_pos.shape[1] == 3
+    assert A2_vel.shape[1] == 3
+    
+    # Mean of R x V is parallel to W
+    A2_pos_cross_A2_vel = np.cross(A2_pos, A2_vel)
+    W_unit = np.sum(A2_pos_cross_A2_vel, axis=0)
+    W_unit = W_unit/np.linalg.norm(W_unit)
+    
+    # V = W x R = alpha (W_unit x R)
+    alpha = A2_vel / np.cross(W_unit, A2_pos)
+    
+    # Remove possible 0's
+    alpha = np.concatenate(alpha)
+    alpha = alpha[alpha != 0]
+    alpha = np.median(alpha)
+    
+    W = alpha*W_unit
+    
+    return W
+
+def rotate_configuration(A2_pos, A2_vel, x, y, z):
+    """
+    Rotates particle configuration of a planet from cartesian coordinates
+    x0 = (1,0,0), y0 = (0, 1, 0), and z0 = (0, 0, 1), to a set of rotated cartesian
+    coordinates where z1 = (x, y, z) is given by the user.
+
+    Parameters
+    ----------
+    A2_pos : [float]
+        Position of the particles (m).
+    A2_vel : [float]
+        Velocities of the particles (m/s).
+    x : float
+        x coordinate of z1.
+    y : float
+        y coordinate of z1.
+    z : float
+        z coordinate of z1.
+
+    Returns
+    -------
+    A2_pos : [float]
+        New position of the particles (m).
+    A2_vel : [float]
+        New velocities of the particles (m/s).
+
+    """
+
+    z1 = np.array([x, y, z])
+    z1 = z1/np.linalg.norm(z1)
+    
+    random_vector = np.random.rand(3)
+    
+    x1 = np.cross(z1, random_vector)
+    x1 = x1/np.linalg.norm(x1)
+    y1 = np.cross(z1, x1)
+    
+    M = np.vstack((x1, y1, z1))
+    M_inv = np.linalg.inv(M)
+    
+    A2_pos_new = np.dot(M_inv, A2_pos.T)
+    A2_vel_new = np.dot(M_inv, A2_vel.T)
+        
+    return A2_pos_new.T, A2_vel_new.T
