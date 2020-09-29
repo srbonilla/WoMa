@@ -525,7 +525,6 @@ def compute_W(A2_pos, A2_vel):
     -------
     W : [float]
         Angular velocity vector (rad/s).
-
     """
 
     # Check for right dimensions
@@ -576,15 +575,19 @@ def rotate_configuration(A2_pos, A2_vel, x, y, z):
         New position of the particles (m).
     A2_vel : [float]
         New velocities of the particles (m/s).
-
     """
 
     z1 = np.array([x, y, z])
     z1 = z1 / np.linalg.norm(z1)
 
-    random_vector = np.random.rand(3)
+    if z1[1] == 1 or z1[1] == -1:
+        random_vector = np.array([1,0,0])
+    else:
+        random_vector = np.array([0,1,0])
 
+    # Create vector perpendicular to Z1 and in the old x-z plane
     x1 = np.cross(z1, random_vector)
+    # Normalize
     x1 = x1 / np.linalg.norm(x1)
     y1 = np.cross(z1, x1)
 
