@@ -11,8 +11,8 @@ file, below.
 
 Presented in Ruiz-Bonilla et al. (2020, https://arxiv.org/abs/2007.02965).
 
-Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, 
-[MNRAS 487:4](https://doi.org/10.1093/mnras/stz1606)) 
+Includes SEAGen (https://github.com/jkeger/seagen; 
+Kegerreis et al. [2019, MNRAS 487:4](https://doi.org/10.1093/mnras/stz1606)) 
 with modifications for spinning planets.
 
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
@@ -68,6 +68,7 @@ Set `0` for no printing, `1` for standard output, or `2` for extra details.
 1. Spherical profiles  
 2. Spinning profiles  
 3. Particle placement
+4. (Bonus) Impact initial conditions
 
 
 
@@ -247,3 +248,20 @@ particles = woma.ParticleSet(planet, N_particles, N_ngb=N_ngb)
 
 The output attributes available from the `particles` object 
 are documented in the `ParticlePlanet` class docstring in `woma/main.py`.
+
+
+
+## 4. Impact initial conditions
+One of the motivations for WoMa's development was to create initial conditions 
+for the modelling of planetary giant impacts. (Check out the open-source SWIFT 
+code at www.swiftsim.com and see e.g. http://icc.dur.ac.uk/giant_impacts/ for 
+more info about these applications.)
+
+Therefore, we include here some simple utilities for setting up the initial 
+conditions for an impact scenario between two planets, as described in Appendix 
+A of [Kegerreis et al. (2020), ApJ 897:161](iopscience.iop.org/article/10.3847/1538-4357/ab9810).
+
+See the `tutorial.ipynb` notebook for an example and the docstrings of 
+`impact_pos_vel_b_v_c_r()` and `impact_pos_vel_b_v_c_t()` in 
+`woma/misc/utils.py` for the full documentation.
+
