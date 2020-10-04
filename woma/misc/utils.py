@@ -581,9 +581,9 @@ def rotate_configuration(A2_pos, A2_vel, x, y, z):
     z1 = z1 / np.linalg.norm(z1)
 
     if z1[1] == 1 or z1[1] == -1:
-        random_vector = np.array([1,0,0])
+        random_vector = np.array([1, 0, 0])
     else:
-        random_vector = np.array([0,1,0])
+        random_vector = np.array([0, 1, 0])
 
     # Create vector perpendicular to Z1 and in the old x-z plane
     x1 = np.cross(z1, random_vector)

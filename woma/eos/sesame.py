@@ -95,7 +95,7 @@ def load_table_SESAME(Fp_table):
         # Skip the header
         for i in range(7):
             f.readline()
-            
+
         num_rho, num_T = np.array(f.readline().split(), dtype=int)
         A2_u = np.empty((num_rho, num_T))
         A2_P = np.empty((num_rho, num_T))
