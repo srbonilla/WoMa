@@ -57,7 +57,8 @@ def find_index_and_interp(x, A1_x):
 def load_table_SESAME(Fp_table):
     """ Load and return the table file data.
 
-    # header (five lines)
+    # header (six lines)
+    date
     num_rho  num_T
     A1_rho
     A1_T
@@ -78,37 +79,23 @@ def load_table_SESAME(Fp_table):
 
     Returns
     -------
-    # num_rho, num_T : int
-    #     Number of densities and temperatures for the arrays.
-
-    # rho_min, rho_max : float
-    #     Penultimate minimum and maximum values of the temperature
-    #     array (K).
-
-    # T_min, T_max : float
-    #     Penultimate minimum and maximum values of the density array
-    #     (kg m^-3).
-
-    # A1_rho, A1_T : [float]
-    #     1D arrays of density (kg m^-3) and temperature (K).
-
-    A2_u, A2_P, A2_s, # A2_c ([[float]])
-        2D arrays of sp. int. energy (J kg^-1), pressure (Pa),
-        # sp. entropy (J kg^-1 K^-1), and sound speed (m s^-1).
+    A2_u, A2_P, A2_s : [[float]]
+        2D table arrays of sp. int. energy (J kg^-1), pressure (Pa), and sp.
+        entropy (J kg^-1 K^-1).
 
     A1_log_rho, A1_log_T : [float]
-        1D arrays of natural logs of density (kg m^-3) and
-        temperature (K).
+        1D arrays of natural logs of density (kg m^-3) and temperature (K).
 
-    A2_log_u, # A2_log_P, A2_log_c ([[float]])
-        2D arrays of natural logs of sp. int. energy (J kg^-1),
-        pressure (Pa), sound speed (m s^-1).
+    A2_log_u : [[float]]
+        2D table array of natural logs of sp. int. energy (J kg^-1).
     """
     # Load
     Fp_table = ut.check_end(Fp_table, ".txt")
     with open(Fp_table) as f:
-        for i in range(5):
+        # Skip the header
+        for i in range(7):
             f.readline()
+            
         num_rho, num_T = np.array(f.readline().split(), dtype=int)
         A2_u = np.empty((num_rho, num_T))
         A2_P = np.empty((num_rho, num_T))

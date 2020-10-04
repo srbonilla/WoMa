@@ -44,6 +44,7 @@ def load_table_HM80(Fp_table):
     """ Load and return the table file data.
 
     # header (four lines)
+    date
     log_rho_min  log_rho_max  num_rho  log_u_min  log_u_max  num_u
     P_0_0   P_0_1   ...     P_0_num_u           # Array of pressures
     P_1_0   ...     ...     P_1_num_u
@@ -86,16 +87,15 @@ def load_table_HM80(Fp_table):
         Step between consecutive tabulated specific internal energy values.
     
     A2_log_P, A2_log_T : [float]
-        2D arrays of natural logs of pressure (Pa), and temperature (K).
-    
+        2D arrays of natural logs of pressure (Pa) and temperature (K).
     """
     # Parameters
     log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(
-        Fp_table, skip_header=4, max_rows=1
+        Fp_table, skip_header=6, max_rows=1
     )
 
     # Tables
-    A2_data = np.loadtxt(Fp_table, skiprows=5)
+    A2_data = np.loadtxt(Fp_table, skiprows=7)
 
     num_rho = int(num_rho)
     num_u = int(num_u)
