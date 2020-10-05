@@ -53,6 +53,13 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
         else:
             raise ValueError("Adiabatic not implemented for this material type")
+
+    # Fixed entropy, T_rho_args = [s]
+    elif T_rho_type_id == gv.type_ent:
+        if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+            return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
+        else:
+            raise ValueError("Entropy not implemented for this material type")
     else:
         raise ValueError("T_rho_type_id not implemented")
 
