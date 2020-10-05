@@ -128,9 +128,6 @@ def L2_integrate(
             rho0 = rho
         # Layer 1, 2 boundary
         elif A1_r[i] <= R1 and A1_r[i - 1] > R1:
-            rho = eos.find_rho(
-                A1_P[i - 1], mat_id_L1, 1, [A1_T[i - 1], 0.0], A1_rho[i - 1], 100000
-            )
             rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1)
             T_rho_args_L1 = set_T_rho_args(
                 A1_T[i - 1], rho, T_rho_type_id_L1, T_rho_args_L1, mat_id_L1
