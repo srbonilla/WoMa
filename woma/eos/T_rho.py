@@ -41,7 +41,7 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
         T = K * np.power(rho, alpha)
         return T
 
-    # Adiabatic, T_rho_args = [s_adb], [rho_prv, T_prv], or [T rho^(1-gamma)]
+    # Adiabatic, T_rho_args = [s_adb,], [rho_prv, T_prv], or [T rho^(1-gamma)]
     elif T_rho_type_id == gv.type_adb:
         if mat_type == gv.type_idg:
             # T rho^(1-gamma) = constant
@@ -54,7 +54,7 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
         else:
             raise ValueError("Adiabatic not implemented for this material type")
 
-    # Fixed entropy, T_rho_args = [s]
+    # Fixed entropy, T_rho_args = [s,]
     elif T_rho_type_id == gv.type_ent:
         if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
@@ -112,6 +112,12 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
             # T_rho_args = [s_adb,]
             T_rho_args[0] = sesame.s_rho_T(rho, T, mat_id)
 
+    # Fixed entropy
+    elif T_rho_type_id == gv.type_ent:
+        if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+            # T_rho_args = [s,]
+            T_rho_args[0] = sesame.s_rho_T(rho, T, mat_id)
+
     else:
         raise ValueError("T-rho relation not implemented")
 
@@ -153,6 +159,8 @@ def T_rho_id_and_args_from_type(A1_T_rho_type):
         T_rho_args = [None, None]
         if string.split("=")[0] == "power":
             T_rho_args[1] = float(string.split("=")[1])
+        elif string.split("=")[0] == "entropy":
+            T_rho_args[0] = float(string.split("=")[1])
         A1_T_rho_args.append(T_rho_args)
 
     return A1_T_rho_type_id, A1_T_rho_args
