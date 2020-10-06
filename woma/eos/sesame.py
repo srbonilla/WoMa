@@ -123,7 +123,7 @@ def load_table_SESAME(Fp_table):
     return A2_u, A2_P, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
 
 
-# Load SESAME tables as global variables
+# Load SESAME tables as global variables for numba
 (
     A2_u_SESAME_iron,
     A2_P_SESAME_iron,
@@ -322,6 +322,143 @@ def P_u_rho(u, rho, mat_id):
 
     # Convert back from log
     return np.exp(P)
+
+
+@njit
+def s_u_rho(u, rho, mat_id):
+    """ Compute the specific entropy from the internal energy and density.
+
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
+
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    s : float
+        Specific entropy (J K^-1 kg^-1).
+    """
+    # Unpack the parameters
+    if mat_id == gv.id_SESAME_iron:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_SESAME_iron,
+            A1_log_rho_SESAME_iron,
+            A2_log_u_SESAME_iron,
+        )
+    elif mat_id == gv.id_SESAME_basalt:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_SESAME_basalt,
+            A1_log_rho_SESAME_basalt,
+            A2_log_u_SESAME_basalt,
+        )
+    elif mat_id == gv.id_SESAME_water:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_SESAME_water,
+            A1_log_rho_SESAME_water,
+            A2_log_u_SESAME_water,
+        )
+    elif mat_id == gv.id_SS08_water:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_SS08_water,
+            A1_log_rho_SS08_water,
+            A2_log_u_SS08_water,
+        )
+    elif mat_id == gv.id_ANEOS_forsterite:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_ANEOS_forsterite,
+            A1_log_rho_ANEOS_forsterite,
+            A2_log_u_ANEOS_forsterite,
+        )
+    elif mat_id == gv.id_ANEOS_iron:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_ANEOS_iron,
+            A1_log_rho_ANEOS_iron,
+            A2_log_u_ANEOS_iron,
+        )
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_ANEOS_Fe85Si15,
+            A1_log_rho_ANEOS_Fe85Si15,
+            A2_log_u_ANEOS_Fe85Si15,
+        )
+    else:
+        raise ValueError("Invalid material ID")
+
+    # Ignore the first elements of rho = 0, T = 0
+    A2_s = A2_s[1:, 1:]
+    A2_log_u = A2_log_u[1:, 1:]
+
+    # Convert to log
+    log_rho = np.log(rho)
+    log_u = np.log(u)
+
+    # 2D interpolation (bilinear with log(rho), log(u)) to find s(rho, u).
+    # If rho and/or u are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    # Density
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho = int(idx_rho_intp_rho[0])
+    intp_rho = idx_rho_intp_rho[1]
+
+    # u (in this and the next density slice of the 2D u array)
+    idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
+    idx_u_1 = int(idx_u_1_intp_u_1[0])
+    intp_u_1 = idx_u_1_intp_u_1[1]
+    idx_u_2_intp_u_2 = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
+    idx_u_2 = int(idx_u_2_intp_u_2[0])
+    intp_u_2 = idx_u_2_intp_u_2[1]
+
+    s_1 = A2_s[idx_rho, idx_u_1]
+    s_2 = A2_s[idx_rho, idx_u_1 + 1]
+    s_3 = A2_s[idx_rho + 1, idx_u_2]
+    s_4 = A2_s[idx_rho + 1, idx_u_2 + 1]
+
+    # If below the minimum u at this rho then just use the lowest table values
+    if idx_rho >= 0 and (intp_u_1 < 0 or intp_u_2 < 0 or s_1 > s_2 or s_3 > s_4):
+        intp_u_1 = 0
+        intp_u_2 = 0
+
+    # If more than two table values are non-positive then return zero
+    num_non_pos = np.sum(np.array([s_1, s_2, s_3, s_4]) < 0)
+    if num_non_pos > 2:
+        return 0.0
+
+    # If just one or two are non-positive then replace them with a tiny value
+    # Unless already trying to extrapolate in which case return zero
+    if num_non_pos > 0:
+        if intp_rho < 0 or intp_u_1 < 0 or intp_u_2 < 0:
+            return 0.0
+        else:
+            s_tiny = np.amin(np.abs(A2_s)) * 1e-3
+            if s_1 <= 0:
+                s_1 = s_tiny
+            if s_2 <= 0:
+                s_2 = s_tiny
+            if s_3 <= 0:
+                s_3 = s_tiny
+            if s_4 <= 0:
+                s_4 = s_tiny
+
+    # Interpolate with the log values
+    s_1 = np.log(s_1)
+    s_2 = np.log(s_2)
+    s_3 = np.log(s_3)
+    s_4 = np.log(s_4)
+
+    # s(rho, u)
+    s = (1 - intp_rho) * ((1 - intp_u_1) * s_1 + intp_u_1 * s_2) + intp_rho * (
+        (1 - intp_u_2) * s_3 + intp_u_2 * s_4
+    )
+
+    # Convert back from log
+    return np.exp(s)
 
 
 @njit
