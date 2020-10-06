@@ -78,6 +78,7 @@ All profiles require the temperature and either the pressure or density at the
 surface: `T_s` and `P_s` or `rho_s`,
 plus the material and temperature-density relation for each layer (see below):
 `A1_mat_layer` and `A1_T_rho_type`.
+For a fixed-entropy relation, only the surface density is needed.
 
 The optional parameter `num_prof` sets the number of profile integration steps.
 Default 1000.
@@ -123,6 +124,9 @@ These relations are set for each layer with `A1_T_rho_type`:
 + `"adiabatic"`: Adiabatic, only available for some EoS.
 + `"power=a"` where `a` is a float: A power law T ~ rho^`a`. 
     So e.g. `"power=0"` for isothermal.
++ `"entropy=s"` where `s` is a float: A fixed specific entropy (J K^-1 kg^-1).
+    Similar to adiabatic, but uses this entropy directly instead of deriving it 
+    from the temperature and density or pressure.
 
 
 ### Profile generation
