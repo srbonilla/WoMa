@@ -132,7 +132,12 @@ def L2_integrate(
             # New density, continuous temperature unless fixed entropy
             if T_rho_type_id_L1 == gv.type_ent:
                 rho = eos.find_rho(
-                    A1_P[i - 1], mat_id_L1, T_rho_type_id_L1, T_rho_args_L1, A1_rho[i - 1], 1e5
+                    A1_P[i - 1],
+                    mat_id_L1,
+                    T_rho_type_id_L1,
+                    T_rho_args_L1,
+                    A1_rho[i - 1],
+                    1e5,
                 )
             else:
                 rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1)
