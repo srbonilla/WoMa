@@ -395,7 +395,7 @@ def u_rho_T(rho, T, mat_id):
 
     # Convert to log
     log_rho = np.log(rho)
-    log_T = np.log(T * 1)  ### why is numba so weird?
+    log_T = np.log(T * 1)  # why is numba so weird?
 
     # 2D interpolation (bilinear with log(rho), log(T)) to find u(rho, T).
     # If rho and/or T are below or above the table, then use the interpolation
@@ -579,7 +579,7 @@ def s_rho_T(rho, T, mat_id):
 
 @njit
 def T_rho_s(rho, s, mat_id):
-    """ Compute the temperature from the the density and specific entropy.
+    """ Compute the temperature from the density and specific entropy.
 
     Parameters
     ----------
