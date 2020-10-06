@@ -74,7 +74,8 @@ id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
 # T-rho relation types
 type_rho_pow = 1
 type_adb = 2
-Di_T_rho_id = {"power": type_rho_pow, "adiabatic": type_adb}
+type_ent = 3
+Di_T_rho_id = {"power": type_rho_pow, "adiabatic": type_adb, "entropy": type_ent}
 
 # Local data files
 this_dir, this_file = os.path.split(__file__)

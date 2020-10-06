@@ -56,6 +56,7 @@ class Planet:
 
         "power=alpha"   T ~ rho^alpha. Set alpha = 0 for isothermal.
         "adiabatic"     Adiabatic. 
+        "entropy=s"     Fixed specific entropy s (J kg^-1 K^-1).
 
     P_s, T_s, rho_s : float
         The pressure, temperature, and density at the surface. Only two of the 
@@ -182,7 +183,21 @@ class Planet:
             # Placeholder
             self.num_layer = 1
 
-        # T and P or rho must be provided at the surface to calculate the third.
+        # Temperature--density relation
+        if self.A1_T_rho_type is not None:
+            self.A1_T_rho_type_id, self.A1_T_rho_args = T_rho_id_and_args_from_type(
+                self.A1_T_rho_type
+            )
+            # Whether to calculate the surface temperature from a fixed entropy
+            if self.A1_T_rho_type_id[-1] == gv.type_ent:
+                do_T_from_fixed_s = True
+            else:
+                do_T_from_fixed_s = False
+        else:
+            do_T_from_fixed_s = False
+
+        # T and P or rho must be provided at the surface to calculate the third,
+        # or a fixed entropy to calculate P and rho
         if self.P_s is not None and self.P_s <= 0:
             e = "Pressure at surface must be > 0."
             raise ValueError(e)
@@ -192,12 +207,16 @@ class Planet:
         if self.rho_s is not None and self.rho_s <= 0:
             e = "Density at surface must be > 0."
             raise ValueError(e)
-        if self.T_s is None:
+        if self.T_s is None and not do_T_from_fixed_s:
             e = "Temperature at surface must be provided."
             raise ValueError(e)
         if self.P_s is not None:
             self.rho_s = eos.rho_P_T(self.P_s, self.T_s, self.A1_mat_id_layer[-1])
         elif self.rho_s is not None:
+            if do_T_from_fixed_s:
+                self.T_s = eos.sesame.T_rho_s(
+                    self.rho_s, self.A1_T_rho_args[-1][0], self.A1_mat_id_layer[-1]
+                )
             self.P_s = eos.P_T_rho(self.T_s, self.rho_s, self.A1_mat_id_layer[-1])
             if self.P_s <= 0:
                 e = (
@@ -208,12 +227,6 @@ class Planet:
         else:
             e = "Temperature and pressure or density at surface must be provided."
             raise ValueError(e)
-
-        # Temperature--density relation
-        if self.A1_T_rho_type is not None:
-            self.A1_T_rho_type_id, self.A1_T_rho_args = T_rho_id_and_args_from_type(
-                self.A1_T_rho_type
-            )
 
         # Default filename and layer arrays
         if self.A1_M_layer is None:
