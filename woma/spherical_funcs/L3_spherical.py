@@ -142,16 +142,25 @@ def L3_integrate(
             T_rho_type_id = T_rho_type_id_L3
             T_rho_args = T_rho_args_L3
             rho0 = rho
+            
         # Layer 2, 3 boundary
         elif A1_r[i] <= R2 and A1_r[i - 1] > R2:
-            rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L2)
-            T_rho_args_L2 = set_T_rho_args(
-                A1_T[i - 1], rho, T_rho_type_id_L2, T_rho_args_L2, mat_id_L2
-            )
+            # New density, continuous temperature unless fixed entropy
+            if T_rho_type_id_L2 == gv.type_ent:
+                rho = eos.find_rho(
+                    A1_P[i - 1], mat_id_L2, T_rho_type_id_L2, T_rho_args_L2, A1_rho[i - 1], 1e5
+                )
+            else:
+                rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L2)
+                T_rho_args_L2 = set_T_rho_args(
+                    A1_T[i - 1], rho, T_rho_type_id_L2, T_rho_args_L2, mat_id_L2
+                )
+            
             mat_id = mat_id_L2
             T_rho_type_id = T_rho_type_id_L2
             T_rho_args = T_rho_args_L2
             rho0 = A1_rho[i - 1]
+            
         # Layer 2
         elif A1_r[i] > R1:
             rho = A1_rho[i - 1]
@@ -159,16 +168,25 @@ def L3_integrate(
             T_rho_type_id = T_rho_type_id_L2
             T_rho_args = T_rho_args_L2
             rho0 = rho
+            
         # Layer 1, 2 boundary
         elif A1_r[i] <= R1 and A1_r[i - 1] > R1:
-            rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1)
-            T_rho_args_L1 = set_T_rho_args(
-                A1_T[i - 1], rho, T_rho_type_id_L1, T_rho_args_L1, mat_id_L1
-            )
+            # New density, continuous temperature unless fixed entropy
+            if T_rho_type_id_L1 == gv.type_ent:
+                rho = eos.find_rho(
+                    A1_P[i - 1], mat_id_L1, T_rho_type_id_L1, T_rho_args_L1, A1_rho[i - 1], 1e5
+                )
+            else:
+                rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1)
+                T_rho_args_L1 = set_T_rho_args(
+                    A1_T[i - 1], rho, T_rho_type_id_L1, T_rho_args_L1, mat_id_L1
+                )
+                
             mat_id = mat_id_L1
             T_rho_type_id = T_rho_type_id_L1
             T_rho_args = T_rho_args_L1
             rho0 = A1_rho[i - 1]
+            
         # Layer 1
         elif A1_r[i] <= R1:
             rho = A1_rho[i - 1]
