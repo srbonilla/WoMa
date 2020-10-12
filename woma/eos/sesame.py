@@ -390,6 +390,10 @@ def s_u_rho(u, rho, mat_id):
     else:
         raise ValueError("Invalid material ID")
 
+    # Check this material has entropy values
+    if (A2_s == 0).all():
+        raise ValueError("No entropy values for this material")
+
     # Ignore the first elements of rho = 0, T = 0
     A2_s = A2_s[1:, 1:]
     A2_log_u = A2_log_u[1:, 1:]
