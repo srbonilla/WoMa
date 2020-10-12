@@ -253,6 +253,12 @@ particles = woma.ParticleSet(planet, N_particles, N_ngb=N_ngb)
 The output attributes available from the `particles` object 
 are documented in the `ParticlePlanet` class docstring in `woma/main.py`.
 
+Particles can be saved to a SWIFT-style HDF5 file with the `save()` method.
+See its docstring and `save_particle_data()` in `woma/misc/io.py` for details.
+
+The specific entropies of the particles can be added to the object using the 
+`set_material_entropies()` or `calculate_entropies()` methods.
+
 
 
 ## 4. Impact initial conditions
