@@ -135,8 +135,8 @@ def moi(A1_r, A1_rho):
 
 
 class Conversions:
-    """ Class to store conversions from one set of units to another, derived
-        using the base mass-, length-, and time-unit relations.
+    """ Simple conversions from one set of units to another, derived using the 
+        base mass-, length-, and time-unit relations.
 
     Usage e.g.
     ----------

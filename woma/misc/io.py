@@ -206,6 +206,7 @@ def save_particle_data(
     A1_u,
     A1_mat_id,
     A1_id=None,
+    A1_s=None,
     boxsize=0,
     file_to_SI=SI_to_SI,
     verbosity=1,
@@ -225,21 +226,37 @@ def save_particle_data(
         
     A1_id : [int] (opt.)
         The particle IDs. Defaults to the order in which they're provided.
+        
+    A1_s : [float] (opt.)
+        The particle specific entropies.
 
     boxsize : float (opt.)
         The simulation box side length (m). If provided, then the origin will be 
         shifted to the centre of the box.
 
-    file_to_SI : Conversions (opt.)
-        Unit conversion object from the file's units to SI. Defaults to staying 
-        in SI.
+    file_to_SI : woma.Conversions (opt.)
+        Simple unit conversion object from the file's units to SI. Defaults to
+        staying in SI. See Conversions in misc/utils.py for more details.
     """
     num_particle = len(A1_m)
     if A1_id is None:
         A1_id = np.arange(num_particle)
 
+    # Convert to file units
     SI_to_file = file_to_SI.inv()
     boxsize *= SI_to_file.l
+    A2_pos *= SI_to_file.l
+    A2_vel * SI_to_file.v
+    A1_m *= SI_to_file.m
+    A1_h *= SI_to_file.l
+    A1_rho *= SI_to_file.rho
+    A1_P *= SI_to_file.P
+    A1_u *= SI_to_file.u
+    if A1_s is not None:
+        A1_s *= SI_to_file.s
+
+    # Shift to box coordinates
+    A2_pos += boxsize / 2.0
 
     # Print info
     if verbosity >= 1:
@@ -281,6 +298,8 @@ def save_particle_data(
             ["m", "rho", "P", "u", "h"], [A1_m, A1_rho, A1_P, A1_u, A1_h]
         ):
             print("  %s = %.5g, %.5g" % (name, np.amin(array), np.amax(array)))
+        if A1_s is not None:
+            print("  s = %.5g, %.5g" % (np.amin(A1_s), np.amax(A1_s)))
         print("")
 
     # Save
@@ -310,23 +329,17 @@ def save_particle_data(
 
     # Particles
     grp = f.create_group("/PartType0")
-    grp.create_dataset(
-        Di_hdf5_particle_label["pos"],
-        data=(A2_pos + boxsize / 2.0) * SI_to_file.l,
-        dtype="d",
-    )
-    grp.create_dataset(
-        Di_hdf5_particle_label["vel"], data=A2_vel * SI_to_file.v, dtype="f"
-    )
-    grp.create_dataset(Di_hdf5_particle_label["m"], data=A1_m * SI_to_file.m, dtype="f")
-    grp.create_dataset(Di_hdf5_particle_label["h"], data=A1_h * SI_to_file.l, dtype="f")
-    grp.create_dataset(
-        Di_hdf5_particle_label["rho"], data=A1_rho * SI_to_file.rho, dtype="f"
-    )
-    grp.create_dataset(Di_hdf5_particle_label["P"], data=A1_P * SI_to_file.P, dtype="f")
-    grp.create_dataset(Di_hdf5_particle_label["u"], data=A1_u * SI_to_file.u, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["pos"], data=A2_pos, dtype="d")
+    grp.create_dataset(Di_hdf5_particle_label["vel"], data=A2_vel, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["m"], data=A1_m, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["h"], data=A1_h, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["rho"], data=A1_rho, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["P"], data=A1_P, dtype="f")
+    grp.create_dataset(Di_hdf5_particle_label["u"], data=A1_u, dtype="f")
     grp.create_dataset(Di_hdf5_particle_label["id"], data=A1_id, dtype="L")
     grp.create_dataset(Di_hdf5_particle_label["mat_id"], data=A1_mat_id, dtype="i")
+    if A1_s is not None:
+        grp.create_dataset(Di_hdf5_particle_label["s"], data=A1_s, dtype="f")
 
     if verbosity >= 1:
         print('Saved "%s"' % f.filename[-64:])
