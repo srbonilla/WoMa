@@ -3338,7 +3338,59 @@ class ParticlePlanet:
         self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
         self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
 
-    def save(self, filename, boxsize=0, verbosity=1):
+    def set_material_entropies(self, A1_mat, A1_s_mat):
+        """ Set specific entropies for all particles of each material.
+        
+        Not applicable for all equations of state.
+        
+        Parameters
+        ----------
+        A1_mat : [str]
+            The name of the material in each layer, from the central layer 
+            outwards. See Di_mat_id in `eos/eos.py`.
+            
+        A1_s_mat : [float]
+            The specific entropy for particles of each material (J K^-1 kg^-1).
+            
+        Set attributes
+        --------------
+        A1_s : [float]
+            The specific entropy of each particle (J K^-1 kg^-1).
+        """
+        A1_mat_id = [gv.Di_mat_id[mat] for mat in A1_mat]
+        self.A1_s = np.zeros_like(self.A1_m)
+
+        for mat_id, s in zip(A1_mat_id, A1_s_mat):
+            self.A1_s[self.A1_mat_id == mat_id] = s
+
+    def calculate_entropies(self):
+        """ 
+        Calculate the particles' specific entropies from their densities and 
+        temperatures. 
+        
+        Not available for all equations of state.
+        
+        Currently requires all particles to be of materials that have entropy 
+        implemented.
+        
+        Set attributes
+        --------------
+        A1_s : [float]
+            The specific entropy of each particle (J K^-1 kg^-1).
+        """
+        self.A1_s = [
+            eos.s_rho_T(rho, T, mat_id)
+            for rho, T, mat_id in zip(self.A1_rho, self.A1_T, self.A1_mat_id)
+        ]
+
+    def save(
+        self,
+        filename,
+        boxsize=0,
+        file_to_SI=utils.SI_to_SI,
+        do_entropies=False,
+        verbosity=1,
+    ):
         """ Save the particle configuration to an HDF5 file.
         
         Uses the same format as the SWIFT simulation code (www.swiftsim.com). 
@@ -3351,12 +3403,29 @@ class ParticlePlanet:
         boxsize : float (opt.)
             The simulation box side length (m). If provided, then the origin 
             will be shifted to the centre of the box.
+
+        file_to_SI : woma.Conversions (opt.)
+            Simple unit conversion object from the file's units to SI. Defaults 
+            to staying in SI. See Conversions in misc/utils.py for more details.
+            
+        do_entropies : bool (opt.)
+            If True then also save the particle specific entropies. See e.g. 
+            set_material_entropies() or similar to set the values first, or  
+            calculate_entropies() is called if not already set.
         """
 
         filename = utils.check_end(filename, ".hdf5")
 
         if verbosity >= 1:
             print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
+
+        if do_entropies:
+            # Calculate the entropies if not already set
+            if not hasattr(self, "A1_s"):
+                self.calculate_entropies()
+            A1_s = self.A1_s
+        else:
+            A1_s = None
 
         with h5py.File(filename, "w") as f:
             io.save_particle_data(
@@ -3370,7 +3439,8 @@ class ParticlePlanet:
                 self.A1_u,
                 self.A1_mat_id,
                 A1_id=None,
+                A1_s=A1_s,
                 boxsize=boxsize,
-                file_to_SI=utils.SI_to_SI,
+                file_to_SI=file_to_SI,
                 verbosity=verbosity,
             )
