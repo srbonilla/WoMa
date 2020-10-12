@@ -49,14 +49,14 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
             return T_rho_args[0] * rho ** (gamma - 1)
         elif mat_id == gv.id_HM80_HHe:
             return hm80.T_rho_HM80_HHe(rho, T_rho_args[0], T_rho_args[1])
-        elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
+        elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
         else:
             raise ValueError("Adiabatic not implemented for this material type")
 
     # Fixed entropy, T_rho_args = [s,]
     elif T_rho_type_id == gv.type_ent:
-        if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
+        if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
         else:
             raise ValueError("Entropy not implemented for this material type")
@@ -108,13 +108,13 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
             T_rho_args[0] = rho
             T_rho_args[1] = T
 
-        elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
+        elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
             # T_rho_args = [s_adb,]
             T_rho_args[0] = sesame.s_rho_T(rho, T, mat_id)
 
     # Fixed entropy
     elif T_rho_type_id == gv.type_ent:
-        if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
+        if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
             # T_rho_args = [s,]
             T_rho_args[0] = sesame.s_rho_T(rho, T, mat_id)
 
