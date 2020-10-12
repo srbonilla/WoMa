@@ -41,7 +41,7 @@ def P_u_rho(u, rho, mat_id):
         P = hm80.P_u_rho(u, rho, mat_id)
         if np.isnan(P):
             P = 0.0
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
         P = sesame.P_u_rho(u, rho, mat_id)
         if np.isnan(P):
             P = 0.0
@@ -77,7 +77,7 @@ def u_rho_T(rho, T, mat_id):
         u = tillotson.u_rho_T(rho, T, mat_id)
     elif mat_type == gv.type_HM80:
         u = hm80.u_rho_T(rho, T, mat_id)
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
         u = sesame.u_rho_T(rho, T, mat_id)
     else:
         raise ValueError("Invalid material ID")
@@ -105,7 +105,7 @@ def s_rho_T(rho, T, mat_id):
         Specific entropy (J kg^-1 K^-1).
     """
     mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
         s = sesame.s_rho_T(rho, T, mat_id)
     else:
         raise ValueError("Entropy not implemented for this material type.")
@@ -292,7 +292,7 @@ def rho_P_T(P, T, mat_id):
         elif mat_id == gv.id_HM80_rock:
             rho_min = 1e0
             rho_max = 40000
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_AQUA]:
         assert T > 0
         assert P > 0
 
