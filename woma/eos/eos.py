@@ -85,6 +85,34 @@ def u_rho_T(rho, T, mat_id):
 
 
 @njit
+def s_rho_T(rho, T, mat_id):
+    """ Compute the specific entropy from the density and temperature, for any EoS.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+        
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    s : float
+        Specific entropy (J kg^-1 K^-1).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        s = sesame.s_rho_T(rho, T, mat_id)
+    else:
+        raise ValueError("Entropy not implemented for this material type.")
+    return s
+
+
+@njit
 def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     """ Find the density that satisfies P(u(rho), rho) = P_des, for any EoS.
 
