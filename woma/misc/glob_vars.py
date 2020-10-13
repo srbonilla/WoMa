@@ -37,13 +37,11 @@ Di_mat_id = {
     "SESAME_basalt": Di_mat_type["SESAME"] * type_factor + 1,  # 7530
     "SESAME_water": Di_mat_type["SESAME"] * type_factor + 2,  # 7154
     "SS08_water": Di_mat_type["SESAME"] * type_factor + 3,  # Senft & Stewart (2008)
-    "AQUA": Di_mat_type["SESAME"] * type_factor + 4, # Haldemann+2020
+    "AQUA": Di_mat_type["SESAME"] * type_factor + 4,  # Haldemann+2020
     # ANEOS
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
     "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
     "ANEOS_Fe85Si15": Di_mat_type["ANEOS"] * type_factor + 2,  # Stewart (2020)
-
-    
 }
 # Invert so the ID are the keys
 Di_id_mat = {mat_id: mat for mat, mat_id in Di_mat_id.items()}
@@ -107,4 +105,3 @@ Fp_AQUA = dir_data + "AQUA_H20.txt"
 Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.txt"
 Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.txt"
 Fp_ANEOS_Fe85Si15 = dir_data + "ANEOS_Fe85Si15_S20.txt"
-

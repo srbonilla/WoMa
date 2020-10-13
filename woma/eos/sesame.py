@@ -195,6 +195,7 @@ def load_table_SESAME(Fp_table):
     A2_log_u_AQUA,
 ) = load_table_SESAME(gv.Fp_AQUA)
 
+
 @njit
 def P_u_rho(u, rho, mat_id):
     """ Compute the pressure from the internal energy and density.
