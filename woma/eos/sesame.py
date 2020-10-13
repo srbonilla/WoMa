@@ -185,6 +185,16 @@ def load_table_SESAME(Fp_table):
     A2_log_u_ANEOS_Fe85Si15,
 ) = load_table_SESAME(gv.Fp_ANEOS_Fe85Si15)
 
+# Load AQUA as SESAME-style tables
+(
+    A2_u_AQUA,
+    A2_P_AQUA,
+    A2_s_AQUA,
+    A1_log_rho_AQUA,
+    A1_log_T_AQUA,
+    A2_log_u_AQUA,
+) = load_table_SESAME(gv.Fp_AQUA)
+
 
 @njit
 def P_u_rho(u, rho, mat_id):
@@ -248,6 +258,12 @@ def P_u_rho(u, rho, mat_id):
             A2_P_ANEOS_Fe85Si15,
             A1_log_rho_ANEOS_Fe85Si15,
             A2_log_u_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_AQUA:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_AQUA,
+            A1_log_rho_AQUA,
+            A2_log_u_AQUA,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -386,6 +402,12 @@ def s_u_rho(u, rho, mat_id):
             A2_s_ANEOS_Fe85Si15,
             A1_log_rho_ANEOS_Fe85Si15,
             A2_log_u_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_AQUA:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_AQUA,
+            A1_log_rho_AQUA,
+            A2_log_u_AQUA,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -528,6 +550,12 @@ def u_rho_T(rho, T, mat_id):
             A1_log_rho_ANEOS_Fe85Si15,
             A1_log_T_ANEOS_Fe85Si15,
         )
+    elif mat_id == gv.id_AQUA:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_AQUA,
+            A1_log_rho_AQUA,
+            A1_log_T_AQUA,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -656,6 +684,12 @@ def s_rho_T(rho, T, mat_id):
             A1_log_rho_ANEOS_Fe85Si15,
             A1_log_T_ANEOS_Fe85Si15,
         )
+    elif mat_id == gv.id_AQUA:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_AQUA,
+            A1_log_rho_AQUA,
+            A1_log_T_AQUA,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -780,6 +814,12 @@ def T_rho_s(rho, s, mat_id):
             A1_log_T_ANEOS_Fe85Si15,
             A1_log_rho_ANEOS_Fe85Si15,
             A2_s_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_AQUA:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_AQUA,
+            A1_log_rho_AQUA,
+            A2_s_AQUA,
         )
     else:
         raise ValueError("Invalid material ID")

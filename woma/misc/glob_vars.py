@@ -37,6 +37,7 @@ Di_mat_id = {
     "SESAME_basalt": Di_mat_type["SESAME"] * type_factor + 1,  # 7530
     "SESAME_water": Di_mat_type["SESAME"] * type_factor + 2,  # 7154
     "SS08_water": Di_mat_type["SESAME"] * type_factor + 3,  # Senft & Stewart (2008)
+    "AQUA": Di_mat_type["SESAME"] * type_factor + 4,  # Haldemann+2020
     # ANEOS
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
     "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
@@ -67,9 +68,11 @@ id_SESAME_iron = Di_mat_id["SESAME_iron"]
 id_SESAME_basalt = Di_mat_id["SESAME_basalt"]
 id_SESAME_water = Di_mat_id["SESAME_water"]
 id_SS08_water = Di_mat_id["SS08_water"]
+id_AQUA = Di_mat_id["AQUA"]
 id_ANEOS_forsterite = Di_mat_id["ANEOS_forsterite"]
 id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
 id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
+
 
 # T-rho relation types
 type_rho_pow = 1
@@ -97,6 +100,7 @@ Fp_SESAME_iron = dir_data + "SESAME_iron_2140.txt"
 Fp_SESAME_basalt = dir_data + "SESAME_basalt_7530.txt"
 Fp_SESAME_water = dir_data + "SESAME_water_7154.txt"
 Fp_SS08_water = dir_data + "SS08_water.txt"
+Fp_AQUA = dir_data + "AQUA_H20.txt"
 # ANEOS tables
 Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.txt"
 Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.txt"
