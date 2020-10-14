@@ -195,6 +195,35 @@ def load_table_SESAME(Fp_table):
     A2_log_u_AQUA,
 ) = load_table_SESAME(gv.Fp_AQUA)
 
+# Load CMS19 as SESAME-style tables
+(
+    A2_u_CMS19_H,
+    A2_P_CMS19_H,
+    A2_s_CMS19_H,
+    A1_log_rho_CMS19_H,
+    A1_log_T_CMS19_H,
+    A2_log_u_CMS19_H,
+) = load_table_SESAME(gv.Fp_CMS19_H)
+
+(
+    A2_u_CMS19_He,
+    A2_P_CMS19_He,
+    A2_s_CMS19_He,
+    A1_log_rho_CMS19_He,
+    A1_log_T_CMS19_He,
+    A2_log_u_CMS19_He,
+) = load_table_SESAME(gv.Fp_CMS19_He)
+
+(
+    A2_u_CMS19_HHe,
+    A2_P_CMS19_HHe,
+    A2_s_CMS19_HHe,
+    A1_log_rho_CMS19_HHe,
+    A1_log_T_CMS19_HHe,
+    A2_log_u_CMS19_HHe,
+) = load_table_SESAME(gv.Fp_CMS19_HHe)
+
+
 
 @njit
 def P_u_rho(u, rho, mat_id):
@@ -264,6 +293,24 @@ def P_u_rho(u, rho, mat_id):
             A2_P_AQUA,
             A1_log_rho_AQUA,
             A2_log_u_AQUA,
+        )
+    elif mat_id == gv.id_CMS19_H:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_CMS19_H,
+            A1_log_rho_CMS19_H,
+            A2_log_u_CMS19_H,
+        )
+    elif mat_id == gv.id_CMS19_He:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_CMS19_He,
+            A1_log_rho_CMS19_He,
+            A2_log_u_CMS19_He,
+        )
+    elif mat_id == gv.id_CMS19_HHe:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_CMS19_HHe,
+            A1_log_rho_CMS19_HHe,
+            A2_log_u_CMS19_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -408,6 +455,24 @@ def s_u_rho(u, rho, mat_id):
             A2_s_AQUA,
             A1_log_rho_AQUA,
             A2_log_u_AQUA,
+        )
+    elif mat_id == gv.id_CMS19_H:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_CMS19_H,
+            A1_log_rho_CMS19_H,
+            A2_log_u_CMS19_H,
+        )
+    elif mat_id == gv.id_CMS19_He:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_CMS19_He,
+            A1_log_rho_CMS19_He,
+            A2_log_u_CMS19_He,
+        )
+    elif mat_id == gv.id_CMS19_HHe:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_CMS19_HHe,
+            A1_log_rho_CMS19_HHe,
+            A2_log_u_CMS19_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -556,6 +621,24 @@ def u_rho_T(rho, T, mat_id):
             A1_log_rho_AQUA,
             A1_log_T_AQUA,
         )
+    elif mat_id == gv.id_CMS19_H:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_CMS19_H,
+            A1_log_rho_CMS19_H,
+            A1_log_T_CMS19_H,
+        )
+    elif mat_id == gv.id_CMS19_He:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_CMS19_He,
+            A1_log_rho_CMS19_He,
+            A1_log_T_CMS19_He,
+        )
+    elif mat_id == gv.id_CMS19_HHe:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_CMS19_HHe,
+            A1_log_rho_CMS19_HHe,
+            A1_log_T_CMS19_HHe,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -690,6 +773,24 @@ def s_rho_T(rho, T, mat_id):
             A1_log_rho_AQUA,
             A1_log_T_AQUA,
         )
+    elif mat_id == gv.id_CMS19_H:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_CMS19_H,
+            A1_log_rho_CMS19_H,
+            A1_log_T_CMS19_H,
+        )
+    elif mat_id == gv.id_CMS19_He:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_CMS19_He,
+            A1_log_rho_CMS19_He,
+            A1_log_T_CMS19_He,
+        )
+    elif mat_id == gv.id_CMS19_HHe:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_CMS19_HHe,
+            A1_log_rho_CMS19_HHe,
+            A1_log_T_CMS19_HHe,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -820,6 +921,24 @@ def T_rho_s(rho, s, mat_id):
             A1_log_T_AQUA,
             A1_log_rho_AQUA,
             A2_s_AQUA,
+        )
+    elif mat_id == gv.id_CMS19_H:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_CMS19_H,
+            A1_log_rho_CMS19_H,
+            A2_s_CMS19_H,
+        )
+    elif mat_id == gv.id_CMS19_He:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_CMS19_He,
+            A1_log_rho_CMS19_He,
+            A2_s_CMS19_He,
+        )
+    elif mat_id == gv.id_CMS19_HHe:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_CMS19_HHe,
+            A1_log_rho_CMS19_HHe,
+            A2_s_CMS19_HHe,
         )
     else:
         raise ValueError("Invalid material ID")

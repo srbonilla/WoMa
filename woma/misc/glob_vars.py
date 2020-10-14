@@ -38,6 +38,9 @@ Di_mat_id = {
     "SESAME_water": Di_mat_type["SESAME"] * type_factor + 2,  # 7154
     "SS08_water": Di_mat_type["SESAME"] * type_factor + 3,  # Senft & Stewart (2008)
     "AQUA": Di_mat_type["SESAME"] * type_factor + 4,  # Haldemann+2020
+    "CMS19_H": Di_mat_type["SESAME"] * type_factor + 5,  # Hydrogen
+    "CMS19_He": Di_mat_type["SESAME"] * type_factor + 6,  # Helium
+    "CMS19_HHe": Di_mat_type["SESAME"] * type_factor + 7,  # H/He mixture Y=0.275
     # ANEOS
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
     "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
@@ -69,6 +72,9 @@ id_SESAME_basalt = Di_mat_id["SESAME_basalt"]
 id_SESAME_water = Di_mat_id["SESAME_water"]
 id_SS08_water = Di_mat_id["SS08_water"]
 id_AQUA = Di_mat_id["AQUA"]
+id_CMS19_H = Di_mat_id["CMS19_H"]
+id_CMS19_He = Di_mat_id["CMS19_He"]
+id_CMS19_HHe = Di_mat_id["CMS19_HHe"]
 id_ANEOS_forsterite = Di_mat_id["ANEOS_forsterite"]
 id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
 id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
@@ -101,6 +107,9 @@ Fp_SESAME_basalt = dir_data + "SESAME_basalt_7530.txt"
 Fp_SESAME_water = dir_data + "SESAME_water_7154.txt"
 Fp_SS08_water = dir_data + "SS08_water.txt"
 Fp_AQUA = dir_data + "AQUA_H20.txt"
+Fp_CMS19_H = dir_data + "CMS19_H.txt"
+Fp_CMS19_He = dir_data + "CMS19_He.txt"
+Fp_CMS19_HHe = dir_data + "CMS19_HHe.txt"
 # ANEOS tables
 Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.txt"
 Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.txt"
