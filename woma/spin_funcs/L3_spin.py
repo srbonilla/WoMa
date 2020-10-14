@@ -33,7 +33,7 @@ def L3_rho_eq_po_from_V(
     T_rho_type_id_L3,
     T_rho_args_L3,
 ):
-    """ Compute densities of equatorial and polar profiles given the potential
+    """Compute densities of equatorial and polar profiles given the potential
         for a 3 layer planet.
 
     Parameters
@@ -234,7 +234,7 @@ def L3_spin(
     T_rho_args_L3,
     verbosity=1,
 ):
-    """ Compute spining profile of densities for a 3 layer planet.
+    """Compute spining profile of densities for a 3 layer planet.
 
     Parameters
     ----------

@@ -34,7 +34,7 @@ def L3_integrate(
     T_rho_type_id_L3,
     T_rho_args_L3,
 ):
-    """ Integration of a 2 layer spherical planet.
+    """Integration of a 2 layer spherical planet.
 
     Parameters
     ----------
@@ -247,7 +247,7 @@ def L3_find_M_given_R_R1_R2(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the total mass of the planet.
+    """Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
     Parameters
@@ -302,13 +302,13 @@ def L3_find_M_given_R_R1_R2(
 
     T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive masses.
-        
+
     verbosity : int
         Printing options.
 
@@ -406,7 +406,7 @@ def L3_find_R_given_M_R1_R2(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the total mass of the planet.
+    """Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
     Parameters
@@ -461,13 +461,13 @@ def L3_find_R_given_M_R1_R2(
 
     T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive masses or radius.
-        
+
     verbosity : int
         Printing options.
 
@@ -570,7 +570,7 @@ def L3_find_R2_given_M_R_R1(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the boundary between layers 2 and 3 of the planet for
+    """Finder of the boundary between layers 2 and 3 of the planet for
         fixed boundary between layers 1 and 2.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
@@ -623,13 +623,13 @@ def L3_find_R2_given_M_R_R1(
 
     T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive masses or radius.
-        
+
     verbosity : int
         Printing options.
 
@@ -728,7 +728,7 @@ def L3_find_R1_given_M_R_R2(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the boundary between layers 2 and 3 of the planet for
+    """Finder of the boundary between layers 2 and 3 of the planet for
         fixed boundary between layers 1 and 2.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
@@ -781,13 +781,13 @@ def L3_find_R1_given_M_R_R2(
 
     T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive masses or radius.
-        
+
     verbosity : int
         Printing options.
 
@@ -889,7 +889,7 @@ def L3_find_R1_R2_given_M_R_I(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the boundaries of the planet for a
+    """Finder of the boundaries of the planet for a
         fixed moment of inertia factor.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
@@ -942,22 +942,22 @@ def L3_find_R1_R2_given_M_R_I(
 
     T_rho_args_L3 : [float]
         Extra arguments to determine the relation in layer 3.
-        
+
     R1_min : float
         Minimum core-mantle boundary to consider (m).
-        
+
     R1_max : float
         Maximum core-mantle boundary to consider (m).
-        
+
     num_attempt : float
         Maximum number of iterations to perform. Outer loop.
-        
+
     num_attempt_2 : float
         Maximum number of iterations to perform. Inner loop.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive masses or radius.
-        
+
     verbosity : int
         Printing options.
 

@@ -11,32 +11,32 @@ from woma.misc import utils as ut
 
 @njit
 def find_index_and_interp(x, A1_x):
-    """ Return the index and interpolation factor of a value in an array.
+    """Return the index and interpolation factor of a value in an array.
 
-   Allows x outside A1_x. If so then intp will be < 0 or > 1.
+    Allows x outside A1_x. If so then intp will be < 0 or > 1.
 
-   Parameters
-   ----------
-   x : float
-       The value to find.
+    Parameters
+    ----------
+    x : float
+        The value to find.
 
-   A1_x : [float]
-       The array to search.
+    A1_x : [float]
+        The array to search.
 
-   Returns
-   -------
-   idx : int
-       The index of the last array element smaller than the value.
+    Returns
+    -------
+    idx : int
+        The index of the last array element smaller than the value.
 
-       0               If x is below A1_x.
-       len(A1_x) - 2   If x is above A1_x.
+        0               If x is below A1_x.
+        len(A1_x) - 2   If x is above A1_x.
 
-   intp : float
-       The interpolation factor for how far the values is from the
-       indexed array value to the next.
+    intp : float
+        The interpolation factor for how far the values is from the
+        indexed array value to the next.
 
-       < 0     If x is below A1_x.
-       > 1     If x is above A1_x.
+        < 0     If x is below A1_x.
+        > 1     If x is above A1_x.
     """
     idx = np.searchsorted(A1_x, x) - 1
     # Return error values if outside the array
@@ -55,7 +55,7 @@ def find_index_and_interp(x, A1_x):
 
 
 def load_table_SESAME(Fp_table):
-    """ Load and return the table file data.
+    """Load and return the table file data.
 
     # header (six lines)
     date
@@ -198,7 +198,7 @@ def load_table_SESAME(Fp_table):
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure from the internal energy and density.
+    """Compute the pressure from the internal energy and density.
 
     Parameters
     ----------
@@ -342,7 +342,7 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def s_u_rho(u, rho, mat_id):
-    """ Compute the specific entropy from the internal energy and density.
+    """Compute the specific entropy from the internal energy and density.
 
     Parameters
     ----------
@@ -489,13 +489,13 @@ def s_u_rho(u, rho, mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Compute the internal energy from the density and temperature.
+    """Compute the internal energy from the density and temperature.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     T : float
         Temperature (K).
 
@@ -623,13 +623,13 @@ def u_rho_T(rho, T, mat_id):
 
 @njit
 def s_rho_T(rho, T, mat_id):
-    """ Compute the specific entropy from the density and temperature.
+    """Compute the specific entropy from the density and temperature.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     T : float
         Temperature (K).
 
@@ -754,13 +754,13 @@ def s_rho_T(rho, T, mat_id):
 
 @njit
 def T_rho_s(rho, s, mat_id):
-    """ Compute the temperature from the density and specific entropy.
+    """Compute the temperature from the density and specific entropy.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     s : float
         Specific entropy (J kg^-1 K^-1).
 

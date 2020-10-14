@@ -9,8 +9,8 @@ from woma.misc import glob_vars as gv
 
 @njit
 def idg_gamma(mat_id):
-    """ Return the adiabatic index gamma for an ideal gas. 
-    
+    """Return the adiabatic index gamma for an ideal gas.
+
     Parameters
     ----------
     mat_id : int
@@ -33,7 +33,7 @@ def idg_gamma(mat_id):
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure from the internal energy and density.
+    """Compute the pressure from the internal energy and density.
 
     Parameters
     ----------
@@ -61,7 +61,7 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def C_V_idg(mat_id):
-    """ Return the specific heat capacity.
+    """Return the specific heat capacity.
 
     Parameters
     ----------
@@ -85,13 +85,13 @@ def C_V_idg(mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Compute the internal energy from the density and temperature.
+    """Compute the internal energy from the density and temperature.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     T : float
         Temperature (K).
 

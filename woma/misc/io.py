@@ -90,10 +90,10 @@ Di_hdf5_particle_label = {  # Type
 
 
 def get_planet_data(f, param):
-    """ Load an attribute or profile from an HDF5 file. 
-    
+    """Load an attribute or profile from an HDF5 file.
+
     See woma.Planet.save().
-    
+
     Parameters
     ----------
     f : h5py File
@@ -116,8 +116,8 @@ def get_planet_data(f, param):
 
 
 def multi_get_planet_data(f, A1_param):
-    """ Load multiple attributes and/or profiles from an HDF5 file. 
-    
+    """Load multiple attributes and/or profiles from an HDF5 file.
+
     See woma.Planet.save().
 
     Parameters
@@ -143,10 +143,10 @@ def multi_get_planet_data(f, A1_param):
 
 
 def get_spin_planet_data(f, param):
-    """ Load an attribute or profile from an HDF5 file. 
-    
+    """Load an attribute or profile from an HDF5 file.
+
     See woma.SpinPlanet.save().
-    
+
     Parameters
     ----------
     f : h5py File
@@ -169,8 +169,8 @@ def get_spin_planet_data(f, param):
 
 
 def multi_get_spin_planet_data(f, A1_param):
-    """ Load multiple attributes and/or profiles from an HDF5 file. 
-    
+    """Load multiple attributes and/or profiles from an HDF5 file.
+
     See woma.SpinPlanet.save().
 
     Parameters
@@ -211,8 +211,8 @@ def save_particle_data(
     file_to_SI=SI_to_SI,
     verbosity=1,
 ):
-    """ Save particle data to an hdf5 file.
-    
+    """Save particle data to an hdf5 file.
+
     Uses the same format as the SWIFT simulation code (www.swiftsim.com).
 
     Parameters
@@ -220,18 +220,18 @@ def save_particle_data(
     f : h5py File
         The opened hdf5 data file (with "w").
 
-    A2_pos, A2_vel, A1_m, A1_h, A1_rho, A1_P, A1_u, A1_mat_id 
+    A2_pos, A2_vel, A1_m, A1_h, A1_rho, A1_P, A1_u, A1_mat_id
         : [float] or [int]
         The particle data arrays. See Di_hdf5_particle_label for details.
-        
+
     A1_id : [int] (opt.)
         The particle IDs. Defaults to the order in which they're provided.
-        
+
     A1_s : [float] (opt.)
         The particle specific entropies.
 
     boxsize : float (opt.)
-        The simulation box side length (m). If provided, then the origin will be 
+        The simulation box side length (m). If provided, then the origin will be
         shifted to the centre of the box.
 
     file_to_SI : woma.Conversions (opt.)
