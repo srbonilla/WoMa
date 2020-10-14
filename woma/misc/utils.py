@@ -15,16 +15,16 @@ def _print_banner():
 
 
 def check_end(string, end):
-    """ Check that a string ends with the required characters, append them if not.
-    
+    """Check that a string ends with the required characters, append them if not.
+
     Parameters
     ----------
     string : str
         The string to check.
-        
+
     end : str
         The required ending.
-    
+
     Returns
     -------
     string : str
@@ -37,8 +37,8 @@ def check_end(string, end):
 
 
 def format_array_string(array, format):
-    """ Return a print-ready string of an array's contents in a given format.
-    
+    """Return a print-ready string of an array's contents in a given format.
+
     Parameters
     ----------
     array :[e.g. float, int, str]
@@ -83,7 +83,7 @@ def format_array_string(array, format):
 
 
 def add_whitespace(string, space):
-    """ Return a padded string for aligned printing with adjusted spaces.
+    """Return a padded string for aligned printing with adjusted spaces.
 
     e.g.
         >>> asdf = 123
@@ -93,15 +93,15 @@ def add_whitespace(string, space):
                    add_whitespace("qwerty", 12), qwerty))
         asdf         = 123
         qwerty       = 456
-            
+
     Parameters
     ----------
     string : str
         The input string.
-        
+
     space : int
         The required length for alignment.
-        
+
     Returns
     -------
     string : str
@@ -112,7 +112,7 @@ def add_whitespace(string, space):
 
 @njit
 def moi(A1_r, A1_rho):
-    """ Compute the moment of inertia for a planet with spherical symmetry.
+    """Compute the moment of inertia for a planet with spherical symmetry.
 
     Parameters
     ----------
@@ -135,7 +135,7 @@ def moi(A1_r, A1_rho):
 
 
 class Conversions:
-    """ Simple conversions from one set of units to another, derived using the 
+    """Simple conversions from one set of units to another, derived using the
         base mass-, length-, and time-unit relations.
 
     Usage e.g.
@@ -204,17 +204,17 @@ SI_to_cgs = cgs_to_SI.inv()
 def impact_pos_vel_b_v_c_r(
     b, v_c, r, R_t, R_i, M_t, M_i, units_b="b", units_v_c="m/s", return_t=False
 ):
-    """ 
+    """
     Calculate the intial position and velocity of an impactor to result in the
-    desired scenario at contact, rotated such that the velocity at contact is 
+    desired scenario at contact, rotated such that the velocity at contact is
     in the negative x direction.
-    
+
     As described in Appendix A of in Kegerreis et al. (2020) ApJ 897:161.
 
     Parameters
     ----------
     b : float
-        The impact parameter, b = sin(B), or the impact angle B if 
+        The impact parameter, b = sin(B), or the impact angle B if
         units_b is "B".
 
     v_c : float
@@ -231,11 +231,11 @@ def impact_pos_vel_b_v_c_r(
         The masses of the target and impactor (kg).
 
     units_b : str (opt.)
-        The units of the impact parameter/angle: "b" (default) for the 
+        The units of the impact parameter/angle: "b" (default) for the
         dimensionless impact parameter, or "B" for the impact angle in degrees.
 
     units_v_c : str (opt.)
-        The units of the contact speed: "m/s" (default), or "v_esc" for the 
+        The units of the contact speed: "m/s" (default), or "v_esc" for the
         mutual escape speed.
 
     return_t : bool (opt.)
@@ -416,20 +416,20 @@ def impact_pos_vel_b_v_c_r(
 def impact_pos_vel_b_v_c_t(
     b, v_c, t, R_t, R_i, M_t, M_i, units_b="b", units_v_c="m/s", r_max_factor=100
 ):
-    """ 
+    """
     Calculate the intial position and velocity of an impactor to result in the
-    desired scenario at contact, rotated such that the velocity at contact is 
+    desired scenario at contact, rotated such that the velocity at contact is
     in the negative x direction.
-    
+
     Find the initial distance between the body centres, r, that yields the
     desired time until contact by iteratively calling impact_pos_vel_b_v_c_r().
-    
+
     As described in Appendix A of in Kegerreis et al. (2020) ApJ 897:161.
 
     Parameters
     ----------
     b : float
-        The impact parameter, b = sin(B), or the impact angle B (degrees) if 
+        The impact parameter, b = sin(B), or the impact angle B (degrees) if
         units_b is "B".
 
     v_c : float
@@ -446,15 +446,15 @@ def impact_pos_vel_b_v_c_t(
         The masses of the target and impactor (kg).
 
     units_b : str (opt.)
-        The units of the impact parameter/angle: "b" (default) for the 
+        The units of the impact parameter/angle: "b" (default) for the
         dimensionless impact parameter, or "B" for the impact angle in degrees.
 
     units_v_c : str (opt.)
-        The units of the contact speed: "m/s" (default), or "v_esc" for the 
+        The units of the contact speed: "m/s" (default), or "v_esc" for the
         mutual escape speed.
-        
+
     r_max_factor : float (opt.)
-        This times the sum of the body radii sets the maximum initial 
+        This times the sum of the body radii sets the maximum initial
         separation of the body centres for the bisection search. Default 100.
 
     Returns

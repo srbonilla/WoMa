@@ -13,7 +13,7 @@ from woma.eos.T_rho import T_rho
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure from the specific internal energy
+    """Compute the pressure from the specific internal energy
     and density, for any EoS.
 
     Parameters
@@ -52,13 +52,13 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Compute the specific internal energy from the density and temperature, for any EoS.
+    """Compute the specific internal energy from the density and temperature, for any EoS.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     T : float
         Temperature (K).
 
@@ -86,13 +86,13 @@ def u_rho_T(rho, T, mat_id):
 
 @njit
 def s_rho_T(rho, T, mat_id):
-    """ Compute the specific entropy from the density and temperature, for any EoS.
+    """Compute the specific entropy from the density and temperature, for any EoS.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     T : float
         Temperature (K).
 
@@ -114,7 +114,7 @@ def s_rho_T(rho, T, mat_id):
 
 @njit
 def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
-    """ Find the density that satisfies P(u(rho), rho) = P_des, for any EoS.
+    """Find the density that satisfies P(u(rho), rho) = P_des, for any EoS.
 
     Parameters
     ----------
@@ -230,7 +230,7 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
 
 @njit
 def P_T_rho(T, rho, mat_id):
-    """ Compute the pressure from the temperature and density, for any EoS.
+    """Compute the pressure from the temperature and density, for any EoS.
 
     Parameters
     ----------
@@ -255,13 +255,13 @@ def P_T_rho(T, rho, mat_id):
 
 @njit
 def rho_P_T(P, T, mat_id):
-    """ Compute the density from the pressure and temperature, for any EoS.
+    """Compute the density from the pressure and temperature, for any EoS.
 
     Parameters
     ----------
     P : float
         Pressure (Pa).
-        
+
     T : float
         Temperature (K).
 
@@ -308,28 +308,28 @@ def rho_P_T(P, T, mat_id):
 def plot_EoS_P_rho_fixed_T(
     mat_id_1, mat_id_2, T, P_min=0.1, P_max=1e11, rho_min=100, rho_max=15000
 ):
-    """ Plot the EoS pressure as a function of density for various temperatures.
+    """Plot the EoS pressure as a function of density for various temperatures.
 
     Parameters
     ----------
     mat_id_1 : int
         Material id for the first material.
-    
+
     mat_id_2 : int
         Material id for the second material.
-        
+
     T : float
         Fixed temperature (K).
-        
+
     P_min : float
         Minimum pressure (Pa) to consider.
-        
+
     P_max : float
         Maximum pressure (Pa) to consider.
-        
+
     rho_min : float
         Minimum density (kg m^-3) to consider.
-        
+
     rho_min : float
         Maximum density (kg m^-3) to consider.
     """

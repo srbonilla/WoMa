@@ -29,7 +29,7 @@ def L2_rho_eq_po_from_V(
     T_rho_type_id_L2,
     T_rho_args_L2,
 ):
-    """ Compute densities of equatorial and polar profiles given the potential
+    """Compute densities of equatorial and polar profiles given the potential
         for a 2 layer planet.
 
     Parameters
@@ -193,7 +193,7 @@ def L2_spin(
     T_rho_args_L2,
     verbosity=1,
 ):
-    """ Compute spining profile of densities for a 2 layer planet.
+    """Compute spining profile of densities for a 2 layer planet.
 
     Parameters
     ----------

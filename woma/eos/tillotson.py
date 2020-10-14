@@ -10,8 +10,8 @@ from woma.misc import glob_vars as gv
 
 
 def load_u_cold_array(mat_id):
-    """ Load precomputed values of cold internal energy.
-    
+    """Load precomputed values of cold internal energy.
+
     Parameters
     ----------
     mat_id : int
@@ -20,7 +20,7 @@ def load_u_cold_array(mat_id):
     Returns
     -------
     u_cold_array : [float]
-        Precomputed values of cold internal energy from function 
+        Precomputed values of cold internal energy from function
         _create_u_cold_array() (J kg^-1).
     """
     if mat_id == gv.id_Til_iron:
@@ -50,7 +50,7 @@ if os.path.isfile(gv.Fp_u_cold_Til_water):
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure from the internal energy and density.
+    """Compute the pressure from the internal energy and density.
 
     Parameters
     ----------
@@ -217,7 +217,7 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def C_V_Til(mat_id):
-    """ Return the specific heat capacity.
+    """Return the specific heat capacity.
 
     Parameters
     ----------
@@ -243,7 +243,7 @@ def C_V_Til(mat_id):
 
 @njit
 def _rho_0(mat_id):
-    """ Return the density for which the cold internal energy is zero.
+    """Return the density for which the cold internal energy is zero.
 
     Parameters
     ----------
@@ -269,7 +269,7 @@ def _rho_0(mat_id):
 
 @njit
 def u_cold(rho, mat_id, N):
-    """ Compute the cold internal energy from the density.
+    """Compute the cold internal energy from the density.
 
     Parameters
     ----------
@@ -307,8 +307,8 @@ def u_cold(rho, mat_id, N):
 
 @njit
 def _create_u_cold_array(mat_id):
-    """ Compute tabulated values of the cold internal energy.
-    
+    """Compute tabulated values of the cold internal energy.
+
     Ranges from density = 100 to 100000 kg/m^3
 
     Parameters
@@ -339,7 +339,7 @@ def _create_u_cold_array(mat_id):
 
 @njit
 def u_cold_tab(rho, mat_id):
-    """ Compute the cold internal energy using premade tabulated values.
+    """Compute the cold internal energy using premade tabulated values.
 
     Parameters
     ----------
@@ -394,13 +394,13 @@ def u_cold_tab(rho, mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Compute the internal energy from the density and temperature.
+    """Compute the internal energy from the density and temperature.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     T : float
         Temperature (K).
 

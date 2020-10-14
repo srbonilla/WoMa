@@ -10,8 +10,8 @@ from woma.misc import glob_vars as gv
 
 
 def load_u_cold_array(mat_id):
-    """ Load precomputed values of cold internal energy.
-    
+    """Load precomputed values of cold internal energy.
+
     Parameters
     ----------
     mat_id : int
@@ -20,7 +20,7 @@ def load_u_cold_array(mat_id):
     Returns
     -------
     u_cold_array : [float]
-        Precomputed values of cold internal energy from function 
+        Precomputed values of cold internal energy from function
         _create_u_cold_array() (J kg^-1).
     """
     if mat_id == gv.id_HM80_ice:
@@ -41,7 +41,7 @@ if os.path.isfile(gv.Fp_u_cold_HM80_rock):
 
 
 def load_table_HM80(Fp_table):
-    """ Load and return the table file data.
+    """Load and return the table file data.
 
     # header (four lines)
     date
@@ -57,35 +57,35 @@ def load_table_HM80(Fp_table):
 
     Parameters
     ----------
-    Fp_table : str 
+    Fp_table : str
         The table file path.
 
     Returns
     -------
     log_rho_min : float
         Natural log of the minimum density (kg m^-3).
-        
+
     log_rho_max : float
         Natural log of the maximum density (kg m^-3).
-    
+
     num_rho : int
         Number of different density values tabulated.
-    
+
     log_rho_step : float
         Step between consecutive tabulated density values.
-    
+
     log_u_min : float
         Natural log of the minimum specific internal energy (J kg^-1).
-        
+
     log_u_max : float
         Natural log of the maximum specific internal energy (J kg^-1).
-    
+
     num_u : int
         Number of different specific internal energy values tabulated.
-    
+
     log_u_step : float
         Step between consecutive tabulated specific internal energy values.
-    
+
     A2_log_P, A2_log_T : [float]
         2D arrays of natural logs of pressure (Pa) and temperature (K).
     """
@@ -172,7 +172,7 @@ m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)
 
 @njit
 def P_u_rho(u, rho, mat_id):
-    """ Compute the pressure from the internal energy and density.
+    """Compute the pressure from the internal energy and density.
 
     Parameters
     ----------
@@ -264,13 +264,13 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def T_u_rho(u, rho, mat_id):
-    """ Compute the temperature from the internal energy and density.
+    """Compute the temperature from the internal energy and density.
 
     Parameters
     ----------
     u : float
         Specific internal energy (J kg^-1).
-    
+
     rho : float
         Density (kg m^-3).
 
@@ -356,7 +356,7 @@ def T_u_rho(u, rho, mat_id):
 
 @njit
 def _rho_0(mat_id):
-    """ Return the density for which the cold internal energy is zero.
+    """Return the density for which the cold internal energy is zero.
 
     Parameters
     ----------
@@ -380,7 +380,7 @@ def _rho_0(mat_id):
 
 @njit
 def u_cold(rho, mat_id, N):
-    """ Compute the cold internal energy from the density.
+    """Compute the cold internal energy from the density.
 
     Parameters
     ----------
@@ -421,8 +421,8 @@ def u_cold(rho, mat_id, N):
 
 @njit
 def _create_u_cold_array(mat_id):
-    """ Compute tabulated values of the cold internal energy.
-    
+    """Compute tabulated values of the cold internal energy.
+
     Ranges from density = 100 to 100000 kg/m^3
 
     Parameters
@@ -453,7 +453,7 @@ def _create_u_cold_array(mat_id):
 
 @njit
 def u_cold_tab(rho, mat_id):
-    """ Compute the cold internal energy using premade tabulated values.
+    """Compute the cold internal energy using premade tabulated values.
 
     Parameters
     ----------
@@ -506,7 +506,7 @@ def u_cold_tab(rho, mat_id):
 
 @njit
 def C_V_HM80(rho, T, mat_id):
-    """ Return the specific heat capacity from the density and temperature.
+    """Return the specific heat capacity from the density and temperature.
 
     Parameters
     ----------
@@ -515,7 +515,7 @@ def C_V_HM80(rho, T, mat_id):
 
     T : float
         Temperature (K).
-        
+
     mat_id : int
         Material id.
 
@@ -573,13 +573,13 @@ def C_V_HM80(rho, T, mat_id):
 
 @njit
 def u_rho_T(rho, T, mat_id):
-    """ Compute the internal energy from the density and temperature.
+    """Compute the internal energy from the density and temperature.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     T : float
         Temperature (K).
 
@@ -605,13 +605,13 @@ def u_rho_T(rho, T, mat_id):
 
 @njit
 def T_rho_HM80_HHe(rho, rho_prv, T_prv):
-    """ Compute the temperature as a function of density for the H-He atmosphere.
+    """Compute the temperature as a function of density for the H-He atmosphere.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     rho_prv, T_prv : float
         The previous density (kg m^-3) and temperature (K).
 

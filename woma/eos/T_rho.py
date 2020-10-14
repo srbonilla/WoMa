@@ -11,7 +11,7 @@ from woma.eos import tillotson, sesame, idg, hm80
 
 @njit
 def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
-    """ Compute the temperature from the density using the chosen relation.
+    """Compute the temperature from the density using the chosen relation.
 
     Parameters
     ----------
@@ -66,7 +66,7 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
 
 @njit
 def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
-    """ Set any parameters for the T-rho relation.
+    """Set any parameters for the T-rho relation.
 
     Parameters
     ----------
@@ -125,21 +125,21 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
 
 
 def T_rho_id_and_args_from_type(A1_T_rho_type):
-    """ Convert input T-rho types into the internal T-rho arrays.
-    
+    """Convert input T-rho types into the internal T-rho arrays.
+
     Example: ['power=2.4', 'adiabatic'] --> [1, 2], [[None, 2.4], [None, None]]
 
     Parameters
     ----------
     A1_T_rho_type : [string]
-        Array of T-rho relations for each layer. See tutorial.ipynb and 
+        Array of T-rho relations for each layer. See tutorial.ipynb and
         glob_vars.py for more info.
 
     Returns
     -------
     A1_T_rho_id : [int]
         Array of T-rho relation ids for each layer. See glob_vars.py.
-        
+
     A1_T_rho_args : [[float]]
         Array of T-rho arguments for each layer. See glob_vars.py.
     """

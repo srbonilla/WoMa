@@ -15,7 +15,7 @@ from woma.eos.T_rho import T_rho, set_T_rho_args
 
 @njit
 def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args):
-    """ Integration of a 1 layer spherical planet.
+    """Integration of a 1 layer spherical planet.
 
     Parameters
     ----------
@@ -127,19 +127,19 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
 def L1_integrate_out(
     r, dr, m_enc, P, T, u, mat_id, T_rho_type_id, T_rho_args, rho_min=0, P_min=0
 ):
-    """ Integrate a new layer of a spherical planet outwards.
+    """Integrate a new layer of a spherical planet outwards.
 
     Parameters
     ----------
     r : float
         The radius at the base (m).
-        
+
     dr : float
         The radius step for the integration (m).
-        
+
     m_enc : float
         The enclosed mass at the base (Pa).
-        
+
     P : float
         The pressure at the base (Pa).
 
@@ -162,7 +162,7 @@ def L1_integrate_out(
         The minimum density (must be >= 0) at which the new layer will stop.
 
     P_min : float
-        The minimum pressure (must be >= 0) at which the new layer will stop. 
+        The minimum pressure (must be >= 0) at which the new layer will stop.
 
     Returns
     -------
@@ -213,10 +213,19 @@ def L1_integrate_out(
         # Update the T-rho parameters
         if T_rho_type_id == gv.type_adb and mat_id == gv.id_HM80_HHe:
             T_rho_args = set_T_rho_args(
-                A1_T[-1], A1_rho[-1], T_rho_type_id, T_rho_args, mat_id,
+                A1_T[-1],
+                A1_rho[-1],
+                T_rho_type_id,
+                T_rho_args,
+                mat_id,
             )
         rho = eos.find_rho(
-            A1_P[-1], mat_id, T_rho_type_id, T_rho_args, 0.9 * A1_rho[-1], A1_rho[-1],
+            A1_P[-1],
+            mat_id,
+            T_rho_type_id,
+            T_rho_args,
+            0.9 * A1_rho[-1],
+            A1_rho[-1],
         )
         A1_rho.append(rho)
         A1_T.append(T_rho(rho, T_rho_type_id, T_rho_args, mat_id))
@@ -250,7 +259,7 @@ def L1_find_M_given_R(
     tol=1e-7,
     verbosity=1,
 ):
-    """ Finder of the total mass of the planet.
+    """Finder of the total mass of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
 
     Parameters
@@ -281,13 +290,13 @@ def L1_find_M_given_R(
 
     T_rho_args : [float]
         Extra arguments to determine the relation.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between consecutive masses.
-        
+
     verbosity : int
         Printing options.
 
@@ -362,7 +371,7 @@ def L1_find_R_given_M(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the total radius of the planet.
+    """Finder of the total radius of the planet.
         The correct value yields m_enc -> 0 at the center of the planet.
 
     Parameters
@@ -393,13 +402,13 @@ def L1_find_R_given_M(
 
     T_rho_args : [float]
         Extra arguments to determine the relation.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive radius
-        
+
     verbosity : int
         Printing options.
 
@@ -418,7 +427,15 @@ def L1_find_R_given_M(
         R_try = (R_min + R_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-            num_prof, R_try, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args,
+            num_prof,
+            R_try,
+            M,
+            P_s,
+            T_s,
+            rho_s,
+            mat_id,
+            T_rho_type_id,
+            T_rho_args,
         )
 
         if A1_m_enc[-1] > 0.0:

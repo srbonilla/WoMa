@@ -37,8 +37,8 @@ from woma.eos.T_rho import T_rho, T_rho_id_and_args_from_type
 
 
 class Planet:
-    """ Create model profiles of a spherical body in hydrostatic equilibrium.
-    
+    """Create model profiles of a spherical body in hydrostatic equilibrium.
+
     See also README.md and tutorial.ipynb.
 
     Parameters
@@ -47,19 +47,19 @@ class Planet:
         The name of the planet object.
 
     A1_mat_layer : [str]
-        The name of the material in each layer, from the central layer outwards. 
+        The name of the material in each layer, from the central layer outwards.
         See Di_mat_id in `eos/eos.py`.
-        
+
     A1_T_rho_type : [int]
-        The type of temperature-density relation in each layer, from the central 
+        The type of temperature-density relation in each layer, from the central
         layer outwards. See Di_mat_id in `eos/eos.py`.
 
         "power=alpha"   T ~ rho^alpha. Set alpha = 0 for isothermal.
-        "adiabatic"     Adiabatic. 
+        "adiabatic"     Adiabatic.
         "entropy=s"     Fixed specific entropy s (J kg^-1 K^-1).
 
     P_s, T_s, rho_s : float
-        The pressure, temperature, and density at the surface. Only two of the 
+        The pressure, temperature, and density at the surface. Only two of the
         three need be provided (Pa, K, kg m^-3).
 
     M : float
@@ -69,7 +69,7 @@ class Planet:
         The total radius (m).
 
     A1_M_layer : [float]
-        The mass within each layer, starting from the from the central layer 
+        The mass within each layer, starting from the from the central layer
         outwards (kg).
 
     A1_R_layer : [float]
@@ -80,7 +80,7 @@ class Planet:
 
     num_prof : int
         The number of profile integration steps.
-        
+
     load_file : str (opt.)
         If provided, then load the attributes and profiles from an HDF5 file.
         See woma.Planet.save() and .load().
@@ -91,7 +91,7 @@ class Planet:
         The number of planetary layers.
 
     P_0, P_1, ... P_s;  T_0, ..., T_s;  rho_0, ..., rho_s : float
-        The pressure, temperature, and density (Pa, K, kg m^-3) at each layer 
+        The pressure, temperature, and density (Pa, K, kg m^-3) at each layer
         boundary, from the centre (_0) up to the surface (_s).
 
     A1_mat_id_layer : [int]
@@ -105,16 +105,16 @@ class Planet:
 
     A1_P : [float]
         The pressure at each profile radius (Pa).
-        
+
     A1_rho : [float]
         The density at each profile radius (kg m^-3).
-        
+
     A1_T : [float]
         The temperature at each profile radius (K).
-        
+
     A1_u : [float]
         The specific internal energy at each profile radius (J kg^-1).
-        
+
     A1_mat_id : [int]
         The ID of the material at each profile radius.
     """
@@ -407,7 +407,7 @@ class Planet:
         )
 
     def save(self, filename, verbosity=1):
-        """ Save the attributes and profiles to an HDF5 file. 
+        """Save the attributes and profiles to an HDF5 file.
 
         Parameters
         ----------
@@ -456,7 +456,7 @@ class Planet:
             print("Done")
 
     def load(self, filename, verbosity=1):
-        """ Load the attributes and profiles from an HDF5 file. 
+        """Load the attributes and profiles from an HDF5 file.
 
         Parameters
         ----------
@@ -540,16 +540,16 @@ class Planet:
         assert self.A1_T_rho_type_id[0] is not None
 
     def gen_prof_L1_given_R_M(self, verbosity=1):
-        """ 
+        """
         Compute the profile of a planet with 1 layer given the mass and radius.
-            
+
         Parameters
         ----------
         self.R : float
             The total radius (m).
-            
+
         self.M : float
-            The total mass (kg).            
+            The total mass (kg).
         """
 
         # Check for necessary input
@@ -585,10 +585,10 @@ class Planet:
     def gen_prof_L1_find_R_given_M(
         self, R_max, tol=0.001, tol_M_tweak=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
-        Compute the profile of a planet with 1 layer to find the radius given 
+        """
+        Compute the profile of a planet with 1 layer to find the radius given
         the mass.
-            
+
         Parameters
         ----------
         self.M : float
@@ -598,15 +598,15 @@ class Planet:
             The maximum radius to try (m).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.M is not None
@@ -685,10 +685,10 @@ class Planet:
             self.print_info()
 
     def gen_prof_L1_find_M_given_R(self, M_max, tol=1e-7, num_attempt=40, verbosity=1):
-        """ 
-        Compute the profile of a planet with 1 layer to find the mass given the 
+        """
+        Compute the profile of a planet with 1 layer to find the mass given the
         radius.
-            
+
         Parameters
         ----------
         self.R or self.A1_R_layer[0] : float
@@ -698,11 +698,11 @@ class Planet:
             The maximum mass to try (kg).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.R is not None or self.A1_R_layer[0] is not None
@@ -754,24 +754,24 @@ class Planet:
     def gen_prof_given_inner_prof(
         self, mat, T_rho_type, rho_min=0, P_min=0, verbosity=1
     ):
-        """ Add a new layer on top of existing profiles by integrating outwards.
+        """Add a new layer on top of existing profiles by integrating outwards.
 
-        i.e. The self Planet object must already have valid profiles as 
-        generated by another WoMa function, then this function will increase 
+        i.e. The self Planet object must already have valid profiles as
+        generated by another WoMa function, then this function will increase
         the number of layers by one.
-        
-        In addition to this function's arguments, try changing the surface 
-        conditions (P_s, T_s, rho_s) and remaking the initial planet to control 
+
+        In addition to this function's arguments, try changing the surface
+        conditions (P_s, T_s, rho_s) and remaking the initial planet to control
         this new layer, as these set the conditions at its base.
 
         Parameters
         ----------
         mat : str
-            The name of the material in the new layer. See Di_mat_id in 
+            The name of the material in the new layer. See Di_mat_id in
             `eos/eos.py`.
-            
+
         T_rho_type : int
-            The type of temperature-density relation in the new layer. See 
+            The type of temperature-density relation in the new layer. See
             Di_mat_id in `eos/eos.py`.
 
             "power=alpha"   T = K * rho^alpha.
@@ -781,7 +781,7 @@ class Planet:
             The minimum density (must be >= 0) at which the new layer will stop.
 
         P_min : float
-            The minimum pressure (must be >= 0) at which the new layer will stop. 
+            The minimum pressure (must be >= 0) at which the new layer will stop.
         """
         # Append the new layer info to the existing profiles
         self.num_layer += 1
@@ -863,18 +863,18 @@ class Planet:
         assert self.A1_T_rho_type_id[1] is not None
 
     def gen_prof_L2_given_R_M_R1(self, verbosity=1):
-        """ 
-            Compute the profile of a planet with 2 layers given the total mass and 
-            the outer radii of both layers.
-                
-            Parameters
-            ----------
-            self.M : float
-                The total mass (kg).
-                
-            self.A1_R_layer : [float]
-                The outer radii of each layer (m).       
-            """
+        """
+        Compute the profile of a planet with 2 layers given the total mass and
+        the outer radii of both layers.
+
+        Parameters
+        ----------
+        self.M : float
+            The total mass (kg).
+
+        self.A1_R_layer : [float]
+            The outer radii of each layer (m).
+        """
         # Check for necessary input
         assert self.R is not None
         assert self.A1_R_layer[0] is not None
@@ -913,28 +913,28 @@ class Planet:
     def gen_prof_L2_find_R1_given_M_R(
         self, tol=0.001, tol_M_tweak=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
-        Compute the profile of a planet with 2 layers to find the outer radius 
+        """
+        Compute the profile of a planet with 2 layers to find the outer radius
         of the first layer, given the total mass and total radius.
-            
+
         Parameters
         ----------
         self.R : float
             The total radius (m).
-        
+
         self.M : float
             The total mass (kg).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.R is not None
@@ -1024,24 +1024,24 @@ class Planet:
     def gen_prof_L2_find_M_given_R_R1(
         self, M_max, tol=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
+        """
         Compute the profile of a planet with 2 layers to find the total mass
         given the outer radii of both layers.
-            
+
         Parameters
         ----------
         self.A1_R_layer : [float]
             The radii of each layer (m).
-        
+
         M_max : float
             The maximum mass to try (kg).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.R is not None
@@ -1099,31 +1099,31 @@ class Planet:
     def gen_prof_L2_find_R_given_M_R1(
         self, R_max, tol=0.001, tol_M_tweak=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
+        """
         Compute the profile of a planet with 2 layers to find the total radius
         given the total mass and the outer radius of the first layer.
-            
+
         Parameters
         ----------
         self.M : float
             The total mass (kg).
-        
+
         self.A1_R_layer[0] : [float]
             The outer radius of the first layer (m).
-        
+
         R_max : float
             The maximum radius to try (m).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.A1_R_layer[0] is not None
@@ -1217,31 +1217,31 @@ class Planet:
     def gen_prof_L2_find_R_R1_given_M1_M2(
         self, R_min, R_max, tol=0.001, tol_M_tweak=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
-        Compute the profile of a planet with 2 layers to find outer radii of 
+        """
+        Compute the profile of a planet with 2 layers to find outer radii of
         both layers given the masses of both layers.
-            
+
         Parameters
         ----------
         self.A1_M_layer : [float]
             The masses of each layer (kg).
-            
+
         R_min : float
             The minimum radius to try (m).
-        
+
         R_max : float
             The maximum radius to try (m).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
 
         # Check for necessary input
@@ -1356,17 +1356,17 @@ class Planet:
         assert self.A1_T_rho_type_id[2] is not None
 
     def gen_prof_L3_given_R_M_R1_R2(self, verbosity=1):
-        """ 
-        Compute the profile of a planet with 3 layers given the total mass and 
+        """
+        Compute the profile of a planet with 3 layers given the total mass and
         the outer radii of all three layers.
-            
+
         Parameters
         ----------
         self.M : float
             The total mass (kg).
-            
+
         self.A1_R_layer : [float]
-            The outer radii of each layer (m).       
+            The outer radii of each layer (m).
         """
         # Check for necessary input
         assert self.R is not None
@@ -1411,24 +1411,24 @@ class Planet:
     def gen_prof_L3_find_M_given_R_R1_R2(
         self, M_max, tol=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
+        """
         Compute the profile of a planet with 3 layers to find the total mass
         given the outer radii of all three layers.
-            
+
         Parameters
         ----------
         self.A1_R_layer : [float]
             The radii of each layer (m).
-        
+
         M_max : float
             The maximum mass to try (kg).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.R is not None
@@ -1495,32 +1495,32 @@ class Planet:
     def gen_prof_L3_find_R1_given_M_R_R2(
         self, tol=0.001, tol_M_tweak=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
-        Compute the profile of a planet with 3 layers to find the outer radius 
-        of the first layer, given the total mass, total radius, and outer 
+        """
+        Compute the profile of a planet with 3 layers to find the outer radius
+        of the first layer, given the total mass, total radius, and outer
         radius of the second layer.
-            
+
         Parameters
         ----------
         self.R : float
             The total radius (m).
-        
+
         self.A1_R_layer[1] : [float]
             The outer radius of the second layer (m).
-        
+
         self.M : float
             The total mass (kg).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.R is not None
@@ -1624,32 +1624,32 @@ class Planet:
     def gen_prof_L3_find_R2_given_M_R_R1(
         self, tol=0.001, tol_M_tweak=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
-        Compute the profile of a planet with 3 layers to find the outer radius 
-        of the second layer, given the total mass, total radius, and outer 
+        """
+        Compute the profile of a planet with 3 layers to find the outer radius
+        of the second layer, given the total mass, total radius, and outer
         radius of the first layer.
-            
+
         Parameters
         ----------
         self.R : float
             The total radius (m).
-        
+
         self.A1_R_layer[0] : [float]
             The outer radius of the first layer (m).
-        
+
         self.M : float
             The total mass (kg).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.R is not None
@@ -1752,32 +1752,32 @@ class Planet:
     def gen_prof_L3_find_R_given_M_R1_R2(
         self, R_max, tol=0.001, tol_M_tweak=1e-7, num_attempt=40, verbosity=1
     ):
-        """ 
+        """
         Compute the profile of a planet with 3 layers to find the total radius
-        given the total mass and the outer radii of the firsta and second 
+        given the total mass and the outer radii of the firsta and second
         layers.
-            
+
         Parameters
         ----------
         self.A1_R_layer[0] and [1] : float
             The radii of the first and second layers (m).
-        
+
         self.M : float
             The total mass (kg).
-        
+
         R_max : float
             The maximum radius to try (m).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts.        
+            The maximum number of iteration attempts.
         """
         # Check for necessary input
         assert self.A1_R_layer[0] is not None
@@ -1889,38 +1889,38 @@ class Planet:
         num_attempt_2=40,
         verbosity=1,
     ):
-        """ 
+        """
         Compute the profile of a planet with 3 layers to find the boundary core-mantle,
         and mantle-atmosphere given the total mass, the outer radii, and
         the moment of inertia factor.
-            
+
         Parameters
         ----------
         self.R : float
             The radius of the planet (m).
-        
+
         self.M : float
             The total mass (kg).
-        
+
         R_1_min : float
             The minimum boundary core-mantle to try (m).
-            
+
         R_1_max : float
             The maximum boundary core-mantle to try (m).
 
         tol : float
-            The tolerance for finding unknown parameters as a fractional 
+            The tolerance for finding unknown parameters as a fractional
             difference between two consecutive iterations.
-            
+
         tol_M_tweak : float
-            The tolerance for tweaking the mass to avoid density peaks at the 
+            The tolerance for tweaking the mass to avoid density peaks at the
             center; the relative difference between consecutive masses.
 
         num_attempt : int
-            The maximum number of iteration attempts. Outer loop.  
-        
+            The maximum number of iteration attempts. Outer loop.
+
         num_attempt_2 : int
-            The maximum number of iteration attempts. Inner loop.  
+            The maximum number of iteration attempts. Inner loop.
         """
         # Check for necessary input
         assert self.R is not None
@@ -2028,86 +2028,86 @@ class Planet:
 
 
 class SpinPlanet:
-    """ Create nested-spheroid profiles of a spinning body in equilibrium.
+    """Create nested-spheroid profiles of a spinning body in equilibrium.
     The planet spins with positive z-axis angular velocity.
-    
+
     See also README.md and tutorial.ipynb.
 
     Parameters
     ----------
     name : str
         The name of the spinning planet object.
-        
+
     planet : woma.Planet
         The spherical planet object from which to generate the spinning planet.
-        
+
     period : float
         The rotation period for the planet (hours).
 
     num_prof : int
-        The number of grid points used in the 1D equatorial and polar profiles, 
+        The number of grid points used in the 1D equatorial and polar profiles,
         i.e. the number of nested spheroids used to model the spinning planet.
 
     R_max_eq : float
-        Maximum equatorial radius (m). Defaults to 2 times the spherical 
+        Maximum equatorial radius (m). Defaults to 2 times the spherical
         radius.
-        
+
     R_max_po : float
         Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
-        
+
     check_min_period : bool
-        Checks if the period provided is less than the minimum physically 
+        Checks if the period provided is less than the minimum physically
         allowed. Slow -- set True only if required for extremely high spin.
-        
+
     tol_density_profile : float
-        The iterative search will end when the fractional differences 
-        between the density profiles in successive iterations is less than 
+        The iterative search will end when the fractional differences
+        between the density profiles in successive iterations is less than
         this tolerance.
-        
+
     tol_layer_masses : float
-        The iterative search will end when the fractional differences 
-        between the layer masses of the spinning planet and the spherical 
+        The iterative search will end when the fractional differences
+        between the layer masses of the spinning planet and the spherical
         one are less than this tolerance.
-        
+
     num_attempt_1: int
         Maximum number of iterations allowed. Inner loop.
-        
+
     num_attempt_2: int
         Maximum number of iterations allowed. Outer loop.
-        
+
     load_file : str (opt.)
         If provided, then load the attributes and profiles from an HDF5 file.
         See woma.SpinPlanet.save() and .load().
-        
-    
+
+
     Attributes (in addition to the input parameters)
     ----------
     M : float
         The total mass (kg).
-        
+
     R_eq, R_po : float
         The equatorial and polar radii (m).
 
     A1_M_layer : [float]
-        The mass within each layer, starting from the from the central layer 
+        The mass within each layer, starting from the from the central layer
         outwards (kg).
-        
+
     A1_R, A1_Z : [float]
-        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        The semi-major (equatorial) and semi-minor (polar) radii of the
         nested spheroids (m).
-        
+
     A1_m : [float]
         The mass of each spheroid (kg).
 
     A1_rho, A1_P, A1_T, A1_u : [float]
-        The pressure (Pa), density (kg m^-3), temperature (K), and specific 
+        The pressure (Pa), density (kg m^-3), temperature (K), and specific
         internal energy (J kg^-1) of each spheroid.
-        
+
     A1_mat_id : [int]
         The material ID of each spheroid. (See the README.md documentation.)
 
     P_0, P_1, ... P_s;  T_0, ..., T_s;  rho_0, ..., rho_s : float
-        The pressure (Pa), temperature (K), and density (kg m^-3) at each layer 
+        The pressure (Pa), temperature (K), and density (kg m^-3) at each layer
         boundary, from the centre (_0) up to the surface (_s).
 
     I_MR2 : float
@@ -2272,7 +2272,11 @@ class SpinPlanet:
 
         # Escape speed
         self.v_esc_eq, self.v_esc_po = us.spin_escape_vel(
-            self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po, self.period,
+            self.A1_r_eq,
+            self.A1_rho_eq,
+            self.A1_r_po,
+            self.A1_rho_po,
+            self.period,
         )
 
         # Equatorial and polar radii
@@ -2480,11 +2484,12 @@ class SpinPlanet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
         print_try(
-            "    %s = %.5g  kg m^2 s^-1", (utils.add_whitespace("L", space), self.L),
+            "    %s = %.5g  kg m^2 s^-1",
+            (utils.add_whitespace("L", space), self.L),
         )
 
     def save(self, filename, verbosity=1):
-        """ Save the attributes and profiles to an HDF5 file. 
+        """Save the attributes and profiles to an HDF5 file.
 
         Parameters
         ----------
@@ -2591,7 +2596,7 @@ class SpinPlanet:
             print("Done")
 
     def load(self, filename, verbosity=1):
-        """ Load the attributes and profiles from an HDF5 file. 
+        """Load the attributes and profiles from an HDF5 file.
 
         Parameters
         ----------
@@ -2729,7 +2734,7 @@ class SpinPlanet:
         num_attempt=20,
         num_attempt_find_min_period=20,
     ):
-        """ 
+        """
         Create a spinning planet from a spherical one.
         """
         # Set up the spheroid equatorial and polar arrays
@@ -2814,8 +2819,8 @@ class SpinPlanet:
         num_attempt=15,
         verbosity=1,
     ):
-        """ 
-        Create a spinning planet from a spherical one, keeping the same layer 
+        """
+        Create a spinning planet from a spherical one, keeping the same layer
         masses, for a 1 layer planet.
         """
 
@@ -2913,8 +2918,8 @@ class SpinPlanet:
         num_attempt_2=15,
         verbosity=1,
     ):
-        """ 
-        Create a spinning planet from a spherical one, keeping the same layer 
+        """
+        Create a spinning planet from a spherical one, keeping the same layer
         masses, for a 2 layer planet.
         """
 
@@ -3114,39 +3119,39 @@ class SpinPlanet:
         num_attempt_2=5,
         verbosity=1,
     ):
-        """ Create the spinning planet from the spherical one.
+        """Create the spinning planet from the spherical one.
 
         Parameters
-        ----------        
+        ----------
         fix_mass : bool
-            If True (default), then iterate the input mass to ensure that the  
-            final spinning mass is the same. If False, then more quickly create 
+            If True (default), then iterate the input mass to ensure that the
+            final spinning mass is the same. If False, then more quickly create
             the spinning profiles directly from the spherical one.
 
         R_max_eq : float
-            Maximum equatorial radius (m). Defaults to 2 times the spherical 
+            Maximum equatorial radius (m). Defaults to 2 times the spherical
             radius.
-            
+
         R_max_po : float
             Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
-            
+
         check_min_period : bool
-            Checks if the period provided is less than the minimum physically 
+            Checks if the period provided is less than the minimum physically
             allowed. Slow, set True only if required for extremely high spin.
-            
+
         tol_density_profile : float
-            The iterative search will end when the fractional differences 
-            between the density profiles in successive iterations is less than 
+            The iterative search will end when the fractional differences
+            between the density profiles in successive iterations is less than
             this tolerance.
-            
+
         tol_layer_masses : float
-            The iterative search will end when the fractional differences 
-            between the layer masses of the spinning planet and the spherical 
+            The iterative search will end when the fractional differences
+            between the layer masses of the spinning planet and the spherical
             one are less than this tolerance.
-            
+
         num_attempt_1 : int
             Maximum number of iterations allowed. Inner loop.
-            
+
         num_attempt_2 : int
             Maximum number of iterations allowed. Outer loop.
         """
@@ -3208,8 +3213,8 @@ class SpinPlanet:
 
 
 class ParticlePlanet:
-    """ Place particles to precisely match spinning or spherical body profiles.
-    
+    """Place particles to precisely match spinning or spherical body profiles.
+
     See also README.md and tutorial.ipynb.
 
     Parameters
@@ -3219,9 +3224,9 @@ class ParticlePlanet:
 
     N_particles : int
         The number of particles to place.
-        
+
     N_ngb : int
-        The number of neighbours used to estimate the SPH smoothing lengths and 
+        The number of neighbours used to estimate the SPH smoothing lengths and
         densities.
 
     verbosity : int
@@ -3235,30 +3240,30 @@ class ParticlePlanet:
     ----------
     A2_pos : [[float]]
         The [x, y, z] positions of each particle (m).
-    
+
     A2_vel : [[float]]
         The [v_x, v_y, v_z] velocities of each particle (m s^-1).
-            
+
     A1_m : [float]
         The mass of each particle (kg).
-        
+
     A1_rho : [float]
         The density of each particle (kg m^-3).
-        
+
     A1_u : [float]
         The specific internal energy of each particle (J kg^-1).
-        
+
     A1_T : [float]
         The temperature of each particle (K).
-        
+
     A1_P : [float]
         The pressure of each particle (Pa).
-    
+
     A1_h : [float]
         The approximate smoothing length of each particle (m).
-        
+
     A1_mat_id : [int]
-        The material ID of each particle. (See the README.md documentation.)      
+        The material ID of each particle. (See the README.md documentation.)
     """
 
     def __init__(self, planet, N_particles, N_ngb=48, verbosity=1):
@@ -3339,19 +3344,19 @@ class ParticlePlanet:
         self.A2_vel = np.transpose([self.A1_vx, self.A1_vy, self.A1_vz])
 
     def set_material_entropies(self, A1_mat, A1_s_mat):
-        """ Set specific entropies for all particles of each material.
-        
+        """Set specific entropies for all particles of each material.
+
         Not applicable for all equations of state.
-        
+
         Parameters
         ----------
         A1_mat : [str]
-            The name of the material in each layer, from the central layer 
+            The name of the material in each layer, from the central layer
             outwards. See Di_mat_id in `eos/eos.py`.
-            
+
         A1_s_mat : [float]
             The specific entropy for particles of each material (J K^-1 kg^-1).
-            
+
         Set attributes
         --------------
         A1_s : [float]
@@ -3364,15 +3369,15 @@ class ParticlePlanet:
             self.A1_s[self.A1_mat_id == mat_id] = s
 
     def calculate_entropies(self):
-        """ 
-        Calculate the particles' specific entropies from their densities and 
-        temperatures. 
-        
+        """
+        Calculate the particles' specific entropies from their densities and
+        temperatures.
+
         Not available for all equations of state.
-        
-        Currently requires all particles to be of materials that have entropy 
+
+        Currently requires all particles to be of materials that have entropy
         implemented.
-        
+
         Set attributes
         --------------
         A1_s : [float]
@@ -3391,26 +3396,26 @@ class ParticlePlanet:
         do_entropies=False,
         verbosity=1,
     ):
-        """ Save the particle configuration to an HDF5 file.
-        
-        Uses the same format as the SWIFT simulation code (www.swiftsim.com). 
+        """Save the particle configuration to an HDF5 file.
+
+        Uses the same format as the SWIFT simulation code (www.swiftsim.com).
 
         Parameters
         ----------
         filename : str
             The data file path.
-            
+
         boxsize : float (opt.)
-            The simulation box side length (m). If provided, then the origin 
+            The simulation box side length (m). If provided, then the origin
             will be shifted to the centre of the box.
 
         file_to_SI : woma.Conversions (opt.)
-            Simple unit conversion object from the file's units to SI. Defaults 
+            Simple unit conversion object from the file's units to SI. Defaults
             to staying in SI. See Conversions in misc/utils.py for more details.
-            
+
         do_entropies : bool (opt.)
-            If True then also save the particle specific entropies. See e.g. 
-            set_material_entropies() or similar to set the values first, or  
+            If True then also save the particle specific entropies. See e.g.
+            set_material_entropies() or similar to set the values first, or
             calculate_entropies() is called if not already set.
         """
 

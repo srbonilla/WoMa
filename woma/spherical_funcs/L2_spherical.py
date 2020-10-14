@@ -29,7 +29,7 @@ def L2_integrate(
     T_rho_type_id_L2,
     T_rho_args_L2,
 ):
-    """ Integration of a 2 layer spherical planet.
+    """Integration of a 2 layer spherical planet.
 
     Parameters
     ----------
@@ -161,7 +161,12 @@ def L2_integrate(
         A1_m_enc[i] = A1_m_enc[i - 1] - 4 * np.pi * A1_r[i - 1] ** 2 * rho * dr
         A1_P[i] = A1_P[i - 1] + gv.G * A1_m_enc[i - 1] * rho / (A1_r[i - 1] ** 2) * dr
         A1_rho[i] = eos.find_rho(
-            A1_P[i], mat_id, T_rho_type_id, T_rho_args, rho0, 1.1 * rho,
+            A1_P[i],
+            mat_id,
+            T_rho_type_id,
+            T_rho_args,
+            rho0,
+            1.1 * rho,
         )
         A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
         A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
@@ -196,7 +201,7 @@ def L2_find_M_given_R_R1(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the total mass of the planet.
+    """Finder of the total mass of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
     Parameters
@@ -242,10 +247,10 @@ def L2_find_M_given_R_R1(
 
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive masses.
-        
+
     verbosity : int
         Printing options.
 
@@ -335,7 +340,7 @@ def L2_find_R_given_M_R1(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the total radius of the planet.
+    """Finder of the total radius of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
     Parameters
@@ -378,13 +383,13 @@ def L2_find_R_given_M_R1(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive radius.
-        
+
     verbosity : int
         Printing options.
 
@@ -474,7 +479,7 @@ def L2_find_R1_given_M_R(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the boundary of the planet.
+    """Finder of the boundary of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
     Parameters
@@ -514,13 +519,13 @@ def L2_find_R1_given_M_R(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
-    
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive radius.
-        
+
     verbosity : int
         Printing options.
 
@@ -612,14 +617,14 @@ def L2_find_R_R1_given_M1_M2(
     tol=0.01,
     verbosity=1,
 ):
-    """ Finder of the boundary and radius of the planet.
+    """Finder of the boundary and radius of the planet.
         The correct value yields A1_m_enc -> 0 at the center of the planet.
 
     Parameters
     ----------
     num_prof : int
         Number of profile integration steps.
-        
+
     R_min : float
         Min. radius of the planet (m).
 
@@ -628,7 +633,7 @@ def L2_find_R_R1_given_M1_M2(
 
     M1 : float
         Mass of the core (kg).
-        
+
     M2 : float
         Mass of the mantle (kg).
 
@@ -658,13 +663,13 @@ def L2_find_R_R1_given_M1_M2(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
-        
+
     num_attempt : float
         Maximum number of iterations to perform.
-        
+
     tol : float
         Tolerance level. Relative difference between two consecutive radius.
-        
+
     verbosity : int
         Printing options.
 

@@ -13,7 +13,7 @@ from woma.eos.T_rho import T_rho
 
 @jit(nopython=False)
 def V_eq_po_from_rho(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
-    """ Computes the potential at every point of the equatorial and polar profiles.
+    """Computes the potential at every point of the equatorial and polar profiles.
 
     Parameters
     ----------
@@ -87,7 +87,7 @@ def L1_rho_eq_po_from_V(
     T_rho_type_id_L1,
     T_rho_args_L1,
 ):
-    """ Compute densities of equatorial and polar profiles given the potential
+    """Compute densities of equatorial and polar profiles given the potential
         for a 1 layer planet.
 
     Parameters
@@ -213,7 +213,7 @@ def L1_spin(
     T_rho_args_L1,
     verbosity=1,
 ):
-    """ Compute spining profile of densities for a 1 layer planet.
+    """Compute spining profile of densities for a 1 layer planet.
 
     Parameters
     ----------

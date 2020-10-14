@@ -14,7 +14,7 @@ from woma.spin_funcs import L1_spin, L2_spin, L3_spin
 # Spining model functions
 @njit
 def Kellogg_V_r_indef(r, R, Z, x):
-    """ Indefinite integral, analytic solution of the potential
+    """Indefinite integral, analytic solution of the potential
         of an oblate spheroid evaluated at x with z = 0. Computed
         from Kellogg's formula.
 
@@ -31,12 +31,12 @@ def Kellogg_V_r_indef(r, R, Z, x):
 
     x : float
         Integration variable.
-        
+
     Returns
     -------
     A1 + A2 : float
         Analytic solution.
-    
+
     """
     if R == Z:
         return 2 * (r ** 2 - 3 * (R ** 2 + x)) / 3 / np.sqrt((R ** 2 + x) ** 3)
@@ -52,7 +52,7 @@ def Kellogg_V_r_indef(r, R, Z, x):
 
 @njit
 def Kellogg_V_z_indef(z, R, Z, x):
-    """ Indefinite integral, analytic solution of the potential
+    """Indefinite integral, analytic solution of the potential
         of an oblate spheroid evaluated at x with r = 0. Computed
         from Kellogg's formula.
 
@@ -69,7 +69,7 @@ def Kellogg_V_z_indef(z, R, Z, x):
 
     x : float
         Integration variable.
-    
+
     Returns
     -------
     A1 + A2 : float
@@ -90,7 +90,7 @@ def Kellogg_V_z_indef(z, R, Z, x):
 
 @njit
 def V_grav_eq(r, R, Z, rho):
-    """ Gravitational potential due to an oblate spheroid with constant density
+    """Gravitational potential due to an oblate spheroid with constant density
         at r, theta = 0, z = 0.
 
     Parameters
@@ -150,7 +150,7 @@ def V_grav_eq(r, R, Z, rho):
 
 @njit
 def V_grav_po(z, R, Z, rho):
-    """ Gravitational potential due to an oblate spheroid with constant density
+    """Gravitational potential due to an oblate spheroid with constant density
         at r = 0, theta = 0, z.
 
     Parameters
@@ -209,7 +209,7 @@ def V_grav_po(z, R, Z, rho):
 
 @njit
 def ellipse_eqn(r, z, R, Z):
-    """ Computes elliptic function (r/R)^2 + (z/Z)^2.
+    """Computes elliptic function (r/R)^2 + (z/Z)^2.
 
     Parameters
     ----------
@@ -234,7 +234,7 @@ def ellipse_eqn(r, z, R, Z):
 
 
 def rho_at_r_z(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
-    """ Computes the density at any point r, z given a spining profile.
+    """Computes the density at any point r, z given a spining profile.
 
     Parameters
     ----------
@@ -329,7 +329,7 @@ def rho_at_r_z(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
 
 @njit
 def vol_spheroid(R, Z):
-    """ Computes the volume of a spheroid of parameters R, Z.
+    """Computes the volume of a spheroid of parameters R, Z.
 
     Parameters
     ----------
@@ -351,16 +351,16 @@ def vol_spheroid(R, Z):
 
 @njit
 def cart_to_spher(x, y, z):
-    """ Transformation from cartesian to spherical coorinates.
+    """Transformation from cartesian to spherical coorinates.
 
     Parameters
     ----------
     x : float
         x position (m).
-        
+
     y : float
         y position (m).
-        
+
     z : float
         z position (m).
 
@@ -380,16 +380,16 @@ def cart_to_spher(x, y, z):
 
 @njit
 def spher_to_cart(r, theta, phi):
-    """ Transformation from spherical to cartesian coorinates.
+    """Transformation from spherical to cartesian coorinates.
 
     Parameters
     ----------
     r : float
         r coordinate (m).
-        
+
     theta : float
         theta coordinate (rad).
-        
+
     phi : float
         phi coordinate (rad).
 
@@ -409,7 +409,7 @@ def spher_to_cart(r, theta, phi):
 
 @njit
 def vol_i_partial(theta, R, Z):
-    """ Volume of a spheroid from polar angle 0 to theta.
+    """Volume of a spheroid from polar angle 0 to theta.
 
     Parameters
     ----------
@@ -438,7 +438,7 @@ def vol_i_partial(theta, R, Z):
 
 
 def frac_vol_theta_analytical(theta, R_in, Z_in, R_out, Z_out):
-    """ Cummulative fractional volume of a spheroidal shell from
+    """Cummulative fractional volume of a spheroidal shell from
     polar angle 0 to theta.
 
     Parameters
@@ -472,12 +472,12 @@ def frac_vol_theta_analytical(theta, R_in, Z_in, R_out, Z_out):
 
 @jit(nopython=False)
 def spheroid_masses(A1_R, A1_Z, A1_rho):
-    """ Computes the mass of every spheroidal shell of a spinning planet.
+    """Computes the mass of every spheroidal shell of a spinning planet.
 
     Parameters
     ----------
     A1_R, A1_Z : [float]
-        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        The semi-major (equatorial) and semi-minor (polar) radii of the
         nested spheroids (m).
 
     A1_rho : [float]
@@ -501,12 +501,12 @@ def spheroid_masses(A1_R, A1_Z, A1_rho):
 
 @jit(nopython=False)
 def M_spin_planet(A1_R, A1_Z, A1_rho):
-    """ Computes the mass of a spinning planet.
+    """Computes the mass of a spinning planet.
 
     Parameters
     ----------
     A1_R, A1_Z : [float]
-        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        The semi-major (equatorial) and semi-minor (polar) radii of the
         nested spheroids (m).
 
     A1_rho : [float]
@@ -522,20 +522,20 @@ def M_spin_planet(A1_R, A1_Z, A1_rho):
 
 
 def picle_shell_masses(A1_R, A1_Z, A1_rho, A1_R_shell, A1_R_shell_outer):
-    """ Computes the mass of every spheroidal shell of particles.
+    """Computes the mass of every spheroidal shell of particles.
 
     Parameters
     ----------
     A1_R, A1_Z : [float]
-        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        The semi-major (equatorial) and semi-minor (polar) radii of the
         nested spheroids (m).
 
     A1_rho : [float]
         The density (kg m^-3) of each spheroid.
-    
+
     A1_R_shell : [float]
         Array of semi-major axis where the particles are located (m).
-    
+
     A1_R_shell_outer : [float]
         Array of semi-major axis where the solid spheroidal shells end (m).
 
@@ -569,27 +569,27 @@ def place_particles(
     A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, N_ngb=48, verbosity=1
 ):
 
-    """ Particle placement for a spining profile.
+    """Particle placement for a spining profile.
 
     Parameters
     ----------
     A1_R, A1_Z : [float]
-        The semi-major (equatorial) and semi-minor (polar) radii of the 
+        The semi-major (equatorial) and semi-minor (polar) radii of the
         nested spheroids (m).
 
     A1_rho, A1_P, A1_T, A1_u : [float]
-        The pressure (Pa), density (kg m^-3), temperature (K), and specific 
+        The pressure (Pa), density (kg m^-3), temperature (K), and specific
         internal energy (J kg^-1) of each spheroid.
-        
+
     A1_mat_id : [int]
         The material ID of each spheroid. (See the README.md documentation.)
 
     N (int):
         Number of particles.
-        
+
     period : float
         Period of the planet (hours).
-        
+
     N_ngb : int
         Number of neighbors in the SPH simulation.
 
@@ -615,7 +615,7 @@ def place_particles(
 
     A1_m : [float]
         Mass of every particle (kg).
-        
+
     A1_rho : [float]
         Density for every particle (kg m^-3).
 
@@ -624,7 +624,7 @@ def place_particles(
 
     A1_R : [float]
         Semi-major axis of the spheroid for every particle (m).
-        
+
     A1_Z : [float]
         Semi-minor axis of the spheroid for every particle (m).
 
@@ -817,8 +817,8 @@ def place_particles(
 
 
 def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
-    """ Computes the escape velocity for a spining planet.
-        
+    """Computes the escape velocity for a spining planet.
+
     Parameters
     ----------
     A1_r_eq : [float]
@@ -832,7 +832,7 @@ def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
 
     A1_rho_po : [float]
         Polar profile of densities (kg m^-3).
-        
+
     period : float
         Period of the planet (hours).
 
@@ -844,7 +844,7 @@ def spin_escape_vel(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     v_esc_po : [float]
         Escape velocity at the pole (m s^-1).
 
-        
+
     """
     V_eq, V_po = L1_spin.V_eq_po_from_rho(
         A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period
@@ -880,16 +880,16 @@ def spin_iteration(
     P_2=None,
     verbosity=0,
 ):
-    """ Compute the minimum period available for a given profile.
+    """Compute the minimum period available for a given profile.
 
     Parameters
     ----------
     period : float
         Period of the planet (hours).
-        
+
     num_layer : int
         Number of different material layers in the planet.
-        
+
     A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (m).
 
@@ -904,16 +904,16 @@ def spin_iteration(
 
     P_0 : float
         Pressure at the center of the planet (Pa).
-        
+
     P_s : float
         Pressure at the surface of the planet (Pa).
-        
+
     rho_0 : float
         Density at the center of the planet (kg m^-3).
 
     rho_s : float
         Density at the surface of the planet (kg m^-3).
-    
+
     A1_mat_id : int
         Array of material ids.
 
@@ -928,7 +928,7 @@ def spin_iteration(
 
     P_2 : float
         Pressure at the boundary between layers 2 and 3 of the planet (Pa).
-        
+
     verbosity : int
         Printing options.
 
@@ -1034,13 +1034,13 @@ def find_min_period(
     tol=0.01,
     verbosity=1,
 ):
-    """ Compute the minimum period available for a given profile.
+    """Compute the minimum period available for a given profile.
 
     Parameters
     ----------
     num_layer : int
         Number of different material layers in the planet.
-        
+
     A1_r_eq : [float]
         Points at equatorial profile where the solution is defined (m).
 
@@ -1055,16 +1055,16 @@ def find_min_period(
 
     P_0 : float
         Pressure at the center of the planet (Pa).
-        
+
     P_s : float
         Pressure at the surface of the planet (Pa).
-        
+
     rho_0 : float
         Density at the center of the planet (kg m^-3).
 
     rho_s : float
         Density at the surface of the planet (kg m^-3).
-    
+
     A1_mat_id : int
         Array of material ids.
 
@@ -1079,17 +1079,17 @@ def find_min_period(
 
     P_2 : float
         Pressure at the boundary between layers 2 and 3 of the planet (Pa).
-        
+
     max_period : float
         Maximum period to consider (hours).
-        
+
     num_attempts : int
         The maximum number of iterations to perform.
-        
+
     tol : float
         The tolerance for the minimum period as a fractional difference between
         two consecutive iterations.
-        
+
     verbosity : int
         Printing options.
 
