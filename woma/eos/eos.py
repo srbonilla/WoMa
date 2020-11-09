@@ -216,9 +216,9 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
         return rho_mid
 
     elif P_des < P_min < P_max:
-        return rho_min
+        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min/2, rho_max)
     elif P_des > P_max > P_min:
-        return rho_max
+        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, 2*rho_max)
     elif P_des > P_min > P_max:
         return rho_min
     elif P_des < P_max < P_min:
