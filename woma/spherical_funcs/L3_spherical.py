@@ -208,7 +208,7 @@ def L3_integrate(
         A1_m_enc[i] = A1_m_enc[i - 1] - 4 * np.pi * A1_r[i - 1] ** 2 * rho * dr
         A1_P[i] = A1_P[i - 1] + gv.G * A1_m_enc[i - 1] * rho / (A1_r[i - 1] ** 2) * dr
         A1_rho[i] = eos.find_rho(
-            A1_P[i], mat_id, T_rho_type_id, T_rho_args, rho0, 1.1 * rho
+            A1_P[i], mat_id, T_rho_type_id, T_rho_args, rho0, 1.1 * rho + 1.5e-1
         )
         A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
         A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
