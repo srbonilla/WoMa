@@ -166,7 +166,7 @@ def L2_integrate(
             T_rho_type_id,
             T_rho_args,
             rho0,
-            1.1 * rho + 1.5e-1,
+            1.1 * rho,
         )
         A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
         A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
