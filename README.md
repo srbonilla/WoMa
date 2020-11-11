@@ -109,7 +109,8 @@ set by a base type ID (multiplied by 100) plus a minor type:
     + Iron (2140): `SESAME_iron` : `300`
     + Basalt (7530): `SESAME_basalt` : `301`
     + Water (7154): `SESAME_water` : `302`
-    + Senft & Stewart (2008) water in a SESAME-style table: `SS08_water` : `303`
+    + Senft & Stewart (2008) water: `SS08_water` : `303`
+    + Haldemann, J. et al. (2020) AQUA: `AQUA` : `304`
 + ANEOS (in SESAME-style tables): `4`
     + Forsterite (Stewart et al. 2019): `ANEOS_forsterite` : `400`
     + Iron (Stewart, zenodo.org/record/3866507): `ANEOS_iron` : `401`
