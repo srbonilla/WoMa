@@ -645,3 +645,36 @@ def T_rho_HM80_HHe(rho, rho_prv, T_prv):
         x_prv = x_tmp
 
     return np.exp(y)
+
+@njit
+def P_T_rho(T, rho, mat_id):
+    """Compute the pressure from the density and temperature.
+
+    Parameters
+    ----------
+    T : float
+        Temperature (K).
+        
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    u : float
+        Specific internal energy (J kg^-1).
+    """
+
+    mat_type = mat_id // gv.type_factor
+
+    if mat_type == gv.type_HM80:
+        
+        u = u_rho_T(rho, T)
+        P = P_u_rho(u, rho, mat_id)
+
+    else:
+        raise ValueError("Invalid material ID")
+
+    return P

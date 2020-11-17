@@ -83,6 +83,43 @@ def u_rho_T(rho, T, mat_id):
         raise ValueError("Invalid material ID")
     return u
 
+@njit
+def P_T_rho(T, rho, mat_id):
+    """Compute the pressure from the temperature and density, for any EoS.
+
+    Parameters
+    ----------
+    T : float
+        Temperature (K).
+
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    P : float
+        Pressure (Pa).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type == gv.type_idg:
+        P = idg.P_T_rho(T, rho, mat_id)
+    elif mat_type == gv.type_Til:
+        P = tillotson.P_T_rho(T, rho, mat_id)
+    elif mat_type == gv.type_HM80:
+        P = hm80.P_T_rho(T, rho, mat_id)
+        if np.isnan(P):
+            P = 0.0
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        P = sesame.P_T_rho(T, rho, mat_id)
+        if np.isnan(P):
+            P = 0.0
+    else:
+        raise ValueError("Invalid material ID")
+    return P
+
 
 @njit
 def s_rho_T(rho, T, mat_id):
@@ -226,32 +263,6 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     else:
         e = "Critical error in find_rho."
         raise ValueError(e)
-
-
-@njit
-def P_T_rho(T, rho, mat_id):
-    """Compute the pressure from the temperature and density, for any EoS.
-
-    Parameters
-    ----------
-    T : float
-        Temperature (K).
-
-    rho : float
-        Density (kg m^-3).
-
-    mat_id : int
-        Material id.
-
-    Returns
-    -------
-    P : float
-        Pressure (Pa).
-    """
-    u = u_rho_T(rho, T, mat_id)
-    P = P_u_rho(u, rho, mat_id)
-    return P
-
 
 @njit
 def rho_P_T(P, T, mat_id):
