@@ -671,7 +671,7 @@ def P_T_rho(T, rho, mat_id):
 
     if mat_type == gv.type_HM80:
         
-        u = u_rho_T(rho, T)
+        u = u_rho_T(rho, T, mat_id)
         P = P_u_rho(u, rho, mat_id)
 
     else:

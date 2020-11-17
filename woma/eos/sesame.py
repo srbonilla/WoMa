@@ -91,7 +91,7 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
     
     # first element of A1_rho and A1_T cannot be == 0
     # because interpolation is in log rho, log T
-    small = 1e-10
+    small = A1_rho[1]*0.0001
     if A1_rho[0] <= 0:
         A1_rho[0] = small
     if A1_T[0] <= 0:
@@ -110,10 +110,10 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
     assert np.all(A2_P >= 0)
     
     # Negative u?
-    assert np.all(A2_u >= 0)
+    #assert np.all(A2_u >= 0)
     
     # Negative u?
-    assert np.all(A2_s >= 0)
+    #assert np.all(A2_s >= 0)
     
     # partial P / partial rho at fixed T must be >= 0
     count = 0
