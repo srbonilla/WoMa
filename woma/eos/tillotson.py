@@ -434,7 +434,7 @@ def P_T_rho(T, rho, mat_id):
     ----------
     T : float
         Temperature (K).
-        
+
     rho : float
         Density (kg m^-3).
 
@@ -450,7 +450,7 @@ def P_T_rho(T, rho, mat_id):
     mat_type = mat_id // gv.type_factor
 
     if mat_type == gv.type_Til:
-        
+
         cv = C_V_Til(mat_id)
         u = u_cold_tab(rho, mat_id) + cv * T
         P = P_u_rho(u, rho, mat_id)

@@ -83,6 +83,7 @@ def u_rho_T(rho, T, mat_id):
         raise ValueError("Invalid material ID")
     return u
 
+
 @njit
 def P_T_rho(T, rho, mat_id):
     """Compute the pressure from the temperature and density, for any EoS.
@@ -241,9 +242,9 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
         return rho_mid
 
     elif P_des < P_min < P_max:
-        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min/2, rho_max)
+        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min / 2, rho_max)
     elif P_des > P_max > P_min:
-        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, 2*rho_max)
+        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, 2 * rho_max)
     elif P_des > P_min > P_max:
         return rho_min
     elif P_des < P_max < P_min:
@@ -251,6 +252,7 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     else:
         e = "Critical error in find_rho."
         raise ValueError(e)
+
 
 @njit
 def rho_P_T(P, T, mat_id):

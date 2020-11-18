@@ -38,9 +38,9 @@ def find_index_and_interp(x, A1_x):
         < 0     If x is below A1_x.
         > 1     If x is above A1_x.
     """
-    #assert np.all(np.sort(A1_x) == A1_x)
-    
-    idx = np.searchsorted(A1_x, x, side='right') - 1
+    # assert np.all(np.sort(A1_x) == A1_x)
+
+    idx = np.searchsorted(A1_x, x, side="right") - 1
     # Return error values if outside the array
     if idx == -1:
         idx = 0
@@ -55,8 +55,9 @@ def find_index_and_interp(x, A1_x):
 
     return np.array([idx, intp])
 
+
 def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
-    """ Prepare SESAME-like tables to be used.
+    """Prepare SESAME-like tables to be used.
 
     Parameters
     ----------
@@ -78,7 +79,7 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
     None.
 
     """
-    
+
     # Basic dimension checks
     n_row = A1_rho.shape[0]
     n_col = A1_T.shape[0]
@@ -88,58 +89,62 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
     assert A2_P.shape[1] == n_col
     assert A2_u.shape[1] == n_col
     assert A2_s.shape[1] == n_col
-    
+
     # first element of A1_rho and A1_T cannot be == 0
     # because interpolation is in log rho, log T
-    small = A1_rho[1]*0.0001
+    small = A1_rho[1] * 0.0001
     if A1_rho[0] <= 0:
         A1_rho[0] = small
     if A1_T[0] <= 0:
         A1_T[0] = small
-        
+
     # Non-negative elements
     assert np.all(A1_rho > 0)
     assert np.all(A1_T > 0)
-    
+
     # Sorted arrays
     assert np.all(np.sort(A1_rho) == A1_rho)
     assert np.all(np.sort(A1_T) == A1_T)
-        
+
     # Avoid negative pressures
     A2_P[A2_P < 0] = 0
     assert np.all(A2_P >= 0)
-    
+
     # Negative u?
-    #assert np.all(A2_u >= 0)
-    
+    # assert np.all(A2_u >= 0)
+
     # Negative u?
-    #assert np.all(A2_s >= 0)
-    
+    # assert np.all(A2_s >= 0)
+
     # partial P / partial rho at fixed T must be >= 0
     count = 0
     for j, T in enumerate(A1_T):
         for i, rho in enumerate(A1_rho[:-1]):
-            if A2_P[i + 1, j] < A2_P[i,j]:
-                A2_P[i + 1, j] = A2_P[i,j]
+            if A2_P[i + 1, j] < A2_P[i, j]:
+                A2_P[i + 1, j] = A2_P[i, j]
                 count += 1
-    
+
     if verbosity >= 1:
         print("partial P / partial rho at fixed T must be >= 0")
-        print("count of modified values:", count, ", total table entries:", n_row*n_col)
-        print("fraction:", count/n_row/n_col)
-    
+        print(
+            "count of modified values:", count, ", total table entries:", n_row * n_col
+        )
+        print("fraction:", count / n_row / n_col)
+
     # partial u / partial T at fixed rho must be >= 0
     count = 0
     for j, T in enumerate(A1_T[:-1]):
         for i, rho in enumerate(A1_rho):
-            if A2_u[i, j + 1] < A2_u[i,j]:
-                A2_u[i, j + 1] = A2_u[i,j]
+            if A2_u[i, j + 1] < A2_u[i, j]:
+                A2_u[i, j + 1] = A2_u[i, j]
                 count += 1
-    
+
     if verbosity >= 1:
         print("partial u / partial T at fixed rho must be >= 0")
-        print("count of modified values:", count, ", total table entries:", n_row*n_col)
-        print("fraction:", count/n_row/n_col)
+        print(
+            "count of modified values:", count, ", total table entries:", n_row * n_col
+        )
+        print("fraction:", count / n_row / n_col)
 
 
 def load_table_SESAME(Fp_table):
@@ -204,7 +209,6 @@ def load_table_SESAME(Fp_table):
     prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0)
 
     return A1_rho, A1_T, A2_P, A2_u, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
-
 
 
 # Load SESAME tables as global variables for numba
@@ -328,6 +332,7 @@ def load_table_SESAME(Fp_table):
     A1_log_T_CMS19_HHe,
     A2_log_u_CMS19_HHe,
 ) = load_table_SESAME(gv.Fp_CMS19_HHe)
+
 
 @njit
 def P_u_rho(u, rho, mat_id):
@@ -807,6 +812,7 @@ def u_rho_T(rho, T, mat_id):
     # Convert back from log
     return np.exp(u)
 
+
 @njit
 def P_T_rho(T, rho, mat_id):
     """Compute the internal energy from the density and temperature.
@@ -815,7 +821,7 @@ def P_T_rho(T, rho, mat_id):
     ----------
     T : float
         Temperature (K).
-        
+
     rho : float
         Density (kg m^-3).
 

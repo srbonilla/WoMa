@@ -646,6 +646,7 @@ def T_rho_HM80_HHe(rho, rho_prv, T_prv):
 
     return np.exp(y)
 
+
 @njit
 def P_T_rho(T, rho, mat_id):
     """Compute the pressure from the density and temperature.
@@ -654,7 +655,7 @@ def P_T_rho(T, rho, mat_id):
     ----------
     T : float
         Temperature (K).
-        
+
     rho : float
         Density (kg m^-3).
 
@@ -670,7 +671,7 @@ def P_T_rho(T, rho, mat_id):
     mat_type = mat_id // gv.type_factor
 
     if mat_type == gv.type_HM80:
-        
+
         u = u_rho_T(rho, T, mat_id)
         P = P_u_rho(u, rho, mat_id)
 

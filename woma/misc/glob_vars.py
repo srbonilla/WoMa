@@ -38,7 +38,7 @@ Di_mat_id = {
     "SESAME_water": Di_mat_type["SESAME"] * type_factor + 2,  # 7154
     "SS08_water": Di_mat_type["SESAME"] * type_factor + 3,  # Senft & Stewart (2008)
     "AQUA": Di_mat_type["SESAME"] * type_factor + 4,  # Haldemann+2020
-    "CMS19_H": Di_mat_type["SESAME"] * type_factor + 5,  # Chabrier+2019 Hydrogen 
+    "CMS19_H": Di_mat_type["SESAME"] * type_factor + 5,  # Chabrier+2019 Hydrogen
     "CMS19_He": Di_mat_type["SESAME"] * type_factor + 6,  # Helium
     "CMS19_HHe": Di_mat_type["SESAME"] * type_factor + 7,  # H/He mixture Y=0.275
     # ANEOS
