@@ -38,7 +38,7 @@ def find_index_and_interp(x, A1_x):
         < 0     If x is below A1_x.
         > 1     If x is above A1_x.
     """
-    assert np.all(np.sort(A1_x) == A1_x)
+    #assert np.all(np.sort(A1_x) == A1_x)
     
     idx = np.searchsorted(A1_x, x, side='right') - 1
     # Return error values if outside the array

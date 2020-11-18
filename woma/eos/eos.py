@@ -186,35 +186,26 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     tolerance = 1e-5
 
     T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
-    u_min = u_rho_T(rho_min, T_min, mat_id)
-    P_min = P_u_rho(u_min, rho_min, mat_id)
+    P_min = P_T_rho(T_min, rho_min, mat_id)
     T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
-    u_max = u_rho_T(rho_max, T_max, mat_id)
-    P_max = P_u_rho(u_max, rho_max, mat_id)
+    P_max = P_T_rho(T_max, rho_max, mat_id)
     rho_mid = (rho_min + rho_max) / 2.0
     T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
-    u_mid = u_rho_T(rho_mid, T_mid, mat_id)
-    P_mid = P_u_rho(u_mid, rho_mid, mat_id)
+    P_mid = P_T_rho(T_mid, rho_mid, mat_id)
     rho_aux = rho_min + 1e-6
     T_aux = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
-    u_aux = u_rho_T(rho_aux, T_aux, mat_id)
-    P_aux = P_u_rho(u_aux, rho_aux, mat_id)
+    P_aux = P_T_rho(T_aux, rho_aux, mat_id)
 
     if (P_min < P_des < P_max) or (P_min > P_des > P_max):
         max_counter = 200
         counter = 0
         while np.abs(rho_max - rho_min) > tolerance and counter < max_counter:
             T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
-            u_min = u_rho_T(rho_min, T_min, mat_id)
-            P_min = P_u_rho(u_min, rho_min, mat_id)
+            P_min = P_T_rho(T_min, rho_min, mat_id)
             T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
-            u_max = u_rho_T(rho_max, T_max, mat_id)
-            P_max = P_u_rho(u_max, rho_max, mat_id)
+            P_max = P_T_rho(T_max, rho_max, mat_id)
             T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
-            u_mid = u_rho_T(rho_mid, T_mid, mat_id)
-            P_mid = P_u_rho(u_mid, rho_mid, mat_id)
-
-            # if np.isnan(P_min): P_min = 0.
+            P_mid = P_T_rho(T_mid, rho_mid, mat_id)
 
             f0 = P_des - P_min
             f2 = P_des - P_mid
@@ -233,15 +224,12 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
         while np.abs(rho_max - rho_min) > tolerance:
             rho_mid = (rho_min + rho_max) / 2.0
             T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
-            u_min = u_rho_T(rho_min, T_min, mat_id)
-            P_min = P_u_rho(u_min, rho_min, mat_id)
+            P_min = P_T_rho(T_min, rho_min, mat_id)
             T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
-            u_max = u_rho_T(rho_max, T_max, mat_id)
-            P_max = P_u_rho(u_max, rho_max, mat_id)
+            P_max = P_T_rho(T_max, rho_max, mat_id)
             rho_mid = (rho_min + rho_max) / 2.0
             T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
-            u_mid = u_rho_T(rho_mid, T_mid, mat_id)
-            P_mid = P_u_rho(u_mid, rho_mid, mat_id)
+            P_mid = P_T_rho(T_mid, rho_mid, mat_id)
 
             if P_mid == P_des:
                 rho_min = rho_mid
