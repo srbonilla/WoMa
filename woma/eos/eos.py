@@ -250,6 +250,13 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     elif P_des < P_max < P_min:
         return rho_max
     else:
+        # For debugging
+        # print(P_des)
+        # print(mat_id)
+        # print(T_rho_type, T_rho_args)
+        # print(rho_min, rho_max)
+        # print(T_min, T_max)
+        # print(P_min, P_max)
         e = "Critical error in find_rho."
         raise ValueError(e)
 

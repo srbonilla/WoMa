@@ -2055,6 +2055,10 @@ class SpinPlanet:
     R_max_po : float
         Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
 
+    f_iter : float
+        Fractional radius to proceed with iterative method of finding
+        spinning planet given a fixed mass.
+
     check_min_period : bool
         Checks if the period provided is less than the minimum physically
         allowed. Slow -- set True only if required for extremely high spin.
@@ -2126,6 +2130,7 @@ class SpinPlanet:
         fix_mass=True,
         R_max_eq=None,
         R_max_po=None,
+        f_iter=None,
         check_min_period=False,
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
@@ -2150,6 +2155,7 @@ class SpinPlanet:
         self.fix_mass = fix_mass
         self.R_max_eq = R_max_eq
         self.R_max_po = R_max_po
+        self.f_iter = f_iter
         self.check_min_period = check_min_period
         self.tol_density_profile = tol_density_profile
         self.tol_layer_masses = tol_layer_masses
@@ -2183,6 +2189,7 @@ class SpinPlanet:
         self.spin(
             R_max_eq=self.R_max_eq,
             R_max_po=self.R_max_po,
+            f_iter=self.f_iter,
             fix_mass=self.fix_mass,
             check_min_period=self.check_min_period,
             tol_density_profile=self.tol_density_profile,
@@ -2916,6 +2923,7 @@ class SpinPlanet:
         self,
         R_max_eq,
         R_max_po,
+        f_iter,
         check_min_period=False,
         tol_layer_masses=0.01,
         tol_density_profile=0.001,
@@ -2955,7 +2963,6 @@ class SpinPlanet:
             return
 
         # Define dr
-        f_iter = 1 / self.num_prof  # Maybe need to make this one an input parameter
         dr = f_iter * self.planet.R
 
         for i in range(num_attempt):
@@ -3208,6 +3215,7 @@ class SpinPlanet:
         self,
         R_max_eq,
         R_max_po,
+        f_iter,
         check_min_period=False,
         tol_layer_masses=0.01,
         tol_density_profile=0.001,
@@ -3251,7 +3259,6 @@ class SpinPlanet:
             return
 
         # Define dr
-        f_iter = 1 / self.num_prof  # Maybe need to make this one an input parameter
         dr = f_iter * self.planet.R
 
         for i in range(num_attempt):
@@ -3381,6 +3388,7 @@ class SpinPlanet:
         self,
         R_max_eq=None,
         R_max_po=None,
+        f_iter=None,
         fix_mass=True,
         check_min_period=False,
         tol_density_profile=0.001,
@@ -3440,11 +3448,24 @@ class SpinPlanet:
         if R_max_po is None:
             R_max_po = 1.2 * self.planet.R
 
+        # Default f_iter
+        if f_iter is None:
+            f_iter = 0.005
+
+        # f_iter should be < 1%
+        if f_iter > 0.01:
+            e = (
+                "f_iter should be lower than 0.01.\n"
+                "But I'm just a message, so feel free to come and mute me."
+            )
+            raise ValueError(e)
+
         if fix_mass:
             if self.planet.num_layer == 1:
                 self._L1_spin_planet_fix_M_steps(
                     R_max_eq,
                     R_max_po,
+                    f_iter,
                     check_min_period=check_min_period,
                     tol_layer_masses=tol_layer_masses,
                     tol_density_profile=tol_density_profile,
@@ -3456,6 +3477,7 @@ class SpinPlanet:
                 self._L2_spin_planet_fix_M_steps(
                     R_max_eq,
                     R_max_po,
+                    f_iter,
                     check_min_period=check_min_period,
                     tol_layer_masses=tol_layer_masses,
                     tol_density_profile=tol_density_profile,
