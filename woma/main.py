@@ -2055,6 +2055,10 @@ class SpinPlanet:
     R_max_po : float
         Maximum polar radius (m). Defaults to 1.2 times the spherical radius.
 
+    f_iter : float
+        Fractional radius to proceed with iterative method of finding
+        spinning planet given a fixed mass.
+
     check_min_period : bool
         Checks if the period provided is less than the minimum physically
         allowed. Slow -- set True only if required for extremely high spin.
@@ -2126,6 +2130,7 @@ class SpinPlanet:
         fix_mass=True,
         R_max_eq=None,
         R_max_po=None,
+        f_iter=None,
         check_min_period=False,
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
@@ -2150,6 +2155,7 @@ class SpinPlanet:
         self.fix_mass = fix_mass
         self.R_max_eq = R_max_eq
         self.R_max_po = R_max_po
+        self.f_iter = f_iter
         self.check_min_period = check_min_period
         self.tol_density_profile = tol_density_profile
         self.tol_layer_masses = tol_layer_masses
@@ -2183,6 +2189,7 @@ class SpinPlanet:
         self.spin(
             R_max_eq=self.R_max_eq,
             R_max_po=self.R_max_po,
+            f_iter=self.f_iter,
             fix_mass=self.fix_mass,
             check_min_period=self.check_min_period,
             tol_density_profile=self.tol_density_profile,
@@ -2776,6 +2783,11 @@ class SpinPlanet:
                 self.planet.P_2,
             )
 
+            if np.any(np.isnan(A1_rho_eq)):
+                raise ValueError(
+                    "Equatorial profile has nan values. Please report this."
+                )
+
             # Check the fractional change in the density profile for convergence
             tol_reached = np.mean(np.abs(A1_rho_eq - self.A1_rho_eq) / self.rho_s)
 
@@ -2809,7 +2821,7 @@ class SpinPlanet:
         if verbosity >= 2:
             self.print_info()
 
-    def _L1_spin_planet_fix_M(
+    def _L1_spin_planet_fix_M_bisection(
         self,
         R_max_eq,
         R_max_po,
@@ -2907,7 +2919,99 @@ class SpinPlanet:
             else:
                 f_min = f
 
-    def _L2_spin_planet_fix_M(
+    def _L1_spin_planet_fix_M_steps(
+        self,
+        R_max_eq,
+        R_max_po,
+        f_iter,
+        check_min_period=False,
+        tol_layer_masses=0.01,
+        tol_density_profile=0.001,
+        num_attempt=15,
+        verbosity=1,
+    ):
+        """
+        Create a spinning planet from a spherical one, keeping the same layer
+        masses, for a 1 layer planet.
+        """
+
+        assert self.num_layer == 1
+
+        # Desired masses
+        M_fixed = self.planet.M
+
+        # Create the spinning profiles
+        self._spin_planet_simple(
+            R_max_eq,
+            R_max_po,
+            tol_density_profile=tol_density_profile,
+            check_min_period=check_min_period,
+            verbosity=0,
+        )
+
+        # Check the fractional error in the masses for convergence
+
+        tol = np.abs(self.M - M_fixed) / M_fixed
+
+        # No need to search if simple spin does the job (e.g. very high periods)
+        if tol < tol_layer_masses:
+            if verbosity >= 1:
+                print("Simple spin method sufficient")
+
+            if verbosity >= 2:
+                self.print_info()
+            return
+
+        # Define dr
+        dr = f_iter * self.planet.R
+
+        for i in range(num_attempt):
+            if self.M > M_fixed:
+                self.planet.A1_R_layer[0] = self.planet.R - dr
+                self.planet.R = self.planet.R - dr
+            else:
+                self.planet.A1_R_layer[0] = self.planet.R + dr
+                self.planet.R = self.planet.R + dr
+
+            # Make the new spherical profiles
+            self.planet.gen_prof_L1_find_M_given_R(M_max=1.2 * M_fixed, verbosity=0)
+
+            self._spin_planet_simple(
+                R_max_eq,
+                R_max_po,
+                tol_density_profile=tol_density_profile,
+                check_min_period=check_min_period,
+                verbosity=0,
+            )
+
+            # Check the fractional error in the masses for convergence
+            tol = (self.M - M_fixed) / M_fixed
+
+            # Print progress
+            if verbosity >= 1:
+                print(
+                    "Iter %d(%d): R=%.4gR_E: tol=%.2g(%.2g)"
+                    % (
+                        i + 1,
+                        num_attempt,
+                        self.planet.R / gv.R_earth,
+                        tol,
+                        tol_layer_masses,
+                    ),
+                    end="\n",
+                    flush=True,
+                )
+
+            # End if tol is satisfied
+            if np.abs(tol) < tol_layer_masses:
+                if verbosity >= 1:
+                    print("")
+                if verbosity >= 2:
+                    self.print_info()
+
+                return
+
+    def _L2_spin_planet_fix_M_bisection(
         self,
         R_max_eq,
         R_max_po,
@@ -3107,10 +3211,184 @@ class SpinPlanet:
                 else:
                     R_1_min = R_1
 
+    def _L2_spin_planet_fix_M_steps(
+        self,
+        R_max_eq,
+        R_max_po,
+        f_iter,
+        check_min_period=False,
+        tol_layer_masses=0.01,
+        tol_density_profile=0.001,
+        num_attempt=15,
+        num_attempt_2=15,
+        verbosity=1,
+    ):
+        """
+        Create a spinning planet from a spherical one, keeping the same layer
+        masses, for a 2 layer planet.
+        """
+
+        assert self.num_layer == 2
+
+        # Desired masses
+        M_fixed = self.planet.M
+        M_0_fixed = self.planet.A1_M_layer[0]
+        M_1_fixed = self.planet.A1_M_layer[1]
+
+        # Create the spinning profiles
+        self._spin_planet_simple(
+            R_max_eq,
+            R_max_po,
+            tol_density_profile=tol_density_profile,
+            check_min_period=check_min_period,
+            verbosity=0,
+        )
+
+        # Check the fractional error in the masses for convergence
+
+        tol_0 = np.abs(self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
+        tol_1 = np.abs(self.A1_M_layer[1] - M_1_fixed) / M_1_fixed
+
+        # No need to search if simple spin does the job (e.g. very high periods)
+        if tol_1 < tol_layer_masses and tol_0 < tol_layer_masses:
+            if verbosity >= 1:
+                print("Simple spin method sufficient")
+
+            if verbosity >= 2:
+                self.print_info()
+            return
+
+        # Define dr
+        dr = f_iter * self.planet.R
+
+        for i in range(num_attempt):
+            # First iteration (fix M mantle)
+            for j in range(num_attempt_2):
+                if self.A1_M_layer[1] > M_1_fixed:
+                    self.planet.A1_R_layer[1] = self.planet.R - dr
+                    self.planet.R = self.planet.R - dr
+                else:
+                    self.planet.A1_R_layer[1] = self.planet.R + dr
+                    self.planet.R = self.planet.R + dr
+
+                # Make the new spherical profiles
+                self.planet.gen_prof_L2_find_M_given_R_R1(
+                    M_max=1.2 * M_fixed, verbosity=0
+                )
+
+                self._spin_planet_simple(
+                    R_max_eq,
+                    R_max_po,
+                    tol_density_profile=tol_density_profile,
+                    check_min_period=check_min_period,
+                    verbosity=0,
+                )
+
+                # Check the fractional error in the masses for convergence
+                tol_0 = (self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
+                tol_1 = (self.A1_M_layer[1] - M_1_fixed) / M_1_fixed
+
+                # Print progress
+                if verbosity >= 1:
+                    print(
+                        "Iter %d(%d),%d(%d): R0=%.4gR_E R1=%.4gR_E: tol=%.2g(%.2g), %.2g(%.2g)"
+                        % (
+                            i + 1,
+                            num_attempt,
+                            j + 1,
+                            2 * num_attempt_2,
+                            self.planet.A1_R_layer[0] / gv.R_earth,
+                            self.planet.A1_R_layer[1] / gv.R_earth,
+                            tol_0,
+                            tol_layer_masses,
+                            tol_1,
+                            tol_layer_masses,
+                        ),
+                        end="\n",
+                        flush=True,
+                    )
+
+                # End if tol_1 and tol_0 are satisfied
+                if (
+                    np.abs(tol_0) < tol_layer_masses
+                    and np.abs(tol_1) < tol_layer_masses
+                ):
+                    if verbosity >= 1:
+                        print("")
+                    if verbosity >= 2:
+                        self.print_info()
+
+                    return
+
+                # Break if tol_1 is satisfied
+                if np.abs(tol_1) < tol_layer_masses:
+                    break
+
+            # Second iteration (fix M core)
+            for j in range(num_attempt_2):
+                if self.A1_M_layer[0] > M_0_fixed:
+                    self.planet.A1_R_layer[0] = self.planet.A1_R_layer[0] - dr
+                else:
+                    self.planet.A1_R_layer[0] = self.planet.A1_R_layer[0] + dr
+
+                # Make the new spherical profiles
+                self.planet.gen_prof_L2_find_M_given_R_R1(
+                    M_max=1.2 * M_fixed, verbosity=0
+                )
+
+                self._spin_planet_simple(
+                    R_max_eq,
+                    R_max_po,
+                    tol_density_profile=tol_density_profile,
+                    check_min_period=check_min_period,
+                    verbosity=0,
+                )
+
+                # Check the fractional error in the masses for convergence
+                tol_0 = (self.A1_M_layer[0] - M_0_fixed) / M_0_fixed
+                tol_1 = (self.A1_M_layer[1] - M_1_fixed) / M_1_fixed
+
+                # Print progress
+                if verbosity >= 1:
+                    print(
+                        "Iter %d(%d),%d(%d): R0=%.3gR_E R1=%.3gR_E: tol=%.2g(%.2g), %.2g(%.2g)"
+                        % (
+                            i + 1,
+                            num_attempt,
+                            num_attempt + j + 1,
+                            2 * num_attempt_2,
+                            self.planet.A1_R_layer[0] / gv.R_earth,
+                            self.planet.A1_R_layer[1] / gv.R_earth,
+                            tol_0,
+                            tol_layer_masses,
+                            tol_1,
+                            tol_layer_masses,
+                        ),
+                        end="\n",
+                        flush=True,
+                    )
+
+                # End if tol_1 and tol_0 are satisfied
+                if (
+                    np.abs(tol_0) < tol_layer_masses
+                    and np.abs(tol_1) < tol_layer_masses
+                ):
+                    if verbosity >= 1:
+                        print("")
+                    if verbosity >= 2:
+                        self.print_info()
+
+                    return
+
+                # Break if tol_0 is satisfied
+                if np.abs(tol_0) < tol_layer_masses:
+                    break
+
     def spin(
         self,
         R_max_eq=None,
         R_max_po=None,
+        f_iter=None,
         fix_mass=True,
         check_min_period=False,
         tol_density_profile=0.001,
@@ -3170,11 +3448,24 @@ class SpinPlanet:
         if R_max_po is None:
             R_max_po = 1.2 * self.planet.R
 
+        # Default f_iter
+        if f_iter is None:
+            f_iter = 0.005
+
+        # f_iter should be < 1%
+        if f_iter > 0.01:
+            e = (
+                "f_iter should be lower than 0.01.\n"
+                "But I'm just a message, so feel free to come and mute me."
+            )
+            raise ValueError(e)
+
         if fix_mass:
             if self.planet.num_layer == 1:
-                self._L1_spin_planet_fix_M(
+                self._L1_spin_planet_fix_M_steps(
                     R_max_eq,
                     R_max_po,
+                    f_iter,
                     check_min_period=check_min_period,
                     tol_layer_masses=tol_layer_masses,
                     tol_density_profile=tol_density_profile,
@@ -3183,9 +3474,10 @@ class SpinPlanet:
                 )
 
             elif self.planet.num_layer == 2:
-                self._L2_spin_planet_fix_M(
+                self._L2_spin_planet_fix_M_steps(
                     R_max_eq,
                     R_max_po,
+                    f_iter,
                     check_min_period=check_min_period,
                     tol_layer_masses=tol_layer_masses,
                     tol_density_profile=tol_density_profile,
