@@ -1209,6 +1209,7 @@ def T_rho_s(rho, s, mat_id):
 
     return T
 
+
 @njit
 def T_u_rho(u, rho, mat_id):
     """Compute the temperature from the density and specific entropy.
@@ -1217,7 +1218,7 @@ def T_u_rho(u, rho, mat_id):
     ----------
     u : float
         Specific internal energy (J kg^-1).
-        
+
     rho : float
         Density (kg m^-3).
 
@@ -1327,4 +1328,3 @@ def T_u_rho(u, rho, mat_id):
         T = 0
 
     return T
-

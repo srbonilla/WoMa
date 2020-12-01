@@ -460,6 +460,7 @@ def P_T_rho(T, rho, mat_id):
 
     return P
 
+
 @njit
 def T_u_rho(u, rho, mat_id):
     """Compute the pressure from the density and temperature.
@@ -487,10 +488,10 @@ def T_u_rho(u, rho, mat_id):
 
         cv = C_V_Til(mat_id)
         u_cold = u_cold_tab(rho, mat_id)
-        T = (u - u_cold)/cv
-        
+        T = (u - u_cold) / cv
+
         if T < 0:
-            T = 0.
+            T = 0.0
 
     else:
         raise ValueError("Invalid material ID")

@@ -49,6 +49,7 @@ def P_u_rho(u, rho, mat_id):
         raise ValueError("Invalid material ID")
     return P
 
+
 @njit
 def T_u_rho(u, rho, mat_id):
     """Compute the pressure from the density and temperature.

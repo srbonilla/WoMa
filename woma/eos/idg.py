@@ -143,6 +143,7 @@ def P_T_rho(T, rho, mat_id):
 
     return P
 
+
 @njit
 def T_u_rho(u, rho, mat_id):
     """Compute the pressure from the density and temperature.
@@ -164,4 +165,4 @@ def T_u_rho(u, rho, mat_id):
         Temperature (K).
     """
     raise ValueError("T_u_rho function not implemented for ideal gas.")
-    return 0.
+    return 0.0
