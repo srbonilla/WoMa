@@ -49,6 +49,39 @@ def P_u_rho(u, rho, mat_id):
         raise ValueError("Invalid material ID")
     return P
 
+@njit
+def T_u_rho(u, rho, mat_id):
+    """Compute the pressure from the density and temperature.
+
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
+
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    T : float
+        Temperature (K).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type == gv.type_idg:
+        T = idg.T_u_rho(u, rho, mat_id)
+    elif mat_type == gv.type_Til:
+        T = tillotson.T_u_rho(u, rho, mat_id)
+    elif mat_type == gv.type_HM80:
+        T = hm80.T_u_rho(u, rho, mat_id)
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        T = sesame.T_u_rho(u, rho, mat_id)
+    else:
+        raise ValueError("Invalid material ID")
+    return T
+
 
 @njit
 def u_rho_T(rho, T, mat_id):
