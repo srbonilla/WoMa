@@ -51,7 +51,7 @@ def P_u_rho(u, rho, mat_id):
 
 
 @njit
-def A1_P_u_rho(A1_u, A1_rho, mat_id):
+def A1_P_u_rho(A1_u, A1_rho, A1_mat_id):
     """Compute the pressure from the specific internal energy
     and density, for any EoS.
 
@@ -63,7 +63,7 @@ def A1_P_u_rho(A1_u, A1_rho, mat_id):
     A1_rho : [float]
         Density (kg m^-3).
 
-    mat_id : int
+    A1_mat_id : [int]
         Material id.
 
     Returns
@@ -74,12 +74,14 @@ def A1_P_u_rho(A1_u, A1_rho, mat_id):
 
     assert A1_u.ndim == 1
     assert A1_rho.ndim == 1
+    assert A1_mat_id.ndim == 1
     assert A1_u.shape[0] == A1_rho.shape[0]
+    assert A1_u.shape[0] == A1_mat_id.shape[0]
 
     A1_P = np.zeros_like(A1_u)
 
     for i, u in enumerate(A1_u):
-        A1_P[i] = P_u_rho(A1_u[i], A1_rho[i], mat_id)
+        A1_P[i] = P_u_rho(A1_u[i], A1_rho[i], A1_mat_id[i])
 
     return A1_P
 
@@ -119,7 +121,7 @@ def T_u_rho(u, rho, mat_id):
 
 
 @njit
-def A1_T_u_rho(A1_u, A1_rho, mat_id):
+def A1_T_u_rho(A1_u, A1_rho, A1_mat_id):
     """Compute the pressure from the density and temperature.
 
     Parameters
@@ -130,7 +132,7 @@ def A1_T_u_rho(A1_u, A1_rho, mat_id):
     A1_rho : [float]
         Density (kg m^-3).
 
-    mat_id : int
+    A1_mat_id : [int]
         Material id.
 
     Returns
@@ -141,12 +143,14 @@ def A1_T_u_rho(A1_u, A1_rho, mat_id):
 
     assert A1_u.ndim == 1
     assert A1_rho.ndim == 1
+    assert A1_mat_id.ndim == 1
     assert A1_u.shape[0] == A1_rho.shape[0]
+    assert A1_u.shape[0] == A1_mat_id.shape[0]
 
     A1_T = np.zeros_like(A1_u)
 
     for i, u in enumerate(A1_u):
-        A1_T[i] = T_u_rho(A1_u[i], A1_rho[i], mat_id)
+        A1_T[i] = T_u_rho(A1_u[i], A1_rho[i], A1_mat_id[i])
 
     return A1_T
 
@@ -186,7 +190,7 @@ def u_rho_T(rho, T, mat_id):
 
 
 @njit
-def A1_u_rho_T(A1_rho, A1_T, mat_id):
+def A1_u_rho_T(A1_rho, A1_T, A1_mat_id):
     """Compute the specific internal energy from the density and temperature, for any EoS.
 
     Parameters
@@ -197,7 +201,7 @@ def A1_u_rho_T(A1_rho, A1_T, mat_id):
     A1_T : [float]
         Temperature (K).
 
-    mat_id : int
+    A1_mat_id : [int]
         Material id.
 
     Returns
@@ -207,12 +211,14 @@ def A1_u_rho_T(A1_rho, A1_T, mat_id):
     """
     assert A1_rho.ndim == 1
     assert A1_T.ndim == 1
+    assert A1_mat_id.ndim == 1
     assert A1_rho.shape[0] == A1_T.shape[0]
+    assert A1_rho.shape[0] == A1_mat_id.shape[0]
 
     A1_u = np.zeros_like(A1_rho)
 
     for i, rho in enumerate(A1_rho):
-        A1_u[i] = u_rho_T(A1_rho[i], A1_T[i], mat_id)
+        A1_u[i] = u_rho_T(A1_rho[i], A1_T[i], A1_mat_id[i])
 
     return A1_u
 
@@ -256,7 +262,7 @@ def P_T_rho(T, rho, mat_id):
 
 
 @njit
-def A1_P_T_rho(A1_T, A1_rho, mat_id):
+def A1_P_T_rho(A1_T, A1_rho, A1_mat_id):
     """Compute the pressure from the temperature and density, for any EoS.
 
     Parameters
@@ -267,7 +273,7 @@ def A1_P_T_rho(A1_T, A1_rho, mat_id):
     A1_rho : [float]
         Density (kg m^-3).
 
-    mat_id : int
+    A1_mat_id : [int]
         Material id.
 
     Returns
@@ -277,12 +283,14 @@ def A1_P_T_rho(A1_T, A1_rho, mat_id):
     """
     assert A1_T.ndim == 1
     assert A1_rho.ndim == 1
+    assert A1_mat_id.ndim == 1
     assert A1_T.shape[0] == A1_rho.shape[0]
+    assert A1_T.shape[0] == A1_mat_id.shape[0]
 
     A1_P = np.zeros_like(A1_T)
 
     for i, T in enumerate(A1_T):
-        A1_P[i] = P_T_rho(A1_T[i], A1_rho[i], mat_id)
+        A1_P[i] = P_T_rho(A1_T[i], A1_rho[i], A1_mat_id[i])
 
     return A1_P
 
@@ -316,7 +324,7 @@ def s_rho_T(rho, T, mat_id):
 
 
 @njit
-def A1_s_rho_T(A1_rho, A1_T, mat_id):
+def A1_s_rho_T(A1_rho, A1_T, A1_mat_id):
     """Compute the specific entropy from the density and temperature, for any EoS.
 
     Parameters
@@ -327,7 +335,7 @@ def A1_s_rho_T(A1_rho, A1_T, mat_id):
     A1_T : [float]
         Temperature (K).
 
-    mat_id : int
+    A1_mat_id : [int]
         Material id.
 
     Returns
@@ -337,12 +345,14 @@ def A1_s_rho_T(A1_rho, A1_T, mat_id):
     """
     assert A1_T.ndim == 1
     assert A1_rho.ndim == 1
+    assert A1_mat_id.ndim == 1
     assert A1_T.shape[0] == A1_rho.shape[0]
+    assert A1_T.shape[0] == A1_mat_id.shape[0]
 
     A1_s = np.zeros_like(A1_T)
 
     for i, rho in enumerate(A1_rho):
-        A1_s[i] = s_rho_T(A1_rho[i], A1_T[i], mat_id)
+        A1_s[i] = s_rho_T(A1_rho[i], A1_T[i], A1_mat_id[i])
 
     return A1_s
 
@@ -510,7 +520,7 @@ def rho_P_T(P, T, mat_id):
 
 
 @njit
-def A1_rho_P_T(A1_P, A1_T, mat_id):
+def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
     """Compute the density from the pressure and temperature, for any EoS.
 
     Parameters
@@ -521,7 +531,7 @@ def A1_rho_P_T(A1_P, A1_T, mat_id):
     A1_T : float
         Temperature (K).
 
-    mat_id : int
+    A1_mat_id : [int]
         Material id.
 
     Returns
@@ -531,12 +541,14 @@ def A1_rho_P_T(A1_P, A1_T, mat_id):
     """
     assert A1_P.ndim == 1
     assert A1_T.ndim == 1
+    assert A1_mat_id.ndim == 1
     assert A1_P.shape[0] == A1_T.shape[0]
+    assert A1_P.shape[0] == A1_mat_id.shape[0]
 
     A1_rho = np.zeros_like(A1_P)
 
     for i, P in enumerate(A1_P):
-        A1_rho[i] = rho_P_T(A1_P[i], A1_T[i], mat_id)
+        A1_rho[i] = rho_P_T(A1_P[i], A1_T[i], A1_mat_id[i])
 
     return A1_rho
 
