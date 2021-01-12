@@ -3675,10 +3675,7 @@ class ParticlePlanet:
         A1_s : [float]
             The specific entropy of each particle (J K^-1 kg^-1).
         """
-        self.A1_s = [
-            eos.s_rho_T(rho, T, mat_id)
-            for rho, T, mat_id in zip(self.A1_rho, self.A1_T, self.A1_mat_id)
-        ]
+        self.A1_s = eos.A1_s_rho_T(self.A1_rho, self.A1_T, self.A1_mat_id)
 
     def save(
         self,
