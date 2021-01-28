@@ -79,7 +79,6 @@ id_ANEOS_forsterite = Di_mat_id["ANEOS_forsterite"]
 id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
 id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
 
-
 # T-rho relation types
 type_rho_pow = 1
 type_adb = 2
