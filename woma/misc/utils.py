@@ -274,6 +274,10 @@ def impact_pos_vel_b_v_c_r(
     # Contact position
     r_c = R_t + R_i
     y_c = b * r_c
+    if r < r_c:
+        raise ValueError(
+            "Invalid r = %g m for body radii %g + %g = %g m" % (r, R_t, R_i, r_c)
+        )
 
     # Parabola
     if v_c == v_esc:
@@ -291,7 +295,7 @@ def impact_pos_vel_b_v_c_r(
     # Ellipse or hyperbola
     else:
         # Semimajor axis
-        a = 1 / (2 / r_c - v_c ** 2 / (mu))
+        a = 1 / (2 / r_c - v_c ** 2 / mu)
 
         # Initial speed and position
         v = np.sqrt(mu * (2 / r - 1 / a))
@@ -304,6 +308,14 @@ def impact_pos_vel_b_v_c_r(
             abs(0.5 * (a - np.sqrt(a ** 2 - 2 * a * v_c ** 2 * y_c ** 2 / mu))),
         )
         e = 1 - r_p / a
+
+        # Check requested separation is valid
+        r_a = 2 * a - r_p
+        if v_c < v_esc and r > r_a:
+            raise ValueError(
+                "Invalid r = %g m for bound orbit (v_esc = %g m/s) with apoapsis = %g m"
+                % (r, v_esc, r_a)
+            )
 
         # True anomalies (actually the complementary angles)
         theta_c = np.arccos((1 - a * (1 - e ** 2) / r_c) / e)
