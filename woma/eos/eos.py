@@ -52,8 +52,8 @@ def P_u_rho(u, rho, mat_id):
 
 @njit
 def A1_P_u_rho(A1_u, A1_rho, A1_mat_id):
-    """Compute the pressure from the specific internal energy
-    and density, for any EoS.
+    """Compute the pressures from arrays of specific internal energy and
+    density, for any EoS.
 
     Parameters
     ----------
@@ -88,7 +88,7 @@ def A1_P_u_rho(A1_u, A1_rho, A1_mat_id):
 
 @njit
 def T_u_rho(u, rho, mat_id):
-    """Compute the pressure from the density and temperature.
+    """Compute the pressure from the density and temperature, for any EoS.
 
     Parameters
     ----------
@@ -122,7 +122,8 @@ def T_u_rho(u, rho, mat_id):
 
 @njit
 def A1_T_u_rho(A1_u, A1_rho, A1_mat_id):
-    """Compute the pressure from the density and temperature.
+    """Compute the pressures from arrays of density and temperature, for any
+    EoS.
 
     Parameters
     ----------
@@ -191,7 +192,8 @@ def u_rho_T(rho, T, mat_id):
 
 @njit
 def A1_u_rho_T(A1_rho, A1_T, A1_mat_id):
-    """Compute the specific internal energy from the density and temperature, for any EoS.
+    """Compute the specific internal energies from arrays of density and
+    temperature, for any EoS.
 
     Parameters
     ----------
@@ -263,7 +265,8 @@ def P_T_rho(T, rho, mat_id):
 
 @njit
 def A1_P_T_rho(A1_T, A1_rho, A1_mat_id):
-    """Compute the pressure from the temperature and density, for any EoS.
+    """Compute the pressures from arrays of temperature and density, for any
+    EoS.
 
     Parameters
     ----------
@@ -325,7 +328,8 @@ def s_rho_T(rho, T, mat_id):
 
 @njit
 def A1_s_rho_T(A1_rho, A1_T, A1_mat_id):
-    """Compute the specific entropy from the density and temperature, for any EoS.
+    """Compute the specific entropies from arrays of density and temperature,
+    for any EoS.
 
     Parameters
     ----------
@@ -521,14 +525,15 @@ def rho_P_T(P, T, mat_id):
 
 @njit
 def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
-    """Compute the density from the pressure and temperature, for any EoS.
+    """Compute the densities from arrays of pressure and temperature, for any
+    EoS.
 
     Parameters
     ----------
-    A1_P : float
+    A1_P : [float]
         Pressure (Pa).
 
-    A1_T : float
+    A1_T : [float]
         Temperature (K).
 
     A1_mat_id : [int]
@@ -536,7 +541,7 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
 
     Returns
     -------
-    A1_rho : float
+    A1_rho : [float]
         Density (kg m^-3).
     """
     assert A1_P.ndim == 1
@@ -551,6 +556,71 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
         A1_rho[i] = rho_P_T(A1_P[i], A1_T[i], A1_mat_id[i])
 
     return A1_rho
+
+
+@njit
+def s_u_rho(u, rho, mat_id):
+    """Compute the specific entropy from the specific internal energy and
+    density, for any EoS.
+
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
+
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    s : float
+        Specific entropy (J kg^-1 K^-1).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        s = sesame.s_u_rho(u, rho, mat_id)
+    else:
+        raise ValueError("Entropy not implemented for this material type.")
+    return s
+
+
+@njit
+def A1_s_u_rho(A1_u, A1_rho, A1_mat_id):
+    """Compute the specific entropies from arrays of specific internal energy
+    and density, for any EoS.
+
+    Parameters
+    ----------
+    A1_u : [float]
+        Specific internal energy (J kg^-1).
+
+    A1_rho : [float]
+        Density (kg m^-3).
+
+    A1_mat_id : [int]
+        Material id.
+
+    Returns
+    -------
+    A1_s : [float]
+        Specific entropy (J kg^-1 K^-1).
+    """
+
+    assert A1_u.ndim == 1
+    assert A1_rho.ndim == 1
+    assert A1_mat_id.ndim == 1
+    assert A1_u.shape[0] == A1_rho.shape[0]
+    assert A1_u.shape[0] == A1_mat_id.shape[0]
+
+    A1_s = np.zeros_like(A1_u)
+
+    for i, u in enumerate(A1_u):
+        A1_s[i] = s_u_rho(A1_u[i], A1_rho[i], A1_mat_id[i])
+
+    return A1_s
 
 
 # Visualize EoS
