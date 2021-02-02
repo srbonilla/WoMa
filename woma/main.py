@@ -26,9 +26,9 @@ import h5py
 from scipy.interpolate import interp1d
 from copy import deepcopy
 import seagen
+from importlib import reload
 
 from woma.spherical_funcs import L1_spherical, L2_spherical, L3_spherical
-from woma.spin_funcs import L1_spin, L2_spin, L3_spin
 import woma.spin_funcs.utils_spin as us
 from woma.misc import glob_vars as gv
 from woma.misc import utils, io
@@ -168,6 +168,9 @@ class Planet:
         self.rho_2 = rho_2
         self.I_MR2 = I_MR2
         self.num_prof = num_prof
+        
+        # Load eos tables
+        utils.load_eos_tables(self.A1_mat_layer)
 
         # Load from file
         if load_file is not None:
@@ -787,6 +790,7 @@ class Planet:
         self.num_layer += 1
         self.A1_mat_layer = np.append(self.A1_mat_layer, mat)
         mat_id = gv.Di_mat_id[mat]
+        utils.load_eos_tables(self.A1_mat_layer) # load new material table
         self.A1_mat_id_layer = np.append(self.A1_mat_id_layer, mat_id)
 
         T_rho_type_id, T_rho_args = T_rho_id_and_args_from_type([T_rho_type])
@@ -2184,6 +2188,9 @@ class SpinPlanet:
             self.P_2 = self.planet.P_2
             self.T_2 = self.planet.T_2
             self.rho_2 = self.planet.rho_2
+            
+        # Load eos tables
+        utils.load_eos_tables(self.A1_mat_layer)
 
         # Make the spinning profiles!
         self.spin(

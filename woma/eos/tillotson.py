@@ -38,14 +38,22 @@ def load_u_cold_array(mat_id):
 
 
 # Load precomputed values of cold internal energy
-if os.path.isfile(gv.Fp_u_cold_Til_iron):
-    A1_u_cold_iron = load_u_cold_array(gv.id_Til_iron)
-if os.path.isfile(gv.Fp_u_cold_Til_granite):
-    A1_u_cold_granite = load_u_cold_array(gv.id_Til_granite)
-if os.path.isfile(gv.Fp_u_cold_Til_basalt):
-    A1_u_cold_basalt = load_u_cold_array(gv.id_Til_basalt)
-if os.path.isfile(gv.Fp_u_cold_Til_water):
-    A1_u_cold_water = load_u_cold_array(gv.id_Til_water)
+# =============================================================================
+# if os.path.isfile(gv.Fp_u_cold_Til_iron):
+#     A1_u_cold_iron = load_u_cold_array(gv.id_Til_iron)
+# if os.path.isfile(gv.Fp_u_cold_Til_granite):
+#     A1_u_cold_granite = load_u_cold_array(gv.id_Til_granite)
+# if os.path.isfile(gv.Fp_u_cold_Til_basalt):
+#     A1_u_cold_basalt = load_u_cold_array(gv.id_Til_basalt)
+# if os.path.isfile(gv.Fp_u_cold_Til_water):
+#     A1_u_cold_water = load_u_cold_array(gv.id_Til_water)
+# =============================================================================
+    
+# Set None values for cold internal energy arrays
+A1_u_cold_iron = np.zeros(1)
+A1_u_cold_granite = np.zeros(1)
+A1_u_cold_basalt = np.zeros(1)
+A1_u_cold_water = np.zeros(1)
 
 
 @njit
