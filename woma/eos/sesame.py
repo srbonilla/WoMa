@@ -212,129 +212,6 @@ def load_table_SESAME(Fp_table):
 
 
 # Load SESAME tables as global variables for numba
-# =============================================================================
-# (
-#     A1_rho_SESAME_iron,
-#     A1_T_SESAME_iron,
-#     A2_P_SESAME_iron,
-#     A2_u_SESAME_iron,
-#     A2_s_SESAME_iron,
-#     A1_log_rho_SESAME_iron,
-#     A1_log_T_SESAME_iron,
-#     A2_log_u_SESAME_iron,
-# ) = load_table_SESAME(gv.Fp_SESAME_iron)
-# (
-#     A1_rho_SESAME_basalt,
-#     A1_T_SESAME_basalt,
-#     A2_P_SESAME_basalt,
-#     A2_u_SESAME_basalt,
-#     A2_s_SESAME_basalt,
-#     A1_log_rho_SESAME_basalt,
-#     A1_log_T_SESAME_basalt,
-#     A2_log_u_SESAME_basalt,
-# ) = load_table_SESAME(gv.Fp_SESAME_basalt)
-# (
-#     A1_rho_SESAME_water,
-#     A1_T_SESAME_water,
-#     A2_P_SESAME_water,
-#     A2_u_SESAME_water,
-#     A2_s_SESAME_water,
-#     A1_log_rho_SESAME_water,
-#     A1_log_T_SESAME_water,
-#     A2_log_u_SESAME_water,
-# ) = load_table_SESAME(gv.Fp_SESAME_water)
-# (
-#     A1_rho_SS08_water,
-#     A1_T_SS08_water,
-#     A2_P_SS08_water,
-#     A2_u_SS08_water,
-#     A2_s_SS08_water,
-#     A1_log_rho_SS08_water,
-#     A1_log_T_SS08_water,
-#     A2_log_u_SS08_water,
-# ) = load_table_SESAME(gv.Fp_SS08_water)
-# 
-# # Load ANEOS as SESAME-style tables
-# (
-#     A1_rho_ANEOS_forsterite,
-#     A1_T_ANEOS_forsterite,
-#     A2_P_ANEOS_forsterite,
-#     A2_u_ANEOS_forsterite,
-#     A2_s_ANEOS_forsterite,
-#     A1_log_rho_ANEOS_forsterite,
-#     A1_log_T_ANEOS_forsterite,
-#     A2_log_u_ANEOS_forsterite,
-# ) = load_table_SESAME(gv.Fp_ANEOS_forsterite)
-# 
-# (
-#     A1_rho_ANEOS_iron,
-#     A1_T_ANEOS_iron,
-#     A2_P_ANEOS_iron,
-#     A2_u_ANEOS_iron,
-#     A2_s_ANEOS_iron,
-#     A1_log_rho_ANEOS_iron,
-#     A1_log_T_ANEOS_iron,
-#     A2_log_u_ANEOS_iron,
-# ) = load_table_SESAME(gv.Fp_ANEOS_iron)
-# 
-# (
-#     A1_rho_ANEOS_Fe85Si15,
-#     A1_T_ANEOS_Fe85Si15,
-#     A2_P_ANEOS_Fe85Si15,
-#     A2_u_ANEOS_Fe85Si15,
-#     A2_s_ANEOS_Fe85Si15,
-#     A1_log_rho_ANEOS_Fe85Si15,
-#     A1_log_T_ANEOS_Fe85Si15,
-#     A2_log_u_ANEOS_Fe85Si15,
-# ) = load_table_SESAME(gv.Fp_ANEOS_Fe85Si15)
-# 
-# # Load AQUA as SESAME-style tables
-# (
-#     A1_rho_AQUA,
-#     A1_T_AQUA,
-#     A2_P_AQUA,
-#     A2_u_AQUA,
-#     A2_s_AQUA,
-#     A1_log_rho_AQUA,
-#     A1_log_T_AQUA,
-#     A2_log_u_AQUA,
-# ) = load_table_SESAME(gv.Fp_AQUA)
-# 
-# # Load CMS19 as SESAME-style tables
-# (
-#     A1_rho_CMS19_H,
-#     A1_T_CMS19_H,
-#     A2_P_CMS19_H,
-#     A2_u_CMS19_H,
-#     A2_s_CMS19_H,
-#     A1_log_rho_CMS19_H,
-#     A1_log_T_CMS19_H,
-#     A2_log_u_CMS19_H,
-# ) = load_table_SESAME(gv.Fp_CMS19_H)
-# 
-# (
-#     A1_rho_CMS19_He,
-#     A1_T_CMS19_He,
-#     A2_P_CMS19_He,
-#     A2_u_CMS19_He,
-#     A2_s_CMS19_He,
-#     A1_log_rho_CMS19_He,
-#     A1_log_T_CMS19_He,
-#     A2_log_u_CMS19_He,
-# ) = load_table_SESAME(gv.Fp_CMS19_He)
-# 
-# (
-#     A1_rho_CMS19_HHe,
-#     A1_T_CMS19_HHe,
-#     A2_P_CMS19_HHe,
-#     A2_u_CMS19_HHe,
-#     A2_s_CMS19_HHe,
-#     A1_log_rho_CMS19_HHe,
-#     A1_log_T_CMS19_HHe,
-#     A2_log_u_CMS19_HHe,
-# ) = load_table_SESAME(gv.Fp_CMS19_HHe)
-# =============================================================================
-
 (
     A1_rho_SESAME_iron,
     A1_T_SESAME_iron,
@@ -345,15 +222,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_SESAME_iron,
     A2_log_u_SESAME_iron,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 (
     A1_rho_SESAME_basalt,
     A1_T_SESAME_basalt,
@@ -364,15 +241,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_SESAME_basalt,
     A2_log_u_SESAME_basalt,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 (
     A1_rho_SESAME_water,
     A1_T_SESAME_water,
@@ -383,15 +260,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_SESAME_water,
     A2_log_u_SESAME_water,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 (
     A1_rho_SS08_water,
     A1_T_SS08_water,
@@ -402,15 +279,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_SS08_water,
     A2_log_u_SS08_water,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 # Load ANEOS as SESAME-style tables
 (
@@ -423,15 +300,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_ANEOS_forsterite,
     A2_log_u_ANEOS_forsterite,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 (
     A1_rho_ANEOS_iron,
@@ -443,15 +320,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_ANEOS_iron,
     A2_log_u_ANEOS_iron,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 (
     A1_rho_ANEOS_Fe85Si15,
@@ -463,15 +340,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_ANEOS_Fe85Si15,
     A2_log_u_ANEOS_Fe85Si15,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 # Load AQUA as SESAME-style tables
 (
@@ -484,15 +361,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_AQUA,
     A2_log_u_AQUA,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 # Load CMS19 as SESAME-style tables
 (
@@ -505,15 +382,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_CMS19_H,
     A2_log_u_CMS19_H,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 (
     A1_rho_CMS19_He,
@@ -525,15 +402,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_CMS19_He,
     A2_log_u_CMS19_He,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 (
     A1_rho_CMS19_HHe,
@@ -545,15 +422,15 @@ def load_table_SESAME(Fp_table):
     A1_log_T_CMS19_HHe,
     A2_log_u_CMS19_HHe,
 ) = (
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros((2,2)),
-     np.zeros(1),
-     np.zeros(1),
-     np.zeros((2,2)),
-     )
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+)
 
 
 @njit

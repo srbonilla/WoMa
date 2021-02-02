@@ -10,6 +10,7 @@ from woma.eos import eos
 import sys
 from importlib import reload
 
+
 def _print_banner():
     print("\n")
     print("#  WoMa - World Maker")
@@ -614,10 +615,11 @@ def rotate_configuration(A2_pos, A2_vel, x, y, z):
 
     return A2_pos_new.T, A2_vel_new.T
 
+
 def check_loaded_eos_tables():
     A1_mat = gv.Di_mat_id.keys()
     A1_mat = list(A1_mat)
-    
+
     # discard idg materials
     A1_idg = []
     for material in A1_mat:
@@ -625,17 +627,17 @@ def check_loaded_eos_tables():
             A1_idg.append(material)
     for material in A1_idg:
         A1_mat.remove(material)
-            
+
     # Check Tillotson
     if len(eos.tillotson.A1_u_cold_iron) == 1:
-        A1_mat.remove("Til_iron")   
+        A1_mat.remove("Til_iron")
     if len(eos.tillotson.A1_u_cold_granite) == 1:
-        A1_mat.remove("Til_granite")   
+        A1_mat.remove("Til_granite")
     if len(eos.tillotson.A1_u_cold_basalt) == 1:
-        A1_mat.remove("Til_basalt")   
+        A1_mat.remove("Til_basalt")
     if len(eos.tillotson.A1_u_cold_water) == 1:
-        A1_mat.remove("Til_water")   
-        
+        A1_mat.remove("Til_water")
+
     # Check HM80
     if len(eos.hm80.A2_log_P_HM80_HHe) == 1:
         A1_mat.remove("HM80_HHe")
@@ -643,37 +645,36 @@ def check_loaded_eos_tables():
         A1_mat.remove("HM80_ice")
     if len(eos.hm80.A2_log_P_HM80_rock) == 1:
         A1_mat.remove("HM80_rock")
-        
+
     # Check SESAME
     if len(eos.sesame.A1_rho_SESAME_iron) == 1:
         A1_mat.remove("SESAME_iron")
     if len(eos.sesame.A1_rho_SESAME_basalt) == 1:
         A1_mat.remove("SESAME_basalt")
-    if len(eos.sesame.A1_rho_SESAME_water) == 1: 
+    if len(eos.sesame.A1_rho_SESAME_water) == 1:
         A1_mat.remove("SESAME_water")
     if len(eos.sesame.A1_rho_SS08_water) == 1:
         A1_mat.remove("SS08_water")
-        
+
     if len(eos.sesame.A1_rho_ANEOS_forsterite) == 1:
         A1_mat.remove("ANEOS_forsterite")
     if len(eos.sesame.A1_rho_ANEOS_iron) == 1:
         A1_mat.remove("ANEOS_iron")
     if len(eos.sesame.A1_rho_ANEOS_Fe85Si15) == 1:
         A1_mat.remove("ANEOS_Fe85Si15")
-        
+
     if len(eos.sesame.A1_rho_AQUA) == 1:
         A1_mat.remove("AQUA")
-        
+
     if len(eos.sesame.A1_rho_CMS19_H) == 1:
         A1_mat.remove("CMS19_H")
     if len(eos.sesame.A1_rho_CMS19_He) == 1:
         A1_mat.remove("CMS19_He")
     if len(eos.sesame.A1_rho_CMS19_HHe) == 1:
         A1_mat.remove("CMS19_HHe")
-        
+
     return A1_mat
-    
-    
+
 
 def load_eos_tables(A1_mat=None):
     """
@@ -700,42 +701,52 @@ def load_eos_tables(A1_mat=None):
             A1_idg.append(material)
     for material in A1_idg:
         A1_mat.remove(material)
-        
+
     # Check A1_mat elements are available eos
     for material in A1_mat:
         if material not in gv.Di_mat_id.keys():
-            raise ValueError("%s not available. Check misc/glob_vars.py for available eos." % (material))
-            #raise ValueError("EoS not available.")
-            
+            raise ValueError(
+                "%s not available. Check misc/glob_vars.py for available eos."
+                % (material)
+            )
+            # raise ValueError("EoS not available.")
+
     # Check if tables are already loaded
     A1_mat_loaded = check_loaded_eos_tables()
-    
+
     A1_mat_loaded = sorted(A1_mat_loaded)
     A1_mat = sorted(A1_mat)
     if A1_mat_loaded == A1_mat:
         return None
-    
+
     if all(x in A1_mat_loaded for x in A1_mat):
         return None
 
-        
     # print("Loading eos tables...")
-    
+
     # Reload woma modules, need to recompile for numba
     for k, v in sys.modules.items():
-        if k.startswith("woma.eos") or k.startswith("woma.s"):
+        if (
+            k.startswith("woma.eos")
+            or k.startswith("woma.spherical")
+            or k.startswith("woma.spin")
+        ):
             reload(v)
-    
+
     # Tillotson
     if "Til_iron" in A1_mat and len(eos.tillotson.A1_u_cold_iron) == 1:
         eos.tillotson.A1_u_cold_iron = eos.tillotson.load_u_cold_array(gv.id_Til_iron)
     if "Til_granite" in A1_mat and len(eos.tillotson.A1_u_cold_granite) == 1:
-        eos.tillotson.A1_u_cold_granite = eos.tillotson.load_u_cold_array(gv.id_Til_granite)
+        eos.tillotson.A1_u_cold_granite = eos.tillotson.load_u_cold_array(
+            gv.id_Til_granite
+        )
     if "Til_basalt" in A1_mat and len(eos.tillotson.A1_u_cold_basalt) == 1:
-        eos.tillotson.A1_u_cold_basalt = eos.tillotson.load_u_cold_array(gv.id_Til_basalt)
+        eos.tillotson.A1_u_cold_basalt = eos.tillotson.load_u_cold_array(
+            gv.id_Til_basalt
+        )
     if "Til_water" in A1_mat and len(eos.tillotson.A1_u_cold_water) == 1:
         eos.tillotson.A1_u_cold_water = eos.tillotson.load_u_cold_array(gv.id_Til_water)
-        
+
     # Hubbard & MacFarlane (1980) Uranus/Neptune
     if "HM80_HHe" in A1_mat and len(eos.hm80.A2_log_P_HM80_HHe) == 1:
         (
@@ -778,7 +789,7 @@ def load_eos_tables(A1_mat=None):
             eos.hm80.A2_log_P_HM80_rock,
             eos.hm80.A2_log_T_HM80_rock,
         ) = eos.hm80.load_table_HM80(gv.Fp_HM80_rock)
-        
+
     # SESAME
     if "SESAME_iron" in A1_mat and len(eos.sesame.A1_rho_SESAME_iron) == 1:
         (
@@ -901,5 +912,5 @@ def load_eos_tables(A1_mat=None):
             eos.sesame.A1_log_T_CMS19_HHe,
             eos.sesame.A2_log_u_CMS19_HHe,
         ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_HHe)
-    
+
     return None

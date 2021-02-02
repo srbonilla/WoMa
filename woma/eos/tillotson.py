@@ -48,7 +48,7 @@ def load_u_cold_array(mat_id):
 # if os.path.isfile(gv.Fp_u_cold_Til_water):
 #     A1_u_cold_water = load_u_cold_array(gv.id_Til_water)
 # =============================================================================
-    
+
 # Set None values for cold internal energy arrays
 A1_u_cold_iron = np.zeros(1)
 A1_u_cold_granite = np.zeros(1)
