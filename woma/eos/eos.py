@@ -10,7 +10,6 @@ from woma.misc import glob_vars as gv
 from woma.eos import tillotson, sesame, idg, hm80
 from woma.eos.T_rho import T_rho
 
-
 @njit
 def P_u_rho(u, rho, mat_id):
     """Compute the pressure from the specific internal energy

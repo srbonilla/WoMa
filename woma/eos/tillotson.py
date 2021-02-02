@@ -36,19 +36,6 @@ def load_u_cold_array(mat_id):
 
     return u_cold_array
 
-
-# Load precomputed values of cold internal energy
-# =============================================================================
-# if os.path.isfile(gv.Fp_u_cold_Til_iron):
-#     A1_u_cold_iron = load_u_cold_array(gv.id_Til_iron)
-# if os.path.isfile(gv.Fp_u_cold_Til_granite):
-#     A1_u_cold_granite = load_u_cold_array(gv.id_Til_granite)
-# if os.path.isfile(gv.Fp_u_cold_Til_basalt):
-#     A1_u_cold_basalt = load_u_cold_array(gv.id_Til_basalt)
-# if os.path.isfile(gv.Fp_u_cold_Til_water):
-#     A1_u_cold_water = load_u_cold_array(gv.id_Til_water)
-# =============================================================================
-
 # Set None values for cold internal energy arrays
 A1_u_cold_iron = np.zeros(1)
 A1_u_cold_granite = np.zeros(1)
@@ -373,6 +360,10 @@ def u_cold_tab(rho, mat_id):
         u_cold_array = A1_u_cold_water
     else:
         raise ValueError("Invalid material ID")
+        
+    if len(u_cold_array) == 1:
+        raise ValueError("Please load the corresponding Tillotson table.\n" +
+                         "Use the woma.load_eos_tables function.\n")
 
     N_row = u_cold_array.shape[0]
     rho_min = 100

@@ -615,7 +615,6 @@ def rotate_configuration(A2_pos, A2_vel, x, y, z):
 
     return A2_pos_new.T, A2_vel_new.T
 
-
 def check_loaded_eos_tables():
     A1_mat = gv.Di_mat_id.keys()
     A1_mat = list(A1_mat)
@@ -683,7 +682,7 @@ def load_eos_tables(A1_mat=None):
     Parameters
     ----------
     A1_mat : [str]
-        The name of the material in each layer, from the central layer outwards.
+        List of the materials to be loaded. Default None loads all materials available.
         See Di_mat_id in `misc/glob_vars.py`.
 
     Returns
