@@ -717,7 +717,6 @@ def load_eos_tables(A1_mat=None):
     A1_mat = sorted(A1_mat)
     if A1_mat_loaded == A1_mat:
         return None
-
     if all(x in A1_mat_loaded for x in A1_mat):
         return None
 
@@ -726,9 +725,15 @@ def load_eos_tables(A1_mat=None):
     # Reload woma modules, need to recompile for numba
     for k, v in sys.modules.items():
         if (
-            k.startswith("woma.eos")
-            or k.startswith("woma.spherical")
+            k.startswith("woma.spherical")
             or k.startswith("woma.spin")
+        ):
+            reload(v)
+    
+    for k, v in sys.modules.items():
+        if (
+            k.startswith("woma.eos")
+            or k == 'woma'
         ):
             reload(v)
 

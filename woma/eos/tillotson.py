@@ -361,6 +361,7 @@ def u_cold_tab(rho, mat_id):
     else:
         raise ValueError("Invalid material ID")
         
+    # Check necessary data loaded
     if len(u_cold_array) == 1:
         raise ValueError("Please load the corresponding Tillotson table.\n" +
                          "Use the woma.load_eos_tables function.\n")
