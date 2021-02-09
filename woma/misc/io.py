@@ -246,7 +246,7 @@ def save_particle_data(
     SI_to_file = file_to_SI.inv()
     boxsize *= SI_to_file.l
     A2_pos *= SI_to_file.l
-    A2_vel * SI_to_file.v
+    A2_vel *= SI_to_file.v
     A1_m *= SI_to_file.m
     A1_h *= SI_to_file.l
     A1_rho *= SI_to_file.rho
