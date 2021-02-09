@@ -5,11 +5,11 @@ equations for hydrostatic equilibrium, and create initial conditions for e.g.
 smoothed particle hydrodynamics (SPH) simulations by placing particles that
 precisely match the planet's profiles.
 
-See the `tutorial.ipynb` notebook for a full tutorial and examples 
+See the `tutorial.ipynb` notebook for an introductory tutorial and examples 
 (https://github.com/srbonilla/WoMa), with additional documentation in this 
-file, below.
+file, below. Please see the class and function docstrings for full details.
 
-Presented in Ruiz-Bonilla et al. (2020, https://arxiv.org/abs/2007.02965).
+Presented in Ruiz-Bonilla et al. ([2020, MNRAS 500:3](https://academic.oup.com/mnras/article/500/3/2861/6007797)).
 
 Includes SEAGen (https://github.com/jkeger/seagen; 
 Kegerreis et al. [2019, MNRAS 487:4](https://doi.org/10.1093/mnras/stz1606)) 
