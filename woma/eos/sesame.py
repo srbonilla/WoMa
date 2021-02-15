@@ -624,11 +624,7 @@ def s_u_rho(u, rho, mat_id):
     """
     # Unpack the parameters
     if mat_id == gv.id_SESAME_iron:
-        A2_s, A1_log_rho, A2_log_u = (
-            A2_s_SESAME_iron,
-            A1_log_rho_SESAME_iron,
-            A2_log_u_SESAME_iron,
-        )
+        raise ValueError("No entropy values for this material")
     elif mat_id == gv.id_SESAME_basalt:
         A2_s, A1_log_rho, A2_log_u = (
             A2_s_SESAME_basalt,
@@ -698,9 +694,6 @@ def s_u_rho(u, rho, mat_id):
             "Please load the corresponding SESAME table.\n"
             + "Use the woma.load_eos_tables function.\n"
         )
-
-    if mat_id == 300:
-        raise ValueError("No entropy values for this material")
 
     # Ignore the first elements of rho = 0, T = 0
     A2_s = A2_s[1:, 1:]
@@ -1089,11 +1082,7 @@ def s_rho_T(rho, T, mat_id):
     """
     # Unpack the parameters
     if mat_id == gv.id_SESAME_iron:
-        A2_s, A1_log_rho, A1_log_T = (
-            A2_s_SESAME_iron,
-            A1_log_rho_SESAME_iron,
-            A1_log_T_SESAME_iron,
-        )
+        raise ValueError("No entropy values for this material")
     elif mat_id == gv.id_SESAME_basalt:
         A2_s, A1_log_rho, A1_log_T = (
             A2_s_SESAME_basalt,
@@ -1163,9 +1152,6 @@ def s_rho_T(rho, T, mat_id):
             "Please load the corresponding SESAME table.\n"
             + "Use the woma.load_eos_tables function.\n"
         )
-
-    if mat_id == 300:
-        raise ValueError("No entropy values for this material")
 
     # Ignore the first elements of rho = 0, T = 0
     A2_s = A2_s[1:, 1:]
