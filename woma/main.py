@@ -3570,7 +3570,7 @@ class ParticlePlanet:
 
         assert isinstance(planet, Planet) or isinstance(planet, SpinPlanet)
         assert self.N_particles is not None
-        
+
         utils.load_eos_tables(planet.A1_mat_layer)
 
         if isinstance(planet, Planet):

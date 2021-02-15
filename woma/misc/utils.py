@@ -615,6 +615,7 @@ def rotate_configuration(A2_pos, A2_vel, x, y, z):
 
     return A2_pos_new.T, A2_vel_new.T
 
+
 def check_loaded_eos_tables():
     A1_mat = gv.Di_mat_id.keys()
     A1_mat = list(A1_mat)
@@ -724,17 +725,11 @@ def load_eos_tables(A1_mat=None):
 
     # Reload woma modules, need to recompile for numba
     for k, v in sys.modules.items():
-        if (
-            k.startswith("woma.spherical")
-            or k.startswith("woma.spin")
-        ):
+        if k.startswith("woma.spherical") or k.startswith("woma.spin"):
             reload(v)
-    
+
     for k, v in sys.modules.items():
-        if (
-            k.startswith("woma.eos")
-            or k == 'woma'
-        ):
+        if k.startswith("woma.eos") or k == "woma":
             reload(v)
 
     # Tillotson

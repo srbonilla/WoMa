@@ -522,11 +522,13 @@ def P_u_rho(u, rho, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
-        
+
     # Check necessary data loaded
     if len(A1_log_rho) == 1:
-        raise ValueError("Please load the corresponding SESAME table.\n" +
-                         "Use the woma.load_eos_tables function.\n")
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     # Ignore the first elements of rho = 0, T = 0
     A2_P = A2_P[1:, 1:]
@@ -689,11 +691,13 @@ def s_u_rho(u, rho, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
-        
+
     # Check necessary data loaded
     if len(A1_log_rho) == 1:
-        raise ValueError("Please load the corresponding SESAME table.\n" +
-                         "Use the woma.load_eos_tables function.\n")
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     if mat_id == 300:
         raise ValueError("No entropy values for this material")
@@ -858,11 +862,13 @@ def u_rho_T(rho, T, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
-        
+
     # Check necessary data loaded
     if len(A1_log_rho) == 1:
-        raise ValueError("Please load the corresponding SESAME table.\n" +
-                         "Use the woma.load_eos_tables function.\n")
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     # Ignore the first elements of rho = 0, T = 0
     A2_u = A2_u[1:, 1:]
@@ -1015,11 +1021,13 @@ def P_T_rho(T, rho, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
-        
+
     # Check necessary data loaded
     if len(A1_log_rho) == 1:
-        raise ValueError("Please load the corresponding SESAME table.\n" +
-                         "Use the woma.load_eos_tables function.\n")
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     # Convert to log
     log_rho = np.log(rho)
@@ -1148,11 +1156,13 @@ def s_rho_T(rho, T, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
-        
+
     # Check necessary data loaded
     if len(A1_log_rho) == 1:
-        raise ValueError("Please load the corresponding SESAME table.\n" +
-                         "Use the woma.load_eos_tables function.\n")
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     if mat_id == 300:
         raise ValueError("No entropy values for this material")
@@ -1210,6 +1220,7 @@ def s_rho_T(rho, T, mat_id):
     )
 
     return s
+
 
 @njit
 def T_rho_s(rho, s, mat_id):
@@ -1300,11 +1311,13 @@ def T_rho_s(rho, s, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
-        
+
     # Check necessary data loaded
     if len(A1_log_rho) == 1:
-        raise ValueError("Please load the corresponding SESAME table.\n" +
-                         "Use the woma.load_eos_tables function.\n")
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     # Convert to log
     log_rho = np.log(rho)
@@ -1425,11 +1438,13 @@ def T_u_rho(u, rho, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
-        
+
     # Check necessary data loaded
     if len(A1_log_rho) == 1:
-        raise ValueError("Please load the corresponding SESAME table.\n" +
-                         "Use the woma.load_eos_tables function.\n")
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     # Convert to log
     log_rho = np.log(rho)
