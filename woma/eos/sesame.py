@@ -695,9 +695,8 @@ def s_u_rho(u, rho, mat_id):
         raise ValueError("Please load the corresponding SESAME table.\n" +
                          "Use the woma.load_eos_tables function.\n")
 
-    # Check this material has entropy values (makes code slow)
-    #if (A2_s == 0).all():
-    #    raise ValueError("No entropy values for this material")
+    if mat_id == 300:
+        raise ValueError("No entropy values for this material")
 
     # Ignore the first elements of rho = 0, T = 0
     A2_s = A2_s[1:, 1:]
@@ -1155,9 +1154,8 @@ def s_rho_T(rho, T, mat_id):
         raise ValueError("Please load the corresponding SESAME table.\n" +
                          "Use the woma.load_eos_tables function.\n")
 
-    # Check this material has entropy values (makes code slow)
-    #if (A2_s == 0).all():
-    #    raise ValueError("No entropy values for this material")
+    if mat_id == 300:
+        raise ValueError("No entropy values for this material")
 
     # Ignore the first elements of rho = 0, T = 0
     A2_s = A2_s[1:, 1:]
