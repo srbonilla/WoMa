@@ -637,6 +637,8 @@ def check_loaded_eos_tables():
         A1_mat.remove("Til_basalt")
     if len(eos.tillotson.A1_u_cold_water) == 1:
         A1_mat.remove("Til_water")
+    if len(eos.tillotson.A1_u_cold_ice) == 1:
+        A1_mat.remove("Til_ice")
 
     # Check HM80
     if len(eos.hm80.A2_log_P_HM80_HHe) == 1:
@@ -747,6 +749,8 @@ def load_eos_tables(A1_mat_input=None):
         )
     if "Til_water" in A1_mat and len(eos.tillotson.A1_u_cold_water) == 1:
         eos.tillotson.A1_u_cold_water = eos.tillotson.load_u_cold_array(gv.id_Til_water)
+    if "Til_ice" in A1_mat and len(eos.tillotson.A1_u_cold_ice) == 1:
+        eos.tillotson.A1_u_cold_ice = eos.tillotson.load_u_cold_array(gv.id_Til_ice)
 
     # Hubbard & MacFarlane (1980) Uranus/Neptune
     if "HM80_HHe" in A1_mat and len(eos.hm80.A2_log_P_HM80_HHe) == 1:

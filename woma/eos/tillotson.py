@@ -31,6 +31,8 @@ def load_u_cold_array(mat_id):
         u_cold_array = np.load(gv.Fp_u_cold_Til_basalt)
     elif mat_id == gv.id_Til_water:
         u_cold_array = np.load(gv.Fp_u_cold_Til_water)
+    elif mat_id == gv.id_Til_ice:
+        u_cold_array = np.load(gv.Fp_u_cold_Til_ice)
     else:
         raise ValueError("Invalid material ID")
 
@@ -42,6 +44,7 @@ A1_u_cold_iron = np.zeros(1)
 A1_u_cold_granite = np.zeros(1)
 A1_u_cold_basalt = np.zeros(1)
 A1_u_cold_water = np.zeros(1)
+A1_u_cold_ice = np.zeros(1)
 
 
 @njit
@@ -139,6 +142,24 @@ def P_u_rho(u, rho, mat_id):
             0.875,
         ]
     )
+    ice = np.array(
+        [
+            gv.id_Til_ice,
+            1293,
+            0.3,
+            0.1,
+            1.07e10,
+            6.5e10,
+            1.0e7,
+            7.73e5,
+            3.04e6,
+            10,
+            5,
+            0.925,
+            0,
+            0.875,
+        ]
+    )
 
     if mat_id == gv.id_Til_iron:
         material = iron
@@ -148,6 +169,8 @@ def P_u_rho(u, rho, mat_id):
         material = basalt
     elif mat_id == gv.id_Til_water:
         material = water
+    elif mat_id == gv.id_Til_ice:
+        material = ice
     else:
         raise ValueError("Invalid material ID")
 
@@ -233,6 +256,8 @@ def C_V_Til(mat_id):
         return 790.0
     elif mat_id == gv.id_Til_water:
         return 4186.0
+    elif mat_id == gv.id_Til_ice:
+        return 2010.0
     else:
         raise ValueError("Invalid material ID")
 
@@ -259,6 +284,8 @@ def _rho_0(mat_id):
         return 2700.0
     elif mat_id == gv.id_Til_water:
         return 998.0
+    elif mat_id == gv.id_Til_ice:
+        return 1293.0
     else:
         raise ValueError("Invalid material ID")
 
@@ -359,6 +386,8 @@ def u_cold_tab(rho, mat_id):
         u_cold_array = A1_u_cold_basalt
     elif mat_id == gv.id_Til_water:
         u_cold_array = A1_u_cold_water
+    elif mat_id == gv.id_Til_ice:
+        u_cold_array = A1_u_cold_ice
     else:
         raise ValueError("Invalid material ID")
 

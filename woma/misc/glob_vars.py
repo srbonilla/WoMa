@@ -28,6 +28,7 @@ Di_mat_id = {
     "Til_granite": Di_mat_type["Til"] * type_factor + 1,
     "Til_water": Di_mat_type["Til"] * type_factor + 2,
     "Til_basalt": Di_mat_type["Til"] * type_factor + 3,
+    "Til_ice": Di_mat_type["Til"] * type_factor + 4,
     # Hubbard & MacFarlane (1980) Uranus/Neptune
     "HM80_HHe": Di_mat_type["HM80"] * type_factor,  # Hydrogen-helium atmosphere
     "HM80_ice": Di_mat_type["HM80"] * type_factor + 1,  # H20-CH4-NH3 ice mix
@@ -64,6 +65,7 @@ id_Til_iron = Di_mat_id["Til_iron"]
 id_Til_granite = Di_mat_id["Til_granite"]
 id_Til_basalt = Di_mat_id["Til_basalt"]
 id_Til_water = Di_mat_id["Til_water"]
+id_Til_ice = Di_mat_id["Til_ice"]
 id_HM80_HHe = Di_mat_id["HM80_HHe"]
 id_HM80_ice = Di_mat_id["HM80_ice"]
 id_HM80_rock = Di_mat_id["HM80_rock"]
@@ -93,6 +95,7 @@ Fp_u_cold_Til_iron = dir_data + "u_cold_array_Til_iron.npy"
 Fp_u_cold_Til_granite = dir_data + "u_cold_array_Til_granite.npy"
 Fp_u_cold_Til_basalt = dir_data + "u_cold_array_Til_basalt.npy"
 Fp_u_cold_Til_water = dir_data + "u_cold_array_Til_water.npy"
+Fp_u_cold_Til_ice = dir_data + "u_cold_array_Til_ice.npy"
 # HM80 tables
 Fp_HM80_HHe = dir_data + "HM80_HHe.txt"
 Fp_HM80_ice = dir_data + "HM80_ice.txt"
