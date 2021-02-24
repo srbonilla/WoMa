@@ -2137,7 +2137,7 @@ class SpinPlanet:
         check_min_period=False,
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
-        num_attempt=15,
+        num_attempt_1=15,
         num_attempt_2=15,
         load_file=None,
         verbosity=1,
@@ -2162,7 +2162,7 @@ class SpinPlanet:
         self.check_min_period = check_min_period
         self.tol_density_profile = tol_density_profile
         self.tol_layer_masses = tol_layer_masses
-        self.num_attempt = num_attempt
+        self.num_attempt_1 = num_attempt_1
         self.num_attempt_2 = num_attempt_2
         self.verbosity = verbosity
 
@@ -2200,7 +2200,7 @@ class SpinPlanet:
             check_min_period=self.check_min_period,
             tol_density_profile=self.tol_density_profile,
             tol_layer_masses=self.tol_layer_masses,
-            num_attempt=self.num_attempt,
+            num_attempt_1=self.num_attempt_1,
             num_attempt_2=self.num_attempt_2,
             verbosity=self.verbosity,
         )
@@ -3034,7 +3034,7 @@ class SpinPlanet:
         check_min_period=False,
         tol_layer_masses=0.01,
         tol_density_profile=0.001,
-        num_attempt=15,
+        num_attempt_1=15,
         num_attempt_2=15,
         verbosity=1,
     ):
@@ -3077,7 +3077,7 @@ class SpinPlanet:
             return
 
         # Vary the spherical planet radii to fix the spinning planet masses
-        for i in range(num_attempt):
+        for i in range(num_attempt_1):
 
             # Initialise the bounds
             if self.M > M_fixed:
@@ -3121,7 +3121,7 @@ class SpinPlanet:
                         "\rIter %d(%d),%d(%d): R=%.3gR_E R1=%.3gR_E: tol=%.2g(%.2g),%.2g(%.2g)"
                         % (
                             i + 1,
-                            num_attempt,
+                            num_attempt_1,
                             j + 1,
                             2 * num_attempt_2,
                             self.planet.R / gv.R_earth,
@@ -3200,8 +3200,8 @@ class SpinPlanet:
                         "\rIter %d(%d),%d(%d): R=%.3gR_E R1=%.3gR_E: tol=%.2g(%.2g),%.2g(%.2g)"
                         % (
                             i + 1,
-                            num_attempt,
-                            num_attempt + j + 1,
+                            num_attempt_1,
+                            num_attempt_1 + j + 1,
                             2 * num_attempt_2,
                             self.planet.R / gv.R_earth,
                             self.planet.A1_R_layer[0] / gv.R_earth,
@@ -3240,7 +3240,7 @@ class SpinPlanet:
         check_min_period=False,
         tol_layer_masses=0.01,
         tol_density_profile=0.001,
-        num_attempt=15,
+        num_attempt_1=15,
         num_attempt_2=15,
         verbosity=1,
     ):
@@ -3286,7 +3286,7 @@ class SpinPlanet:
         # Define dr
         dr = f_iter * self.planet.R
 
-        for i in range(num_attempt):
+        for i in range(num_attempt_1):
             # First iteration (fix M mantle)
             for j in range(num_attempt_2):
                 if self.A1_M_layer[1] > M_1_fixed:
@@ -3319,7 +3319,7 @@ class SpinPlanet:
                         "Iter %d(%d),%d(%d): R0=%.4gR_E R1=%.4gR_E: tol=%.2g(%.2g), %.2g(%.2g)"
                         % (
                             i + 1,
-                            num_attempt,
+                            num_attempt_1,
                             j + 1,
                             2 * num_attempt_2,
                             self.planet.A1_R_layer[0] / gv.R_earth,
@@ -3379,8 +3379,8 @@ class SpinPlanet:
                         "Iter %d(%d),%d(%d): R0=%.3gR_E R1=%.3gR_E: tol=%.2g(%.2g), %.2g(%.2g)"
                         % (
                             i + 1,
-                            num_attempt,
-                            num_attempt + j + 1,
+                            num_attempt_1,
+                            num_attempt_1 + j + 1,
                             2 * num_attempt_2,
                             self.planet.A1_R_layer[0] / gv.R_earth,
                             self.planet.A1_R_layer[1] / gv.R_earth,
@@ -3418,7 +3418,7 @@ class SpinPlanet:
         check_min_period=False,
         tol_density_profile=0.001,
         tol_layer_masses=0.01,
-        num_attempt=15,
+        num_attempt_1=15,
         num_attempt_2=5,
         verbosity=1,
     ):
@@ -3494,7 +3494,7 @@ class SpinPlanet:
                     check_min_period=check_min_period,
                     tol_layer_masses=tol_layer_masses,
                     tol_density_profile=tol_density_profile,
-                    num_attempt=num_attempt,
+                    num_attempt=num_attempt_1,
                     verbosity=verbosity,
                 )
 
@@ -3506,7 +3506,7 @@ class SpinPlanet:
                     check_min_period=check_min_period,
                     tol_layer_masses=tol_layer_masses,
                     tol_density_profile=tol_density_profile,
-                    num_attempt=num_attempt,
+                    num_attempt_1=num_attempt_1,
                     num_attempt_2=num_attempt_2,
                     verbosity=verbosity,
                 )
