@@ -1100,6 +1100,8 @@ def find_min_period(
     """
 
     min_period = 0.0001
+    if verbosity >= 1:
+        print("Finding minimum period...")
 
     for i in range(num_attempt):
 

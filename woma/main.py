@@ -2850,6 +2850,11 @@ class SpinPlanet:
 
         # Desired mass
         M_fixed = self.planet.M
+        
+        if check_min_period:
+            verbosity_2 = verbosity - 1
+        else:
+            verbosity_2 = 0
 
         # Create the spinning profiles
         self._spin_planet_simple(
@@ -2857,7 +2862,7 @@ class SpinPlanet:
             R_max_po,
             tol_density_profile=tol_density_profile,
             check_min_period=check_min_period,
-            verbosity=0,
+            verbosity=verbosity_2,
         )
 
         # Check the fractional error in the mass for convergence
@@ -2892,7 +2897,7 @@ class SpinPlanet:
                 R_max_po,
                 tol_density_profile=tol_density_profile,
                 check_min_period=check_min_period,
-                verbosity=0,
+                verbosity=verbosity_2,
             )
 
             # Check the fractional error in the mass for convergence
@@ -2945,6 +2950,11 @@ class SpinPlanet:
 
         # Desired masses
         M_fixed = self.planet.M
+        
+        if check_min_period:
+            verbosity_2 = verbosity - 1
+        else:
+            verbosity_2 = 0
 
         # Create the spinning profiles
         self._spin_planet_simple(
@@ -2952,7 +2962,7 @@ class SpinPlanet:
             R_max_po,
             tol_density_profile=tol_density_profile,
             check_min_period=check_min_period,
-            verbosity=0,
+            verbosity=verbosity_2,
         )
 
         # Check the fractional error in the masses for convergence
@@ -2987,7 +2997,7 @@ class SpinPlanet:
                 R_max_po,
                 tol_density_profile=tol_density_profile,
                 check_min_period=check_min_period,
-                verbosity=0,
+                verbosity=verbosity_2,
             )
 
             # Check the fractional error in the masses for convergence
@@ -3038,6 +3048,11 @@ class SpinPlanet:
         # Desired masses
         M_fixed = self.planet.M
         M_0_fixed = self.planet.A1_M_layer[0]
+        
+        if check_min_period:
+            verbosity_2 = verbosity - 1
+        else:
+            verbosity_2 = 0
 
         # Create the spinning profiles
         self._spin_planet_simple(
@@ -3045,7 +3060,7 @@ class SpinPlanet:
             R_max_po,
             tol_density_profile=tol_density_profile,
             check_min_period=check_min_period,
-            verbosity=0,
+            verbosity=verbosity_2,
         )
 
         # Check the fractional error in the masses for convergence
@@ -3093,7 +3108,7 @@ class SpinPlanet:
                     R_max_po,
                     tol_density_profile=tol_density_profile,
                     check_min_period=check_min_period,
-                    verbosity=0,
+                    verbosity=verbosity_2,
                 )
 
                 # Check the fractional error in the masses for convergence
@@ -3172,7 +3187,7 @@ class SpinPlanet:
                     R_max_po,
                     tol_density_profile=tol_density_profile,
                     check_min_period=check_min_period,
-                    verbosity=0,
+                    verbosity=verbosity_2,
                 )
 
                 # Check the fractional error in the masses for convergence
@@ -3242,12 +3257,16 @@ class SpinPlanet:
         M_1_fixed = self.planet.A1_M_layer[1]
 
         # Create the spinning profiles
+        if check_min_period:
+            verbosity_2 = verbosity - 1
+        else:
+            verbosity_2 = 0
         self._spin_planet_simple(
             R_max_eq,
             R_max_po,
             tol_density_profile=tol_density_profile,
             check_min_period=check_min_period,
-            verbosity=0,
+            verbosity=verbosity_2,
         )
 
         # Check the fractional error in the masses for convergence
@@ -3287,7 +3306,7 @@ class SpinPlanet:
                     R_max_po,
                     tol_density_profile=tol_density_profile,
                     check_min_period=check_min_period,
-                    verbosity=0,
+                    verbosity=verbosity_2,
                 )
 
                 # Check the fractional error in the masses for convergence
@@ -3347,7 +3366,7 @@ class SpinPlanet:
                     R_max_po,
                     tol_density_profile=tol_density_profile,
                     check_min_period=check_min_period,
-                    verbosity=0,
+                    verbosity=verbosity_2,
                 )
 
                 # Check the fractional error in the masses for convergence
