@@ -2979,9 +2979,14 @@ class SpinPlanet:
             return
 
         # Define dr
-        dr = f_iter * self.planet.R
+        dr_default = f_iter * self.planet.R
 
         for i in range(num_attempt):
+            #adaptive dr (test)
+            dr = (tol - tol_layer_masses)*5*dr_default/100/tol_layer_masses
+            dr += dr_default
+            dr = np.abs(dr)
+                
             if self.M > M_fixed:
                 self.planet.A1_R_layer[0] = self.planet.R - dr
                 self.planet.R = self.planet.R - dr
@@ -3284,11 +3289,16 @@ class SpinPlanet:
             return
 
         # Define dr
-        dr = f_iter * self.planet.R
+        dr_default = f_iter * self.planet.R
 
         for i in range(num_attempt_1):
             # First iteration (fix M mantle)
             for j in range(num_attempt_2):
+                #adaptive dr (test)
+                dr = (tol_1 - tol_layer_masses)*5*dr_default/100/tol_layer_masses
+                dr += dr_default
+                dr = np.abs(dr)
+                
                 if self.A1_M_layer[1] > M_1_fixed:
                     self.planet.A1_R_layer[1] = self.planet.R - dr
                     self.planet.R = self.planet.R - dr
@@ -3351,6 +3361,11 @@ class SpinPlanet:
 
             # Second iteration (fix M core)
             for j in range(num_attempt_2):
+                #adaptive dr (test)
+                dr = (tol_0 - tol_layer_masses)*5*dr_default/100/tol_layer_masses
+                dr += dr_default
+                dr = np.abs(dr)
+                
                 if self.A1_M_layer[0] > M_0_fixed:
                     self.planet.A1_R_layer[0] = self.planet.A1_R_layer[0] - dr
                 else:
