@@ -3380,7 +3380,7 @@ class SpinPlanet:
                         % (
                             i + 1,
                             num_attempt_1,
-                            num_attempt_1 + j + 1,
+                            num_attempt_2 + j + 1,
                             2 * num_attempt_2,
                             self.planet.A1_R_layer[0] / gv.R_earth,
                             self.planet.A1_R_layer[1] / gv.R_earth,
