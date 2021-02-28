@@ -92,6 +92,7 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
 
     # first element of A1_rho and A1_T cannot be == 0
     # because interpolation is in log rho, log T
+    ### but we discard those in the interpolation functions anyway?
     small = A1_rho[1] * 0.0001
     if A1_rho[0] <= 0:
         A1_rho[0] = small
@@ -172,13 +173,15 @@ def load_table_SESAME(Fp_table):
 
     Returns
     -------
-    A2_u, A2_P, A2_s : [[float]]
-        2D table arrays of sp. int. energy (J kg^-1), pressure (Pa), and sp.
-        entropy (J kg^-1 K^-1).
-
     A1_rho, A1_T : [float]
         1D arrays of  of density (kg m^-3) and temperature (K).
-
+        
+    A2_P, A2_u, A2_s : [[float]]
+        2D table arrays of pressure (Pa), sp. int. energy (J kg^-1), and sp.
+        entropy (J kg^-1 K^-1).
+        
+    A1_log_*, A2_log_* : [float], [[float]]
+        The natural log versions of the same arrays.
     """
     # Load
     Fp_table = ut.check_end(Fp_table, ".txt")
@@ -208,7 +211,7 @@ def load_table_SESAME(Fp_table):
     # Prepare table
     prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0)
 
-    return A1_rho, A1_T, A2_P, A2_u, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_u)
+    return A1_rho, A1_T, A2_P, A2_u, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_P), np.log(A2_u), np.log(A2_s)
 
 
 def load_phase_table_ANEOS_forsterite():
@@ -272,7 +275,7 @@ def load_phase_table_ANEOS_forsterite():
 
 
 # ========
-# Load SESAME-style tables as global variables for numba
+# Initialise SESAME-style tables as global variables for numba
 # ========
 # SESAME
 (
@@ -283,7 +286,9 @@ def load_phase_table_ANEOS_forsterite():
     A2_s_SESAME_iron,
     A1_log_rho_SESAME_iron,
     A1_log_T_SESAME_iron,
+    A2_log_P_SESAME_iron,
     A2_log_u_SESAME_iron,
+    A2_log_s_SESAME_iron,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -292,6 +297,8 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 (
@@ -302,7 +309,9 @@ def load_phase_table_ANEOS_forsterite():
     A2_s_SESAME_basalt,
     A1_log_rho_SESAME_basalt,
     A1_log_T_SESAME_basalt,
+    A2_log_P_SESAME_basalt,
     A2_log_u_SESAME_basalt,
+    A2_log_s_SESAME_basalt,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -311,6 +320,8 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 (
@@ -321,7 +332,9 @@ def load_phase_table_ANEOS_forsterite():
     A2_s_SESAME_water,
     A1_log_rho_SESAME_water,
     A1_log_T_SESAME_water,
+    A2_log_P_SESAME_water,
     A2_log_u_SESAME_water,
+    A2_log_s_SESAME_water,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -330,6 +343,8 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 (
@@ -340,7 +355,9 @@ def load_phase_table_ANEOS_forsterite():
     A2_s_SS08_water,
     A1_log_rho_SS08_water,
     A1_log_T_SS08_water,
+    A2_log_P_SS08_water,
     A2_log_u_SS08_water,
+    A2_log_s_SS08_water,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -349,6 +366,8 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 
@@ -361,7 +380,9 @@ def load_phase_table_ANEOS_forsterite():
     A2_s_ANEOS_forsterite,
     A1_log_rho_ANEOS_forsterite,
     A1_log_T_ANEOS_forsterite,
+    A2_log_P_ANEOS_forsterite,
     A2_log_u_ANEOS_forsterite,
+    A2_log_s_ANEOS_forsterite,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -370,6 +391,8 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
@@ -381,7 +404,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_ANEOS_iron,
     A1_log_rho_ANEOS_iron,
     A1_log_T_ANEOS_iron,
+    A2_log_P_ANEOS_iron,
     A2_log_u_ANEOS_iron,
+    A2_log_s_ANEOS_iron,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -390,6 +415,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 (
@@ -400,7 +427,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_ANEOS_Fe85Si15,
     A1_log_rho_ANEOS_Fe85Si15,
     A1_log_T_ANEOS_Fe85Si15,
+    A2_log_P_ANEOS_Fe85Si15,
     A2_log_u_ANEOS_Fe85Si15,
+    A2_log_s_ANEOS_Fe85Si15,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -409,6 +438,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 
@@ -421,7 +452,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_AQUA,
     A1_log_rho_AQUA,
     A1_log_T_AQUA,
+    A2_log_P_AQUA,
     A2_log_u_AQUA,
+    A2_log_s_AQUA,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -430,6 +463,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 
@@ -442,7 +477,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_CMS19_H,
     A1_log_rho_CMS19_H,
     A1_log_T_CMS19_H,
+    A2_log_P_CMS19_H,
     A2_log_u_CMS19_H,
+    A2_log_s_CMS19_H,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -451,6 +488,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 (
@@ -461,7 +500,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_CMS19_He,
     A1_log_rho_CMS19_He,
     A1_log_T_CMS19_He,
+    A2_log_P_CMS19_He,
     A2_log_u_CMS19_He,
+    A2_log_s_CMS19_He,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -470,6 +511,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 (
@@ -480,7 +523,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_CMS19_HHe,
     A1_log_rho_CMS19_HHe,
     A1_log_T_CMS19_HHe,
+    A2_log_P_CMS19_HHe,
     A2_log_u_CMS19_HHe,
+    A2_log_s_CMS19_HHe,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -489,6 +534,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 
@@ -677,8 +724,9 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
     Z_3 = A2_Z[idx_rho + 1, idx_T]
     Z_4 = A2_Z[idx_rho + 1, idx_T + 1]
 
-    # If more than two table values are non-positive then return zero
+    # Check for non-positive values
     if Z_choice in ["u", "s"]:
+        # If more than two table values are non-positive then return zero
         num_non_pos = np.sum(np.array([Z_1, Z_2, Z_3, Z_4]) < 0)
         if num_non_pos > 2:
             return 0.0
@@ -708,6 +756,275 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
     # Z(rho, T)
     Z = (1 - intp_rho) * ((1 - intp_T) * Z_1 + intp_T * Z_2) + intp_rho * (
         (1 - intp_T) * Z_3 + intp_T * Z_4
+    )
+
+    # Convert back from log
+    return np.exp(Z)
+
+
+@njit
+def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
+    """Compute an equation of state parameter from the density and another 
+    parameter.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+                    
+    Y : float
+        The chosen input parameter (SI).
+
+    mat_id : int
+        Material id.
+    
+    Z_choice, Y_choice : str
+        The parameter to calculate, and the other input parameter, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+
+    Returns
+    -------
+    Z : float
+        The chosen parameter (SI).
+    """
+    assert Z_choice != Y_choice
+    
+    # Unpack the arrays of Z and log(Y)
+    if mat_id == gv.id_SESAME_iron:
+        A1_log_rho = A1_log_rho_SESAME_iron
+        if Z_choice == "P":
+            A2_Z = A2_P_SESAME_iron
+        elif Z_choice == "u":
+            A2_Z = A2_u_SESAME_iron
+        elif Z_choice == "s":
+            A2_Z = A2_s_SESAME_iron
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_SESAME_iron
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_SESAME_iron
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_SESAME_iron
+    elif mat_id == gv.id_SESAME_basalt:
+        A1_log_rho = A1_log_rho_SESAME_basalt
+        if Z_choice == "P":
+            A2_Z = A2_P_SESAME_basalt
+        elif Z_choice == "u":
+            A2_Z = A2_u_SESAME_basalt
+        elif Z_choice == "s":
+            A2_Z = A2_s_SESAME_basalt
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_SESAME_basalt
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_SESAME_basalt
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_SESAME_basalt
+    elif mat_id == gv.id_SESAME_water:
+        A1_log_rho = A1_log_rho_SESAME_water
+        if Z_choice == "P":
+            A2_Z = A2_P_SESAME_water
+        elif Z_choice == "u":
+            A2_Z = A2_u_SESAME_water
+        elif Z_choice == "s":
+            A2_Z = A2_s_SESAME_water
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_SESAME_water
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_SESAME_water
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_SESAME_water
+    elif mat_id == gv.id_SS08_water:
+        A1_log_rho = A1_log_rho_SS08_water
+        if Z_choice == "P":
+            A2_Z = A2_P_SS08_water
+        elif Z_choice == "u":
+            A2_Z = A2_u_SS08_water
+        elif Z_choice == "s":
+            A2_Z = A2_s_SS08_water
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_SS08_water
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_SS08_water
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_SS08_water
+    elif mat_id == gv.id_ANEOS_forsterite:
+        A1_log_rho = A1_log_rho_ANEOS_forsterite
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_forsterite
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_forsterite
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_forsterite
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_ANEOS_forsterite
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_ANEOS_forsterite
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_ANEOS_forsterite
+    elif mat_id == gv.id_ANEOS_iron:
+        A1_log_rho = A1_log_rho_ANEOS_iron
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_iron
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_iron
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_iron
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_ANEOS_iron
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_ANEOS_iron
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_ANEOS_iron
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A1_log_rho = A1_log_rho_ANEOS_Fe85Si15
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_Fe85Si15
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_Fe85Si15
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_Fe85Si15
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_ANEOS_Fe85Si15
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_ANEOS_Fe85Si15
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_ANEOS_Fe85Si15
+    elif mat_id == gv.id_AQUA:
+        A1_log_rho = A1_log_rho_AQUA
+        if Z_choice == "P":
+            A2_Z = A2_P_AQUA
+        elif Z_choice == "u":
+            A2_Z = A2_u_AQUA
+        elif Z_choice == "s":
+            A2_Z = A2_s_AQUA
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_AQUA
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_AQUA
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_AQUA
+    elif mat_id == gv.id_CMS19_H:
+        A1_log_rho = A1_log_rho_CMS19_H
+        if Z_choice == "P":
+            A2_Z = A2_P_CMS19_H
+        elif Z_choice == "u":
+            A2_Z = A2_u_CMS19_H
+        elif Z_choice == "s":
+            A2_Z = A2_s_CMS19_H
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_CMS19_H
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_CMS19_H
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_CMS19_H
+    elif mat_id == gv.id_CMS19_He:
+        A1_log_rho = A1_log_rho_CMS19_He
+        if Z_choice == "P":
+            A2_Z = A2_P_CMS19_He
+        elif Z_choice == "u":
+            A2_Z = A2_u_CMS19_He
+        elif Z_choice == "s":
+            A2_Z = A2_s_CMS19_He
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_CMS19_He
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_CMS19_He
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_CMS19_He
+    elif mat_id == gv.id_CMS19_HHe:
+        A1_log_rho = A1_log_rho_CMS19_HHe
+        if Z_choice == "P":
+            A2_Z = A2_P_CMS19_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_CMS19_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_CMS19_HHe
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_CMS19_HHe
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_CMS19_HHe
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_CMS19_HHe
+    else:
+        raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A1_log_rho) == 1:
+        raise ValueError(
+            "Please load the corresponding EoS table. See woma.load_eos_tables()."
+        )
+
+    # Ignore the first elements of rho = 0, T = 0
+    A2_Z = A2_Z[1:, 1:]
+    A2_log_Y = A2_log_Y[1:, 1:]
+
+    # Convert to log
+    log_rho = np.log(rho)
+    log_Y = np.log(Y)
+
+    # 2D interpolation (bilinear with log(rho), log(Y)) to find Z(rho, Y).
+    # If rho and/or Y are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    # Density
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho = int(idx_rho_intp_rho[0])
+    intp_rho = idx_rho_intp_rho[1]
+
+    # Y (in this and the next density slice of the 2D Y array)
+    idx_Y_1_intp_Y_1 = find_index_and_interp(log_Y, A2_log_Y[idx_rho])
+    idx_Y_1 = int(idx_Y_1_intp_Y_1[0])
+    intp_Y_1 = idx_Y_1_intp_Y_1[1]
+    idx_Y_2_intp_Y_2 = find_index_and_interp(log_Y, A2_log_Y[idx_rho + 1])
+    idx_Y_2 = int(idx_Y_2_intp_Y_2[0])
+    intp_Y_2 = idx_Y_2_intp_Y_2[1]
+
+    # Table values
+    Z_1 = A2_Z[idx_rho, idx_Y_1]
+    Z_2 = A2_Z[idx_rho, idx_Y_1 + 1]
+    Z_3 = A2_Z[idx_rho + 1, idx_Y_2]
+    Z_4 = A2_Z[idx_rho + 1, idx_Y_2 + 1]
+
+    # If below the minimum Y at this rho then just use the lowest table values
+    if Y_choice in ["u", "s"]:
+        if idx_rho >= 0 and (intp_Y_1 < 0 or intp_Y_2 < 0 or Z_1 > Z_2 or Z_3 > Z_4):
+            intp_Y_1 = 0
+            intp_Y_2 = 0
+
+    # Check for non-positive values
+    if Z_choice in ["u", "s"]:
+        # If more than two table values are non-positive then return zero
+        num_non_pos = np.sum(np.array([Z_1, Z_2, Z_3, Z_4]) < 0)
+        if num_non_pos > 2:
+            return 0.0
+
+        # If just one or two are non-positive then replace them with a tiny value
+        # Unless already trying to extrapolate in which case return zero
+        if num_non_pos > 0:
+            if intp_rho < 0 or intp_Y_1 < 0 or intp_Y_2 < 0:
+                return 0.0
+            else:
+                # Z_tiny  = np.amin(A2_Z[A2_Z > 0]) * 1e-3
+                Z_tiny = np.amin(np.abs(A2_Z)) * 1e-3
+                if Z_1 <= 0:
+                    Z_1 = Z_tiny
+                if Z_2 <= 0:
+                    Z_2 = Z_tiny
+                if Z_3 <= 0:
+                    Z_3 = Z_tiny
+                if Z_4 <= 0:
+                    Z_4 = Z_tiny
+
+    # Interpolate with the log values
+    Z_1 = np.log(Z_1)
+    Z_2 = np.log(Z_2)
+    Z_3 = np.log(Z_3)
+    Z_4 = np.log(Z_4)
+
+    # Z(rho, Y)
+    Z = (1 - intp_rho) * ((1 - intp_Y_1) * Z_1 + intp_Y_1 * Z_2) + intp_rho * (
+        (1 - intp_Y_2) * Z_3 + intp_Y_2 * Z_4
     )
 
     # Convert back from log
@@ -880,6 +1197,141 @@ def P_u_rho(u, rho, mat_id):
     # P(rho, u)
     P = (1 - intp_rho) * ((1 - intp_u_1) * P_1 + intp_u_1 * P_2) + intp_rho * (
         (1 - intp_u_2) * P_3 + intp_u_2 * P_4
+    )
+
+    # Convert back from log
+    return np.exp(P)
+
+
+@njit
+def P_T_rho(T, rho, mat_id):
+    """Compute the internal energy from the density and temperature.
+
+    Parameters
+    ----------
+    T : float
+        Temperature (K).
+
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    P : float
+        Pressure (Pa).
+    """
+    # Unpack the parameters
+    if mat_id == gv.id_SESAME_iron:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_SESAME_iron,
+            A1_log_rho_SESAME_iron,
+            A1_log_T_SESAME_iron,
+        )
+    elif mat_id == gv.id_SESAME_basalt:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_SESAME_basalt,
+            A1_log_rho_SESAME_basalt,
+            A1_log_T_SESAME_basalt,
+        )
+    elif mat_id == gv.id_SESAME_water:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_SESAME_water,
+            A1_log_rho_SESAME_water,
+            A1_log_T_SESAME_water,
+        )
+    elif mat_id == gv.id_SS08_water:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_SS08_water,
+            A1_log_rho_SS08_water,
+            A1_log_T_SS08_water,
+        )
+    elif mat_id == gv.id_ANEOS_forsterite:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_ANEOS_forsterite,
+            A1_log_rho_ANEOS_forsterite,
+            A1_log_T_ANEOS_forsterite,
+        )
+    elif mat_id == gv.id_ANEOS_iron:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_ANEOS_iron,
+            A1_log_rho_ANEOS_iron,
+            A1_log_T_ANEOS_iron,
+        )
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_ANEOS_Fe85Si15,
+            A1_log_rho_ANEOS_Fe85Si15,
+            A1_log_T_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_AQUA:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_AQUA,
+            A1_log_rho_AQUA,
+            A1_log_T_AQUA,
+        )
+    elif mat_id == gv.id_CMS19_H:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_CMS19_H,
+            A1_log_rho_CMS19_H,
+            A1_log_T_CMS19_H,
+        )
+    elif mat_id == gv.id_CMS19_He:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_CMS19_He,
+            A1_log_rho_CMS19_He,
+            A1_log_T_CMS19_He,
+        )
+    elif mat_id == gv.id_CMS19_HHe:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_CMS19_HHe,
+            A1_log_rho_CMS19_HHe,
+            A1_log_T_CMS19_HHe,
+        )
+    else:
+        raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A1_log_rho) == 1:
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
+
+    # Convert to log
+    log_rho = np.log(rho)
+    log_T = np.log(T * 1)  # why is numba so weird?
+
+    # 2D interpolation (bilinear with log(rho), log(T)) to find u(rho, T).
+    # If rho and/or T are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    # Density
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho = int(idx_rho_intp_rho[0])
+    intp_rho = idx_rho_intp_rho[1]
+
+    # Temperature
+    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+    idx_T = int(idx_T_intp_T[0])
+    intp_T = idx_T_intp_T[1]
+
+    P_1 = A2_P[idx_rho, idx_T]
+    P_2 = A2_P[idx_rho, idx_T + 1]
+    P_3 = A2_P[idx_rho + 1, idx_T]
+    P_4 = A2_P[idx_rho + 1, idx_T + 1]
+
+    # Interpolate with the log values
+    P_1 = np.log(P_1)
+    P_2 = np.log(P_2)
+    P_3 = np.log(P_3)
+    P_4 = np.log(P_4)
+
+    # P(rho, T)
+    P = (1 - intp_rho) * ((1 - intp_T) * P_1 + intp_T * P_2) + intp_rho * (
+        (1 - intp_T) * P_3 + intp_T * P_4
     )
 
     # Convert back from log
@@ -1303,141 +1755,6 @@ def u_rho_T(rho, T, mat_id):
 
     # Convert back from log
     return np.exp(u)
-
-
-@njit
-def P_T_rho(T, rho, mat_id):
-    """Compute the internal energy from the density and temperature.
-
-    Parameters
-    ----------
-    T : float
-        Temperature (K).
-
-    rho : float
-        Density (kg m^-3).
-
-    mat_id : int
-        Material id.
-
-    Returns
-    -------
-    P : float
-        Pressure (Pa).
-    """
-    # Unpack the parameters
-    if mat_id == gv.id_SESAME_iron:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_SESAME_iron,
-            A1_log_rho_SESAME_iron,
-            A1_log_T_SESAME_iron,
-        )
-    elif mat_id == gv.id_SESAME_basalt:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_SESAME_basalt,
-            A1_log_rho_SESAME_basalt,
-            A1_log_T_SESAME_basalt,
-        )
-    elif mat_id == gv.id_SESAME_water:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_SESAME_water,
-            A1_log_rho_SESAME_water,
-            A1_log_T_SESAME_water,
-        )
-    elif mat_id == gv.id_SS08_water:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_SS08_water,
-            A1_log_rho_SS08_water,
-            A1_log_T_SS08_water,
-        )
-    elif mat_id == gv.id_ANEOS_forsterite:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_ANEOS_forsterite,
-            A1_log_rho_ANEOS_forsterite,
-            A1_log_T_ANEOS_forsterite,
-        )
-    elif mat_id == gv.id_ANEOS_iron:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_ANEOS_iron,
-            A1_log_rho_ANEOS_iron,
-            A1_log_T_ANEOS_iron,
-        )
-    elif mat_id == gv.id_ANEOS_Fe85Si15:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_ANEOS_Fe85Si15,
-            A1_log_rho_ANEOS_Fe85Si15,
-            A1_log_T_ANEOS_Fe85Si15,
-        )
-    elif mat_id == gv.id_AQUA:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_AQUA,
-            A1_log_rho_AQUA,
-            A1_log_T_AQUA,
-        )
-    elif mat_id == gv.id_CMS19_H:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_CMS19_H,
-            A1_log_rho_CMS19_H,
-            A1_log_T_CMS19_H,
-        )
-    elif mat_id == gv.id_CMS19_He:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_CMS19_He,
-            A1_log_rho_CMS19_He,
-            A1_log_T_CMS19_He,
-        )
-    elif mat_id == gv.id_CMS19_HHe:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A1_log_T_CMS19_HHe,
-        )
-    else:
-        raise ValueError("Invalid material ID")
-
-    # Check necessary data loaded
-    if len(A1_log_rho) == 1:
-        raise ValueError(
-            "Please load the corresponding SESAME table.\n"
-            + "Use the woma.load_eos_tables function.\n"
-        )
-
-    # Convert to log
-    log_rho = np.log(rho)
-    log_T = np.log(T * 1)  # why is numba so weird?
-
-    # 2D interpolation (bilinear with log(rho), log(T)) to find u(rho, T).
-    # If rho and/or T are below or above the table, then use the interpolation
-    # formula to extrapolate using the edge and edge-but-one values.
-
-    # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
-    idx_rho = int(idx_rho_intp_rho[0])
-    intp_rho = idx_rho_intp_rho[1]
-
-    # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
-    idx_T = int(idx_T_intp_T[0])
-    intp_T = idx_T_intp_T[1]
-
-    P_1 = A2_P[idx_rho, idx_T]
-    P_2 = A2_P[idx_rho, idx_T + 1]
-    P_3 = A2_P[idx_rho + 1, idx_T]
-    P_4 = A2_P[idx_rho + 1, idx_T + 1]
-
-    # Interpolate with the log values
-    P_1 = np.log(P_1)
-    P_2 = np.log(P_2)
-    P_3 = np.log(P_3)
-    P_4 = np.log(P_4)
-
-    # P(rho, T)
-    P = (1 - intp_rho) * ((1 - intp_T) * P_1 + intp_T * P_2) + intp_rho * (
-        (1 - intp_T) * P_3 + intp_T * P_4
-    )
-
-    # Convert back from log
-    return np.exp(P)
 
 
 # ========
