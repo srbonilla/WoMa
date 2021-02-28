@@ -95,7 +95,7 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
 @njit
 def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
     """Compute an equation of state parameter from the density and another 
-    parameter.
+    parameter, for any EoS..
 
     Parameters
     ----------
@@ -137,7 +137,7 @@ def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
     A1_rho : [float]
         Densities (kg m^-3).
                     
-    Y : float
+    A1_Y : float
         The chosen input parameter values (SI).
 
     A1_mat_id : [int]
@@ -165,6 +165,83 @@ def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
 
     for i, rho in enumerate(A1_rho):
         A1_Z[i] = Z_rho_Y(A1_rho[i], A1_Y[i], A1_mat_id[i], Z_choice, Y_choice)
+
+    return A1_Z
+
+
+@njit
+def Z_X_T(X, T, mat_id, Z_choice, X_choice):
+    """Compute an equation of state parameter from another parameter and the 
+    temperature, for any EoS.
+
+    Parameters
+    ----------                   
+    X : float
+        The chosen input parameter (SI).
+    
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+    
+    Z_choice, X_choice : str
+        The parameter to calculate, and the other input parameter, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+            phase   Phase KPA flag (Z_choice only).
+
+    Returns
+    -------
+    Z : float
+        The chosen parameter (SI).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        return sesame.Z_X_T(X, T, mat_id, Z_choice, X_choice)
+    else:
+        raise ValueError("Not yet implemented for this EoS")
+
+
+@njit
+def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
+    """Compute equation of state parameters from arrays of density and 
+    another parameter, for any EoS.
+
+    Parameters
+    ----------
+    A1_X : [float]
+        The chosen input parameter values (SI).
+
+    A1_T : [float]
+        Temperatures (K).
+
+    A1_mat_id : [int]
+        Material ids.
+        
+    Z_choice, X_choice : str
+        The parameter to calculate, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+            phase   Phase KPA flag (Z_choice only).
+
+    Returns
+    -------
+    A1_Z : float
+        The chosen parameter values (SI).
+    """
+    assert A1_X.ndim == 1
+    assert A1_T.ndim == 1
+    assert A1_mat_id.ndim == 1
+    assert A1_X.shape[0] == A1_T.shape[0]
+    assert A1_X.shape[0] == A1_mat_id.shape[0]
+
+    A1_Z = np.zeros_like(A1_X)
+
+    for i, X in enumerate(A1_X):
+        A1_Z[i] = Z_X_T(A1_X[i], A1_T[i], A1_mat_id[i], Z_choice, X_choice)
 
     return A1_Z
 

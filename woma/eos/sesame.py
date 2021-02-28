@@ -1063,6 +1063,288 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
     return np.exp(Z)
 
 
+@njit
+def Z_X_T(X, T, mat_id, Z_choice, X_choice):
+    """Compute an equation of state parameter from another parameter and the 
+    temperature.
+    
+    Warning: Not all of the 2D X arrays are monotonic with density along a 
+    temperature slice, which will break the attempted interpolation.
+
+    Parameters
+    ----------      
+    X : float
+        The chosen input parameter (SI).
+
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+
+    Z_choice, X_choice : str
+        The parameter to calculate, and the other input parameter, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+            phase   Phase KPA flag (Z_choice only).
+
+    Returns
+    -------
+    Z : float
+        The chosen parameter (SI).
+    """
+    assert Z_choice != X_choice
+
+    # Unpack the arrays of Z and log(X)
+    if mat_id == gv.id_SESAME_iron:
+        A1_log_T = A1_log_T_SESAME_iron
+        if Z_choice == "P":
+            A2_Z = A2_P_SESAME_iron
+        elif Z_choice == "u":
+            A2_Z = A2_u_SESAME_iron
+        elif Z_choice == "s":
+            A2_Z = A2_s_SESAME_iron
+        if X_choice == "P":
+            A2_log_X = A2_log_P_SESAME_iron
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_SESAME_iron
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_SESAME_iron
+    elif mat_id == gv.id_SESAME_basalt:
+        A1_log_T = A1_log_T_SESAME_basalt
+        if Z_choice == "P":
+            A2_Z = A2_P_SESAME_basalt
+        elif Z_choice == "u":
+            A2_Z = A2_u_SESAME_basalt
+        elif Z_choice == "s":
+            A2_Z = A2_s_SESAME_basalt
+        if X_choice == "P":
+            A2_log_X = A2_log_P_SESAME_basalt
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_SESAME_basalt
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_SESAME_basalt
+    elif mat_id == gv.id_SESAME_water:
+        A1_log_T = A1_log_T_SESAME_water
+        if Z_choice == "P":
+            A2_Z = A2_P_SESAME_water
+        elif Z_choice == "u":
+            A2_Z = A2_u_SESAME_water
+        elif Z_choice == "s":
+            A2_Z = A2_s_SESAME_water
+        if X_choice == "P":
+            A2_log_X = A2_log_P_SESAME_water
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_SESAME_water
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_SESAME_water
+    elif mat_id == gv.id_SS08_water:
+        A1_log_T = A1_log_T_SS08_water
+        if Z_choice == "P":
+            A2_Z = A2_P_SS08_water
+        elif Z_choice == "u":
+            A2_Z = A2_u_SS08_water
+        elif Z_choice == "s":
+            A2_Z = A2_s_SS08_water
+        if X_choice == "P":
+            A2_log_X = A2_log_P_SS08_water
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_SS08_water
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_SS08_water
+    elif mat_id == gv.id_ANEOS_forsterite:
+        A1_log_T = A1_log_T_ANEOS_forsterite
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_forsterite
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_forsterite
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_forsterite
+        elif Z_choice == "phase":
+            A2_Z = A2_phase_ANEOS_forsterite
+        if X_choice == "P":
+            A2_log_X = A2_log_P_ANEOS_forsterite
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_ANEOS_forsterite
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_ANEOS_forsterite
+    elif mat_id == gv.id_ANEOS_iron:
+        A1_log_T = A1_log_T_ANEOS_iron
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_iron
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_iron
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_iron
+        if X_choice == "P":
+            A2_log_X = A2_log_P_ANEOS_iron
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_ANEOS_iron
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_ANEOS_iron
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A1_log_T = A1_log_T_ANEOS_Fe85Si15
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_Fe85Si15
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_Fe85Si15
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_Fe85Si15
+        if X_choice == "P":
+            A2_log_X = A2_log_P_ANEOS_Fe85Si15
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_ANEOS_Fe85Si15
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_ANEOS_Fe85Si15
+    elif mat_id == gv.id_AQUA:
+        A1_log_T = A1_log_T_AQUA
+        if Z_choice == "P":
+            A2_Z = A2_P_AQUA
+        elif Z_choice == "u":
+            A2_Z = A2_u_AQUA
+        elif Z_choice == "s":
+            A2_Z = A2_s_AQUA
+        if X_choice == "P":
+            A2_log_X = A2_log_P_AQUA
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_AQUA
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_AQUA
+    elif mat_id == gv.id_CMS19_H:
+        A1_log_T = A1_log_T_CMS19_H
+        if Z_choice == "P":
+            A2_Z = A2_P_CMS19_H
+        elif Z_choice == "u":
+            A2_Z = A2_u_CMS19_H
+        elif Z_choice == "s":
+            A2_Z = A2_s_CMS19_H
+        if X_choice == "P":
+            A2_log_X = A2_log_P_CMS19_H
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_CMS19_H
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_CMS19_H
+    elif mat_id == gv.id_CMS19_He:
+        A1_log_T = A1_log_T_CMS19_He
+        if Z_choice == "P":
+            A2_Z = A2_P_CMS19_He
+        elif Z_choice == "u":
+            A2_Z = A2_u_CMS19_He
+        elif Z_choice == "s":
+            A2_Z = A2_s_CMS19_He
+        if X_choice == "P":
+            A2_log_X = A2_log_P_CMS19_He
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_CMS19_He
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_CMS19_He
+    elif mat_id == gv.id_CMS19_HHe:
+        A1_log_T = A1_log_T_CMS19_HHe
+        if Z_choice == "P":
+            A2_Z = A2_P_CMS19_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_CMS19_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_CMS19_HHe
+        if X_choice == "P":
+            A2_log_X = A2_log_P_CMS19_HHe
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_CMS19_HHe
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_CMS19_HHe
+    else:
+        raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A1_log_T) == 1:
+        raise ValueError(
+            "Please load the corresponding EoS table. See woma.load_eos_tables()."
+        )
+
+    # Ignore the first elements of rho = 0, T = 0
+    A2_Z = A2_Z[1:, 1:]
+    A2_log_X = A2_log_X[1:, 1:]
+
+    # Convert to log
+    log_T = np.log(T)
+    log_X = np.log(X)
+
+    # 2D interpolation (bilinear with log(X), log(T)) to find Z(X, T).
+    # If T and/or X are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    # Temperature
+    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T[1:])
+    idx_T = int(idx_T_intp_T[0])
+    intp_T = idx_T_intp_T[1]
+
+    # X (in this and the next temperature slice of the 2D X array)
+    idx_X_1_intp_X_1 = find_index_and_interp(log_X, A2_log_X[:, idx_T])
+    idx_X_1 = int(idx_X_1_intp_X_1[0])
+    intp_X_1 = idx_X_1_intp_X_1[1]
+    idx_X_2_intp_X_2 = find_index_and_interp(log_X, A2_log_X[:, idx_T + 1])
+    idx_X_2 = int(idx_X_2_intp_X_2[0])
+    intp_X_2 = idx_X_2_intp_X_2[1]
+
+    # Table values
+    Z_1 = A2_Z[idx_X_1, idx_T]
+    Z_2 = A2_Z[idx_X_1 + 1, idx_T]
+    Z_3 = A2_Z[idx_X_2, idx_T + 1]
+    Z_4 = A2_Z[idx_X_2 + 1, idx_T + 1]
+    
+    # Choose the nearest table value, no interpolation
+    if Z_choice == "phase":
+        if intp_T < 0.5:
+            if intp_X_1 < 0.5:
+                return Z_1
+            else:
+                return Z_2
+        else:
+            if intp_X_2 < 0.5:
+                return Z_3
+            else:
+                return Z_4
+
+    # Check for non-positive values
+    if Z_choice in ["u", "s"]:
+        # If more than two table values are non-positive then return zero
+        num_non_pos = np.sum(np.array([Z_1, Z_2, Z_3, Z_4]) < 0)
+        if num_non_pos > 2:
+            return 0.0
+
+        # If just one or two are non-positive then replace them with a tiny value
+        # Unless already trying to extrapolate in which case return zero
+        if num_non_pos > 0:
+            if intp_T < 0 or intp_X_1 < 0 or intp_X_2 < 0:
+                return 0.0
+            else:
+                # Z_tiny  = np.amin(A2_Z[A2_Z > 0]) * 1e-3
+                Z_tiny = np.amin(np.abs(A2_Z)) * 1e-3
+                if Z_1 <= 0:
+                    Z_1 = Z_tiny
+                if Z_2 <= 0:
+                    Z_2 = Z_tiny
+                if Z_3 <= 0:
+                    Z_3 = Z_tiny
+                if Z_4 <= 0:
+                    Z_4 = Z_tiny
+
+    # Interpolate with the log values
+    Z_1 = np.log(Z_1)
+    Z_2 = np.log(Z_2)
+    Z_3 = np.log(Z_3)
+    Z_4 = np.log(Z_4)
+
+    # Z(X, T)
+    Z = (1 - intp_T) * ((1 - intp_X_1) * Z_1 + intp_X_1 * Z_2) + intp_T * (
+        (1 - intp_X_2) * Z_3 + intp_X_2 * Z_4
+    )
+
+    # Convert back from log
+    return np.exp(Z)
+
+
 # ========
 # Pressure
 # ========
