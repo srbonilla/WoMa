@@ -35,6 +35,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             P       Pressure.
             u       Specific internal energy.
             s       Specific entropy.
+            phase   Phase KPA flag.
 
     Returns
     -------
@@ -69,6 +70,7 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
             P       Pressure.
             u       Specific internal energy.
             s       Specific entropy.
+            phase   Phase KPA flag.
 
     Returns
     -------
@@ -111,6 +113,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             P       Pressure.
             u       Specific internal energy.
             s       Specific entropy.
+            phase   Phase KPA flag (Z_choice only).
 
     Returns
     -------
@@ -145,6 +148,7 @@ def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
             P       Pressure.
             u       Specific internal energy.
             s       Specific entropy.
+            phase   Phase KPA flag (Z_choice only).
 
     Returns
     -------
@@ -790,204 +794,6 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
         A1_rho[i] = rho_P_T(A1_P[i], A1_T[i], A1_mat_id[i])
 
     return A1_rho
-
-
-# ========
-# Phase
-# ========
-@njit
-def phase_u_rho(u, rho, mat_id):
-    """Compute the phase ID flag from the specific internal energy and
-    density, for any EoS.
-
-    Parameters
-    ----------
-    u : float
-        Specific internal energy (J kg^-1).
-
-    rho : float
-        Density (kg m^-3).
-
-    mat_id : int
-        Material id.
-
-    Returns
-    -------
-    phase : int
-        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc.
-    """
-    mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_ANEOS]:
-        phase = sesame.phase_u_rho(u, rho, mat_id)
-    else:
-        raise ValueError("Phase IDs not implemented for this material type.")
-    return phase
-
-
-@njit
-def A1_phase_u_rho(A1_u, A1_rho, A1_mat_id):
-    """Compute the phase ID flags from arrays of specific internal energy and
-    density, for any EoS.
-
-    Parameters
-    ----------
-    A1_u : [float]
-        Specific internal energy (J kg^-1).
-
-    A1_rho : [float]
-        Density (kg m^-3).
-
-    A1_mat_id : [int]
-        Material id.
-
-    Returns
-    -------
-    A1_phase : [int]
-        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc.
-    """
-
-    assert A1_u.ndim == 1
-    assert A1_rho.ndim == 1
-    assert A1_mat_id.ndim == 1
-    assert A1_u.shape[0] == A1_rho.shape[0]
-    assert A1_u.shape[0] == A1_mat_id.shape[0]
-
-    A1_phase = np.zeros_like(A1_u)
-
-    for i, u in enumerate(A1_u):
-        A1_phase[i] = phase_u_rho(A1_u[i], A1_rho[i], A1_mat_id[i])
-
-    return A1_phase
-
-
-@njit
-def phase_rho_T(u, rho, mat_id):
-    """Compute the phase ID flag from the specific internal energy and
-    density, for any EoS.
-
-    Parameters
-    ----------
-    u : float
-        Specific internal energy (J kg^-1).
-
-    rho : float
-        Density (kg m^-3).
-
-    mat_id : int
-        Material id.
-
-    Returns
-    -------
-    phase : int
-        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc.
-    """
-    mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_ANEOS]:
-        phase = sesame.phase_rho_T(u, rho, mat_id)
-    else:
-        raise ValueError("Phase IDs not implemented for this material type.")
-    return phase
-
-
-@njit
-def A1_phase_rho_T(A1_u, A1_rho, A1_mat_id):
-    """Compute the phase ID flags from arrays of specific internal energy and
-    density, for any EoS.
-
-    Parameters
-    ----------
-    A1_u : [float]
-        Specific internal energy (J kg^-1).
-
-    A1_rho : [float]
-        Density (kg m^-3).
-
-    A1_mat_id : [int]
-        Material id.
-
-    Returns
-    -------
-    A1_phase : [int]
-        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc.
-    """
-
-    assert A1_u.ndim == 1
-    assert A1_rho.ndim == 1
-    assert A1_mat_id.ndim == 1
-    assert A1_u.shape[0] == A1_rho.shape[0]
-    assert A1_u.shape[0] == A1_mat_id.shape[0]
-
-    A1_phase = np.zeros_like(A1_u)
-
-    for i, u in enumerate(A1_u):
-        A1_phase[i] = phase_rho_T(A1_u[i], A1_rho[i], A1_mat_id[i])
-
-    return A1_phase
-
-
-@njit
-def phase_rho_s(u, rho, mat_id):
-    """Compute the phase ID flag from the specific internal energy and
-    density, for any EoS.
-
-    Parameters
-    ----------
-    u : float
-        Specific internal energy (J kg^-1).
-
-    rho : float
-        Density (kg m^-3).
-
-    mat_id : int
-        Material id.
-
-    Returns
-    -------
-    phase : int
-        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc.
-    """
-    mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_ANEOS]:
-        phase = sesame.phase_rho_s(u, rho, mat_id)
-    else:
-        raise ValueError("Phase IDs not implemented for this material type.")
-    return phase
-
-
-@njit
-def A1_phase_rho_s(A1_u, A1_rho, A1_mat_id):
-    """Compute the phase ID flags from arrays of specific internal energy and
-    density, for any EoS.
-
-    Parameters
-    ----------
-    A1_u : [float]
-        Specific internal energy (J kg^-1).
-
-    A1_rho : [float]
-        Density (kg m^-3).
-
-    A1_mat_id : [int]
-        Material id.
-
-    Returns
-    -------
-    A1_phase : [int]
-        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc.
-    """
-
-    assert A1_u.ndim == 1
-    assert A1_rho.ndim == 1
-    assert A1_mat_id.ndim == 1
-    assert A1_u.shape[0] == A1_rho.shape[0]
-    assert A1_u.shape[0] == A1_mat_id.shape[0]
-
-    A1_phase = np.zeros_like(A1_u)
-
-    for i, u in enumerate(A1_u):
-        A1_phase[i] = phase_rho_s(A1_u[i], A1_rho[i], A1_mat_id[i])
-
-    return A1_phase
 
 
 # ========
