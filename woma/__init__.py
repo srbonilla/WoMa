@@ -35,4 +35,6 @@ from woma.eos.eos import (
     A1_rho_P_T,
     s_u_rho,
     A1_s_u_rho,
+    phase_u_rho,
+    A1_phase_u_rho,
 )
