@@ -12,6 +12,160 @@ from woma.eos.T_rho import T_rho
 
 
 # ========
+# Generic
+# ========
+@njit
+def Z_rho_T(rho, T, mat_id, Z_choice):
+    """Compute an equation of state parameter from the density and temperature, 
+    for any EoS.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+                    
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+        
+    Z_choice : str
+        The parameter to calculate, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+
+    Returns
+    -------
+    Z : float
+        The chosen parameter (SI).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        return sesame.Z_rho_T(rho, T, mat_id, Z_choice)
+    else:
+        raise ValueError("Not yet implemented for this EoS")
+
+
+@njit
+def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
+    """Compute equation of state parameters from arrays of density and 
+    temperature, for any EoS.
+
+    Parameters
+    ----------
+    A1_rho : [float]
+        Densities (kg m^-3).
+                    
+    A1_T : float
+        Temperatures (K).
+
+    A1_mat_id : [int]
+        Material ids.
+        
+    Z_choice : str
+        The parameter to calculate, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+
+    Returns
+    -------
+    A1_Z : float
+        The chosen parameter values (SI).
+    """
+
+    assert A1_rho.ndim == 1
+    assert A1_T.ndim == 1
+    assert A1_mat_id.ndim == 1
+    assert A1_rho.shape[0] == A1_T.shape[0]
+    assert A1_rho.shape[0] == A1_mat_id.shape[0]
+
+    A1_Z = np.zeros_like(A1_rho)
+
+    for i, rho in enumerate(A1_rho):
+        A1_Z[i] = Z_rho_T(A1_rho[i], A1_T[i], A1_mat_id[i], Z_choice)
+
+    return A1_Z
+
+
+@njit
+def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
+    """Compute an equation of state parameter from the density and another 
+    parameter.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+                    
+    Y : float
+        The chosen input parameter (SI).
+
+    mat_id : int
+        Material id.
+    
+    Z_choice, Y_choice : str
+        The parameter to calculate, and the other input parameter, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+
+    Returns
+    -------
+    Z : float
+        The chosen parameter (SI).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        return sesame.Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice)
+    else:
+        raise ValueError("Not yet implemented for this EoS")
+
+
+@njit
+def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
+    """Compute equation of state parameters from arrays of density and 
+    another parameter, for any EoS.
+
+    Parameters
+    ----------
+    A1_rho : [float]
+        Densities (kg m^-3).
+                    
+    Y : float
+        The chosen input parameter values (SI).
+
+    A1_mat_id : [int]
+        Material ids.
+        
+    Z_choice, Y_choice : str
+        The parameter to calculate, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+
+    Returns
+    -------
+    A1_Z : float
+        The chosen parameter values (SI).
+    """
+    assert A1_rho.ndim == 1
+    assert A1_Y.ndim == 1
+    assert A1_mat_id.ndim == 1
+    assert A1_rho.shape[0] == A1_Y.shape[0]
+    assert A1_rho.shape[0] == A1_mat_id.shape[0]
+
+    A1_Z = np.zeros_like(A1_rho)
+
+    for i, rho in enumerate(A1_rho):
+        A1_Z[i] = Z_rho_Y(A1_rho[i], A1_Y[i], A1_mat_id[i], Z_choice, Y_choice)
+
+    return A1_Z
+
+
+# ========
 # Pressure
 # ========
 @njit
@@ -638,35 +792,6 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
     return A1_rho
 
 
-###WIP
-# @njit
-# def rho_P_s(P, s, mat_id):
-#     """Compute the density from the pressure and specific entropy, for any EoS.
-# 
-#     Parameters
-#     ----------
-#     P : float
-#         Pressure (Pa).
-# 
-#     s : float
-#         Specific entropy (J kg^-1 K^-1).
-# 
-#     mat_id : int
-#         Material id.
-# 
-#     Returns
-#     -------
-#     rho : float
-#         Density (kg m^-3).
-#     """
-#     mat_type = mat_id // gv.type_factor
-#     if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
-#         s = sesame.rho_P_s(P, s, mat_id)
-#     else:
-#         raise ValueError("Entropy not implemented for this material type.")
-#     return s
-
-
 # ========
 # Phase
 # ========
@@ -868,42 +993,6 @@ def A1_phase_rho_s(A1_u, A1_rho, A1_mat_id):
 # ========
 # Derived functions
 # ========
-###WIP
-# @njit
-# def A1_phase_P_s(A1_P, A1_s, A1_mat_id):
-#     """Compute the phase ID flags from arrays of pressure and specific entropy, 
-#     for any EoS.
-# 
-#     Parameters
-#     ----------
-#     A1_P : [float]
-#        Pressure (Pa).
-# 
-#     A1_s : [float]
-#        Specific entropy (J kg^-1 K^-1).
-# 
-#     A1_mat_id : [int]
-#         Material id.
-# 
-#     Returns
-#     -------
-#     A1_phase : [int]
-#         Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc.
-#     """
-# 
-#     assert A1_P.ndim == 1
-#     assert A1_s.ndim == 1
-#     assert A1_mat_id.ndim == 1
-#     assert A1_P.shape[0] == A1_s.shape[0]
-#     assert A1_P.shape[0] == A1_mat_id.shape[0]
-# 
-#     A1_phase = np.zeros_like(A1_P)
-# 
-#     for i, P in enumerate(A1_P):
-#         rho = rho_P_s(A1_P[i], A1_s[i], A1_mat_id[i])
-#         A1_phase[i] = phase_rho_s(rho, A1_s[i], A1_mat_id[i])
-# 
-#     return A1_phase
 
 
 # ========

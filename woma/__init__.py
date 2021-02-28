@@ -20,25 +20,4 @@ from woma.misc.utils import (
 from woma.spin_funcs.utils_spin import rho_at_r_z
 from woma.misc.io import save_particle_data
 from woma.eos import T_rho, tillotson, sesame, idg, hm80
-from woma.eos.eos import (
-    P_u_rho,
-    A1_P_u_rho,
-    P_T_rho,
-    A1_P_T_rho,
-    T_u_rho,
-    A1_T_u_rho,
-    u_rho_T,
-    A1_u_rho_T,
-    s_rho_T,
-    A1_s_rho_T,
-    s_u_rho,
-    A1_s_u_rho,
-    rho_P_T,
-    A1_rho_P_T,
-    phase_u_rho,
-    A1_phase_u_rho,
-    phase_rho_T,
-    A1_phase_rho_T,
-    phase_rho_s,
-    A1_phase_rho_s,
-)
+from woma.eos.eos import *
