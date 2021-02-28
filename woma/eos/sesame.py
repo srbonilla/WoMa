@@ -1611,3 +1611,167 @@ def phase_u_rho(u, rho, mat_id):
             return phase_3
         else:
             return phase_4
+
+
+@njit
+def phase_rho_T(rho, T, mat_id):
+    """Compute the phase ID flag from the density and temperature.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+
+    T : float
+        Temperature (K).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    phase : int
+        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc:
+                                    TABLE          ANEOS
+         KPAQQ=STATE INDICATOR      =1, 1p    =1, 1p    (eos without melt)
+                                    =2, 2p lv =2, 2p liquid/solid plus vapor
+                                              =4, 1p solid  (eos with melt)
+                                              =5, 2p melt   (eos with melt)
+                                              =6, 1p liquid (eos with melt)
+                                    =-1 bad value of temperature
+                                    =-2 bad value of density
+                                    =-3 bad value of material number
+    """
+    # Unpack the parameters
+    if mat_id == gv.id_ANEOS_forsterite:
+        A2_phase, A1_log_rho, A1_log_T = (
+            A2_phase_ANEOS_forsterite,
+            A1_log_rho_ANEOS_forsterite,
+            A1_log_T_ANEOS_forsterite,
+        )
+    else:
+        raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A1_log_rho) == 1:
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
+
+    # Ignore the first elements of rho = 0, T = 0
+    A2_phase = A2_phase[1:, 1:]
+
+    # Convert to log
+    log_rho = np.log(rho)
+    log_T = np.log(T * 1)  # why is numba so weird?
+
+    # 2D interpolation (bilinear with log(rho), log(T)) to find phase(rho, T).
+    # If rho and/or T are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    # Density
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho = int(idx_rho_intp_rho[0])
+    intp_rho = idx_rho_intp_rho[1]
+
+    # Temperature
+    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T[1:])
+    idx_T = int(idx_T_intp_T[0])
+    intp_T = idx_T_intp_T[1]
+
+    phase_1 = A2_phase[idx_rho, idx_T]
+    phase_2 = A2_phase[idx_rho, idx_T + 1]
+    phase_3 = A2_phase[idx_rho + 1, idx_T]
+    phase_4 = A2_phase[idx_rho + 1, idx_T + 1]
+
+    # Choose the closest phase, no interpolation
+    if intp_rho < 0.5:
+        if intp_T < 0.5:
+            return phase_1
+        else:
+            return phase_2
+    else:
+        if intp_T < 0.5:
+            return phase_3
+        else:
+            return phase_4
+
+
+@njit
+def phase_rho_s(rho, s, mat_id):
+    """Compute the phase ID flag from the density and specific entropy.
+
+    Parameters
+    ----------
+    rho : float
+        Density (kg m^-3).
+
+    s : float
+        Specific entropy (J kg^-1 K^-1).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    phase : int
+        Phase KPA flag, see https://github.com/ststewart/aneos-forsterite-2019 etc:
+                                    TABLE          ANEOS
+         KPAQQ=STATE INDICATOR      =1, 1p    =1, 1p    (eos without melt)
+                                    =2, 2p lv =2, 2p liquid/solid plus vapor
+                                              =4, 1p solid  (eos with melt)
+                                              =5, 2p melt   (eos with melt)
+                                              =6, 1p liquid (eos with melt)
+                                    =-1 bad value of temperature
+                                    =-2 bad value of density
+                                    =-3 bad value of material number
+    """
+    # Unpack the parameters
+    if mat_id == gv.id_ANEOS_forsterite:
+        A2_phase, A1_log_rho, A2_s = (
+            A2_phase_ANEOS_forsterite,
+            A1_log_rho_ANEOS_forsterite,
+            A2_s_ANEOS_forsterite,
+        )
+    else:
+        raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A1_log_rho) == 1:
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
+
+    # Convert to log
+    log_rho = np.log(rho)
+
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho = int(idx_rho_intp_rho[0])
+    intp_rho = idx_rho_intp_rho[1]
+
+    # s (in this and the next density slice of the 2D s array)
+    idx_s_1_intp_s_1 = find_index_and_interp(s, A2_s[idx_rho])
+    idx_s_1 = int(idx_s_1_intp_s_1[0])
+    intp_s_1 = idx_s_1_intp_s_1[1]
+    idx_s_2_intp_s_2 = find_index_and_interp(s, A2_s[idx_rho + 1])
+    idx_s_2 = int(idx_s_2_intp_s_2[0])
+    intp_s_2 = idx_s_2_intp_s_2[1]
+
+    phase_1 = A2_phase[idx_rho, idx_s_1]
+    phase_2 = A2_phase[idx_rho, idx_s_1 + 1]
+    phase_3 = A2_phase[idx_rho + 1, idx_s_2]
+    phase_4 = A2_phase[idx_rho + 1, idx_s_2 + 1]
+
+    # Choose the closest phase, no interpolation
+    if intp_rho < 0.5:
+        if intp_s_1 < 0.5:
+            return phase_1
+        else:
+            return phase_2
+    else:
+        if intp_s_2 < 0.5:
+            return phase_3
+        else:
+            return phase_4
