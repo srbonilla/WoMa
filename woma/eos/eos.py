@@ -16,20 +16,20 @@ from woma.eos.T_rho import T_rho
 # ========
 @njit
 def Z_rho_T(rho, T, mat_id, Z_choice):
-    """Compute an equation of state parameter from the density and temperature, 
+    """Compute an equation of state parameter from the density and temperature,
     for any EoS.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-                    
+
     T : float
         Temperature (K).
 
     mat_id : int
         Material id.
-        
+
     Z_choice : str
         The parameter to calculate, choose from:
             P       Pressure.
@@ -51,20 +51,20 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
 
 @njit
 def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
-    """Compute equation of state parameters from arrays of density and 
+    """Compute equation of state parameters from arrays of density and
     temperature, for any EoS.
 
     Parameters
     ----------
     A1_rho : [float]
         Densities (kg m^-3).
-                    
+
     A1_T : float
         Temperatures (K).
 
     A1_mat_id : [int]
         Material ids.
-        
+
     Z_choice : str
         The parameter to calculate, choose from:
             P       Pressure.
@@ -94,20 +94,20 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
 
 @njit
 def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
-    """Compute an equation of state parameter from the density and another 
+    """Compute an equation of state parameter from the density and another
     parameter, for any EoS..
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-                    
+
     Y : float
         The chosen input parameter (SI).
 
     mat_id : int
         Material id.
-    
+
     Z_choice, Y_choice : str
         The parameter to calculate, and the other input parameter, choose from:
             P       Pressure.
@@ -129,20 +129,20 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
 
 @njit
 def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
-    """Compute equation of state parameters from arrays of density and 
+    """Compute equation of state parameters from arrays of density and
     another parameter, for any EoS.
 
     Parameters
     ----------
     A1_rho : [float]
         Densities (kg m^-3).
-                    
+
     A1_Y : float
         The chosen input parameter values (SI).
 
     A1_mat_id : [int]
         Material ids.
-        
+
     Z_choice, Y_choice : str
         The parameter to calculate, choose from:
             P       Pressure.
@@ -171,20 +171,20 @@ def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
 
 @njit
 def Z_X_T(X, T, mat_id, Z_choice, X_choice):
-    """Compute an equation of state parameter from another parameter and the 
+    """Compute an equation of state parameter from another parameter and the
     temperature, for any EoS.
 
     Parameters
-    ----------                   
+    ----------
     X : float
         The chosen input parameter (SI).
-    
+
     T : float
         Temperature (K).
 
     mat_id : int
         Material id.
-    
+
     Z_choice, X_choice : str
         The parameter to calculate, and the other input parameter, choose from:
             P       Pressure.
@@ -206,7 +206,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
 
 @njit
 def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
-    """Compute equation of state parameters from arrays of density and 
+    """Compute equation of state parameters from arrays of density and
     another parameter, for any EoS.
 
     Parameters
@@ -219,7 +219,7 @@ def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
 
     A1_mat_id : [int]
         Material ids.
-        
+
     Z_choice, X_choice : str
         The parameter to calculate, choose from:
             P       Pressure.

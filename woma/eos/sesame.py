@@ -175,11 +175,11 @@ def load_table_SESAME(Fp_table):
     -------
     A1_rho, A1_T : [float]
         1D arrays of  of density (kg m^-3) and temperature (K).
-        
+
     A2_P, A2_u, A2_s : [[float]]
         2D table arrays of pressure (Pa), sp. int. energy (J kg^-1), and sp.
         entropy (J kg^-1 K^-1).
-        
+
     A1_log_*, A2_log_* : [float], [[float]]
         The natural log versions of the same arrays.
     """
@@ -211,14 +211,25 @@ def load_table_SESAME(Fp_table):
     # Prepare table
     prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0)
 
-    return A1_rho, A1_T, A2_P, A2_u, A2_s, np.log(A1_rho), np.log(A1_T), np.log(A2_P), np.log(A2_u), np.log(A2_s)
+    return (
+        A1_rho,
+        A1_T,
+        A2_P,
+        A2_u,
+        A2_s,
+        np.log(A1_rho),
+        np.log(A1_T),
+        np.log(A2_P),
+        np.log(A2_u),
+        np.log(A2_s),
+    )
 
 
 def load_phase_table_ANEOS_forsterite():
     """Load and return the 2D array of KPA flag phase IDs.
 
     See https://github.com/ststewart/aneos-forsterite-2019 etc.
-    
+
     ###WIP
     """
     import os, sys
@@ -551,13 +562,13 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
     ----------
     rho : float
         Density (kg m^-3).
-                    
+
     T : float
         Temperature (K).
 
     mat_id : int
         Material id.
-        
+
     Z_choice : str
         The parameter to calculate, choose from:
             P       Pressure.
@@ -726,7 +737,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
     Z_2 = A2_Z[idx_rho, idx_T + 1]
     Z_3 = A2_Z[idx_rho + 1, idx_T]
     Z_4 = A2_Z[idx_rho + 1, idx_T + 1]
-    
+
     # Choose the nearest table value, no interpolation
     if Z_choice == "phase":
         if intp_rho < 0.5:
@@ -780,20 +791,20 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
 
 @njit
 def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
-    """Compute an equation of state parameter from the density and another 
+    """Compute an equation of state parameter from the density and another
     parameter.
 
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-                    
+
     Y : float
         The chosen input parameter (SI).
 
     mat_id : int
         Material id.
-    
+
     Z_choice, Y_choice : str
         The parameter to calculate, and the other input parameter, choose from:
             P       Pressure.
@@ -807,7 +818,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
         The chosen parameter (SI).
     """
     assert Z_choice != Y_choice
-    
+
     # Unpack the arrays of Z, log(rho), and log(Y)
     if mat_id == gv.id_SESAME_iron:
         A1_log_rho = A1_log_rho_SESAME_iron
@@ -1004,7 +1015,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
     Z_2 = A2_Z[idx_rho, idx_Y_1 + 1]
     Z_3 = A2_Z[idx_rho + 1, idx_Y_2]
     Z_4 = A2_Z[idx_rho + 1, idx_Y_2 + 1]
-    
+
     # Choose the nearest table value, no interpolation
     if Z_choice == "phase":
         if intp_rho < 0.5:
@@ -1065,14 +1076,14 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
 
 @njit
 def Z_X_T(X, T, mat_id, Z_choice, X_choice):
-    """Compute an equation of state parameter from another parameter and the 
+    """Compute an equation of state parameter from another parameter and the
     temperature.
-    
-    Warning: Not all of the 2D X arrays are monotonic with density along a 
+
+    Warning: Not all of the 2D X arrays are monotonic with density along a
     temperature slice, which will break the attempted interpolation.
 
     Parameters
-    ----------      
+    ----------
     X : float
         The chosen input parameter (SI).
 
@@ -1292,7 +1303,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
     Z_2 = A2_Z[idx_X_1 + 1, idx_T]
     Z_3 = A2_Z[idx_X_2, idx_T + 1]
     Z_4 = A2_Z[idx_X_2 + 1, idx_T + 1]
-    
+
     # Choose the nearest table value, no interpolation
     if Z_choice == "phase":
         if intp_T < 0.5:
@@ -2389,4 +2400,3 @@ def s_rho_T(rho, T, mat_id):
 # ========
 # Density
 # ========
-
