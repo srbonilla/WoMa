@@ -566,7 +566,7 @@ def picle_shell_masses(A1_R, A1_Z, A1_rho, A1_R_shell, A1_R_shell_outer):
 
 
 def place_particles(
-    A1_R, A1_Z, A1_rho, A1_mat_id, A1_u, A1_T, A1_P, N, period, N_ngb=48, verbosity=1
+    A1_R, A1_Z, A1_rho, A1_mat_id, A1_P, A1_T, A1_u, N, period, N_ngb=48, verbosity=1
 ):
 
     """Particle placement for a spining profile.
@@ -595,39 +595,35 @@ def place_particles(
 
     Returns
     -------
-    A1_x : [float]
-        Position x of each particle (m).
+    A1_x, A1_y, A1_z : [float]
+        Position of each particle (m).
 
-    A1_y : [float]
-        Position y of each particle (m).
-
-    A1_z : [float]
-        Position z of each particle (m).
-
-    A1_vx : [float]
-        Velocity in x of each particle (m s^-1).
-
-    A1_vy : [float]
-        Velocity in y of each particle (m s^-1).
-
-    A1_vz : [float]
-        Velocity in z of each particle (m s^-1).
+    A1_vx, A1_vy, A1_vz : [float]
+        Velocity of each particle (m s^-1).
 
     A1_m : [float]
-        Mass of every particle (kg).
+        Mass of each particle (kg).
 
     A1_rho : [float]
-        Density for every particle (kg m^-3).
+        Density of each particle (kg m^-3).
+
+    A1_P : [float]
+        Pressure of each particle (Pa).
+
+    A1_T : [float]
+        Temperature of each particle (K).
+
+    A1_u : [float]
+        Specific internal energy of each particle (J kg^-1).
 
     A1_h : [float]
-        Smoothing length for every particle (m).
+        Smoothing length of each particle (m).
 
-    A1_R : [float]
-        Semi-major axis of the spheroid for every particle (m).
+    A1_mat_id : [float]
+        Material ID of each particle.
 
-    A1_Z : [float]
-        Semi-minor axis of the spheroid for every particle (m).
-
+    A1_id : [float]
+        ID of each particle.
     """
 
     assert len(A1_R) == len(A1_Z)
@@ -808,8 +804,9 @@ def place_particles(
         A1_vz,
         A1_m,
         A1_rho,
-        A1_u,
         A1_P,
+        A1_T,
+        A1_u,
         A1_h,
         A1_mat_id,
         A1_id,
