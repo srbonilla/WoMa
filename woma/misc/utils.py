@@ -691,11 +691,11 @@ def load_eos_tables(A1_mat_input=None):
     None.
 
     """
-    A1_mat = A1_mat_input.copy()
-
     # Load all tables (default)
-    if A1_mat is None:
+    if A1_mat_input is None:
         A1_mat = list(gv.Di_mat_id.keys())
+    else:
+        A1_mat = A1_mat_input.copy()
     # Discard idg materials
     A1_idg = []
     for material in A1_mat:
