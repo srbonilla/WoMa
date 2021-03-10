@@ -224,14 +224,14 @@ def load_table_SESAME(Fp_table):
         np.log(A2_s),
     )
 
-
+"""
 def load_phase_table_ANEOS_forsterite():
-    """Load and return the 2D array of KPA flag phase IDs.
+    Load and return the 2D array of KPA flag phase IDs.
 
     See https://github.com/ststewart/aneos-forsterite-2019 etc.
 
     ###WIP
-    """
+    
     import os, sys
 
     this_dir, this_file = os.path.split(__file__)
@@ -283,7 +283,7 @@ def load_phase_table_ANEOS_forsterite():
     )
 
     return NewEOS.KPA.T
-
+"""
 
 # ========
 # Initialise SESAME-style tables as global variables for numba
@@ -406,7 +406,7 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
-A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
+#A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
 (
     A1_rho_ANEOS_iron,
     A1_T_ANEOS_iron,
@@ -558,7 +558,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_SCVH95_HHe,
     A1_log_rho_SCVH95_HHe,
     A1_log_T_SCVH95_HHe,
+    A2_log_P_SCVH95_HHe,
     A2_log_u_SCVH95_HHe,
+    A2_log_s_SCVH95_HHe,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -567,6 +569,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 # Load REOS3 as SESAME-style tables
@@ -578,7 +582,9 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     A2_s_REOS3_HHe,
     A1_log_rho_REOS3_HHe,
     A1_log_T_REOS3_HHe,
+    A2_log_P_REOS3_HHe,
     A2_log_u_REOS3_HHe,
+    A2_log_s_REOS3_HHe,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -587,6 +593,8 @@ A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
     np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
 
@@ -744,6 +752,28 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             A2_Z = A2_u_CMS19_HHe
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_HHe
+    elif mat_id == gv.id_SCVH95_HHe:
+        A1_log_rho, A1_log_T = (
+            A1_log_rho_SCVH95_HHe,
+            A1_log_T_SCVH95_HHe,
+        )
+        if Z_choice == "P":
+            A2_Z = A2_P_SCVH95_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_SCVH95_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_SCVH95_HHe
+    elif mat_id == gv.id_REOS3_HHe:
+        A1_log_rho, A1_log_T = (
+            A1_log_rho_REOS3_HHe,
+            A1_log_T_REOS3_HHe,
+        )
+        if Z_choice == "P":
+            A2_Z = A2_P_REOS3_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_REOS3_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_REOS3_HHe
     else:
         raise ValueError("Invalid material ID")
 
@@ -1015,6 +1045,34 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_log_Y = A2_log_u_CMS19_HHe
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CMS19_HHe
+    elif mat_id == gv.id_SCVH95_HHe:
+        A1_log_rho = A1_log_rho_SCVH95_HHe
+        if Z_choice == "P":
+            A2_Z = A2_P_SCVH95_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_SCVH95_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_SCVH95_HHe
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_SCVH95_HHe
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_SCVH95_HHe
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_SCVH95_HHe
+    elif mat_id == gv.id_REOS3_HHe:
+        A1_log_rho = A1_log_rho_REOS3_HHe
+        if Z_choice == "P":
+            A2_Z = A2_P_REOS3_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_REOS3_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_REOS3_HHe
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_REOS3_HHe
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_REOS3_HHe
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_REOS3_HHe
     else:
         raise ValueError("Invalid material ID")
 
@@ -1303,6 +1361,34 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_log_X = A2_log_u_CMS19_HHe
         elif X_choice == "s":
             A2_log_X = A2_log_s_CMS19_HHe
+    elif mat_id == gv.id_SCVH95_HHe:
+        A1_log_T = A1_log_T_SCVH95_HHe
+        if Z_choice == "P":
+            A2_Z = A2_P_SCVH95_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_SCVH95_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_SCVH95_HHe
+        if X_choice == "P":
+            A2_log_X = A2_log_P_SCVH95_HHe
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_SCVH95_HHe
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_SCVH95_HHe
+    elif mat_id == gv.id_REOS3_HHe:
+        A1_log_T = A1_log_T_REOS3_HHe
+        if Z_choice == "P":
+            A2_Z = A2_P_REOS3_HHe
+        elif Z_choice == "u":
+            A2_Z = A2_u_REOS3_HHe
+        elif Z_choice == "s":
+            A2_Z = A2_s_REOS3_HHe
+        if X_choice == "P":
+            A2_log_X = A2_log_P_REOS3_HHe
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_REOS3_HHe
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_REOS3_HHe
     else:
         raise ValueError("Invalid material ID")
 
@@ -1666,6 +1752,18 @@ def P_T_rho(T, rho, mat_id):
             A1_log_rho_CMS19_HHe,
             A1_log_T_CMS19_HHe,
         )
+    elif mat_id == gv.id_SCVH95_HHe:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_SCVH95_HHe,
+            A1_log_rho_SCVH95_HHe,
+            A1_log_T_SCVH95_HHe,
+        )
+    elif mat_id == gv.id_REOS3_HHe:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_REOS3_HHe,
+            A1_log_rho_REOS3_HHe,
+            A1_log_T_REOS3_HHe,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -1803,6 +1901,18 @@ def T_rho_s(rho, s, mat_id):
             A1_log_T_CMS19_HHe,
             A1_log_rho_CMS19_HHe,
             A2_s_CMS19_HHe,
+        )
+    elif mat_id == gv.id_SCVH95_HHe:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_SCVH95_HHe,
+            A1_log_rho_SCVH95_HHe,
+            A2_s_SCVH95_HHe,
+        )
+    elif mat_id == gv.id_REOS3_HHe:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_REOS3_HHe,
+            A1_log_rho_REOS3_HHe,
+            A2_s_REOS3_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -2496,285 +2606,6 @@ def s_rho_T(rho, T, mat_id):
     return s
 
 
-<<<<<<< HEAD
 # ========
 # Density
 # ========
-=======
-@njit
-def T_rho_s(rho, s, mat_id):
-    """Compute the temperature from the density and specific entropy.
-
-    Parameters
-    ----------
-    rho : float
-        Density (kg m^-3).
-
-    s : float
-        Specific entropy (J kg^-1 K^-1).
-
-    mat_id : int
-        Material id.
-
-    Returns
-    -------
-    T : float
-        Temperature (K).
-    """
-    # Unpack the parameters
-    if mat_id == gv.id_SESAME_iron:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SESAME_iron,
-            A1_log_rho_SESAME_iron,
-            A2_s_SESAME_iron,
-        )
-    elif mat_id == gv.id_SESAME_basalt:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SESAME_basalt,
-            A1_log_rho_SESAME_basalt,
-            A2_s_SESAME_basalt,
-        )
-    elif mat_id == gv.id_SESAME_water:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SESAME_water,
-            A1_log_rho_SESAME_water,
-            A2_s_SESAME_water,
-        )
-    elif mat_id == gv.id_SS08_water:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SS08_water,
-            A1_log_rho_SS08_water,
-            A2_s_SS08_water,
-        )
-    elif mat_id == gv.id_ANEOS_forsterite:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_ANEOS_forsterite,
-            A1_log_rho_ANEOS_forsterite,
-            A2_s_ANEOS_forsterite,
-        )
-    elif mat_id == gv.id_ANEOS_iron:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_ANEOS_iron,
-            A1_log_rho_ANEOS_iron,
-            A2_s_ANEOS_iron,
-        )
-    elif mat_id == gv.id_ANEOS_Fe85Si15:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_ANEOS_Fe85Si15,
-            A1_log_rho_ANEOS_Fe85Si15,
-            A2_s_ANEOS_Fe85Si15,
-        )
-    elif mat_id == gv.id_AQUA:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_AQUA,
-            A1_log_rho_AQUA,
-            A2_s_AQUA,
-        )
-    elif mat_id == gv.id_CMS19_H:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_CMS19_H,
-            A1_log_rho_CMS19_H,
-            A2_s_CMS19_H,
-        )
-    elif mat_id == gv.id_CMS19_He:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_CMS19_He,
-            A1_log_rho_CMS19_He,
-            A2_s_CMS19_He,
-        )
-    elif mat_id == gv.id_CMS19_HHe:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A2_s_CMS19_HHe,
-        )
-    elif mat_id == gv.id_SCVH95_HHe:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_SCVH95_HHe,
-            A1_log_rho_SCVH95_HHe,
-            A2_s_SCVH95_HHe,
-        )
-    elif mat_id == gv.id_REOS3_HHe:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_REOS3_HHe,
-            A1_log_rho_REOS3_HHe,
-            A2_s_REOS3_HHe,
-        )
-    else:
-        raise ValueError("Invalid material ID")
-
-    # Check necessary data loaded
-    if len(A1_log_rho) == 1:
-        raise ValueError(
-            "Please load the corresponding SESAME table.\n"
-            + "Use the woma.load_eos_tables function.\n"
-        )
-
-    # Convert to log
-    log_rho = np.log(rho)
-
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
-    idx_rho = int(idx_rho_intp_rho[0])
-    intp_rho = idx_rho_intp_rho[1]
-
-    # s (in this and the next density slice of the 2D s array)
-    idx_s_1_intp_s_1 = find_index_and_interp(s, A2_s[idx_rho])
-    idx_s_1 = int(idx_s_1_intp_s_1[0])
-    intp_s_1 = idx_s_1_intp_s_1[1]
-    idx_s_2_intp_s_2 = find_index_and_interp(s, A2_s[idx_rho + 1])
-    idx_s_2 = int(idx_s_2_intp_s_2[0])
-    intp_s_2 = idx_s_2_intp_s_2[1]
-
-    # Normal interpolation
-    log_T = (1 - intp_rho) * (
-        (1 - intp_s_1) * A1_log_T[idx_s_1] + intp_s_1 * A1_log_T[idx_s_1 + 1]
-    ) + intp_rho * (
-        (1 - intp_s_2) * A1_log_T[idx_s_2] + intp_s_2 * A1_log_T[idx_s_2 + 1]
-    )
-
-    # Convert back from log
-    T = np.exp(log_T)
-    if T < 0:
-        T = 0
-
-    return T
-
-
-@njit
-def T_u_rho(u, rho, mat_id):
-    """Compute the temperature from the density and specific entropy.
-
-    Parameters
-    ----------
-    u : float
-        Specific internal energy (J kg^-1).
-
-    rho : float
-        Density (kg m^-3).
-
-    mat_id : int
-        Material id.
-
-    Returns
-    -------
-    T : float
-        Temperature (K).
-    """
-    # Unpack the parameters
-    if mat_id == gv.id_SESAME_iron:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_SESAME_iron,
-            A1_log_rho_SESAME_iron,
-            A2_u_SESAME_iron,
-        )
-    elif mat_id == gv.id_SESAME_basalt:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_SESAME_basalt,
-            A1_log_rho_SESAME_basalt,
-            A2_u_SESAME_basalt,
-        )
-    elif mat_id == gv.id_SESAME_water:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_SESAME_water,
-            A1_log_rho_SESAME_water,
-            A2_u_SESAME_water,
-        )
-    elif mat_id == gv.id_SS08_water:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_SS08_water,
-            A1_log_rho_SS08_water,
-            A2_u_SS08_water,
-        )
-    elif mat_id == gv.id_ANEOS_forsterite:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_ANEOS_forsterite,
-            A1_log_rho_ANEOS_forsterite,
-            A2_u_ANEOS_forsterite,
-        )
-    elif mat_id == gv.id_ANEOS_iron:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_ANEOS_iron,
-            A1_log_rho_ANEOS_iron,
-            A2_u_ANEOS_iron,
-        )
-    elif mat_id == gv.id_ANEOS_Fe85Si15:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_ANEOS_Fe85Si15,
-            A1_log_rho_ANEOS_Fe85Si15,
-            A2_u_ANEOS_Fe85Si15,
-        )
-    elif mat_id == gv.id_AQUA:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_AQUA,
-            A1_log_rho_AQUA,
-            A2_u_AQUA,
-        )
-    elif mat_id == gv.id_CMS19_H:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_CMS19_H,
-            A1_log_rho_CMS19_H,
-            A2_u_CMS19_H,
-        )
-    elif mat_id == gv.id_CMS19_He:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_CMS19_He,
-            A1_log_rho_CMS19_He,
-            A2_u_CMS19_He,
-        )
-    elif mat_id == gv.id_CMS19_HHe:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A2_u_CMS19_HHe,
-        )
-    elif mat_id == gv.id_SCVH95_HHe:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_SCVH95_HHe,
-            A1_log_rho_SCVH95_HHe,
-            A2_u_SCVH95_HHe,
-        )
-    elif mat_id == gv.id_REOS3_HHe:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_REOS3_HHe,
-            A1_log_rho_REOS3_HHe,
-            A2_u_REOS3_HHe,
-        )
-    else:
-        raise ValueError("Invalid material ID")
-
-    # Check necessary data loaded
-    if len(A1_log_rho) == 1:
-        raise ValueError(
-            "Please load the corresponding SESAME table.\n"
-            + "Use the woma.load_eos_tables function.\n"
-        )
-
-    # Convert to log
-    log_rho = np.log(rho)
-
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
-    idx_rho = int(idx_rho_intp_rho[0])
-    intp_rho = idx_rho_intp_rho[1]
-
-    # s (in this and the next density slice of the 2D u array)
-    idx_u_1_intp_u_1 = find_index_and_interp(u, A2_u[idx_rho])
-    idx_u_1 = int(idx_u_1_intp_u_1[0])
-    intp_u_1 = idx_u_1_intp_u_1[1]
-    idx_u_2_intp_u_2 = find_index_and_interp(u, A2_u[idx_rho + 1])
-    idx_u_2 = int(idx_u_2_intp_u_2[0])
-    intp_u_2 = idx_u_2_intp_u_2[1]
-
-    # Normal interpolation
-    log_T = (1 - intp_rho) * (
-        (1 - intp_u_1) * A1_log_T[idx_u_1] + intp_u_1 * A1_log_T[idx_u_1 + 1]
-    ) + intp_rho * (
-        (1 - intp_u_2) * A1_log_T[idx_u_2] + intp_u_2 * A1_log_T[idx_u_2 + 1]
-    )
-
-    # Convert back from log
-    T = np.exp(log_T)
-    if T < 0:
-        T = 0
-
-    return T
->>>>>>> b8dc463... Add REOS3_HHe, SCVH95_HHe and update CMS19_HHe to Y=0.245

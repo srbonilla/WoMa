@@ -954,7 +954,9 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_s_SCVH95_HHe,
             eos.sesame.A1_log_rho_SCVH95_HHe,
             eos.sesame.A1_log_T_SCVH95_HHe,
+            eos.sesame.A2_log_P_SCVH95_HHe,
             eos.sesame.A2_log_u_SCVH95_HHe,
+            eos.sesame.A2_log_s_SCVH95_HHe,
         ) = eos.sesame.load_table_SESAME(gv.Fp_SCVH95_HHe)
     if "REOS3_HHe" in A1_mat and len(eos.sesame.A1_rho_REOS3_HHe) == 1:
         (
@@ -965,7 +967,9 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_s_REOS3_HHe,
             eos.sesame.A1_log_rho_REOS3_HHe,
             eos.sesame.A1_log_T_REOS3_HHe,
+            eos.sesame.A2_log_P_REOS3_HHe,
             eos.sesame.A2_log_u_REOS3_HHe,
+            eos.sesame.A2_log_s_REOS3_HHe,
         ) = eos.sesame.load_table_SESAME(gv.Fp_REOS3_HHe)
 
     return None
