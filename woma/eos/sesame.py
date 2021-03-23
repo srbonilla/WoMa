@@ -406,7 +406,7 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
-A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
+#A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
 (
     A1_rho_ANEOS_iron,
     A1_T_ANEOS_iron,

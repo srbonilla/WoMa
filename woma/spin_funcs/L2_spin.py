@@ -100,7 +100,12 @@ def L2_rho_eq_po_from_V(
 
     # equatorial profile
     for i in range(A1_r_eq.shape[0] - 1):
-        gradV = A1_V_eq[i + 1] - A1_V_eq[i]
+        
+        if i == 0 or i == (A1_r_eq.shape[0] - 1):
+            gradV = A1_V_eq[i + 1] - A1_V_eq[i]
+        else:
+            gradV = (A1_V_eq[i + 1] - A1_V_eq[i - 1])/2
+            
         gradP = -A1_rho_eq[i] * gradV
         A1_P_eq[i + 1] = A1_P_eq[i] + gradP
 
@@ -136,7 +141,12 @@ def L2_rho_eq_po_from_V(
 
     # polar profile
     for i in range(A1_r_po.shape[0] - 1):
-        gradV = A1_V_po[i + 1] - A1_V_po[i]
+        
+        if i == 0 or i == (A1_r_po.shape[0] - 1):
+            gradV = A1_V_po[i + 1] - A1_V_po[i]
+        else:
+            gradV = (A1_V_po[i + 1] - A1_V_po[i - 1])/2
+            
         gradP = -A1_rho_po[i] * gradV
         A1_P_po[i + 1] = A1_P_po[i] + gradP
 
