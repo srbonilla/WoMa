@@ -2278,7 +2278,7 @@ class SpinPlanet:
     def update_attributes(self):
         """ Update the attributes for the final output planet. """
         self._update_internal_attributes()
-        
+
         # Update A1_T_rho_args
         self.A1_T_rho_args = self.planet.A1_T_rho_args
 
@@ -2326,9 +2326,9 @@ class SpinPlanet:
                 self.A1_mat_id_layer[0],
             )
             self.A1_u[i] = eos.u_rho_T(rho, self.A1_T[i], self.A1_mat_id[i])
-            #self.A1_P[i] = eos.P_u_rho(self.A1_u[i], rho, self.A1_mat_id[i])
+            # self.A1_P[i] = eos.P_u_rho(self.A1_u[i], rho, self.A1_mat_id[i])
             self.A1_P[i] = eos.P_T_rho(self.A1_T[i], rho, self.A1_mat_id[i])
-                
+
         if self.num_layer >= 2:
             for i, rho in enumerate(
                 self.A1_rho[self.A1_idx_layer_eq[0] + 1 : self.A1_idx_layer_eq[1] + 1]
@@ -2341,7 +2341,7 @@ class SpinPlanet:
                     self.A1_mat_id_layer[1],
                 )
                 self.A1_u[j] = eos.u_rho_T(rho, self.A1_T[j], self.A1_mat_id[j])
-                #self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id[j])
+                # self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id[j])
                 self.A1_P[j] = eos.P_T_rho(self.A1_T[j], rho, self.A1_mat_id[j])
         if self.num_layer >= 3:
             for i, rho in enumerate(
@@ -2355,7 +2355,7 @@ class SpinPlanet:
                     self.A1_mat_id_layer[2],
                 )
                 self.A1_u[j] = eos.u_rho_T(rho, self.A1_T[j], self.A1_mat_id[j])
-                #self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id[j])
+                # self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id[j])
                 self.A1_P[j] = eos.P_T_rho(self.A1_T[j], rho, self.A1_mat_id[j])
 
         # Boundary values
