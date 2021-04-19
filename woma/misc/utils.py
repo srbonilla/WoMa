@@ -5,6 +5,10 @@ WoMa miscellaneous utilities
 import numpy as np
 from numba import njit
 from woma.misc.glob_vars import G
+from woma.misc import glob_vars as gv
+from woma.eos import eos
+import sys
+from importlib import reload
 
 
 def _print_banner():
@@ -610,3 +614,326 @@ def rotate_configuration(A2_pos, A2_vel, x, y, z):
     A2_vel_new = np.dot(M_inv, A2_vel.T)
 
     return A2_pos_new.T, A2_vel_new.T
+
+
+def check_loaded_eos_tables():
+    A1_mat = gv.Di_mat_id.keys()
+    A1_mat = list(A1_mat)
+
+    # discard idg materials
+    A1_idg = []
+    for material in A1_mat:
+        if material.startswith("idg"):
+            A1_idg.append(material)
+    for material in A1_idg:
+        A1_mat.remove(material)
+
+    # Check Tillotson
+    if len(eos.tillotson.A1_u_cold_iron) == 1:
+        A1_mat.remove("Til_iron")
+    if len(eos.tillotson.A1_u_cold_granite) == 1:
+        A1_mat.remove("Til_granite")
+    if len(eos.tillotson.A1_u_cold_basalt) == 1:
+        A1_mat.remove("Til_basalt")
+    if len(eos.tillotson.A1_u_cold_water) == 1:
+        A1_mat.remove("Til_water")
+
+    # Check HM80
+    if len(eos.hm80.A2_log_P_HM80_HHe) == 1:
+        A1_mat.remove("HM80_HHe")
+    if len(eos.hm80.A2_log_P_HM80_ice) == 1:
+        A1_mat.remove("HM80_ice")
+    if len(eos.hm80.A2_log_P_HM80_rock) == 1:
+        A1_mat.remove("HM80_rock")
+
+    # Check SESAME
+    if len(eos.sesame.A1_rho_SESAME_iron) == 1:
+        A1_mat.remove("SESAME_iron")
+    if len(eos.sesame.A1_rho_SESAME_basalt) == 1:
+        A1_mat.remove("SESAME_basalt")
+    if len(eos.sesame.A1_rho_SESAME_water) == 1:
+        A1_mat.remove("SESAME_water")
+    if len(eos.sesame.A1_rho_SS08_water) == 1:
+        A1_mat.remove("SS08_water")
+
+    if len(eos.sesame.A1_rho_ANEOS_forsterite) == 1:
+        A1_mat.remove("ANEOS_forsterite")
+    if len(eos.sesame.A1_rho_ANEOS_iron) == 1:
+        A1_mat.remove("ANEOS_iron")
+    if len(eos.sesame.A1_rho_ANEOS_Fe85Si15) == 1:
+        A1_mat.remove("ANEOS_Fe85Si15")
+
+    if len(eos.sesame.A1_rho_AQUA) == 1:
+        A1_mat.remove("AQUA")
+
+    if len(eos.sesame.A1_rho_CMS19_H) == 1:
+        A1_mat.remove("CMS19_H")
+    if len(eos.sesame.A1_rho_CMS19_He) == 1:
+        A1_mat.remove("CMS19_He")
+    if len(eos.sesame.A1_rho_CMS19_HHe) == 1:
+        A1_mat.remove("CMS19_HHe")
+
+    return A1_mat
+
+
+def load_eos_tables(A1_mat_input=None):
+    """
+    Load necessary tables for eos computations.
+
+    Parameters
+    ----------
+    A1_mat_input : [str]
+        List of the materials to be loaded. Default None loads all materials available.
+        See Di_mat_id in `misc/glob_vars.py`.
+
+    Returns
+    -------
+    None.
+
+    """
+    # Load all tables (default)
+    if A1_mat_input is None:
+        A1_mat = list(gv.Di_mat_id.keys())
+    else:
+        A1_mat = A1_mat_input.copy()
+    # Discard idg materials
+    A1_idg = []
+    for material in A1_mat:
+        if material.startswith("idg"):
+            A1_idg.append(material)
+    for material in A1_idg:
+        A1_mat.remove(material)
+
+    # Check A1_mat elements are available eos
+    for material in A1_mat:
+        if material not in gv.Di_mat_id.keys():
+            raise ValueError(
+                "%s not available. Check misc/glob_vars.py for available eos."
+                % (material)
+            )
+            # raise ValueError("EoS not available.")
+
+    # Check if tables are already loaded
+    A1_mat_loaded = check_loaded_eos_tables()
+
+    A1_mat_loaded = sorted(A1_mat_loaded)
+    A1_mat = sorted(A1_mat)
+    if A1_mat_loaded == A1_mat:
+        return None
+    if all(x in A1_mat_loaded for x in A1_mat):
+        return None
+
+    # print("Loading eos tables...")
+
+    # Reload woma modules, need to recompile for numba
+    for k, v in sys.modules.items():
+        if k.startswith("woma.spherical") or k.startswith("woma.spin"):
+            reload(v)
+
+    for k, v in sys.modules.items():
+        if k.startswith("woma.eos") or k == "woma":
+            reload(v)
+
+    # Tillotson
+    if "Til_iron" in A1_mat and len(eos.tillotson.A1_u_cold_iron) == 1:
+        eos.tillotson.A1_u_cold_iron = eos.tillotson.load_u_cold_array(gv.id_Til_iron)
+    if "Til_granite" in A1_mat and len(eos.tillotson.A1_u_cold_granite) == 1:
+        eos.tillotson.A1_u_cold_granite = eos.tillotson.load_u_cold_array(
+            gv.id_Til_granite
+        )
+    if "Til_basalt" in A1_mat and len(eos.tillotson.A1_u_cold_basalt) == 1:
+        eos.tillotson.A1_u_cold_basalt = eos.tillotson.load_u_cold_array(
+            gv.id_Til_basalt
+        )
+    if "Til_water" in A1_mat and len(eos.tillotson.A1_u_cold_water) == 1:
+        eos.tillotson.A1_u_cold_water = eos.tillotson.load_u_cold_array(gv.id_Til_water)
+
+    # Hubbard & MacFarlane (1980) Uranus/Neptune
+    if "HM80_HHe" in A1_mat and len(eos.hm80.A2_log_P_HM80_HHe) == 1:
+        (
+            eos.hm80.log_rho_min_HM80_HHe,
+            eos.hm80.log_rho_max_HM80_HHe,
+            eos.hm80.num_rho_HM80_HHe,
+            eos.hm80.log_rho_step_HM80_HHe,
+            eos.hm80.log_u_min_HM80_HHe,
+            eos.hm80.log_u_max_HM80_HHe,
+            eos.hm80.num_u_HM80_HHe,
+            eos.hm80.log_u_step_HM80_HHe,
+            eos.hm80.A2_log_P_HM80_HHe,
+            eos.hm80.A2_log_T_HM80_HHe,
+        ) = eos.hm80.load_table_HM80(gv.Fp_HM80_HHe)
+    if "HM80_ice" in A1_mat and len(eos.hm80.A2_log_P_HM80_ice) == 1:
+        eos.hm80.A1_u_cold_HM80_ice = eos.hm80.load_u_cold_array(gv.id_HM80_ice)
+        (
+            eos.hm80.log_rho_min_HM80_ice,
+            eos.hm80.log_rho_max_HM80_ice,
+            eos.hm80.num_rho_HM80_ice,
+            eos.hm80.log_rho_step_HM80_ice,
+            eos.hm80.log_u_min_HM80_ice,
+            eos.hm80.log_u_max_HM80_ice,
+            eos.hm80.num_u_HM80_ice,
+            eos.hm80.log_u_step_HM80_ice,
+            eos.hm80.A2_log_P_HM80_ice,
+            eos.hm80.A2_log_T_HM80_ice,
+        ) = eos.hm80.load_table_HM80(gv.Fp_HM80_ice)
+    if "HM80_rock" in A1_mat and len(eos.hm80.A2_log_P_HM80_rock) == 1:
+        eos.hm80.A1_u_cold_HM80_rock = eos.hm80.load_u_cold_array(gv.id_HM80_rock)
+        (
+            eos.hm80.log_rho_min_HM80_rock,
+            eos.hm80.log_rho_max_HM80_rock,
+            eos.hm80.num_rho_HM80_rock,
+            eos.hm80.log_rho_step_HM80_rock,
+            eos.hm80.log_u_min_HM80_rock,
+            eos.hm80.log_u_max_HM80_rock,
+            eos.hm80.num_u_HM80_rock,
+            eos.hm80.log_u_step_HM80_rock,
+            eos.hm80.A2_log_P_HM80_rock,
+            eos.hm80.A2_log_T_HM80_rock,
+        ) = eos.hm80.load_table_HM80(gv.Fp_HM80_rock)
+
+    # SESAME
+    if "SESAME_iron" in A1_mat and len(eos.sesame.A1_rho_SESAME_iron) == 1:
+        (
+            eos.sesame.A1_rho_SESAME_iron,
+            eos.sesame.A1_T_SESAME_iron,
+            eos.sesame.A2_P_SESAME_iron,
+            eos.sesame.A2_u_SESAME_iron,
+            eos.sesame.A2_s_SESAME_iron,
+            eos.sesame.A1_log_rho_SESAME_iron,
+            eos.sesame.A1_log_T_SESAME_iron,
+            eos.sesame.A2_log_P_SESAME_iron,
+            eos.sesame.A2_log_u_SESAME_iron,
+            eos.sesame.A2_log_s_SESAME_iron,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_SESAME_iron)
+    if "SESAME_basalt" in A1_mat and len(eos.sesame.A1_rho_SESAME_basalt) == 1:
+        (
+            eos.sesame.A1_rho_SESAME_basalt,
+            eos.sesame.A1_T_SESAME_basalt,
+            eos.sesame.A2_P_SESAME_basalt,
+            eos.sesame.A2_u_SESAME_basalt,
+            eos.sesame.A2_s_SESAME_basalt,
+            eos.sesame.A1_log_rho_SESAME_basalt,
+            eos.sesame.A1_log_T_SESAME_basalt,
+            eos.sesame.A2_log_P_SESAME_basalt,
+            eos.sesame.A2_log_u_SESAME_basalt,
+            eos.sesame.A2_log_s_SESAME_basalt,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_SESAME_basalt)
+    if "SESAME_water" in A1_mat and len(eos.sesame.A1_rho_SESAME_water) == 1:
+        (
+            eos.sesame.A1_rho_SESAME_water,
+            eos.sesame.A1_T_SESAME_water,
+            eos.sesame.A2_P_SESAME_water,
+            eos.sesame.A2_u_SESAME_water,
+            eos.sesame.A2_s_SESAME_water,
+            eos.sesame.A1_log_rho_SESAME_water,
+            eos.sesame.A1_log_T_SESAME_water,
+            eos.sesame.A2_log_P_SESAME_water,
+            eos.sesame.A2_log_u_SESAME_water,
+            eos.sesame.A2_log_s_SESAME_water,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_SESAME_water)
+    if "SS08_water" in A1_mat and len(eos.sesame.A1_rho_SS08_water) == 1:
+        (
+            eos.sesame.A1_rho_SS08_water,
+            eos.sesame.A1_T_SS08_water,
+            eos.sesame.A2_P_SS08_water,
+            eos.sesame.A2_u_SS08_water,
+            eos.sesame.A2_s_SS08_water,
+            eos.sesame.A1_log_rho_SS08_water,
+            eos.sesame.A1_log_T_SS08_water,
+            eos.sesame.A2_log_P_SS08_water,
+            eos.sesame.A2_log_u_SS08_water,
+            eos.sesame.A2_log_s_SS08_water,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_SS08_water)
+    if "ANEOS_forsterite" in A1_mat and len(eos.sesame.A1_rho_ANEOS_forsterite) == 1:
+        (
+            eos.sesame.A1_rho_ANEOS_forsterite,
+            eos.sesame.A1_T_ANEOS_forsterite,
+            eos.sesame.A2_P_ANEOS_forsterite,
+            eos.sesame.A2_u_ANEOS_forsterite,
+            eos.sesame.A2_s_ANEOS_forsterite,
+            eos.sesame.A1_log_rho_ANEOS_forsterite,
+            eos.sesame.A1_log_T_ANEOS_forsterite,
+            eos.sesame.A2_log_P_ANEOS_forsterite,
+            eos.sesame.A2_log_u_ANEOS_forsterite,
+            eos.sesame.A2_log_s_ANEOS_forsterite,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_ANEOS_forsterite)
+    if "ANEOS_iron" in A1_mat and len(eos.sesame.A1_rho_ANEOS_iron) == 1:
+        (
+            eos.sesame.A1_rho_ANEOS_iron,
+            eos.sesame.A1_T_ANEOS_iron,
+            eos.sesame.A2_P_ANEOS_iron,
+            eos.sesame.A2_u_ANEOS_iron,
+            eos.sesame.A2_s_ANEOS_iron,
+            eos.sesame.A1_log_rho_ANEOS_iron,
+            eos.sesame.A1_log_T_ANEOS_iron,
+            eos.sesame.A2_log_P_ANEOS_iron,
+            eos.sesame.A2_log_u_ANEOS_iron,
+            eos.sesame.A2_log_s_ANEOS_iron,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_ANEOS_iron)
+    if "ANEOS_Fe85Si15" in A1_mat and len(eos.sesame.A1_rho_ANEOS_Fe85Si15) == 1:
+        (
+            eos.sesame.A1_rho_ANEOS_Fe85Si15,
+            eos.sesame.A1_T_ANEOS_Fe85Si15,
+            eos.sesame.A2_P_ANEOS_Fe85Si15,
+            eos.sesame.A2_u_ANEOS_Fe85Si15,
+            eos.sesame.A2_s_ANEOS_Fe85Si15,
+            eos.sesame.A1_log_rho_ANEOS_Fe85Si15,
+            eos.sesame.A1_log_T_ANEOS_Fe85Si15,
+            eos.sesame.A2_log_P_ANEOS_Fe85Si15,
+            eos.sesame.A2_log_u_ANEOS_Fe85Si15,
+            eos.sesame.A2_log_s_ANEOS_Fe85Si15,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_ANEOS_Fe85Si15)
+    if "AQUA" in A1_mat and len(eos.sesame.A1_rho_AQUA) == 1:
+        (
+            eos.sesame.A1_rho_AQUA,
+            eos.sesame.A1_T_AQUA,
+            eos.sesame.A2_P_AQUA,
+            eos.sesame.A2_u_AQUA,
+            eos.sesame.A2_s_AQUA,
+            eos.sesame.A1_log_rho_AQUA,
+            eos.sesame.A1_log_T_AQUA,
+            eos.sesame.A2_log_P_AQUA,
+            eos.sesame.A2_log_u_AQUA,
+            eos.sesame.A2_log_s_AQUA,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_AQUA)
+    if "CMS19_H" in A1_mat and len(eos.sesame.A1_rho_CMS19_H) == 1:
+        (
+            eos.sesame.A1_rho_CMS19_H,
+            eos.sesame.A1_T_CMS19_H,
+            eos.sesame.A2_P_CMS19_H,
+            eos.sesame.A2_u_CMS19_H,
+            eos.sesame.A2_s_CMS19_H,
+            eos.sesame.A1_log_rho_CMS19_H,
+            eos.sesame.A1_log_T_CMS19_H,
+            eos.sesame.A2_log_P_CMS19_H,
+            eos.sesame.A2_log_u_CMS19_H,
+            eos.sesame.A2_log_s_CMS19_H,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_H)
+    if "CMS19_He" in A1_mat and len(eos.sesame.A1_rho_CMS19_He) == 1:
+        (
+            eos.sesame.A1_rho_CMS19_He,
+            eos.sesame.A1_T_CMS19_He,
+            eos.sesame.A2_P_CMS19_He,
+            eos.sesame.A2_u_CMS19_He,
+            eos.sesame.A2_s_CMS19_He,
+            eos.sesame.A1_log_rho_CMS19_He,
+            eos.sesame.A1_log_T_CMS19_He,
+            eos.sesame.A2_log_P_CMS19_He,
+            eos.sesame.A2_log_u_CMS19_He,
+            eos.sesame.A2_log_s_CMS19_He,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_He)
+    if "CMS19_HHe" in A1_mat and len(eos.sesame.A1_rho_CMS19_HHe) == 1:
+        (
+            eos.sesame.A1_rho_CMS19_HHe,
+            eos.sesame.A1_T_CMS19_HHe,
+            eos.sesame.A2_P_CMS19_HHe,
+            eos.sesame.A2_u_CMS19_HHe,
+            eos.sesame.A2_s_CMS19_HHe,
+            eos.sesame.A1_log_rho_CMS19_HHe,
+            eos.sesame.A1_log_T_CMS19_HHe,
+            eos.sesame.A2_log_P_CMS19_HHe,
+            eos.sesame.A2_log_u_CMS19_HHe,
+            eos.sesame.A2_log_s_CMS19_HHe,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_HHe)
+
+    return None

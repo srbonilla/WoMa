@@ -33,11 +33,9 @@ def load_u_cold_array(mat_id):
     return u_cold_array
 
 
-# Load precomputed values of cold internal energy
-if os.path.isfile(gv.Fp_u_cold_HM80_ice):
-    A1_u_cold_HM80_ice = load_u_cold_array(gv.id_HM80_ice)
-if os.path.isfile(gv.Fp_u_cold_HM80_rock):
-    A1_u_cold_HM80_rock = load_u_cold_array(gv.id_HM80_rock)
+# Set None values for cold internal energy arrays
+A1_u_cold_HM80_ice = np.zeros(1)
+A1_u_cold_HM80_rock = np.zeros(1)
 
 
 def load_table_HM80(Fp_table):
@@ -131,7 +129,7 @@ def load_table_HM80(Fp_table):
 n_H2_n_He = 2 / (1 / 0.75 - 1)
 m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)
 
-# HM80 data as global variables
+# Set default table values
 (
     log_rho_min_HM80_HHe,
     log_rho_max_HM80_HHe,
@@ -143,7 +141,18 @@ m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)
     log_u_step_HM80_HHe,
     A2_log_P_HM80_HHe,
     A2_log_T_HM80_HHe,
-) = load_table_HM80(gv.Fp_HM80_HHe)
+) = (
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    np.zeros((1, 1)),
+    np.zeros((1, 1)),
+)
 (
     log_rho_min_HM80_ice,
     log_rho_max_HM80_ice,
@@ -155,7 +164,18 @@ m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)
     log_u_step_HM80_ice,
     A2_log_P_HM80_ice,
     A2_log_T_HM80_ice,
-) = load_table_HM80(gv.Fp_HM80_ice)
+) = (
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    np.zeros((1, 1)),
+    np.zeros((1, 1)),
+)
 (
     log_rho_min_HM80_rock,
     log_rho_max_HM80_rock,
@@ -167,7 +187,18 @@ m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)
     log_u_step_HM80_rock,
     A2_log_P_HM80_rock,
     A2_log_T_HM80_rock,
-) = load_table_HM80(gv.Fp_HM80_rock)
+) = (
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    np.zeros((1, 1)),
+    np.zeros((1, 1)),
+)
 
 
 @njit
@@ -223,6 +254,13 @@ def P_u_rho(u, rho, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A2_log_P) == 2:
+        raise ValueError(
+            "Please load the corresponding HM80 table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     # Convert to log
     log_rho = np.log(rho)
@@ -315,6 +353,13 @@ def T_u_rho(u, rho, mat_id):
         )
     else:
         raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A2_log_T) == 2:
+        raise ValueError(
+            "Please load the corresponding HM80 table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     # Convert to log
     log_rho = np.log(rho)
@@ -477,6 +522,13 @@ def u_cold_tab(rho, mat_id):
         u_cold_array = A1_u_cold_HM80_rock
     else:
         raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(u_cold_array) == 1:
+        raise ValueError(
+            "Please load the corresponding HM80 table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
 
     N_row = u_cold_array.shape[0]
     rho_min = 100

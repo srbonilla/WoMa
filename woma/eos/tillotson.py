@@ -37,15 +37,11 @@ def load_u_cold_array(mat_id):
     return u_cold_array
 
 
-# Load precomputed values of cold internal energy
-if os.path.isfile(gv.Fp_u_cold_Til_iron):
-    A1_u_cold_iron = load_u_cold_array(gv.id_Til_iron)
-if os.path.isfile(gv.Fp_u_cold_Til_granite):
-    A1_u_cold_granite = load_u_cold_array(gv.id_Til_granite)
-if os.path.isfile(gv.Fp_u_cold_Til_basalt):
-    A1_u_cold_basalt = load_u_cold_array(gv.id_Til_basalt)
-if os.path.isfile(gv.Fp_u_cold_Til_water):
-    A1_u_cold_water = load_u_cold_array(gv.id_Til_water)
+# Set None values for cold internal energy arrays
+A1_u_cold_iron = np.zeros(1)
+A1_u_cold_granite = np.zeros(1)
+A1_u_cold_basalt = np.zeros(1)
+A1_u_cold_water = np.zeros(1)
 
 
 @njit
@@ -366,6 +362,13 @@ def u_cold_tab(rho, mat_id):
     else:
         raise ValueError("Invalid material ID")
 
+    # Check necessary data loaded
+    if len(u_cold_array) == 1:
+        raise ValueError(
+            "Please load the corresponding Tillotson table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
+
     N_row = u_cold_array.shape[0]
     rho_min = 100
     rho_max = 100000
@@ -459,3 +462,41 @@ def P_T_rho(T, rho, mat_id):
         raise ValueError("Invalid material ID")
 
     return P
+
+
+@njit
+def T_u_rho(u, rho, mat_id):
+    """Compute the pressure from the density and temperature.
+
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
+
+    rho : float
+        Density (kg m^-3).
+
+    mat_id : int
+        Material id.
+
+    Returns
+    -------
+    T : float
+        Temperature (K).
+    """
+
+    mat_type = mat_id // gv.type_factor
+
+    if mat_type == gv.type_Til:
+
+        cv = C_V_Til(mat_id)
+        u_cold = u_cold_tab(rho, mat_id)
+        T = (u - u_cold) / cv
+
+        if T < 0:
+            T = 0.0
+
+    else:
+        raise ValueError("Invalid material ID")
+
+    return T
