@@ -726,13 +726,13 @@ def load_eos_tables(A1_mat_input=None):
     # print("Loading eos tables...")
 
     # Reload woma modules, need to recompile for numba
+    to_reload = []
     for k, v in sys.modules.items():
-        if k.startswith("woma.spherical") or k.startswith("woma.spin"):
-            reload(v)
+        if "woma" in k:
+            to_reload.append(k)
 
-    for k, v in sys.modules.items():
-        if k.startswith("woma.eos") or k == "woma":
-            reload(v)
+    for k in to_reload:
+        reload(sys.modules[k])
 
     # Tillotson
     if "Til_iron" in A1_mat and len(eos.tillotson.A1_u_cold_iron) == 1:
