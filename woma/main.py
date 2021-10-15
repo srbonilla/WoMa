@@ -2144,7 +2144,6 @@ class SpinPlanet:
             return
         # Otherwise, require planet and period inputs
         else:
-            assert isinstance(planet, Planet)
             assert period is not None
 
         self.name = name
@@ -3617,12 +3616,11 @@ class ParticlePlanet:
         self.N_particles = N_particles
         self.N_ngb = N_ngb
 
-        assert isinstance(planet, Planet) or isinstance(planet, SpinPlanet)
         assert self.N_particles is not None
 
         utils.load_eos_tables(planet.A1_mat_layer)
 
-        if isinstance(planet, Planet):
+        if not hasattr(planet, 'period'):
             particles = seagen.GenSphere(
                 self.N_particles,
                 planet.A1_r[1:],
@@ -3656,7 +3654,7 @@ class ParticlePlanet:
 
             self.N_particles = particles.A1_x.shape[0]
 
-        if isinstance(planet, SpinPlanet):
+        if hasattr(planet, 'period'):
 
             (
                 self.A1_x,
