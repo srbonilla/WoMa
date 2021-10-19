@@ -2283,11 +2283,7 @@ class SpinPlanet:
 
         # Escape speed
         self.v_esc_eq, self.v_esc_po = us.spin_escape_vel(
-            self.A1_r_eq,
-            self.A1_rho_eq,
-            self.A1_r_po,
-            self.A1_rho_po,
-            self.period,
+            self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po, self.period,
         )
 
         # Equatorial and polar radii
@@ -2499,8 +2495,7 @@ class SpinPlanet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
         print_try(
-            "    %s = %.5g  kg m^2 s^-1",
-            (utils.add_whitespace("L", space), self.L),
+            "    %s = %.5g  kg m^2 s^-1", (utils.add_whitespace("L", space), self.L),
         )
 
     def save(self, filename, verbosity=1):
@@ -3620,7 +3615,7 @@ class ParticlePlanet:
 
         utils.load_eos_tables(planet.A1_mat_layer)
 
-        if not hasattr(planet, 'period'):
+        if not hasattr(planet, "period"):
             particles = seagen.GenSphere(
                 self.N_particles,
                 planet.A1_r[1:],
@@ -3654,7 +3649,7 @@ class ParticlePlanet:
 
             self.N_particles = particles.A1_x.shape[0]
 
-        if hasattr(planet, 'period'):
+        if hasattr(planet, "period"):
 
             (
                 self.A1_x,

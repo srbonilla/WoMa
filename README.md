@@ -39,7 +39,7 @@ Files
 
 Installation and requirements
 -----------------------------
-+ Install the package with `pip install woma`, see https://pypi.org/project/woma/
++ Install the package with `pip install woma`, or downloaded directly from https://pypi.org/project/woma/
 + Python 3 (tested with 3.6.9)
 	  + seagen>=1.4.1, numpy, numba>=0.50.1, h5py
 
