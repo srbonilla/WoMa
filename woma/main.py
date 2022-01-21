@@ -3030,6 +3030,13 @@ class SpinPlanet:
 
                 return
 
+        # Message that there is no convergence
+        if verbosity >= 1:
+            print(
+                "Convergence not reached."
+                + "\nPlease increase num_attempt_1 or f_iter."
+            )
+
     def _L2_spin_planet_fix_M_bisection(
         self,
         R_max_eq,
@@ -3432,6 +3439,13 @@ class SpinPlanet:
                 # Break if M_0 is satisfied
                 if np.abs(M_0_discrep) < tol_layer_masses:
                     break
+                
+        # Message that there is no convergence
+        if verbosity >= 1:
+            print(
+                "Convergence not reached."
+                + "\nPlease increase num_attempt_1, num_attempt_2 or f_iter."
+            )
 
     def spin(
         self,
