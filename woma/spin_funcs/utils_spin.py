@@ -666,6 +666,8 @@ def place_particles(
 
     # Number of particles per shell
     A1_N_shell = np.round(A1_M_shell / m_picle).astype(int)
+    # Require at least 4 particles in the centre
+    A1_N_shell[0] = max(A1_N_shell[0], 4)
 
     # Tweak particle mass per shell to match total mass
     A1_m_picle_shell = A1_M_shell / A1_N_shell
@@ -694,7 +696,7 @@ def place_particles(
 
         # First shell
         if i == 0:
-            # Create analitical model for the shell
+            # Create analytical model for the shell
             theta_elip = np.linspace(0, np.pi, 100000)
 
             particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i])
@@ -713,7 +715,7 @@ def place_particles(
 
         # Rest of shells
         else:
-            # Create analitical model for the shell
+            # Create analytical model for the shell
             theta_elip = np.linspace(0, np.pi, 100000)
 
             particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i])
