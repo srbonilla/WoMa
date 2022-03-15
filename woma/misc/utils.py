@@ -218,7 +218,7 @@ def impact_pos_vel_b_v_c_r(
     Parameters
     ----------
     b : float
-        The impact parameter, b = sin(B), or the impact angle B if
+        The impact parameter, b = sin(B), or the impact angle B (degrees) if
         units_b is "B".
 
     v_c : float
