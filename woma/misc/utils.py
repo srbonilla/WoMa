@@ -566,50 +566,44 @@ def compute_W(A2_pos, A2_vel):
     return W
 
 
-def rotate_configuration(A2_pos, A2_vel, x, y, z):
-    """
-    Rotates particle configuration of a planet from cartesian coordinates
-    x0 = (1,0,0), y0 = (0, 1, 0), and z0 = (0, 0, 1), to a set of rotated cartesian
-    coordinates where z1 = (x, y, z) is given by the user.
+def pos_vel_rotate_to_new_z(A2_pos, A2_vel, A1_z_new):
+    """Rotate positions and velocities to new coordinates with a given z axis.
 
     Parameters
     ----------
     A2_pos : [float]
-        Position of the particles (m).
+        Positions of the particles (m).
+
     A2_vel : [float]
         Velocities of the particles (m/s).
-    x : float
-        x coordinate of z1.
-    y : float
-        y coordinate of z1.
-    z : float
-        z coordinate of z1.
+
+    A1_z_new : [float]
+        The new z axis vector in the original coordinate system.
 
     Returns
     -------
     A2_pos : [float]
-        New position of the particles (m).
+        New positions of the particles (m).
+
     A2_vel : [float]
         New velocities of the particles (m/s).
     """
+    A1_z_new = A1_z_new / np.linalg.norm(A1_z_new)
 
-    z1 = np.array([x, y, z])
-    z1 = z1 / np.linalg.norm(z1)
-
-    if z1[1] == 1 or z1[1] == -1:
-        random_vector = np.array([1, 0, 0])
+    # Create a vector perpendicular to A1_z_new and in the old x-z plane
+    if A1_z_new[1] == 1 or A1_z_new[1] == -1:
+        A1_tmp = np.array([1, 0, 0])
     else:
-        random_vector = np.array([0, 1, 0])
+        A1_tmp = np.array([0, 1, 0])
+    A1_u = np.cross(A1_z_new, A1_tmp)
+    A1_u = A1_u / np.linalg.norm(A1_u)
+    A1_v = np.cross(A1_z_new, A1_u)
 
-    # Create vector perpendicular to Z1 and in the old x-z plane
-    x1 = np.cross(z1, random_vector)
-    # Normalize
-    x1 = x1 / np.linalg.norm(x1)
-    y1 = np.cross(z1, x1)
-
-    M = np.vstack((x1, y1, z1))
+    # Rotation matrix
+    M = np.vstack((A1_u, A1_vA1_vA1_v, A1_z_new))
     M_inv = np.linalg.inv(M)
 
+    # Rotate
     A2_pos_new = np.dot(M_inv, A2_pos.T)
     A2_vel_new = np.dot(M_inv, A2_vel.T)
 
