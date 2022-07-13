@@ -1,4 +1,4 @@
-""" 
+"""
 WoMa SESAME and ANEOS (in SESAME-style tables) equations of state
 """
 
@@ -56,8 +56,95 @@ def find_index_and_interp(x, A1_x):
     return np.array([idx, intp])
 
 
+def write_table_SESAME(
+    Fp_table, name, version_date, A1_rho, A1_T, A2_u, A2_P, A2_c, A2_s
+):
+    """Write the data to a file, in a SESAME-like format plus header info, etc.
+
+    File contents
+    -------------
+    # header (12 lines)
+    version_date                                                (YYYYMMDD)
+    num_rho  num_T
+    rho[0]   rho[1]  ...  rho[num_rho]                          (kg/m^3)
+    T[0]     T[1]    ...  T[num_T]                              (K)
+    u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s, J/K/kg)
+    u[1, 0]                 ...         ...         ...
+    ...                     ...         ...         ...
+    u[num_rho-1, 0]         ...         ...         ...
+    u[0, 1]                 ...         ...         ...
+    ...                     ...         ...         ...
+    u[num_rho-1, num_T-1]   ...         ...         s[num_rho-1, num_T-1]
+
+    Parameters
+    ----------
+    Fp_table : str
+        The table file path.
+
+    name : str
+        The material name.
+
+    version_date : int
+        The file version date (YYYYMMDD).
+
+    A1_rho, A1_T : [float]
+        Density (kg m^-3) and temperature (K) arrays.
+
+    A2_u, A2_P, A2_c, A2_s : [[float]]
+        Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound speed
+        (m s^-1), and sp. entropy (J K^-1 kg^-1).
+    """
+    Fp_table = ut.check_end(Fp_table, ".txt")
+    num_rho = len(A1_rho)
+    num_T = len(A1_T)
+
+    with open(Fp_table, "w") as f:
+        # Header
+        f.write("# Material %s\n" % name)
+        f.write(
+            "# version_date                                                (YYYYMMDD)\n"
+            "# num_rho  num_T\n"
+            "# rho[0]   rho[1]  ...  rho[num_rho-1]                        (kg/m^3)\n"
+            "# T[0]     T[1]    ...  T[num_T-1]                            (K)\n"
+            "# u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s, J/K/kg)\n"
+            "# u[1, 0]                 ...         ...         ...\n"
+            "# ...                     ...         ...         ...\n"
+            "# u[num_rho-1, 0]         ...         ...         ...\n"
+            "# u[0, 1]                 ...         ...         ...\n"
+            "# ...                     ...         ...         ...\n"
+            "# u[num_rho-1, num_T-1]   ...         ...         s[num_rho-1, num_T-1]\n"
+        )
+
+        # Metadata
+        f.write("%d \n" % version_date)
+        f.write("%d %d \n" % (num_rho, num_T))
+
+        # Density and temperature arrays
+        for i_rho in range(num_rho):
+            f.write("%.8e " % A1_rho[i_rho])
+        f.write("\n")
+        for i_T in range(num_T):
+            f.write("%.8e " % A1_T[i_T])
+        f.write("\n")
+
+        # Table arrays
+        for i_T in range(num_T):
+            for i_rho in range(num_rho):
+                f.write(
+                    "%.8e %.8e %.8e %.8e \n"
+                    % (
+                        A2_u[i_rho, i_T],
+                        A2_P[i_rho, i_T],
+                        A2_c[i_rho, i_T],
+                        A2_s[i_rho, i_T],
+                    )
+                )
+
+
 def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
     """Prepare SESAME-like tables to be used.
+
+    ##Needs checking and tidying
 
     Parameters
     ----------
@@ -151,34 +238,21 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
 def load_table_SESAME(Fp_table):
     """Load and return the table file data.
 
-    # header (six lines)
-    date
-    num_rho  num_T
-    A1_rho
-    A1_T
-    A2_u[0, 0]              A2_P[0, 0]      A2_c[0, 0]      A2_s[0, 0]
-    A2_u[1, 0]              ...
-    ...                     ...
-    A2_u[num_rho, 0]        ...
-    A2_u[0, 1]              ...
-    ...                     ...
-    A2_u[num_rho, 1]        ...
-    ...                     ...
-    A2_u[num_rho, num_u]    ...
+    File contents: see write_table_SESAME().
 
     Parameters
     ----------
-    Fp_table (str)
+    Fp_table : str
         The table file path.
 
     Returns
     -------
     A1_rho, A1_T : [float]
-        1D arrays of  of density (kg m^-3) and temperature (K).
+        Density (kg m^-3) and temperature (K) arrays.
 
-    A2_P, A2_u, A2_s : [[float]]
-        2D table arrays of pressure (Pa), sp. int. energy (J kg^-1), and sp.
-        entropy (J kg^-1 K^-1).
+    A2_u, A2_P, A2_c, A2_s : [[float]]
+        Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound speed
+        (m s^-1), and sp. entropy (J K^-1 kg^-1).
 
     A1_log_*, A2_log_* : [float], [[float]]
         The natural log versions of the same arrays.
@@ -187,8 +261,11 @@ def load_table_SESAME(Fp_table):
     Fp_table = ut.check_end(Fp_table, ".txt")
     with open(Fp_table) as f:
         # Skip the header
-        for i in range(7):
+        for i in range(12):
             f.readline()
+
+        # Skip the version date
+        f.readline()
 
         num_rho, num_T = np.array(f.readline().split(), dtype=int)
         A2_u = np.empty((num_rho, num_T))
@@ -214,13 +291,15 @@ def load_table_SESAME(Fp_table):
     return (
         A1_rho,
         A1_T,
-        A2_P,
         A2_u,
+        A2_P,
+        A2_c,
         A2_s,
         np.log(A1_rho),
         np.log(A1_T),
-        np.log(A2_P),
         np.log(A2_u),
+        np.log(A2_P),
+        np.log(A2_c),
         np.log(A2_s),
     )
 
@@ -286,19 +365,21 @@ def load_phase_table_ANEOS_forsterite():
 
 
 # ========
-# Initialise SESAME-style tables as global variables for numba
+# Awkwawrdly initialise SESAME-style tables as global variables needed for numba
 # ========
 # SESAME
 (
     A1_rho_SESAME_iron,
     A1_T_SESAME_iron,
-    A2_P_SESAME_iron,
     A2_u_SESAME_iron,
+    A2_P_SESAME_iron,
+    A2_c_SESAME_iron,
     A2_s_SESAME_iron,
     A1_log_rho_SESAME_iron,
     A1_log_T_SESAME_iron,
-    A2_log_P_SESAME_iron,
     A2_log_u_SESAME_iron,
+    A2_log_P_SESAME_iron,
+    A2_log_c_SESAME_iron,
     A2_log_s_SESAME_iron,
 ) = (
     np.zeros(1),
@@ -306,8 +387,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -315,13 +398,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_SESAME_basalt,
     A1_T_SESAME_basalt,
-    A2_P_SESAME_basalt,
     A2_u_SESAME_basalt,
+    A2_P_SESAME_basalt,
+    A2_c_SESAME_basalt,
     A2_s_SESAME_basalt,
     A1_log_rho_SESAME_basalt,
     A1_log_T_SESAME_basalt,
-    A2_log_P_SESAME_basalt,
     A2_log_u_SESAME_basalt,
+    A2_log_P_SESAME_basalt,
+    A2_log_c_SESAME_basalt,
     A2_log_s_SESAME_basalt,
 ) = (
     np.zeros(1),
@@ -329,8 +414,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -338,13 +425,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_SESAME_water,
     A1_T_SESAME_water,
-    A2_P_SESAME_water,
     A2_u_SESAME_water,
+    A2_P_SESAME_water,
+    A2_c_SESAME_water,
     A2_s_SESAME_water,
     A1_log_rho_SESAME_water,
     A1_log_T_SESAME_water,
-    A2_log_P_SESAME_water,
     A2_log_u_SESAME_water,
+    A2_log_P_SESAME_water,
+    A2_log_c_SESAME_water,
     A2_log_s_SESAME_water,
 ) = (
     np.zeros(1),
@@ -352,8 +441,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -361,13 +452,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_SS08_water,
     A1_T_SS08_water,
-    A2_P_SS08_water,
     A2_u_SS08_water,
+    A2_P_SS08_water,
+    A2_c_SS08_water,
     A2_s_SS08_water,
     A1_log_rho_SS08_water,
     A1_log_T_SS08_water,
-    A2_log_P_SS08_water,
     A2_log_u_SS08_water,
+    A2_log_P_SS08_water,
+    A2_log_c_SS08_water,
     A2_log_s_SS08_water,
 ) = (
     np.zeros(1),
@@ -375,8 +468,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -386,13 +481,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_ANEOS_forsterite,
     A1_T_ANEOS_forsterite,
-    A2_P_ANEOS_forsterite,
     A2_u_ANEOS_forsterite,
+    A2_P_ANEOS_forsterite,
+    A2_c_ANEOS_forsterite,
     A2_s_ANEOS_forsterite,
     A1_log_rho_ANEOS_forsterite,
     A1_log_T_ANEOS_forsterite,
-    A2_log_P_ANEOS_forsterite,
     A2_log_u_ANEOS_forsterite,
+    A2_log_P_ANEOS_forsterite,
+    A2_log_c_ANEOS_forsterite,
     A2_log_s_ANEOS_forsterite,
 ) = (
     np.zeros(1),
@@ -400,8 +497,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -410,13 +509,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_ANEOS_iron,
     A1_T_ANEOS_iron,
-    A2_P_ANEOS_iron,
     A2_u_ANEOS_iron,
+    A2_P_ANEOS_iron,
+    A2_c_ANEOS_iron,
     A2_s_ANEOS_iron,
     A1_log_rho_ANEOS_iron,
     A1_log_T_ANEOS_iron,
-    A2_log_P_ANEOS_iron,
     A2_log_u_ANEOS_iron,
+    A2_log_P_ANEOS_iron,
+    A2_log_c_ANEOS_iron,
     A2_log_s_ANEOS_iron,
 ) = (
     np.zeros(1),
@@ -424,8 +525,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -433,13 +536,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_ANEOS_Fe85Si15,
     A1_T_ANEOS_Fe85Si15,
-    A2_P_ANEOS_Fe85Si15,
     A2_u_ANEOS_Fe85Si15,
+    A2_P_ANEOS_Fe85Si15,
+    A2_c_ANEOS_Fe85Si15,
     A2_s_ANEOS_Fe85Si15,
     A1_log_rho_ANEOS_Fe85Si15,
     A1_log_T_ANEOS_Fe85Si15,
-    A2_log_P_ANEOS_Fe85Si15,
     A2_log_u_ANEOS_Fe85Si15,
+    A2_log_P_ANEOS_Fe85Si15,
+    A2_log_c_ANEOS_Fe85Si15,
     A2_log_s_ANEOS_Fe85Si15,
 ) = (
     np.zeros(1),
@@ -447,8 +552,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -458,13 +565,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_AQUA,
     A1_T_AQUA,
-    A2_P_AQUA,
     A2_u_AQUA,
+    A2_P_AQUA,
+    A2_c_AQUA,
     A2_s_AQUA,
     A1_log_rho_AQUA,
     A1_log_T_AQUA,
-    A2_log_P_AQUA,
     A2_log_u_AQUA,
+    A2_log_P_AQUA,
+    A2_log_c_AQUA,
     A2_log_s_AQUA,
 ) = (
     np.zeros(1),
@@ -472,8 +581,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -483,13 +594,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_CMS19_H,
     A1_T_CMS19_H,
-    A2_P_CMS19_H,
     A2_u_CMS19_H,
+    A2_P_CMS19_H,
+    A2_c_CMS19_H,
     A2_s_CMS19_H,
     A1_log_rho_CMS19_H,
     A1_log_T_CMS19_H,
-    A2_log_P_CMS19_H,
     A2_log_u_CMS19_H,
+    A2_log_P_CMS19_H,
+    A2_log_c_CMS19_H,
     A2_log_s_CMS19_H,
 ) = (
     np.zeros(1),
@@ -497,8 +610,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -506,13 +621,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_CMS19_He,
     A1_T_CMS19_He,
-    A2_P_CMS19_He,
     A2_u_CMS19_He,
+    A2_P_CMS19_He,
+    A2_c_CMS19_He,
     A2_s_CMS19_He,
     A1_log_rho_CMS19_He,
     A1_log_T_CMS19_He,
-    A2_log_P_CMS19_He,
     A2_log_u_CMS19_He,
+    A2_log_P_CMS19_He,
+    A2_log_c_CMS19_He,
     A2_log_s_CMS19_He,
 ) = (
     np.zeros(1),
@@ -520,8 +637,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
@@ -529,13 +648,15 @@ def load_phase_table_ANEOS_forsterite():
 (
     A1_rho_CMS19_HHe,
     A1_T_CMS19_HHe,
-    A2_P_CMS19_HHe,
     A2_u_CMS19_HHe,
+    A2_P_CMS19_HHe,
+    A2_c_CMS19_HHe,
     A2_s_CMS19_HHe,
     A1_log_rho_CMS19_HHe,
     A1_log_T_CMS19_HHe,
-    A2_log_P_CMS19_HHe,
     A2_log_u_CMS19_HHe,
+    A2_log_P_CMS19_HHe,
+    A2_log_c_CMS19_HHe,
     A2_log_s_CMS19_HHe,
 ) = (
     np.zeros(1),
@@ -543,8 +664,10 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
+    np.zeros((2, 2)),
     np.zeros(1),
     np.zeros(1),
+    np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
     np.zeros((2, 2)),
