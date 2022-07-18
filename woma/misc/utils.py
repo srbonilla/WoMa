@@ -213,7 +213,8 @@ def impact_pos_vel_b_v_c_r(
     desired scenario at contact, rotated such that the velocity at contact is
     in the negative x direction.
 
-    As described in Appendix A of in Kegerreis et al. (2020) ApJ 897:161.
+    As described in Appendix A of in Kegerreis et al. (2020) ApJ 897:161, with
+    the erroneous factors of 2 removed from Eq.(A8) to set the rotation angle.
 
     Parameters
     ----------
@@ -307,8 +308,8 @@ def impact_pos_vel_b_v_c_r(
 
         # Periapsis and eccentricity
         r_p = min(
-            abs(0.5 * (a + np.sqrt(a**2 - 2 * a * v_c**2 * y_c**2 / mu))),
-            abs(0.5 * (a - np.sqrt(a**2 - 2 * a * v_c**2 * y_c**2 / mu))),
+            abs(a + np.sqrt(a**2 - a * v_c**2 * y_c**2 / mu)),
+            abs(a - np.sqrt(a**2 - a * v_c**2 * y_c**2 / mu)),
         )
         e = 1 - r_p / a
 
