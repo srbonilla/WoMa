@@ -2,22 +2,22 @@
 WoMa (World Maker)
 ====
 
-Create models of rotating (and non-rotating) planets (or stars etc.) by solving 
-the differential equations for hydrostatic equilibrium, and/or create initial 
-conditions for smoothed particle hydrodynamics (SPH) or any other particle-based 
+Create models of rotating (and non-rotating) planets (or stars etc.) by solving
+the differential equations for hydrostatic equilibrium, and/or create initial
+conditions for smoothed particle hydrodynamics (SPH) or any other particle-based
 methods by placing particles to precisely match the planet's profiles.
 
 See README.md and tutorial.ipynb for general documentation and examples.
 
-Presented in Ruiz-Bonilla et al. (2020), MNRAS..., https://doi.org/...
+Presented in Ruiz-Bonilla et al. (2021), MNRAS 500:3.
 
-Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS 
+Includes SEAGen (https://github.com/jkeger/seagen; Kegerreis et al. 2019, MNRAS
 487:4) with modifications for spinning planets.
 
-Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
+Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk
 Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
 
-Visit https://github.com/srbonilla/woma to download the code including examples 
+Visit https://github.com/srbonilla/woma to download the code including examples
 and for support.
 """
 
@@ -3439,7 +3439,7 @@ class SpinPlanet:
                 # Break if M_0 is satisfied
                 if np.abs(M_0_discrep) < tol_layer_masses:
                     break
-                
+
         # Message that there is no convergence
         if verbosity >= 1:
             print(
@@ -3629,7 +3629,7 @@ class ParticlePlanet:
 
         utils.load_eos_tables(planet.A1_mat_layer)
 
-        if not hasattr(planet, "period"):
+        if not hasattr(planet, "period") or planet.period in [None, 0, np.nan]:
             particles = seagen.GenSphere(
                 self.N_particles,
                 planet.A1_r[1:],
@@ -3662,9 +3662,7 @@ class ParticlePlanet:
             )
 
             self.N_particles = particles.A1_x.shape[0]
-
-        if hasattr(planet, "period"):
-
+        else:
             (
                 self.A1_x,
                 self.A1_y,
