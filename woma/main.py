@@ -254,7 +254,7 @@ class Planet:
         self.v_esc = np.sqrt(2 * gv.G * self.M / self.A1_R_layer[-1])
 
     def update_attributes(self):
-        """ Set all planet information after making the profiles. """
+        """Set all planet information after making the profiles."""
         self.num_prof = len(self.A1_r)
 
         # Reverse profile arrays to be ordered by increasing radius
@@ -283,7 +283,7 @@ class Planet:
         self.M = np.sum(self.A1_M_layer)
 
         # Moment of inertia factor
-        self.I_MR2 = utils.moi(self.A1_r, self.A1_rho) / (self.M * self.R ** 2)
+        self.I_MR2 = utils.moi(self.A1_r, self.A1_rho) / (self.M * self.R**2)
 
         # P, T, and rho at the centre and the outer boundary of each layer
         self.P_0 = self.A1_P[0]
@@ -304,7 +304,7 @@ class Planet:
         self.escape_velocity()
 
     def print_info(self):
-        """ Print the main properties. """
+        """Print the main properties."""
         # Print and catch if any variables are None
         def print_try(string, variables):
             try:
@@ -2222,7 +2222,7 @@ class SpinPlanet:
             assert self.A1_T_rho_type_id[2] is not None
 
     def _find_boundary_indices(self):
-        """ Find the indices of the outermost elements in each layer. """
+        """Find the indices of the outermost elements in each layer."""
         # First index above each layer
         A1_idx_layer_eq = np.array([np.argmax(self.A1_rho_eq == 0)])
         A1_idx_layer_po = np.array([np.argmax(self.A1_rho_po == 0)])
@@ -2244,7 +2244,7 @@ class SpinPlanet:
         return A1_idx_layer_eq - 1, A1_idx_layer_po - 1
 
     def _update_internal_attributes(self):
-        """ Update the attributes required for the internal iterations. """
+        """Update the attributes required for the internal iterations."""
         self.A1_idx_layer_eq, self.A1_idx_layer_po = self._find_boundary_indices()
 
         # Nested spheroid properties
@@ -2275,7 +2275,7 @@ class SpinPlanet:
             self.A1_M_layer[2:] -= self.A1_M_layer[1]
 
     def update_attributes(self):
-        """ Update the attributes for the final output planet. """
+        """Update the attributes for the final output planet."""
         self._update_internal_attributes()
 
         # Update A1_T_rho_args
@@ -2283,7 +2283,11 @@ class SpinPlanet:
 
         # Escape speed
         self.v_esc_eq, self.v_esc_po = us.spin_escape_vel(
-            self.A1_r_eq, self.A1_rho_eq, self.A1_r_po, self.A1_rho_po, self.period,
+            self.A1_r_eq,
+            self.A1_rho_eq,
+            self.A1_r_po,
+            self.A1_rho_po,
+            self.period,
         )
 
         # Equatorial and polar radii
@@ -2377,16 +2381,16 @@ class SpinPlanet:
         A1_drho = np.append(self.A1_rho, 0)
         A1_drho = A1_drho[:-1] - A1_drho[1:]
 
-        self.I_MR2 = np.sum(8 / 15 * np.pi * A1_drho * self.A1_R ** 4 * self.A1_Z)
-        self.I_MR2 /= self.M * self.R_eq ** 2
+        self.I_MR2 = np.sum(8 / 15 * np.pi * A1_drho * self.A1_R**4 * self.A1_Z)
+        self.I_MR2 /= self.M * self.R_eq**2
 
         # Angular momentum
         hours_to_sec = 60 * 60
         w = 2 * np.pi / self.period / hours_to_sec
-        self.L = self.I_MR2 * self.M * self.R_eq ** 2 * w
+        self.L = self.I_MR2 * self.M * self.R_eq**2 * w
 
     def print_info(self):
-        """ Print the main properties. """
+        """Print the main properties."""
         # Print and catch if any variables are None
         def print_try(string, variables):
             try:
@@ -2495,7 +2499,8 @@ class SpinPlanet:
             (utils.add_whitespace("I_MR2", space), self.I_MR2),
         )
         print_try(
-            "    %s = %.5g  kg m^2 s^-1", (utils.add_whitespace("L", space), self.L),
+            "    %s = %.5g  kg m^2 s^-1",
+            (utils.add_whitespace("L", space), self.L),
         )
 
     def save(self, filename, verbosity=1):
@@ -2885,7 +2890,7 @@ class SpinPlanet:
             try:
                 self.planet.gen_prof_L1_find_M_given_R(M_max=1.2 * M_fixed, verbosity=0)
             except ValueError:
-                M_max = 10 * np.pi * self.planet.R ** 3 * self.planet.rho_0
+                M_max = 10 * np.pi * self.planet.R**3 * self.planet.rho_0
                 self.planet.gen_prof_L1_find_M_given_R(M_max=M_max, verbosity=0)
 
             # Create the spinning profiles
@@ -3188,7 +3193,7 @@ class SpinPlanet:
                         M_max=1.2 * M_fixed, verbosity=0
                     )
                 except ValueError:
-                    M_max = 10 * np.pi * self.planet.R ** 3 * self.planet.rho_0
+                    M_max = 10 * np.pi * self.planet.R**3 * self.planet.rho_0
                     self.planet.gen_prof_L2_find_M_given_R_R1(M_max=M_max, verbosity=0)
 
                 # Create the spinning profiles

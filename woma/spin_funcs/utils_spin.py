@@ -39,12 +39,12 @@ def Kellogg_V_r_indef(r, R, Z, x):
 
     """
     if R == Z:
-        return 2 * (r ** 2 - 3 * (R ** 2 + x)) / 3 / np.sqrt((R ** 2 + x) ** 3)
+        return 2 * (r**2 - 3 * (R**2 + x)) / 3 / np.sqrt((R**2 + x) ** 3)
     else:
-        A1 = -(r ** 2) * np.sqrt(x + Z ** 2) / (R ** 2 + x) / (R ** 2 - Z ** 2)
-        A2 = -(r ** 2 - 2 * R ** 2 + 2 * Z ** 2)
-        A2 = A2 * np.arctan(np.sqrt((x + Z ** 2) / (R ** 2 - Z ** 2)))
-        A2 = A2 / ((R ** 2 - Z ** 2) ** (3 / 2))
+        A1 = -(r**2) * np.sqrt(x + Z**2) / (R**2 + x) / (R**2 - Z**2)
+        A2 = -(r**2 - 2 * R**2 + 2 * Z**2)
+        A2 = A2 * np.arctan(np.sqrt((x + Z**2) / (R**2 - Z**2)))
+        A2 = A2 / ((R**2 - Z**2) ** (3 / 2))
         return A1 + A2
 
     return 0
@@ -77,12 +77,12 @@ def Kellogg_V_z_indef(z, R, Z, x):
     """
 
     if R == Z:
-        return 2 * (z ** 2 - 3 * (R ** 2 + x)) / 3 / np.sqrt((R ** 2 + x) ** 3)
+        return 2 * (z**2 - 3 * (R**2 + x)) / 3 / np.sqrt((R**2 + x) ** 3)
     else:
-        A1 = 2 * z ** 2 / (R ** 2 - Z ** 2) / np.sqrt(Z ** 2 + x)
-        A2 = 2 * (R ** 2 + z ** 2 - Z ** 2)
-        A2 = A2 * np.arctan(np.sqrt((x + Z ** 2) / (R ** 2 - Z ** 2)))
-        A2 = A2 / ((R ** 2 - Z ** 2) ** (3 / 2))
+        A1 = 2 * z**2 / (R**2 - Z**2) / np.sqrt(Z**2 + x)
+        A2 = 2 * (R**2 + z**2 - Z**2)
+        A2 = A2 * np.arctan(np.sqrt((x + Z**2) / (R**2 - Z**2)))
+        A2 = A2 / ((R**2 - Z**2) ** (3 / 2))
         return A1 + A2
 
     return 0
@@ -128,20 +128,20 @@ def V_grav_eq(r, R, Z, rho):
 
     if R == Z:
         if r >= R:
-            vol = 4 * np.pi * R ** 2 * Z / 3
+            vol = 4 * np.pi * R**2 * Z / 3
             return -gv.G * vol * rho / r
         else:
-            M = 4 / 3 * np.pi * R ** 3 * rho
-            return -gv.G * M / 2 / R ** 3 * (3 * R ** 2 - r ** 2)
+            M = 4 / 3 * np.pi * R**3 * rho
+            return -gv.G * M / 2 / R**3 * (3 * R**2 - r**2)
 
     if r <= R:
-        V = np.pi * R ** 2 * Z * rho
+        V = np.pi * R**2 * Z * rho
         V = V * (Kellogg_V_r_indef(r, R, Z, 1e30) - Kellogg_V_r_indef(r, R, Z, 0))
         return -gv.G * V
 
     else:
-        A = r ** 2 - R ** 2
-        V = np.pi * R ** 2 * Z * rho
+        A = r**2 - R**2
+        V = np.pi * R**2 * Z * rho
         V = V * (Kellogg_V_r_indef(r, R, Z, 1e30) - Kellogg_V_r_indef(r, R, Z, A))
         return -gv.G * V
 
@@ -187,20 +187,20 @@ def V_grav_po(z, R, Z, rho):
 
     if R == Z:
         if z >= R:
-            vol = 4 * np.pi * R ** 2 * Z / 3
+            vol = 4 * np.pi * R**2 * Z / 3
             return -gv.G * vol * rho / z
         else:
-            M = 4 / 3 * np.pi * R ** 3 * rho
-            return -gv.G * M / 2 / R ** 3 * (3 * R ** 2 - z ** 2)
+            M = 4 / 3 * np.pi * R**3 * rho
+            return -gv.G * M / 2 / R**3 * (3 * R**2 - z**2)
 
     if z <= Z:
-        V = np.pi * R ** 2 * Z * rho
+        V = np.pi * R**2 * Z * rho
         V = V * (Kellogg_V_z_indef(z, R, Z, 1e40) - Kellogg_V_z_indef(z, R, Z, 0))
         return -gv.G * V
 
     else:
-        A = z ** 2 - Z ** 2
-        V = np.pi * R ** 2 * Z * rho
+        A = z**2 - Z**2
+        V = np.pi * R**2 * Z * rho
         V = V * (Kellogg_V_z_indef(z, R, Z, 1e40) - Kellogg_V_z_indef(z, R, Z, A))
         return -gv.G * V
 
@@ -230,7 +230,7 @@ def ellipse_eqn(r, z, R, Z):
     f : float
         Value of (r/R)^2 + (z/Z)^2.
     """
-    return r ** 2 / R ** 2 + z ** 2 / Z ** 2
+    return r**2 / R**2 + z**2 / Z**2
 
 
 def rho_at_r_z(r, z, A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po):
@@ -346,7 +346,7 @@ def vol_spheroid(R, Z):
 
     """
 
-    return np.pi * 4 / 3 * R ** 2 * Z
+    return np.pi * 4 / 3 * R**2 * Z
 
 
 @njit
@@ -371,7 +371,7 @@ def cart_to_spher(x, y, z):
 
     """
 
-    r = np.sqrt(x ** 2 + y ** 2 + z ** 2)
+    r = np.sqrt(x**2 + y**2 + z**2)
     theta = np.arccos(z / r)
     phi = np.arctan2(y, x)
 
@@ -428,11 +428,11 @@ def vol_i_partial(theta, R, Z):
         Volume (m^3).
     """
 
-    i = -np.sqrt(2) * R ** 2 * np.cos(theta)
+    i = -np.sqrt(2) * R**2 * np.cos(theta)
     i = i / np.sqrt(
-        1 / R ** 2 + 1 / Z ** 2 + (-1 / R ** 2 + 1 / Z ** 2) * np.cos(2 * theta)
+        1 / R**2 + 1 / Z**2 + (-1 / R**2 + 1 / Z**2) * np.cos(2 * theta)
     )
-    i = i + R ** 2 * Z
+    i = i + R**2 * Z
 
     return i
 
@@ -745,7 +745,7 @@ def place_particles(
         x, y, z = spher_to_cart(r, theta, phi)
 
         # Project on the spheroid without changing theta
-        alpha = np.sqrt(1 / (x ** 2 / R_0 ** 2 + y ** 2 / R_0 ** 2 + z ** 2 / Z_0 ** 2))
+        alpha = np.sqrt(1 / (x**2 / R_0**2 + y**2 / R_0**2 + z**2 / Z_0**2))
         x = alpha * x
         y = alpha * y
         z = alpha * z

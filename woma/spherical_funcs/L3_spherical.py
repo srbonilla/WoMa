@@ -968,7 +968,7 @@ def L3_find_R1_R2_given_M_R_I(
         the planet (m).
     """
     # Normalisation for moment of inertia factor
-    MR2 = M * R ** 2
+    MR2 = M * R**2
 
     try:
         if verbosity >= 1:

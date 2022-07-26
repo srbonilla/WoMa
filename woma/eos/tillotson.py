@@ -293,7 +293,7 @@ def u_cold(rho, mat_id, N):
 
         for j in range(N):
             x += drho
-            u_cold += P_u_rho(u_cold, x, mat_id) * drho / x ** 2
+            u_cold += P_u_rho(u_cold, x, mat_id) * drho / x**2
 
     else:
         raise ValueError("Invalid material ID")

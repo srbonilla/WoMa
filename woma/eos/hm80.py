@@ -456,7 +456,7 @@ def u_cold(rho, mat_id, N):
 
         for j in range(N):
             x += drho
-            u_cold += P_u_rho(u_cold, x, mat_id) * drho / x ** 2
+            u_cold += P_u_rho(u_cold, x, mat_id) * drho / x**2
 
     else:
         raise ValueError("Invalid material ID")
@@ -588,10 +588,10 @@ def C_V_HM80(rho, T, mat_id):
             (
                 A1_c[0]
                 + A1_c[1] * T
-                + A1_c[2] * T ** 2
+                + A1_c[2] * T**2
                 + A1_c[3] * T * rho_cgs
                 + A1_c[4] * rho_cgs
-                + A1_c[5] * rho_cgs ** 2
+                + A1_c[5] * rho_cgs**2
             )
             * gv.R_gas
             * 1e7
@@ -684,10 +684,10 @@ def T_rho_HM80_HHe(rho, rho_prv, T_prv):
         return (
             A1_b[0]
             + A1_b[1] * y
-            + A1_b[2] * y ** 2
+            + A1_b[2] * y**2
             + A1_b[3] * x * y
             + A1_b[4] * x
-            + A1_b[5] * x ** 2
+            + A1_b[5] * x**2
         )
 
     # Integrate from y_prv(x_prv) to y(x)
