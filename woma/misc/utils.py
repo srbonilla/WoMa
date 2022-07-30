@@ -316,9 +316,10 @@ def impact_pos_vel_b_v_c_r(
         # Check requested separation is valid
         r_a = 2 * a - r_p
         if v_c < v_esc and r > r_a:
-            raise ValueError(
-                "Invalid r = %g m for bound orbit (v_esc = %g m/s) with apoapsis = %g m"
-                % (r, v_esc, r_a)
+            raise Exception(
+                "Invalid r = %g m for bound orbit (v_esc = %g m/s) with "
+                "apoapsis = %g m, period/2 = %.1f s"
+                % (r, v_esc, r_a, 0.5 * np.sqrt(a**3 * 4 * np.pi**2 / mu))
             )
 
         # True anomalies (actually the complementary angles)
@@ -492,30 +493,34 @@ def impact_pos_vel_b_v_c_t(
     tol = 1e-6
     while tol < abs(t_ - t) / t:
         r = 0.5 * (r_min + r_max)
+        i += 1
 
-        t_ = impact_pos_vel_b_v_c_r(
-            b,
-            v_c,
-            r,
-            R_t,
-            R_i,
-            M_t,
-            M_i,
-            units_b=units_b,
-            units_v_c=units_v_c,
-            return_t=True,
-        )[2]
-
-        # Catch if r too big for the desired speed
-        if np.isnan(t_):
+        # Catch if r too big for a bound orbit
+        try:
+            t_ = impact_pos_vel_b_v_c_r(
+                b,
+                v_c,
+                r,
+                R_t,
+                R_i,
+                M_t,
+                M_i,
+                units_b=units_b,
+                units_v_c=units_v_c,
+                return_t=True,
+            )[2]
+        except Exception:
+            # Reduce r next time
             t_ = t * 2
+            # Raise the error anyway if out of iterations
+            if i >= i_max:
+                raise
 
         # Bisect
         if t_ < t:
             r_min = r
         else:
             r_max = r
-        i += 1
 
         if i >= i_max:
             raise RuntimeError("Failed to find r(t) after %d iterations" % (i))
