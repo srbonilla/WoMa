@@ -591,23 +591,21 @@ def check_loaded_eos_tables():
 
 
 def load_eos_tables(A1_mat_input=None):
-    """
-    Load necessary tables for eos computations.
+    """Load necessary tables for eos computations.
 
     Parameters
     ----------
-    A1_mat_input : [str]
-        List of the materials to be loaded. Default None loads all materials available.
-        See Di_mat_id in `misc/glob_vars.py`.
-
-    Returns
-    -------
-    None.
-
+    A1_mat_input : [str] or str
+        List of the materials (or just one) to be loaded. Default None loads all
+        materials available. See Di_mat_id in `misc/glob_vars.py`.
     """
     # Load all tables (default)
     if A1_mat_input is None:
         A1_mat = list(gv.Di_mat_id.keys())
+    elif not hasattr(A1_mat_input, "copy"):
+        # Put a single input into a list
+        A1_mat_input = [A1_mat_input]
+        A1_mat = A1_mat_input.copy()
     else:
         A1_mat = A1_mat_input.copy()
     # Discard idg materials
