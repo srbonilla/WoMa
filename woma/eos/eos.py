@@ -872,6 +872,81 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
 
     return A1_rho
 
+@njit
+def rho_u_P(u, P, mat_id, rho_ref):
+    """Compute the density from the specific internal energy
+    and pressure, for any EoS. Start search for roots at the 
+    reference density. If there are are multiple roots, return
+    root wih smallest abs(log(root_rho) - log(rho_ref))
+
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
+
+    P : float
+        Pressure (Pa).
+
+    mat_id : int
+        Material id.
+        
+    rho_ref : float
+        Reference density. Pick root closest to this value.      
+
+    Returns
+    -------
+    rho : float
+        Density (kg m^-3).
+    """
+    mat_type = mat_id // gv.type_factor
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+        rho = sesame.rho_u_P(u, P, mat_id, rho_ref)
+    else:
+        raise ValueError("Function not implemented for this material type")
+    return rho
+
+
+@njit
+def A1_rho_u_P(A1_u, A1_P, A1_mat_id, A1_rho_ref):
+    """Compute the density from arrays of specific internal energy 
+    and pressure, for any EoS. Start search for roots at the 
+    reference density. If there are are multiple roots, return
+    root wih smallest abs(log(root_rho) - log(rho_ref))
+
+    Parameters
+    ----------
+    A1_u : [float]
+        Specific internal energy (J kg^-1).
+
+    A1_P : [float]
+        Pressure (Pa).
+
+    A1_mat_id : [int]
+        Material id.
+        
+    A1_rho_ref : float
+        Reference density. Pick root closest to this value.          
+
+    Returns
+    -------
+    A1_rho : float
+        Density (kg m^-3).
+    """
+
+    assert A1_u.ndim == 1
+    assert A1_P.ndim == 1
+    assert A1_mat_id.ndim == 1
+    assert A1_rho_ref.ndim == 1
+    assert A1_u.shape[0] == A1_P.shape[0]
+    assert A1_u.shape[0] == A1_mat_id.shape[0]
+    assert A1_u.shape[0] == A1_rho_ref.shape[0]
+
+    A1_rho = np.zeros_like(A1_u)
+
+    for i, u in enumerate(A1_u):
+        A1_rho[i] = rho_u_P(A1_u[i], A1_P[i], A1_mat_id[i], A1_rho_ref[i])
+
+    return A1_rho
 
 # ========
 # Derived functions

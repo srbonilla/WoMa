@@ -2523,3 +2523,370 @@ def s_rho_T(rho, T, mat_id):
 # ========
 # Density
 # ========
+@njit
+def rho_u_P(u, P, mat_id, rho_ref):
+    """Compute the density from the specific internal energy
+    and pressure, for any EoS. Start search for roots at the 
+    reference density. If there are are multiple roots, return
+    root wih smallest abs(log(root_rho) - log(rho_ref))
+
+    Parameters
+    ----------
+    u : float
+        Specific internal energy (J kg^-1).
+
+    P : float
+        Pressure (Pa).
+
+    mat_id : int
+        Material id.
+        
+    rho_ref : float
+        Reference density. Pick root closest to this value.      
+
+    Returns
+    -------
+    rho : float
+        Density (kg m^-3).
+    """
+    # Unpack the parameters
+    if mat_id == gv.id_SESAME_iron:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_iron,
+            A1_log_rho_SESAME_iron,
+            A2_log_u_SESAME_iron,
+        )
+    elif mat_id == gv.id_SESAME_basalt:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_basalt,
+            A1_log_rho_SESAME_basalt,
+            A2_log_u_SESAME_basalt,
+        )
+    elif mat_id == gv.id_SESAME_water:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SESAME_water,
+            A1_log_rho_SESAME_water,
+            A2_log_u_SESAME_water,
+        )
+    elif mat_id == gv.id_SS08_water:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_SS08_water,
+            A1_log_rho_SS08_water,
+            A2_log_u_SS08_water,
+        )
+    elif mat_id == gv.id_ANEOS_forsterite:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_forsterite,
+            A1_log_rho_ANEOS_forsterite,
+            A2_log_u_ANEOS_forsterite,
+        )
+    elif mat_id == gv.id_ANEOS_iron:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_iron,
+            A1_log_rho_ANEOS_iron,
+            A2_log_u_ANEOS_iron,
+        )
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_Fe85Si15,
+            A1_log_rho_ANEOS_Fe85Si15,
+            A2_log_u_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_AQUA:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_AQUA,
+            A1_log_rho_AQUA,
+            A2_log_u_AQUA,
+        )
+    elif mat_id == gv.id_CMS19_H:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_CMS19_H,
+            A1_log_rho_CMS19_H,
+            A2_log_u_CMS19_H,
+        )
+    elif mat_id == gv.id_CMS19_He:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_CMS19_He,
+            A1_log_rho_CMS19_He,
+            A2_log_u_CMS19_He,
+        )
+    elif mat_id == gv.id_CMS19_HHe:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_CMS19_HHe,
+            A1_log_rho_CMS19_HHe,
+            A2_log_u_CMS19_HHe,
+        )
+    else:
+        raise ValueError("Invalid material ID")
+
+    # Check necessary data loaded
+    if len(A1_log_rho) == 1:
+        raise ValueError(
+            "Please load the corresponding SESAME table.\n"
+            + "Use the woma.load_eos_tables function.\n"
+        )
+      
+    # Convert inputs to log
+    log_u = np.log(u)
+    log_P = np.log(P)
+    log_rho_ref = np.log(rho_ref)
+    
+    # Find rounded down index of reference density. This is where we start our search
+    idx_rho_intp_rho_ref = find_index_and_interp(log_rho_ref, A1_log_rho)
+    idx_rho_ref = int(idx_rho_intp_rho_ref[0])
+   
+    # If no roots are found in the current search range, we increase search range
+    # by search_factor_log_rho above and below the reference density each iteration. 
+    search_factor_log_rho = np.log(2) 
+    
+    # Initialise the minimum and maximum densities we're searching to at the 
+    # reference density. These will change before the first iteration.
+    log_rho_min = log_rho_ref
+    log_rho_max = log_rho_ref
+    
+    # When searching, we increase the range above/below with every iteration if no 
+    # roots are found in the current range. We search from index idx_rho_above_min 
+    # to idx_rho_above_max when searching above. idx_rho_above_min is the closest
+    # index above the reference density which we haven't seached in a previous iteration
+    # and idx_rho_above_max is the rounded up index associated with log_rho_max
+    # When searching below, we search from idx_rho_below_max to idx_rho_below_min.
+    # idx_rho_below_max is the closest index below the reference density which we 
+    # haven't seached in a previous iteration and idx_rho_below_min is the rounded down
+    # index associated with log_rho_min
+    
+    # Initialise search indices around rho_ref
+    idx_rho_below_max = idx_rho_ref
+    idx_rho_above_min = idx_rho_ref
+
+    # If we find a root, it will get stored as closest_root
+    closest_root = 0
+    
+    # Counters will stop us getting stuk in a while loop.
+    max_counter = 100
+    counter1 = 0 
+    
+    # Start search for roots
+    while closest_root == 0 and counter1 < max_counter:
+        
+        #increase search range by search_factor_log_rho
+        log_rho_max += search_factor_log_rho
+        idx_rho_above_max = int(find_index_and_interp(log_rho_max, A1_log_rho)[0])
+        log_rho_min -= search_factor_log_rho 
+        idx_rho_below_min = int(find_index_and_interp(log_rho_min, A1_log_rho)[0])
+        
+        counter2 = 0 
+        # If table densities have large enough increments that increasing search range
+        # by search_factor_log_rho doesn't change the table indices we're looking  between,
+        # increase search range by search_factor_log_rho until we're between new indices
+        while (idx_rho_below_min > idx_rho_below_max or idx_rho_above_max < idx_rho_above_min) and counter2 < max_counter:
+            log_rho_max += search_factor_log_rho
+            idx_rho_above_max = int(find_index_and_interp(log_rho_max, A1_log_rho)[0])
+            log_rho_min -= search_factor_log_rho 
+            idx_rho_below_min = int(find_index_and_interp(log_rho_min, A1_log_rho)[0])
+            counter2 += 1
+
+        # When searching above/below, we are looking for where the pressure P(rho, u) 
+        # of the table densities changes from being less than to more than, or vice versa,
+        # the desired pressure. If this is the case, there is a root between these 
+        # table values of rho.
+
+        # First look for roots above rho_ref  
+        for idx_rho in range(idx_rho_above_min, idx_rho_above_max + 1):
+           
+          # This is similar to P_u_rho, but we're not interest in intp_rho,
+          # but instead calculate the pressure for both intp_rho=0 and intp_rho=1
+        
+          # u (in this and the next density slice of the 2D u array)
+            idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
+            idx_u_1 = int(idx_u_1_intp_u_1[0])
+            intp_u_1 = idx_u_1_intp_u_1[1]
+            idx_u_2_intp_u_2 = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
+            idx_u_2 = int(idx_u_2_intp_u_2[0])
+            intp_u_2 = idx_u_2_intp_u_2[1]
+        
+            P_1 = A2_P[idx_rho, idx_u_1]
+            P_2 = A2_P[idx_rho, idx_u_1 + 1]
+            P_3 = A2_P[idx_rho + 1, idx_u_2]
+            P_4 = A2_P[idx_rho + 1, idx_u_2 + 1]
+        
+            # If below the minimum u at this rho then just use the lowest table values
+            if idx_rho >= 0 and (intp_u_1 < 0 or intp_u_2 < 0 or P_1 > P_2 or P_3 > P_4):
+                intp_u_1 = 0
+                intp_u_2 = 0
+        
+            # If more than two table values are non-positive then return zero
+            num_non_pos = np.sum(np.array([P_1, P_2, P_3, P_4]) < 0)
+            if num_non_pos > 2:
+                return 0.0
+        
+            # If just one or two are non-positive then replace them with a tiny value
+            # Unless already trying to extrapolate in which case return zero
+            if num_non_pos > 0:
+                if intp_u_1 < 0 or intp_u_2 < 0:
+                    return 0.0
+                else:
+                    # P_tiny  = np.amin(A2_P[A2_P > 0]) * 1e-3
+                    P_tiny = np.amin(np.abs(A2_P)) * 1e-3
+                    if P_1 <= 0:
+                        P_1 = P_tiny
+                    if P_2 <= 0:
+                        P_2 = P_tiny
+                    if P_3 <= 0:
+                        P_3 = P_tiny
+                    if P_4 <= 0:
+                        P_4 = P_tiny
+        
+            # Interpolate with the log values
+            P_1 = np.log(P_1)
+            P_2 = np.log(P_2)
+            P_3 = np.log(P_3)
+            P_4 = np.log(P_4)
+        
+            # Pressure for intp_rho = 0 
+            P_above_lower = np.exp(((1 - intp_u_1) * P_1 + intp_u_1 * P_2))
+            # Pressure for intp_rho = 1
+            P_above_upper = np.exp(((1 - intp_u_2) * P_3 + intp_u_2 * P_4))
+
+            # If one of the table values of rho gives a pressure close to the
+            # desired pressure, we return this value. This is done to avoid 
+            # interpolation problems that happen near table values
+            if np.abs((P_above_lower - P)) / P < 0.001:
+                closest_root = np.exp(A1_log_rho[idx_rho])
+                if idx_rho == idx_rho_ref:
+                     return  closest_root
+      
+                break    
+                           
+            if np.abs((P_above_upper - P)) / P < 0.001:
+                closest_root = np.exp(A1_log_rho[idx_rho+1])
+                if idx_rho == idx_rho_ref:
+                     return  closest_root
+                
+                break    
+              
+            # Does the pressure of the adjacent table densities switch from being
+            # above to below the desired pressure, or vice versa? If so, there is a root.
+            if (P_above_lower - P) * (P_above_upper - P) <= 0:
+
+                # If there is a root, interpolate between the table values:
+                intp_rho = (log_P - ((1 - intp_u_1) * P_1 + intp_u_1 * P_2)) / (((1 - intp_u_2) * P_3 + intp_u_2 * P_4) - ((1 - intp_u_1) * P_1 + intp_u_1 * P_2))
+              
+                closest_root = np.exp(A1_log_rho[idx_rho] + intp_rho * (A1_log_rho[idx_rho + 1] - A1_log_rho[idx_rho]))
+                        
+                # If the root is between the same table values as the reference value, then this is the closest root,
+                # so we can return it without further searching
+                if idx_rho == idx_rho_ref:
+                   return  closest_root;
+                break   
+      
+        # If we found a root above, we can decrease our search range below,
+        # since we're only looking for the closest root.
+        if closest_root:
+             log_rho_min = log_rho_ref -  (np.log(closest_root) - log_rho_ref)
+             idx_rho_below_min = int(find_index_and_interp(log_rho_min, A1_log_rho)[0])
+      
+        # Now look for roots above rho_ref  
+        for idx_rho in range(idx_rho_below_max, idx_rho_below_min - 1, -1):
+            
+        
+          # u (in this and the next density slice of the 2D u array)
+            idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
+            idx_u_1 = int(idx_u_1_intp_u_1[0])
+            intp_u_1 = idx_u_1_intp_u_1[1]
+            idx_u_2_intp_u_2 = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
+            idx_u_2 = int(idx_u_2_intp_u_2[0])
+            intp_u_2 = idx_u_2_intp_u_2[1]
+        
+            P_1 = A2_P[idx_rho, idx_u_1]
+            P_2 = A2_P[idx_rho, idx_u_1 + 1]
+            P_3 = A2_P[idx_rho + 1, idx_u_2]
+            P_4 = A2_P[idx_rho + 1, idx_u_2 + 1]
+        
+            # If below the minimum u at this rho then just use the lowest table values
+            if idx_rho >= 0 and (intp_u_1 < 0 or intp_u_2 < 0 or P_1 > P_2 or P_3 > P_4):
+                intp_u_1 = 0
+                intp_u_2 = 0
+        
+            # If more than two table values are non-positive then return zero
+            num_non_pos = np.sum(np.array([P_1, P_2, P_3, P_4]) < 0)
+            if num_non_pos > 2:
+                return 0.0
+        
+            # If just one or two are non-positive then replace them with a tiny value
+            # Unless already trying to extrapolate in which case return zero
+            if num_non_pos > 0:
+                if intp_u_1 < 0 or intp_u_2 < 0:
+                    return 0.0
+                else:
+                    # P_tiny  = np.amin(A2_P[A2_P > 0]) * 1e-3
+                    P_tiny = np.amin(np.abs(A2_P)) * 1e-3
+                    if P_1 <= 0:
+                        P_1 = P_tiny
+                    if P_2 <= 0:
+                        P_2 = P_tiny
+                    if P_3 <= 0:
+                        P_3 = P_tiny
+                    if P_4 <= 0:
+                        P_4 = P_tiny
+        
+            # Interpolate with the log values
+            P_1 = np.log(P_1)
+            P_2 = np.log(P_2)
+            P_3 = np.log(P_3)
+            P_4 = np.log(P_4)
+        
+            # Pressure for intp_rho = 0 
+            P_above_lower = np.exp(((1 - intp_u_1) * P_1 + intp_u_1 * P_2));
+            # Pressure for intp_rho = 1
+            P_above_upper = np.exp(((1 - intp_u_2) * P_3 + intp_u_2 * P_4));
+
+            # If one of the table values of rho gives a pressure close to the
+            # desired pressure, we return this value. This is done to avoid 
+            # interpolation problems that happen near table values
+            if np.abs((P_above_lower - P)) / P < 0.001:
+                closest_root = np.exp(A1_log_rho[idx_rho])
+                if idx_rho == idx_rho_ref:
+                     return  closest_root
+      
+                break    
+                
+            if np.abs((P_above_upper - P)) / P < 0.001:
+                closest_root = np.exp(A1_log_rho[idx_rho+1])
+                if idx_rho == idx_rho_ref:
+                     return  closest_root
+                
+                break  
+            
+            # Does the pressure of the adjacent table densities switch from being
+            # above to below the desired pressure, or vice versa? If so, there is a root.        
+            if (P_above_lower - P) * (P_above_upper - P) <= 0:
+                             
+                # If there is a root, interpolate between the table values:
+                intp_rho = (log_P - ((1 - intp_u_1) * P_1 + intp_u_1 * P_2)) / (((1 - intp_u_2) * P_3 + intp_u_2 * P_4) - ((1 - intp_u_1) * P_1 + intp_u_1 * P_2))
+
+                root_rho_below = np.exp(A1_log_rho[idx_rho] + intp_rho * (A1_log_rho[idx_rho + 1] - A1_log_rho[idx_rho]))
+                
+                # If we found a root above, which one is closer to the reference rho?
+                if closest_root:
+                    if np.abs(np.log(root_rho_below) - np.log(rho_ref)) < np.abs(np.log(closest_root) - np.log(rho_ref)):
+                        closest_root = root_rho_below
+                else:
+                    closest_root = root_rho_below  
+
+                break
+        
+        # IReturn the root if we found one
+        if closest_root:
+            return  closest_root
+        
+        # If we didn't find a root, get ready to extend the search range
+        idx_rho_below_max = idx_rho_below_min
+        idx_rho_above_min = idx_rho_above_max
+        counter1 += 1
+        
+        # If we cover the whole EoS table and don't find a root, give an error
+        if idx_rho_below_max == 0 and idx_rho_above_min == len(A1_log_rho) - 2:
+           raise ValueError("rho_u_P failed to converge on root within EoS table")
+  
+    # If we don't find a root before we reach max_counter, give an error
+    raise ValueError("rho_u_P failed to converge on root after many iterations")
