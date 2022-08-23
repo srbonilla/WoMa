@@ -1066,3 +1066,120 @@ def A1_rho_u_P(A1_u, A1_P, A1_mat_id, A1_rho_ref):
         A1_rho[i] = rho_u_P(A1_u[i], A1_P[i], A1_mat_id[i], A1_rho_ref[i])
 
     return A1_rho
+
+
+# ========
+# Plotting
+# ========
+# Table values
+def plot_table_HM80(mat, colour_choice, A1_fig_ax=None):
+    """Plot all entries in a Hubbard & MacFarlane (1980) data table.
+
+    Parameters
+    ----------
+    mat : str
+        The material name.
+
+    colour_choice : str
+        The table parameter to colour by, choose from:
+            "P"     Pressure.
+            "T"     Temperature.
+
+    A1_fig_ax : [fig, ax] (opt.)
+        If provided, then plot on this existing figure and axes instead of
+        making new ones.
+
+    Returns
+    -------
+    A1_fig_ax : [fig, ax]
+        The figure and axes.
+    """
+    # Figure
+    if A1_fig_ax is None:
+        fig = plt.figure(figsize=(9, 8))
+        ax = fig.gca()
+    else:
+        fig, ax = A1_fig_ax
+        plt.figure(fig.number)
+
+    # Table to load
+    if mat == "HM80_HHe":
+        Fp_load = gv.Fp_HM80_HHe
+    elif mat == "HM80_ice":
+        Fp_load = gv.Fp_HM80_ice
+    elif mat == "HM80_rock":
+        Fp_load = gv.Fp_HM80_rock
+    else:
+        raise ValueError("Invalid material name", mat)
+
+    # Load table data
+    (
+        log_rho_min,
+        log_rho_max,
+        num_rho,
+        log_rho_step,
+        log_u_min,
+        log_u_max,
+        num_u,
+        log_u_step,
+        A2_log_P,
+        A2_log_T,
+    ) = hm80.load_table_HM80(Fp_load)
+    A1_rho = np.exp(np.linspace(log_rho_min, log_rho_max, num_rho))
+    A1_u = np.exp(np.linspace(log_u_min, log_u_max, num_u))
+
+    # Colour parameter
+    if colour_choice == "P":
+        A2_colour = np.exp(A2_log_P)
+    elif colour_choice == "T":
+        A2_colour = np.exp(A2_log_T)
+    else:
+        raise ValueError("Invalid colour choice", colour_choice)
+    cmap = plt.get_cmap("viridis")
+    vmin = np.nanmin(A2_colour)
+    vmax = np.nanmax(A2_colour)
+    norm = mpl.colors.LogNorm()
+
+    # Plot each row
+    for i_u, u in enumerate(A1_rho):
+        scat = ax.scatter(
+            A1_rho,
+            np.full(num_u, u),
+            marker=".",
+            s=5**2,
+            c=A2_colour[:, i_u],
+            edgecolor="none",
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+            norm=norm,
+        )
+
+    # Colour bar
+    cbar = plt.colorbar(scat)
+    if colour_choice == "P":
+        cbar.set_label(r"Pressure (Pa)")
+    elif colour_choice == "T":
+        cbar.set_label(r"Temperature (K)")
+
+    # Axes etc
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"Density ($\rm{kg m}^{-3}$)")
+    ax.set_ylabel(r"Sp. Int. Energy ($\rm{J kg}^{-1}$)")
+    ax.set_title(r"%s $%s(\rho, u)$" % (mat, colour_choice))
+
+    plt.tight_layout()
+
+    return fig, ax
+
+
+def plot_all_HM80_tables():
+    for mat in ["HM80_HHe", "HM80_ice", "HM80_rock"]:
+        for param in "P", "T":
+            plot_table_HM80(mat, param)
+
+            Fp_save = "%s_table_%s_rho_u.png" % (mat, param)
+            plt.savefig(Fp_save, dpi=200)
+            plt.close()
+            print('Saved "%s"' % Fp_save)
