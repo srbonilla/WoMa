@@ -1183,3 +1183,247 @@ def plot_all_HM80_tables():
             plt.savefig(Fp_save, dpi=200)
             plt.close()
             print('Saved "%s"' % Fp_save)
+
+
+# Generic lines
+def plot_eos_Z_X_iso_Y(
+    mat,
+    Z_choice,
+    X_choice,
+    Y_choice,
+    X_min=None,
+    X_max=None,
+    Y_min=None,
+    Y_max=None,
+    Z_min=None,
+    Z_max=None,
+    num_X=100,
+    num_Y=20,
+    A1_Y=None,
+    num_label=None,
+    lw=1,
+    ls="-",
+    alpha=1,
+    cmap=plt.get_cmap("viridis"),
+    A1_fig_ax=None,
+):
+    """Plot lines of "Z" values as a function of "X" at a range of constant "Y".
+
+    e.g. Z(X, Y) = P(rho, T) = pressure(density) for a set of isotherms.
+    Not all Z(X, Y) choices are available for all equations of state.
+
+    Paramters
+    ---------
+    mat : int
+        The material name.
+
+    Z_choice : str
+        The parameter to calculate (for the X axis), choose from:
+            "P"         Pressure.
+            "u"         Specific internal energy.
+            "s"         Specific entropy.
+
+    X_choice, Y_choice : str
+        The input parameters, for the Z axis and iso-values respectively:
+            "rho"       Density.
+            "T"         Temperature.
+            "u"         Specific internal energy.
+
+    X_min, X_max, Y_min, Y_max, Z_min, Z_max : float (opt.)
+        The minimum and maximum values for the each parameter. Defaults to
+        crude guesses of maybe-sensible values.
+
+    num_X, num_Y : float (opt.)
+        The number of values for the x-axis and iso parameters.
+
+    A1_Y : [float] (opt.)
+        Alternatively, an array of arbitrary iso values, overrides num_Y etc.
+
+    num_label : int (opt.)
+        Optional override for the number of iso lines to label. Set 0 for none.
+
+    lw, ls, alpha, cmap : float, str, float, cmap (opt.)
+        The linewidth, linestyle, opacity, and colour map.
+
+    A1_fig_ax : [fig, ax] (opt.)
+        If provided, then plot on this existing figure and axes instead of
+        making new ones.
+
+    Returns
+    -------
+    A1_fig_ax : [fig, ax]
+        The figure and axes.
+    """
+    # Load tables, if necessary
+    ut.load_eos_tables(mat)
+
+    # Figure
+    if A1_fig_ax is None:
+        fig = plt.figure(figsize=(8, 8))
+        ax = fig.gca()
+    else:
+        fig, ax = A1_fig_ax
+        plt.figure(fig.number)
+
+    assert Z_choice != X_choice and Z_choice != Y_choice and X_choice != Y_choice
+
+    # Parameter labels and default limits
+    Di_choice_label_min_max = {
+        "P": [r"Pressure (Pa)", 3e4, 1e12],
+        "u": [r"Specific internal energy (J kg$^{-1}$)", 1e4, 1e8],
+        "s": [r"Specific entropy (J K$^{-1}$ kg$^{-1}$)", 1e2, 1e4],
+        "rho": [r"Density (kg m$^{-3}$)", 3e0, 3e4],
+        "T": [r"Temperature (K)", 1e2, 1e5],
+    }
+    X_label, X_min_def, X_max_def = Di_choice_label_min_max[X_choice]
+    Y_label, Y_min_def, Y_max_def = Di_choice_label_min_max[Y_choice]
+    Z_label, Z_min_def, Z_max_def = Di_choice_label_min_max[Z_choice]
+
+    # Set parameter ranges
+    if X_min is None:
+        X_min = X_min_def
+    if X_max is None:
+        X_max = X_max_def
+    if A1_Y is not None:
+        A1_Y = np.array(A1_Y)
+        Y_min = np.nanmin(A1_Y)
+        Y_max = np.nanmax(A1_Y)
+        num_Y = len(A1_Y)
+    else:
+        if Y_min is None:
+            Y_min = Y_min_def
+        if Y_max is None:
+            Y_max = Y_max_def
+        A1_Y = np.exp(np.linspace(np.log(Y_min), np.log(Y_max), num_Y))
+
+    # X values
+    A1_X = np.exp(np.linspace(np.log(X_min), np.log(X_max), num_X))
+
+    # Material ID
+    mat_id = gv.Di_mat_id[mat]
+    A1_mat_id = np.full(num_X, mat_id)
+
+    # Calculate Z(X, Y)
+    A2_Z = np.empty((num_Y, num_X))
+    for i_Y, Y in enumerate(A1_Y):
+        A2_Z[i_Y] = A1_Z_X_Y(
+            A1_X=A1_X,
+            A1_Y=np.full(num_X, Y),
+            A1_mat_id=A1_mat_id,
+            Z_choice=Z_choice,
+            X_choice=X_choice,
+            Y_choice=Y_choice,
+        )
+
+    # Set colour for each iso-Y value
+    vmin = np.nanmin(A1_Y)
+    vmax = np.nanmax(A1_Y)
+    norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
+    mapper = mpl.cm.ScalarMappable(cmap=cmap, norm=norm)
+    A1_colour = [mapper.to_rgba(Y) for Y in A1_Y]
+
+    # Label the iso lines, or only a subset if there are many
+    if num_label == 0:
+        A1_Y_label = []
+    else:
+        if num_label is None:
+            if num_Y < 20:
+                num_label = num_Y
+            else:
+                num_label = 10
+        A1_Y_label = A1_Y[:: num_Y // num_label]
+    handles = []
+
+    # Plot
+    for i_Y, Y in enumerate(A1_Y):
+        # Label (a subset of) lines
+        if Y in A1_Y_label:
+            label = r"%.3g" % Y
+        else:
+            label = None
+
+        line = ax.plot(
+            A1_X,
+            A2_Z[i_Y],
+            c=A1_colour[i_Y],
+            lw=lw,
+            ls=ls,
+            alpha=alpha,
+            label=label,
+        )[0]
+
+        if label is not None:
+            handles.append(line)
+
+    # Colour bar
+    if not True:
+        line = ax.plot(
+            [],
+            [],
+            c=[],
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+            norm=norm,
+            lw=lw,
+            ls=ls,
+            alpha=alpha,
+        )
+        cbar = plt.colorbar(line)
+        cbar.set_label(Y_label)
+
+    # Legend
+    if len(A1_Y_label) > 0:
+        ax.legend(title=Y_label, handles=handles)
+
+    # Axes etc
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(X_label)
+    ax.set_ylabel(Z_label)
+    ax.set_xlim(X_min, X_max)
+    ax.set_ylim(Z_min_def, Z_max_def)
+
+    plt.tight_layout()
+
+    return fig, ax
+
+
+def test_compare_rock_P_rho_iso_T():
+    """Test plotting P(rho) for several rock-like EoS for various fixed T."""
+    # Figure
+    fig = plt.figure(figsize=(8, 8))
+    ax = fig.gca()
+
+    # Materials
+    A2_mat_ls = [
+        ["ANEOS_forsterite", "-"],
+        ["SESAME_basalt", "--"],
+        ["Til_basalt", ":"],
+        ["HM80_rock", "-."],
+    ]
+    # Linestyle legend
+    A1_mat_line = []
+    for mat, ls in A2_mat_ls:
+        A1_mat_line.append(ax.plot([], [], c="k", lw=1, ls=ls, label=mat)[0])
+    ax.add_artist(plt.legend(handles=A1_mat_line, loc="lower right"))
+
+    # Plot each material
+    for i, (mat, ls) in enumerate(A2_mat_ls):
+        print("Plotting %s..." % mat)
+        plot_eos_Z_X_iso_Y(
+            mat,
+            "P",
+            "rho",
+            "T",
+            num_Y=10,
+            num_label=None if (i == 0) else 0,
+            ls=ls,
+            A1_fig_ax=[fig, ax],
+        )
+
+    # Save the figure
+    Fp_save = "test_compare_rock_P_rho_iso_T.png"
+    plt.savefig(Fp_save, dpi=200)
+    plt.close()
+    print('Saved "%s"' % Fp_save)
