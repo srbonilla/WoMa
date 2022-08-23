@@ -1,4 +1,4 @@
-""" 
+"""
 WoMa equations of state (EoS)
 """
 
@@ -872,12 +872,13 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
 
     return A1_rho
 
+
 @njit
 def rho_u_P(u, P, mat_id, rho_ref):
-    """Compute the density from the specific internal energy
-    and pressure, for any EoS. Start search for roots at the 
-    reference density. If there are are multiple roots, return
-    root wih smallest abs(log(root_rho) - log(rho_ref))
+    """Compute the density from the specific internal energy and pressure, for
+    any EoS. Start search for roots at the reference density. If there are are
+    multiple roots, then return the root with the smallest
+    abs(log(root_rho) - log(rho_ref)).
 
     Parameters
     ----------
@@ -889,9 +890,9 @@ def rho_u_P(u, P, mat_id, rho_ref):
 
     mat_id : int
         Material id.
-        
+
     rho_ref : float
-        Reference density. Pick root closest to this value.      
+        Reference density. Pick root closest to this value.
 
     Returns
     -------
@@ -908,29 +909,29 @@ def rho_u_P(u, P, mat_id, rho_ref):
 
 @njit
 def A1_rho_u_P(A1_u, A1_P, A1_mat_id, A1_rho_ref):
-    """Compute the density from arrays of specific internal energy 
-    and pressure, for any EoS. Start search for roots at the 
-    reference density. If there are are multiple roots, return
-    root wih smallest abs(log(root_rho) - log(rho_ref))
+    """Compute the density from arrays of specific internal energy and pressure,
+    for any EoS. Start search for roots at the reference density. If there are
+    are multiple roots, return the roots with the smallest
+    abs(log(root_rho) - log(rho_ref)).
 
     Parameters
     ----------
     A1_u : [float]
-        Specific internal energy (J kg^-1).
+        Specific internal energies (J kg^-1).
 
     A1_P : [float]
-        Pressure (Pa).
+        Pressures (Pa).
 
     A1_mat_id : [int]
-        Material id.
-        
+        Material ids.
+
     A1_rho_ref : float
-        Reference density. Pick root closest to this value.          
+        Reference densities. Pick the roots closest to these values.
 
     Returns
     -------
     A1_rho : float
-        Density (kg m^-3).
+        Densities (kg m^-3).
     """
 
     assert A1_u.ndim == 1
@@ -947,6 +948,7 @@ def A1_rho_u_P(A1_u, A1_P, A1_mat_id, A1_rho_ref):
         A1_rho[i] = rho_u_P(A1_u[i], A1_P[i], A1_mat_id[i], A1_rho_ref[i])
 
     return A1_rho
+
 
 # ========
 # Derived functions
