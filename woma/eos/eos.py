@@ -4,11 +4,13 @@ WoMa equations of state (EoS)
 
 from numba import njit
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
 from woma.misc import glob_vars as gv
 from woma.eos import tillotson, sesame, idg, hm80
 from woma.eos.T_rho import T_rho
+from woma.misc import utils as ut
 
 
 # ========
@@ -28,7 +30,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         Temperature (K).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Z_choice : str
         The parameter to calculate, choose from:
@@ -63,7 +65,7 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
         Temperatures (K).
 
     A1_mat_id : [int]
-        Material ids.
+        Material IDs.
 
     Z_choice : str
         The parameter to calculate, choose from:
@@ -95,7 +97,7 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
 @njit
 def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
     """Compute an equation of state parameter from the density and another
-    parameter, for any EoS..
+    parameter, for any EoS.
 
     Parameters
     ----------
@@ -106,7 +108,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
         The chosen input parameter (SI).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Z_choice, Y_choice : str
         The parameter to calculate, and the other input parameter, choose from:
@@ -121,7 +123,29 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
         The chosen parameter (SI).
     """
     mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    if mat_type == gv.type_Til:
+        if Z_choice == "P" and Y_choice == "u":
+            return tillotson.P_u_rho(Y, rho, mat_id)
+        elif Z_choice == "P" and Y_choice == "T":
+            return tillotson.P_T_rho(Y, rho, mat_id)
+        elif Z_choice == "u" and Y_choice == "T":
+            return tillotson.u_rho_T(rho, Y, mat_id)
+        elif Z_choice == "T" and Y_choice == "u":
+            return tillotson.T_u_rho(Y, rho, mat_id)
+        else:
+            raise ValueError("Not yet implemented for this EoS")
+    elif mat_type == gv.type_HM80:
+        if Z_choice == "P" and Y_choice == "u":
+            return hm80.P_u_rho(Y, rho, mat_id)
+        elif Z_choice == "P" and Y_choice == "T":
+            return hm80.P_T_rho(Y, rho, mat_id)
+        elif Z_choice == "u" and Y_choice == "T":
+            return hm80.u_rho_T(rho, Y, mat_id)
+        elif Z_choice == "T" and Y_choice == "u":
+            return hm80.T_u_rho(Y, rho, mat_id)
+        else:
+            raise ValueError("Not yet implemented for this EoS")
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
         return sesame.Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
@@ -141,7 +165,7 @@ def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
         The chosen input parameter values (SI).
 
     A1_mat_id : [int]
-        Material ids.
+        Material IDs.
 
     Z_choice, Y_choice : str
         The parameter to calculate, choose from:
@@ -183,7 +207,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
         Temperature (K).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Z_choice, X_choice : str
         The parameter to calculate, and the other input parameter, choose from:
@@ -198,7 +222,21 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
         The chosen parameter (SI).
     """
     mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    if mat_type == gv.type_Til:
+        if Z_choice == "P" and X_choice == "rho":
+            return tillotson.P_T_rho(T, X, mat_id)
+        elif Z_choice == "u" and X_choice == "rho":
+            return tillotson.u_rho_T(X, T, mat_id)
+        else:
+            raise ValueError("Not yet implemented for this EoS")
+    elif mat_type == gv.type_HM80:
+        if Z_choice == "P" and X_choice == "rho":
+            return hm80.P_T_rho(T, X, mat_id)
+        elif Z_choice == "u" and X_choice == "rho":
+            return hm80.u_rho_T(X, T, mat_id)
+        else:
+            raise ValueError("Not yet implemented for this EoS")
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
         return sesame.Z_X_T(X, T, mat_id, Z_choice, X_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
@@ -218,7 +256,7 @@ def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
         Temperatures (K).
 
     A1_mat_id : [int]
-        Material ids.
+        Material IDs.
 
     Z_choice, X_choice : str
         The parameter to calculate, choose from:
@@ -246,6 +284,86 @@ def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
     return A1_Z
 
 
+@njit
+def Z_X_Y(X, Y, mat_id, Z_choice, X_choice, Y_choice):
+    """Compute an equation of state parameter from another two parameters.
+
+    e.g. Z(X, Y) = P(rho, T) = pressure(density, temperature).
+    Not all Z(X, Y) choices are available for all equations of state.
+
+    Parameters
+    ----------
+    X, Y : float
+        The chosen input parameters (SI).
+
+    mat_id : int
+        Material ID.
+
+    Z_choice, X_choice, Y_choice : str
+        The parameter to calculate, and the other input parameters, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+            phase   Phase KPA flag (Z_choice only).
+
+    Returns
+    -------
+    Z : float
+        The chosen parameter (SI).
+    """
+    if X_choice == "rho":
+        return Z_rho_Y(X, Y, mat_id, Z_choice, Y_choice)
+    elif Y_choice == "rho":
+        return Z_rho_Y(Y, X, mat_id, Z_choice, X_choice)
+    elif Y_choice == "T":
+        return Z_X_T(X, Y, mat_id, Z_choice, X_choice)
+    elif X_choice == "T":
+        return Z_X_T(Y, X, mat_id, Z_choice, Y_choice)
+    else:
+        raise ValueError("Not yet implemented for this EoS")
+
+
+@njit
+def A1_Z_X_Y(A1_X, A1_Y, A1_mat_id, Z_choice, X_choice, Y_choice):
+    """Compute equation of state parameters from arrays of two other parameters.
+
+    e.g. Z(X, Y) = P(rho, T) = pressures(densities, temperatures).
+    Not all Z(X, Y) choices are available for all equations of state.
+
+    Parameters
+    ----------
+    A1_X, A1_Y : [float]
+        The chosen input parameters' values (SI).
+
+    A1_mat_id : [int]
+        Material IDs.
+
+    Z_choice, X_choice : str
+        The parameter to calculate, and the other input parameters, choose from:
+            P       Pressure.
+            u       Specific internal energy.
+            s       Specific entropy.
+            phase   Phase KPA flag (Z_choice only).
+
+    Returns
+    -------
+    A1_Z : float
+        The chosen parameter values (SI).
+    """
+    assert A1_X.ndim == 1
+    assert A1_Y.ndim == 1
+    assert A1_mat_id.ndim == 1
+    assert A1_X.shape[0] == A1_Y.shape[0]
+    assert A1_X.shape[0] == A1_mat_id.shape[0]
+
+    A1_Z = np.zeros_like(A1_X)
+
+    for i in range(len(A1_Z)):
+        A1_Z[i] = Z_X_Y(A1_X[i], A1_Y[i], A1_mat_id[i], Z_choice, X_choice, Y_choice)
+
+    return A1_Z
+
+
 # ========
 # Pressure
 # ========
@@ -263,7 +381,7 @@ def P_u_rho(u, rho, mat_id):
         Density (kg m^-3).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -302,7 +420,7 @@ def A1_P_u_rho(A1_u, A1_rho, A1_mat_id):
         Density (kg m^-3).
 
     A1_mat_id : [int]
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -337,7 +455,7 @@ def P_T_rho(T, rho, mat_id):
         Density (kg m^-3).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -376,7 +494,7 @@ def A1_P_T_rho(A1_T, A1_rho, A1_mat_id):
         Density (kg m^-3).
 
     A1_mat_id : [int]
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -413,7 +531,7 @@ def T_u_rho(u, rho, mat_id):
         Density (kg m^-3).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -448,7 +566,7 @@ def A1_T_u_rho(A1_u, A1_rho, A1_mat_id):
         Density (kg m^-3).
 
     A1_mat_id : [int]
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -486,7 +604,7 @@ def u_rho_T(rho, T, mat_id):
         Temperature (K).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -521,7 +639,7 @@ def A1_u_rho_T(A1_rho, A1_T, A1_mat_id):
         Temperature (K).
 
     A1_mat_id : [int]
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -558,7 +676,7 @@ def s_rho_T(rho, T, mat_id):
         Temperature (K).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -587,7 +705,7 @@ def A1_s_rho_T(A1_rho, A1_T, A1_mat_id):
         Temperature (K).
 
     A1_mat_id : [int]
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -622,7 +740,7 @@ def s_u_rho(u, rho, mat_id):
         Density (kg m^-3).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -651,7 +769,7 @@ def A1_s_u_rho(A1_u, A1_rho, A1_mat_id):
         Density (kg m^-3).
 
     A1_mat_id : [int]
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -686,7 +804,7 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
         The required pressure (Pa).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     T_rho_type : int
         Relation between T and rho to be used.
@@ -800,7 +918,7 @@ def rho_P_T(P, T, mat_id):
         Temperature (K).
 
     mat_id : int
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -852,7 +970,7 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
         Temperature (K).
 
     A1_mat_id : [int]
-        Material id.
+        Material ID.
 
     Returns
     -------
@@ -948,56 +1066,3 @@ def A1_rho_u_P(A1_u, A1_P, A1_mat_id, A1_rho_ref):
         A1_rho[i] = rho_u_P(A1_u[i], A1_P[i], A1_mat_id[i], A1_rho_ref[i])
 
     return A1_rho
-
-
-# ========
-# Derived functions
-# ========
-
-
-# ========
-# Misc
-# ========
-def plot_EoS_P_rho_fixed_T(
-    mat_id_1, mat_id_2, T, P_min=0.1, P_max=1e11, rho_min=100, rho_max=15000
-):
-    """Plot the EoS pressure as a function of density for various temperatures.
-
-    Parameters
-    ----------
-    mat_id_1 : int
-        Material id for the first material.
-
-    mat_id_2 : int
-        Material id for the second material.
-
-    T : float
-        Fixed temperature (K).
-
-    P_min : float
-        Minimum pressure (Pa) to consider.
-
-    P_max : float
-        Maximum pressure (Pa) to consider.
-
-    rho_min : float
-        Minimum density (kg m^-3) to consider.
-
-    rho_min : float
-        Maximum density (kg m^-3) to consider.
-    """
-
-    rho = np.linspace(rho_min, rho_max, 1000)
-    P_1 = np.zeros_like(rho)
-    P_2 = np.zeros_like(rho)
-    for i, rho_i in enumerate(rho):
-        P_1[i] = P_T_rho(T, rho_i, mat_id_1)
-        P_2[i] = P_T_rho(T, rho_i, mat_id_2)
-
-    plt.figure()
-    plt.scatter(rho, P_1, label=str(mat_id_1))
-    plt.scatter(rho, P_2, label=str(mat_id_2))
-    plt.legend(title="Material")
-    plt.xlabel(r"$\rho$ [kg m$^{-3}$]")
-    plt.ylabel(r"$P$ [Pa]")
-    plt.show()

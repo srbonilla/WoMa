@@ -365,7 +365,7 @@ def load_phase_table_ANEOS_forsterite():
 
 
 # ========
-# Awkwawrdly initialise SESAME-style tables as global variables needed for numba
+# Awkwardly initialise SESAME-style tables as global variables needed for numba
 # ========
 # SESAME
 (
@@ -760,8 +760,8 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
-        elif Z_choice == "phase":
-            A2_Z = A2_phase_ANEOS_forsterite
+        # elif Z_choice == "phase":
+        #     A2_Z = A2_phase_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
         A1_log_rho, A1_log_T = (
             A1_log_rho_ANEOS_iron,
@@ -942,6 +942,9 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
     """
     assert Z_choice != Y_choice
 
+    if Y_choice == "T":
+        return Z_rho_T(rho, Y, mat_id, Z_choice)
+
     # Unpack the arrays of Z, log(rho), and log(Y)
     if mat_id == gv.id_SESAME_iron:
         A1_log_rho = A1_log_rho_SESAME_iron
@@ -1007,8 +1010,8 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
-        elif Z_choice == "phase":
-            A2_Z = A2_phase_ANEOS_forsterite
+        # elif Z_choice == "phase":
+        #     A2_Z = A2_phase_ANEOS_forsterite
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_forsterite
         elif Y_choice == "u":
@@ -1203,7 +1206,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
     temperature.
 
     Warning: Not all of the 2D X arrays are monotonic with density along a
-    temperature slice, which will break the attempted interpolation.
+    temperature slice, which can break the attempted interpolation.
 
     Parameters
     ----------
@@ -1229,6 +1232,9 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
         The chosen parameter (SI).
     """
     assert Z_choice != X_choice
+
+    if X_choice == "rho":
+        return Z_rho_T(X, T, mat_id, Z_choice)
 
     # Unpack the arrays of Z and log(X)
     if mat_id == gv.id_SESAME_iron:
@@ -1295,8 +1301,8 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
-        elif Z_choice == "phase":
-            A2_Z = A2_phase_ANEOS_forsterite
+        # elif Z_choice == "phase":
+        #     A2_Z = A2_phase_ANEOS_forsterite
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_forsterite
         elif X_choice == "u":
