@@ -1,5 +1,9 @@
 """
-WoMa equations of state (EoS)
+WoMa equations of state (EoS).
+
+Note: Numba places odd requirements and limitations for e.g. global variables
+and (avoiding) custom classes, which leads to some awkward or ugly but
+functional approaches here...
 """
 
 from numba import njit
@@ -1072,15 +1076,15 @@ def A1_rho_u_P(A1_u, A1_P, A1_mat_id, A1_rho_ref):
 # Plotting
 # ========
 # Table values
-def plot_table_HM80(mat, colour_choice, A1_fig_ax=None):
-    """Plot all entries in a Hubbard & MacFarlane (1980) data table.
+def plot_table_HM80(mat, Z_choice, A1_fig_ax=None):
+    """Plot all entries in a Hubbard & MacFarlane (1980) (rho, u) table.
 
     Parameters
     ----------
     mat : str
         The material name.
 
-    colour_choice : str
+    Z_choice : str
         The table parameter to colour by, choose from:
             "P"     Pressure.
             "T"     Temperature.
@@ -1129,25 +1133,25 @@ def plot_table_HM80(mat, colour_choice, A1_fig_ax=None):
     A1_u = np.exp(np.linspace(log_u_min, log_u_max, num_u))
 
     # Colour parameter
-    if colour_choice == "P":
-        A2_colour = np.exp(A2_log_P)
-    elif colour_choice == "T":
-        A2_colour = np.exp(A2_log_T)
+    if Z_choice == "P":
+        A2_Z = np.exp(A2_log_P)
+    elif Z_choice == "T":
+        A2_Z = np.exp(A2_log_T)
     else:
-        raise ValueError("Invalid colour choice", colour_choice)
+        raise ValueError("Invalid colour choice", Z_choice)
     cmap = plt.get_cmap("viridis")
-    vmin = np.nanmin(A2_colour)
-    vmax = np.nanmax(A2_colour)
+    vmin = np.nanmin(A2_Z)
+    vmax = np.nanmax(A2_Z)
     norm = mpl.colors.LogNorm()
 
     # Plot each row
-    for i_u, u in enumerate(A1_rho):
+    for i_u, u in enumerate(A1_u):
         scat = ax.scatter(
             A1_rho,
-            np.full(num_u, u),
+            np.full(num_rho, u),
             marker=".",
             s=5**2,
-            c=A2_colour[:, i_u],
+            c=A2_Z[:, i_u],
             edgecolor="none",
             cmap=cmap,
             vmin=vmin,
@@ -1157,9 +1161,9 @@ def plot_table_HM80(mat, colour_choice, A1_fig_ax=None):
 
     # Colour bar
     cbar = plt.colorbar(scat)
-    if colour_choice == "P":
+    if Z_choice == "P":
         cbar.set_label(r"Pressure (Pa)")
-    elif colour_choice == "T":
+    elif Z_choice == "T":
         cbar.set_label(r"Temperature (K)")
 
     # Axes etc
@@ -1167,7 +1171,7 @@ def plot_table_HM80(mat, colour_choice, A1_fig_ax=None):
     ax.set_yscale("log")
     ax.set_xlabel(r"Density ($\rm{kg m}^{-3}$)")
     ax.set_ylabel(r"Sp. Int. Energy ($\rm{J kg}^{-1}$)")
-    ax.set_title(r"%s $%s(\rho, u)$" % (mat, colour_choice))
+    ax.set_title(r"%s $%s(\rho, u)$" % (mat, Z_choice))
 
     plt.tight_layout()
 
@@ -1185,7 +1189,239 @@ def plot_all_HM80_tables():
             print('Saved "%s"' % Fp_save)
 
 
-# Generic lines
+def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
+    """Plot all entries in a SESAME or ANEOS etc (rho, T) table.
+
+    Parameters
+    ----------
+    mat : str
+        The material name.
+
+    Z_choice : str
+        The table parameter to colour by, choose from:
+            "P"     Pressure.
+            "u"     Specific internal energy.
+            "s"     Specific entropy.
+
+    A1_fig_ax : [fig, ax] (opt.)
+        If provided, then plot on this existing figure and axes instead of
+        making new ones.
+
+    Returns
+    -------
+    A1_fig_ax : [fig, ax]
+        The figure and axes.
+    """
+    mat_id = gv.Di_mat_id[mat]
+
+    # Load tables
+    ut.load_eos_tables(mat)
+
+    # Load table data
+    if mat_id == gv.id_SESAME_iron:
+        A1_log_T = sesame.A1_log_T_SESAME_iron
+        A1_log_rho = sesame.A1_log_rho_SESAME_iron
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_SESAME_iron
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_SESAME_iron
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_SESAME_iron
+    elif mat_id == gv.id_SESAME_basalt:
+        A1_log_T = sesame.A1_log_T_SESAME_basalt
+        A1_log_rho = sesame.A1_log_rho_SESAME_basalt
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_SESAME_basalt
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_SESAME_basalt
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_SESAME_basalt
+    elif mat_id == gv.id_SESAME_water:
+        A1_log_T = sesame.A1_log_T_SESAME_water
+        A1_log_rho = sesame.A1_log_rho_SESAME_water
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_SESAME_water
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_SESAME_water
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_SESAME_water
+    elif mat_id == gv.id_SS08_water:
+        A1_log_T = sesame.A1_log_T_SS08_water
+        A1_log_rho = sesame.A1_log_rho_SS08_water
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_SS08_water
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_SS08_water
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_SS08_water
+    elif mat_id == gv.id_ANEOS_forsterite:
+        A1_log_T = sesame.A1_log_T_ANEOS_forsterite
+        A1_log_rho = sesame.A1_log_rho_ANEOS_forsterite
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_ANEOS_forsterite
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_ANEOS_forsterite
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_ANEOS_forsterite
+        # elif Z_choice == "phase":
+        #     A2_Z = sesame.A2_phase_ANEOS_forsterite
+    elif mat_id == gv.id_ANEOS_iron:
+        A1_log_T = sesame.A1_log_T_ANEOS_iron
+        A1_log_rho = sesame.A1_log_rho_ANEOS_iron
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_ANEOS_iron
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_ANEOS_iron
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_ANEOS_iron
+    elif mat_id == gv.id_ANEOS_Fe85Si15:
+        A1_log_T = sesame.A1_log_T_ANEOS_Fe85Si15
+        A1_log_rho = sesame.A1_log_rho_ANEOS_Fe85Si15
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_ANEOS_Fe85Si15
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_ANEOS_Fe85Si15
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_ANEOS_Fe85Si15
+    elif mat_id == gv.id_AQUA:
+        A1_log_T = sesame.A1_log_T_AQUA
+        A1_log_rho = sesame.A1_log_rho_AQUA
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_AQUA
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_AQUA
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_AQUA
+    elif mat_id == gv.id_CMS19_H:
+        A1_log_T = sesame.A1_log_T_CMS19_H
+        A1_log_rho = sesame.A1_log_rho_CMS19_H
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_CMS19_H
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_CMS19_H
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_CMS19_H
+    elif mat_id == gv.id_CMS19_He:
+        A1_log_T = sesame.A1_log_T_CMS19_He
+        A1_log_rho = sesame.A1_log_rho_CMS19_He
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_CMS19_He
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_CMS19_He
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_CMS19_He
+    elif mat_id == gv.id_CMS19_HHe:
+        A1_log_T = sesame.A1_log_T_CMS19_HHe
+        A1_log_rho = sesame.A1_log_rho_CMS19_HHe
+        if Z_choice == "P":
+            A2_Z = sesame.A2_P_CMS19_HHe
+        elif Z_choice == "u":
+            A2_Z = sesame.A2_u_CMS19_HHe
+        elif Z_choice == "s":
+            A2_Z = sesame.A2_s_CMS19_HHe
+    else:
+        raise ValueError("Invalid material ID")
+    A1_T = np.exp(A1_log_T)
+    A1_rho = np.exp(A1_log_rho)
+    num_T = len(A1_T)
+    num_rho = len(A1_rho)
+
+    # Skip if no data (e.g. entropies all zero)
+    if np.all(A2_Z == 0):
+        print("%s %s all zero" % (mat, Z_choice))
+        return None, None
+
+    # Colour parameter
+    cmap = plt.get_cmap("viridis")
+    vmin = np.nanmin(A2_Z[A2_Z > 0])
+    vmax = np.nanmax(A2_Z[A2_Z < np.inf])
+    norm = mpl.colors.LogNorm()
+
+    # Figure
+    if A1_fig_ax is None:
+        fig = plt.figure(figsize=(9, 8))
+        ax = fig.gca()
+    else:
+        fig, ax = A1_fig_ax
+        plt.figure(fig.number)
+
+    # Roughly adjust marker size by number of points
+    s_def = 3**2
+    num_def = 200
+    s = min(s_def, (np.sqrt(s_def) * num_def / max(num_rho, num_T)) ** 2)
+
+    # Plot each row
+    for i_T, T in enumerate(A1_T):
+        scat = ax.scatter(
+            A1_rho,
+            np.full(num_rho, T),
+            marker=".",
+            s=s,
+            c=A2_Z[:, i_T],
+            edgecolor="none",
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax,
+            norm=norm,
+        )
+
+        # Plot non-positive values in grey
+        A1_sel_zero = np.where(A2_Z[:, i_T] <= 0)[0]
+        ax.scatter(
+            A1_rho[A1_sel_zero],
+            np.full(num_rho, T)[A1_sel_zero],
+            marker=".",
+            s=s,
+            c="0.4",
+            edgecolor="none",
+        )
+
+    # Colour bar
+    cbar = plt.colorbar(scat)
+    if Z_choice == "P":
+        cbar.set_label(r"Pressure (Pa)")
+    elif Z_choice == "u":
+        cbar.set_label(r"Specific internal energy (J kg$^{-1}$)")
+    elif Z_choice == "s":
+        cbar.set_label(r"Specific entropy (J K$^{-1}$ kg$^{-1}$)")
+
+    # Axes etc
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_xlabel(r"Density ($\rm{kg m}^{-3}$)")
+    ax.set_ylabel(r"Temperature (K)")
+    ax.set_title(r"%s $%s(\rho, T)$" % (mat, Z_choice))
+
+    plt.tight_layout()
+
+    return fig, ax
+
+
+def plot_all_SESAME_tables():
+    for mat in [
+        "SESAME_iron",
+        "SESAME_basalt",
+        "SESAME_water",
+        "SS08_water",
+        "AQUA",
+        "CMS19_H",
+        "CMS19_He",
+        "CMS19_HHe",
+        "ANEOS_forsterite",
+        "ANEOS_iron",
+        "ANEOS_Fe85Si15",
+    ]:
+        for param in "P", "u", "s":
+            fig, ax = plot_table_SESAME(mat, param)
+
+            if fig is not None:
+                Fp_save = "%s_table_%s_rho_T.png" % (mat, param)
+                plt.savefig(Fp_save, dpi=600)
+                plt.close()
+                print('Saved "%s"' % Fp_save)
+
+
+# Arbitary iso lines
 def plot_eos_Z_X_iso_Y(
     mat,
     Z_choice,
@@ -1271,7 +1507,7 @@ def plot_eos_Z_X_iso_Y(
     Di_choice_label_min_max = {
         "P": [r"Pressure (Pa)", 3e4, 1e12],
         "u": [r"Specific internal energy (J kg$^{-1}$)", 1e4, 1e8],
-        "s": [r"Specific entropy (J K$^{-1}$ kg$^{-1}$)", 1e2, 1e4],
+        "s": [r"Specific entropy (J K$^{-1}$ kg$^{-1}$)", 3e1, 3e5],
         "rho": [r"Density (kg m$^{-3}$)", 3e0, 3e4],
         "T": [r"Temperature (K)", 1e2, 1e5],
     }
@@ -1399,8 +1635,8 @@ def test_compare_rock_P_rho_iso_T():
     A2_mat_ls = [
         ["ANEOS_forsterite", "-"],
         ["SESAME_basalt", "--"],
-        ["Til_basalt", ":"],
-        ["HM80_rock", "-."],
+        ["Til_basalt", "-."],
+        ["HM80_rock", ":"],
     ]
     # Linestyle legend
     A1_mat_line = []
@@ -1424,6 +1660,6 @@ def test_compare_rock_P_rho_iso_T():
 
     # Save the figure
     Fp_save = "test_compare_rock_P_rho_iso_T.png"
-    plt.savefig(Fp_save, dpi=200)
+    plt.savefig(Fp_save, dpi=300)
     plt.close()
     print('Saved "%s"' % Fp_save)

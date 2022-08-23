@@ -1,5 +1,5 @@
 """
-WoMa SESAME and ANEOS (in SESAME-style tables) equations of state
+WoMa SESAME, ANEOS, and other (in ~SESAME-style tables) equations of state
 """
 
 import numpy as np

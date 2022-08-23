@@ -32,7 +32,7 @@ Di_mat_id = {
     "HM80_HHe": Di_mat_type["HM80"] * type_factor,  # Hydrogen-helium atmosphere
     "HM80_ice": Di_mat_type["HM80"] * type_factor + 1,  # H20-CH4-NH3 ice mix
     "HM80_rock": Di_mat_type["HM80"] * type_factor + 2,  # SiO2-MgO-FeS-FeO rock mix
-    # SESAME
+    # SESAME etc
     "SESAME_iron": Di_mat_type["SESAME"] * type_factor,  # 2140
     "SESAME_basalt": Di_mat_type["SESAME"] * type_factor + 1,  # 7530
     "SESAME_water": Di_mat_type["SESAME"] * type_factor + 2,  # 7154
