@@ -621,10 +621,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
     """
     # Unpack the arrays of Z, log(rho), and log(T)
     if mat_id == gv.id_SESAME_iron:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_SESAME_iron,
-            A1_log_T_SESAME_iron,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_SESAME_iron, A1_log_T_SESAME_iron)
         if Z_choice == "P":
             A2_Z = A2_P_SESAME_iron
         elif Z_choice == "u":
@@ -632,10 +629,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_iron
     elif mat_id == gv.id_SESAME_basalt:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_SESAME_basalt,
-            A1_log_T_SESAME_basalt,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_SESAME_basalt, A1_log_T_SESAME_basalt)
         if Z_choice == "P":
             A2_Z = A2_P_SESAME_basalt
         elif Z_choice == "u":
@@ -643,10 +637,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_basalt
     elif mat_id == gv.id_SESAME_water:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_SESAME_water,
-            A1_log_T_SESAME_water,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_SESAME_water, A1_log_T_SESAME_water)
         if Z_choice == "P":
             A2_Z = A2_P_SESAME_water
         elif Z_choice == "u":
@@ -654,10 +645,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_water
     elif mat_id == gv.id_SS08_water:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_SS08_water,
-            A1_log_T_SS08_water,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_SS08_water, A1_log_T_SS08_water)
         if Z_choice == "P":
             A2_Z = A2_P_SS08_water
         elif Z_choice == "u":
@@ -665,10 +653,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_SS08_water
     elif mat_id == gv.id_ANEOS_forsterite:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_ANEOS_forsterite,
-            A1_log_T_ANEOS_forsterite,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_ANEOS_forsterite, A1_log_T_ANEOS_forsterite)
         if Z_choice == "P":
             A2_Z = A2_P_ANEOS_forsterite
         elif Z_choice == "u":
@@ -678,10 +663,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         # elif Z_choice == "phase":
         #     A2_Z = A2_phase_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_ANEOS_iron,
-            A1_log_T_ANEOS_iron,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_ANEOS_iron, A1_log_T_ANEOS_iron)
         if Z_choice == "P":
             A2_Z = A2_P_ANEOS_iron
         elif Z_choice == "u":
@@ -689,10 +671,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_iron
     elif mat_id == gv.id_ANEOS_Fe85Si15:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_ANEOS_Fe85Si15,
-            A1_log_T_ANEOS_Fe85Si15,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_ANEOS_Fe85Si15, A1_log_T_ANEOS_Fe85Si15)
         if Z_choice == "P":
             A2_Z = A2_P_ANEOS_Fe85Si15
         elif Z_choice == "u":
@@ -700,10 +679,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_Fe85Si15
     elif mat_id == gv.id_AQUA:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_AQUA,
-            A1_log_T_AQUA,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_AQUA, A1_log_T_AQUA)
         if Z_choice == "P":
             A2_Z = A2_P_AQUA
         elif Z_choice == "u":
@@ -711,10 +687,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_AQUA
     elif mat_id == gv.id_CMS19_H:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_CMS19_H,
-            A1_log_T_CMS19_H,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_CMS19_H, A1_log_T_CMS19_H)
         if Z_choice == "P":
             A2_Z = A2_P_CMS19_H
         elif Z_choice == "u":
@@ -722,10 +695,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_H
     elif mat_id == gv.id_CMS19_He:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_CMS19_He,
-            A1_log_T_CMS19_He,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_CMS19_He, A1_log_T_CMS19_He)
         if Z_choice == "P":
             A2_Z = A2_P_CMS19_He
         elif Z_choice == "u":
@@ -733,10 +703,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_He
     elif mat_id == gv.id_CMS19_HHe:
-        A1_log_rho, A1_log_T = (
-            A1_log_rho_CMS19_HHe,
-            A1_log_T_CMS19_HHe,
-        )
+        A1_log_rho, A1_log_T = (A1_log_rho_CMS19_HHe, A1_log_T_CMS19_HHe)
         if Z_choice == "P":
             A2_Z = A2_P_CMS19_HHe
         elif Z_choice == "u":
@@ -1467,11 +1434,7 @@ def P_u_rho(u, rho, mat_id):
             A2_log_u_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A2_P, A1_log_rho, A2_log_u = (
-            A2_P_AQUA,
-            A1_log_rho_AQUA,
-            A2_log_u_AQUA,
-        )
+        A2_P, A1_log_rho, A2_log_u = (A2_P_AQUA, A1_log_rho_AQUA, A2_log_u_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A2_P, A1_log_rho, A2_log_u = (
             A2_P_CMS19_H,
@@ -1636,11 +1599,7 @@ def P_T_rho(T, rho, mat_id):
             A1_log_T_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A2_P, A1_log_rho, A1_log_T = (
-            A2_P_AQUA,
-            A1_log_rho_AQUA,
-            A1_log_T_AQUA,
-        )
+        A2_P, A1_log_rho, A1_log_T = (A2_P_AQUA, A1_log_rho_AQUA, A1_log_T_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A2_P, A1_log_rho, A1_log_T = (
             A2_P_CMS19_H,
@@ -1774,11 +1733,7 @@ def T_rho_s(rho, s, mat_id):
             A2_s_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_AQUA,
-            A1_log_rho_AQUA,
-            A2_s_AQUA,
-        )
+        A1_log_T, A1_log_rho, A2_s = (A1_log_T_AQUA, A1_log_rho_AQUA, A2_s_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A1_log_T, A1_log_rho, A2_s = (
             A1_log_T_CMS19_H,
@@ -1901,11 +1856,7 @@ def T_u_rho(u, rho, mat_id):
             A2_u_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_AQUA,
-            A1_log_rho_AQUA,
-            A2_u_AQUA,
-        )
+        A1_log_T, A1_log_rho, A2_u = (A1_log_T_AQUA, A1_log_rho_AQUA, A2_u_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A1_log_T, A1_log_rho, A2_u = (
             A1_log_T_CMS19_H,
@@ -2031,11 +1982,7 @@ def u_rho_T(rho, T, mat_id):
             A1_log_T_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A2_u, A1_log_rho, A1_log_T = (
-            A2_u_AQUA,
-            A1_log_rho_AQUA,
-            A1_log_T_AQUA,
-        )
+        A2_u, A1_log_rho, A1_log_T = (A2_u_AQUA, A1_log_rho_AQUA, A1_log_T_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A2_u, A1_log_rho, A1_log_T = (
             A2_u_CMS19_H,
@@ -2189,11 +2136,7 @@ def s_u_rho(u, rho, mat_id):
             A2_log_u_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A2_s, A1_log_rho, A2_log_u = (
-            A2_s_AQUA,
-            A1_log_rho_AQUA,
-            A2_log_u_AQUA,
-        )
+        A2_s, A1_log_rho, A2_log_u = (A2_s_AQUA, A1_log_rho_AQUA, A2_log_u_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A2_s, A1_log_rho, A2_log_u = (
             A2_s_CMS19_H,
@@ -2353,11 +2296,7 @@ def s_rho_T(rho, T, mat_id):
             A1_log_T_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A2_s, A1_log_rho, A1_log_T = (
-            A2_s_AQUA,
-            A1_log_rho_AQUA,
-            A1_log_T_AQUA,
-        )
+        A2_s, A1_log_rho, A1_log_T = (A2_s_AQUA, A1_log_rho_AQUA, A1_log_T_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A2_s, A1_log_rho, A1_log_T = (
             A2_s_CMS19_H,
@@ -2513,11 +2452,7 @@ def rho_u_P(u, P, mat_id, rho_ref):
             A2_log_u_ANEOS_Fe85Si15,
         )
     elif mat_id == gv.id_AQUA:
-        A2_P, A1_log_rho, A2_log_u = (
-            A2_P_AQUA,
-            A1_log_rho_AQUA,
-            A2_log_u_AQUA,
-        )
+        A2_P, A1_log_rho, A2_log_u = (A2_P_AQUA, A1_log_rho_AQUA, A2_log_u_AQUA)
     elif mat_id == gv.id_CMS19_H:
         A2_P, A1_log_rho, A2_log_u = (
             A2_P_CMS19_H,
@@ -2584,6 +2519,10 @@ def rho_u_P(u, P, mat_id, rho_ref):
     # Counters will stop us getting stuck in a while loop.
     max_counter = 100
     counter1 = 0
+
+    # Initialise these because of numba
+    P_above_upper = 0
+    P_below_lower = 0
 
     # Start search for roots
     while closest_root == 0 and counter1 < max_counter:
@@ -2668,25 +2607,18 @@ def rho_u_P(u, P, mat_id, rho_ref):
 
             # Pressure for intp_rho = 0
             P_above_lower = np.exp((1 - intp_u_1) * P_1 + intp_u_1 * P_2)
+
+            # Because of linear interpolation, pressures are not exactly continuous
+            # as we go from one side of a grid point to another. See if there is
+            # a root between the last P_above_upper and the new P_above_lower,
+            # which are approx the same.
+            if idx_rho != idx_rho_ref:
+                if (P_above_lower - P) * (P_above_upper - P) <= 0:
+                    closest_root = np.exp(A1_log_rho[idx_rho])
+                    break
+
             # Pressure for intp_rho = 1
             P_above_upper = np.exp((1 - intp_u_2) * P_3 + intp_u_2 * P_4)
-
-            # If one of the table values of rho gives a pressure close to the
-            # desired pressure, we return this value. This is done to avoid
-            # interpolation problems that happen near table values
-            if np.abs(P_above_lower - P) / P < 0.001:
-                closest_root = np.exp(A1_log_rho[idx_rho])
-                if idx_rho == idx_rho_ref:
-                    return closest_root
-
-                break
-
-            if np.abs(P_above_upper - P) / P < 0.001:
-                closest_root = np.exp(A1_log_rho[idx_rho + 1])
-                if idx_rho == idx_rho_ref:
-                    return closest_root
-
-                break
 
             # Does the pressure of the adjacent table densities switch from being
             # above to below the desired pressure, or vice versa? If so, there is a root.
@@ -2715,7 +2647,7 @@ def rho_u_P(u, P, mat_id, rho_ref):
             log_rho_min = log_rho_ref - (np.log(closest_root) - log_rho_ref)
             idx_rho_below_min = int(find_index_and_interp(log_rho_min, A1_log_rho)[0])
 
-        # Now look for roots above rho_ref
+        # Now look for roots below rho_ref
         for idx_rho in range(idx_rho_below_max, idx_rho_below_min - 1, -1):
             # u (in this and the next density slice of the 2D u array)
             idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
@@ -2765,31 +2697,24 @@ def rho_u_P(u, P, mat_id, rho_ref):
             P_3 = np.log(P_3)
             P_4 = np.log(P_4)
 
-            # Pressure for intp_rho = 0
-            P_above_lower = np.exp(((1 - intp_u_1) * P_1 + intp_u_1 * P_2))
             # Pressure for intp_rho = 1
-            P_above_upper = np.exp(((1 - intp_u_2) * P_3 + intp_u_2 * P_4))
+            P_below_upper = np.exp(((1 - intp_u_2) * P_3 + intp_u_2 * P_4))
 
-            # If one of the table values of rho gives a pressure close to the
-            # desired pressure, we return this value. This is done to avoid
-            # interpolation problems that happen near table values
-            if np.abs((P_above_lower - P)) / P < 0.001:
-                closest_root = np.exp(A1_log_rho[idx_rho])
-                if idx_rho == idx_rho_ref:
-                    return closest_root
+            # Because of linear interpolation, pressures are not exactly continuous
+            # as we go from one side of a grid point to another. See if there is
+            # a root between the last P_below_lower and the new P_below_upper,
+            # which are approx the same.
+            if idx_rho != idx_rho_ref:
+                if (P_below_lower - P) * (P_below_upper - P) <= 0:
+                    closest_root = np.exp(A1_log_rho[idx_rho + 1])
+                    break
 
-                break
-
-            if np.abs((P_above_upper - P)) / P < 0.001:
-                closest_root = np.exp(A1_log_rho[idx_rho + 1])
-                if idx_rho == idx_rho_ref:
-                    return closest_root
-
-                break
+            # Pressure for intp_rho = 0
+            P_below_lower = np.exp(((1 - intp_u_1) * P_1 + intp_u_1 * P_2))
 
             # Does the pressure of the adjacent table densities switch from being
             # above to below the desired pressure, or vice versa? If so, there is a root.
-            if (P_above_lower - P) * (P_above_upper - P) <= 0:
+            if (P_below_lower - P) * (P_below_upper - P) <= 0:
 
                 # If there is a root, interpolate between the table values:
                 intp_rho = (log_P - ((1 - intp_u_1) * P_1 + intp_u_1 * P_2)) / (
