@@ -1,8 +1,8 @@
 """
 WoMa equations of state (EoS).
 
-Note: Numba places odd requirements and limitations for e.g. global variables
-and (avoiding) custom classes, which leads to some awkward or ugly but
+Note: Numba places odd requirements and limitations for e.g. global-scope
+variables and (avoiding) custom classes, which leads to some awkward or ugly but
 functional approaches here...
 """
 

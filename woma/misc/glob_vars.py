@@ -1,5 +1,9 @@
 """
-WoMa global variables
+WoMa "global" variables.
+
+Note: Numba places odd requirements and limitations for e.g. global-scope
+variables and (avoiding) custom classes, which leads to some awkward or ugly but
+functional approaches here...
 """
 
 import os

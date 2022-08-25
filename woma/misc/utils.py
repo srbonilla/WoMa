@@ -531,6 +531,7 @@ def impact_pos_vel_b_v_c_t(
 
 
 def check_loaded_eos_tables():
+    """###"""
     A1_mat = gv.Di_mat_id.keys()
     A1_mat = list(A1_mat)
 
@@ -623,7 +624,6 @@ def load_eos_tables(A1_mat_input=None):
                 "%s not available. Check misc/glob_vars.py for available eos."
                 % (material)
             )
-            # raise ValueError("EoS not available.")
 
     # Check if tables are already loaded
     A1_mat_loaded = check_loaded_eos_tables()
