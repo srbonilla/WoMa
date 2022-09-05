@@ -716,10 +716,15 @@ class Material_Chabrier_HHe:
                     'input_format "Trho" is only compatible with Y = 0 or 1'
                 )
         elif input_format == "TP":
-            assert Fp_H is not None and Fp_He is not None
-            assert 0 <= Y <= 1
-            self.Fp_H = Fp_H
-            self.Fp_He = Fp_He
+            if Y == 0:
+                self.Fp_H = Fp_H
+            elif Y == 1:   
+                self.Fp_He = Fp_He
+            else:    
+                assert Fp_H is not None and Fp_He is not None
+                assert 0 <= Y <= 1
+                self.Fp_H = Fp_H
+                self.Fp_He = Fp_He
         else:
             raise ValueError('input_format must have value "Trho" or "TP"')
 
