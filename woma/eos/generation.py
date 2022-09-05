@@ -7,6 +7,7 @@ from scipy.optimize import minimize_scalar
 
 from woma.misc import utils as ut
 from woma.misc import glob_vars as gv
+from woma.eos.sesame import find_index_and_interp
 
 # Gas constant (J K^-1 mol^-1)
 R_gas = 8.3145
@@ -157,10 +158,10 @@ class Material_HM80:
                 (
                     self.A1_c[0]
                     + self.A1_c[1] * T
-                    + self.A1_c[2] * T**2
+                    + self.A1_c[2] * T ** 2
                     + self.A1_c[3] * T * rho_cgs
                     + self.A1_c[4] * rho_cgs
-                    + self.A1_c[5] * rho_cgs**2
+                    + self.A1_c[5] * rho_cgs ** 2
                 )
                 * R_gas
                 * ut.SI_to_cgs.E
@@ -191,18 +192,18 @@ class Material_HM80:
             P = np.exp(
                 self.A1_p[0]
                 + self.A1_p[1] * y
-                + self.A1_p[2] * y**2
+                + self.A1_p[2] * y ** 2
                 + self.A1_p[3] * x * y
                 + self.A1_p[4] * x
-                + self.A1_p[5] * x**2
-                + self.A1_p[6] * x**3
-                + self.A1_p[7] * x**2 * y
+                + self.A1_p[5] * x ** 2
+                + self.A1_p[6] * x ** 3
+                + self.A1_p[7] * x ** 2 * y
             )
             P *= Mbar_to_Pa
         else:
             # Cold pressure (0 K)
             P = rho_cgs ** self.A1_p[0] * np.exp(
-                self.A1_p[1] + self.A1_p[2] * rho_cgs + self.A1_p[3] * rho_cgs**2
+                self.A1_p[1] + self.A1_p[2] * rho_cgs + self.A1_p[3] * rho_cgs ** 2
             )
             P *= Mbar_to_Pa
 
@@ -262,7 +263,7 @@ class Material_HM80:
             drho = rho - rho_prv
 
             P = self.P_rho_T(rho, 0)
-            du = P * rho**-2 * drho
+            du = P * rho ** -2 * drho
             u += du
             rho_prv = rho
 
@@ -276,7 +277,7 @@ class Material_HM80:
             drho = rho - rho_prv
 
             P = self.P_rho_T(rho, 0)
-            du = P * rho**-2 * drho
+            du = P * rho ** -2 * drho
             u += du
             rho_prv = rho
 
@@ -340,10 +341,10 @@ class Material_HM80:
                 (
                     self.A1_c[0]
                     + self.A1_c[1] * T / 2
-                    + self.A1_c[2] * T**2 / 3
+                    + self.A1_c[2] * T ** 2 / 3
                     + self.A1_c[3] * T / 2 * rho_cgs
                     + self.A1_c[4] * rho_cgs
-                    + self.A1_c[5] * rho_cgs**2
+                    + self.A1_c[5] * rho_cgs ** 2
                 )
                 * T
                 * R_gas
@@ -669,3 +670,524 @@ def write_table_SESAME(
                         A2_s[i_rho, i_T],
                     )
                 )
+
+
+# ========
+# Chabrier, Mazevet and Soubiran (2019) and Chabrier and Debras (2021)
+# ========
+class Material_Chabrier_HHe:
+    """Chabrier, Mazevet and Soubiran (2019) and Chabrier and Debras (2021) Hydrogen-Helium.
+
+    To generate pure H or He EoS, use Chabrier, Mazevet and Soubiran (2019) tables.
+    
+    To generate a H-He mixture, use the updated Chabrier and Debras (2021) H table.
+
+    Parameters
+    ----------
+    version_date : int
+        The file version date (YYYYMMDD).
+        
+    Y : float
+        Helium mass fraction 0 <= Y <= 1  
+        
+    input_format : str
+        Either "Trho" or "TP" depending on format of input table(s)
+        
+    Fp_H : str
+        File path for Hydrogen EoS table
+    
+    Fp_He : str
+        File path for Helium EoS table
+    
+    """
+
+    def __init__(self, version_date, Y, input_format, Fp_H=None, Fp_He=None):
+        self.version_date = version_date
+        self.Y = Y
+        self.input_format = input_format
+
+        if input_format == "Trho":
+            if Y == 0:
+                self.Fp_H = Fp_H
+            elif Y == 1:
+                self.Fp_He = Fp_He
+            else:
+                raise ValueError(
+                    'input_format "Trho" is only compatible with Y = 0 or 1'
+                )
+        elif input_format == "TP":
+            assert Fp_H is not None and Fp_He is not None
+            assert 0 <= Y <= 1
+            self.Fp_H = Fp_H
+            self.Fp_He = Fp_He
+        else:
+            raise ValueError('input_format must have value "Trho" or "TP"')
+
+    def load_table_Trho(self, file):
+
+        """Load and return the table file data from table in Trho format.
+        
+        Based on format of the downloadable tables from CMS19 and CD21
+    
+        Parameters
+        ----------
+        file : str
+            The table file path.
+    
+        Returns
+        -------
+        A1_rho, A1_T : [float]
+            Density (kg m^-3) and temperature (K) arrays.
+    
+        A2_u, A2_P, A2_c, A2_s : [[float]]
+            Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound speed
+            (m s^-1), and sp. entropy (J K^-1 kg^-1).
+        """
+
+        # These are hardcoded for the downloadable tables
+        num_T = 121
+        num_rho = 241  # for HHe table 0.275
+        # num_rho = 281 # for H table
+
+        # Load
+        with open(file) as f:
+
+            f.readline()
+
+            A1_T = np.empty(num_T)
+            A1_rho = np.empty(num_rho)
+            A2_P = np.empty((num_rho, num_T))
+            A2_u = np.empty((num_rho, num_T))
+            A2_s = np.empty((num_rho, num_T))
+            A2_c = np.empty((num_rho, num_T))
+
+            for i_T in range(num_T):
+                f.readline()
+                for i_rho in range(num_rho):
+                    (
+                        A1_T[i_T],
+                        A2_P[i_rho, i_T],
+                        A1_rho[i_rho],
+                        A2_u[i_rho, i_T],
+                        A2_s[i_rho, i_T],
+                        dlrho_dlT,
+                        dlrho_dlP,
+                        dls_dlT,
+                        dls_dlP,
+                        div_ad,
+                    ) = np.array(f.readline().split(), dtype=float)
+
+                    # Calculate sounds speed
+                    XP = 1 / dlrho_dlP
+                    XT = -dlrho_dlT / dlrho_dlP
+                    rho = 10 ** A1_rho[i_rho] * 10 ** 3
+                    P = 10 ** A2_P[i_rho, i_T] * 10 ** 9
+                    c = 1 / ((rho / (XP * P)) * (1 - XT * div_ad))
+
+                    # If negative, set to 0. This is only at edge of table
+                    if c < 0:
+                        c = 0
+
+                    A2_c[i_rho, i_T] = np.sqrt(c)
+
+            # partial P / partial rho at fixed T must be >= 0
+            for i_T in range(num_T):
+                for i_rho in range(num_rho - 1):
+                    if A2_P[i_rho + 1, i_T] < A2_P[i_rho, i_T]:
+                        A2_P[i_rho + 1, i_T] = A2_P[i_rho, i_T]
+
+        # Convert from log10 and convert units
+        A1_rho = 10 ** (A1_rho) * 10 ** 3
+        A1_T = 10 ** (A1_T)
+        A2_P = 10 ** (A2_P) * 10 ** 9
+        A2_u = 10 ** (A2_u) * 10 ** 6
+        A2_s = 10 ** (A2_s) * 10 ** 6
+
+        return A1_T, A1_rho, A2_P, A2_u, A2_s, A2_c
+
+    def load_table_TP(self, file):
+
+        """Load and return the table file data from table in TP format.
+        
+        Based on format of the downloadable tables from CMS19 and CD21
+    
+        Parameters
+        ----------
+        file : str
+            The table file path.
+    
+        Returns
+        -------
+        A1_P, A1_T : [float]
+            Pressure (Pa) and temperature (K) arrays.
+    
+        A2_u, A2_rho, A2_c, A2_s : [[float]]
+            Table arrays of sp. int. energy (J kg^-1), density (kg m^-3), sound speed
+            (m s^-1), and sp. entropy (J K^-1 kg^-1).
+        """
+        # These are hardcoded for the downloadable tables
+        num_T = 121
+        num_P = 441
+        # Load
+        with open(file) as f:
+
+            f.readline()
+            if 0 < self.Y < 1 and file == self.Fp_H:
+                f.readline()
+                f.readline()
+
+            A1_P = np.empty(num_P)
+            A1_T = np.empty(num_T)
+            A2_rho = np.empty((num_T, num_P))
+            A2_u = np.empty((num_T, num_P))
+            A2_s = np.empty((num_T, num_P))
+            A2_c = np.empty((num_T, num_P))
+
+            for i_T in range(num_T):
+                f.readline()
+                for i_P in range(num_P):
+                    (
+                        A1_T[i_T],
+                        A1_P[i_P],
+                        A2_rho[i_T, i_P],
+                        A2_u[i_T, i_P],
+                        A2_s[i_T, i_P],
+                        dlrho_dlT,
+                        dlrho_dlP,
+                        dls_dlT,
+                        dls_dlP,
+                        div_ad,
+                    ) = np.array(f.readline().split(), dtype=float)
+
+                    # Calculate sounds speed
+                    XP = 1 / dlrho_dlP
+                    XT = -dlrho_dlT / dlrho_dlP
+                    rho = 10 ** A2_rho[i_T, i_P] * 10 ** 3
+                    P = 10 ** A1_P[i_P] * 10 ** 9
+                    c = 1 / ((rho / (XP * P)) * (1 - XT * div_ad))
+
+                    # If negative, set to 0. This is only at edge of table
+                    if c < 0:
+                        c = 0
+
+                    A2_c[i_T, i_P] = np.sqrt(c)
+
+        # Convert from log10 and convert units
+        A2_rho = 10 ** (A2_rho) * 10 ** 3
+        A1_T = 10 ** (A1_T)
+        A1_P = 10 ** (A1_P) * 10 ** 9
+        A2_u = 10 ** (A2_u) * 10 ** 6
+        A2_s = 10 ** (A2_s) * 10 ** 6
+
+        return A1_T, A1_P, A2_rho, A2_u, A2_s, A2_c
+
+    def additive_volume_law(self):
+
+        """Combine H and He tables at same T and P to make a H-He mix
+    
+        Returns
+        -------
+        A1_P, A1_T : [float]
+            Pressure (Pa) and temperature (K) arrays.
+    
+        A2_u, A2_rho, A2_c, A2_s : [[float]]
+            Table arrays of sp. int. energy (J kg^-1), density (kg m^-3), sound speed
+            (m s^-1), and sp. entropy (J K^-1 kg^-1).
+        """
+
+        assert self.input_format == "TP"
+
+        assert (self.A1_T_H_TP == self.A1_T_He_TP).all()
+        assert (self.A1_P_H_TP == self.A1_P_He_TP).all()
+
+        # Masses of hydrogen and helium (kg)
+        m_H = 1.6735575e-27
+        m_He = 6.6464731e-27
+        # Boltzmann const (m^2 kg s^-2 K^-2)
+        k = 1.38064852e-23
+
+        Y = self.Y
+
+        A1_T = self.A1_T_H_TP.copy()
+        A1_P = self.A1_P_H_TP.copy()
+        # Combine H and He tables to get a table for HHe at Y in TP format
+        A2_rho = 1 / ((1 - Y) / self.A2_rho_H_TP + Y / self.A2_rho_He_TP)
+
+        # partial P / partial rho at fixed T must be >= 0
+        for i, T in enumerate(A1_T):
+            for j, P in enumerate(A1_P[:-1]):
+                if A2_rho[i, j + 1] < A2_rho[i, j]:
+                    A2_rho[i, j + 1] = A2_rho[i, j]
+
+        A2_u = (1 - Y) * self.A2_u_H_TP + Y * self.A2_u_He_TP
+        A2_c = (1 - Y) * self.A2_c_H_TP + Y * self.A2_c_He_TP
+
+        # s has additional term:
+        # Mass fraction
+        x_H = ((1 - Y) / m_H) / (((1 - Y) / m_H) + (Y / m_He))
+        x_He = (Y / m_He) / (((1 - Y) / m_H) + (Y / m_He))
+        A = x_H + x_He * m_He / m_H
+        s_mix = -k * ((x_H * np.log(x_H) + x_He * np.log(x_He)) / (A * m_H))
+
+        A2_s = (1 - Y) * self.A2_s_H_TP + Y * self.A2_s_He_TP + s_mix
+
+        return A1_T, A1_P, A2_rho, A2_u, A2_s, A2_c
+
+    def P_T_rho(self, T, rho, A1_P, A1_T, A2_rho):
+
+        """Compute the pressure from the temperature and density.
+        Similar to functions in e.g. sesame.py
+
+        Parameters
+        ----------
+        T : float
+            Temperature.
+    
+        rho : float
+            Density (kg m^-3).
+    
+        A1_P, A1_T : [float]
+            Pressure (Pa) and temperature (K) arrays. Axes of tables.
+            
+        A2_rho : [[float]]
+            Density (kg m^-3) table.
+    
+        Returns
+        -------
+        P : float
+            Pressure (Pa).
+        """
+
+        A1_log_P = np.log(A1_P)
+        A1_log_T = np.log(A1_T)
+
+        # Convert to log
+        log_T = np.log(T)
+
+        idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+        idx_T = int(idx_T_intp_T[0])
+        intp_T = idx_T_intp_T[1]
+
+        idx_rho_1_intp_rho_1 = find_index_and_interp(rho, A2_rho[idx_T, :])
+        idx_rho_1 = int(idx_rho_1_intp_rho_1[0])
+        intp_rho_1 = idx_rho_1_intp_rho_1[1]
+        idx_rho_2_intp_rho_2 = find_index_and_interp(rho, A2_rho[idx_T + 1, :])
+        idx_rho_2 = int(idx_rho_2_intp_rho_2[0])
+        intp_rho_2 = idx_rho_2_intp_rho_2[1]
+
+        # Normal interpolation
+        log_P = (1 - intp_T) * (
+            (1 - intp_rho_1) * A1_log_P[idx_rho_1]
+            + intp_rho_1 * A1_log_P[idx_rho_1 + 1]
+        ) + intp_T * (
+            (1 - intp_rho_2) * A1_log_P[idx_rho_2]
+            + intp_rho_2 * A1_log_P[idx_rho_2 + 1]
+        )
+
+        # Convert back from log
+        P = np.exp(log_P)
+        if P < 0:
+            P = 0
+
+        return P
+
+    def X_T_rho(self, T, rho, A2_X, A1_T, A2_rho):
+
+        """Compute the internal energy/entropy/sound speed from the temperature and density.
+        Similar to functions in e.g. sesame.py
+
+        Parameters
+        ----------
+        T : float
+            Temperature.
+    
+        rho : float
+            Density (kg m^-3).
+            
+        A2_X : [[float]]
+            Table arrays of either sp. int. energy (J kg^-1), sound speed
+            (m s^-1), or sp. entropy (J K^-1 kg^-1).
+    
+        A1_T : [float]
+            Temperature (K) arrays. Axes of tables.
+            
+        A2_rho : [[float]]
+            Density (kg m^-3) table.
+    
+        Returns
+        -------
+        X : float
+            either sp. int. energy (J kg^-1), sound speed (m s^-1), or 
+            sp. entropy (J K^-1 kg^-1).
+        """
+
+        A1_log_T = np.log(A1_T)
+        A2_log_rho = np.log(A2_rho)
+
+        # Convert to log
+        log_T = np.log(T)
+        log_rho = np.log(rho)
+
+        idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+        idx_T = int(idx_T_intp_T[0])
+        intp_T = idx_T_intp_T[1]
+
+        idx_rho_1_intp_rho_1 = find_index_and_interp(log_rho, A2_log_rho[idx_T])
+        idx_rho_1 = int(idx_rho_1_intp_rho_1[0])
+        intp_rho_1 = idx_rho_1_intp_rho_1[1]
+        idx_rho_2_intp_rho_2 = find_index_and_interp(log_rho, A2_log_rho[idx_T + 1])
+        idx_rho_2 = int(idx_rho_2_intp_rho_2[0])
+        intp_rho_2 = idx_rho_2_intp_rho_2[1]
+
+        X_1 = A2_X[idx_T, idx_rho_1]
+        X_2 = A2_X[idx_T, idx_rho_1 + 1]
+        X_3 = A2_X[idx_T + 1, idx_rho_2]
+        X_4 = A2_X[idx_T + 1, idx_rho_2 + 1]
+
+        if idx_T >= 0 and (intp_rho_1 < 0 or intp_rho_2 < 0):
+            intp_rho_1 = 0
+            intp_rho_2 = 0
+
+        # Interpolate with the log values
+        X_1 = np.log(X_1)
+        X_2 = np.log(X_2)
+        X_3 = np.log(X_3)
+        X_4 = np.log(X_4)
+
+        # P(rho, u)
+        X = (1 - intp_T) * ((1 - intp_rho_1) * X_1 + intp_rho_1 * X_2) + intp_T * (
+            (1 - intp_rho_2) * X_3 + intp_rho_2 * X_4
+        )
+
+        # Convert back from log
+        return np.exp(X)
+
+    def transform_TP_to_Trho(self, A1_rho, A1_T):
+
+        """Convert tabes in TP forma to Trho format
+
+        Parameters
+        ----------
+        A1_rho, A1_T : [float]
+            Density (kg m^-3) and temperature (K) arrays. desired axes of tables.
+            
+        A2_rho : [[float]]
+            Density (kg m^-3) table.
+    
+        Returns
+        -------
+        A2_P_Trho, A2_u_Trho, A2_s_Trho, A2_c_Trho : [float]
+            Table arrays of sp. int. energy (J kg^-1), density (kg m^-3), sound speed
+            (m s^-1), and sp. entropy (J K^-1 kg^-1). Now converted to Trho format.
+        """
+
+        assert self.input_format == "TP"
+
+        A2_P_Trho = np.empty((len(A1_rho), len(A1_T)))
+        A2_u_Trho = np.empty((len(A1_rho), len(A1_T)))
+        A2_s_Trho = np.empty((len(A1_rho), len(A1_T)))
+        A2_c_Trho = np.empty((len(A1_rho), len(A1_T)))
+
+        for i, rho in enumerate(A1_rho):
+            for j, T in enumerate(A1_T):
+
+                A2_P_Trho[i, j] = self.P_T_rho(
+                    T, rho, self.A1_P_TP, self.A1_T_TP, self.A2_rho_TP
+                )
+                A2_u_Trho[i, j] = self.X_T_rho(
+                    T, rho, self.A2_u_TP, self.A1_T_TP, self.A2_rho_TP
+                )
+                A2_s_Trho[i, j] = self.X_T_rho(
+                    T, rho, self.A2_s_TP, self.A1_T_TP, self.A2_rho_TP
+                )
+                A2_c_Trho[i, j] = self.X_T_rho(
+                    T, rho, self.A2_c_TP, self.A1_T_TP, self.A2_rho_TP
+                )
+
+        return A2_P_Trho, A2_u_Trho, A2_s_Trho, A2_c_Trho
+
+    def write_table(self, Fp_table, A1_rho=None):
+
+        """Generates and writes tables to SESAME-style file
+
+        Parameters
+        ----------
+        Fp_table : str
+            The table file path.
+            
+        A1_rho : [float]
+            Density (kg m^-3) array.
+        """
+
+        if self.input_format == "Trho":
+            # If input table format is "Trho" we only need to load table
+            if self.Y == 0:
+                self.A1_T_Trho, self.A1_rho_Trho, self.A2_P_Trho, self.A2_u_Trho, self.A2_s_Trho, self.A2_c_Trho = self.load_table_Trho(
+                    self.Fp_H
+                )
+            elif self.Y == 1:
+                self.A1_T_Trho, self.A1_rho_Trho, self.A2_P_Trho, self.A2_u_Trho, self.A2_s_Trho, self.A2_c_Trho = self.load_table_Trho(
+                    self.Fp_He
+                )
+            else:
+                raise ValueError(
+                    'input_format "Trho" is only compatible with Y = 0 or 1'
+                )
+        elif self.input_format == "TP":
+            # If input table format is "TP" we need to transform to "Trho" before saving
+            assert A1_rho is not None
+
+            if self.Y == 0:
+                self.A1_T_TP, self.A1_P_TP, self.A2_rho_TP, self.A2_u_TP, self.A2_s_TP, self.A2_c_TP = self.load_table_TP(
+                    self.Fp_H
+                )
+
+            elif self.Y == 1:
+                self.A1_T_TP, self.A1_P_TP, self.A2_rho_TP, self.A2_u_TP, self.A2_s_TP, self.A2_c_TP = self.load_table_TP(
+                    self.Fp_He
+                )
+
+            elif 0 < self.Y < 1:
+
+                self.A1_T_H_TP, self.A1_P_H_TP, self.A2_rho_H_TP, self.A2_u_H_TP, self.A2_s_H_TP, self.A2_c_H_TP = self.load_table_TP(
+                    self.Fp_H
+                )
+                self.A1_T_He_TP, self.A1_P_He_TP, self.A2_rho_He_TP, self.A2_u_He_TP, self.A2_s_He_TP, self.A2_c_He_TP = self.load_table_TP(
+                    self.Fp_He
+                )
+                # if Y isn't exacly 0 or 1 we need to combine tables to get mixture
+                self.A1_T_TP, self.A1_P_TP, self.A2_rho_TP, self.A2_u_TP, self.A2_s_TP, self.A2_c_TP = (
+                    self.additive_volume_law()
+                )
+
+            self.A1_T_Trho = self.A1_T_TP
+            self.A1_rho_Trho = A1_rho
+
+            # These are our final tables
+            self.A2_P_Trho, self.A2_u_Trho, self.A2_s_Trho, self.A2_c_Trho = self.transform_TP_to_Trho(
+                self.A1_rho_Trho, self.A1_T_Trho
+            )
+
+        else:
+            raise ValueError('input_format must have value "Trho" or "TP"')
+
+        # Name based on mass fraction
+        if self.Y == 0:
+            name = "CMS19 H"
+        elif self.Y == 1:
+            name = "CMS19 He"
+        else:
+            name = "Chabrier & Debras (2021) H-He Y=" + str(self.Y)
+
+        # Save as SESAME-style table
+        write_table_SESAME(
+            Fp_table,
+            name,
+            self.version_date,
+            self.A1_rho_Trho,
+            self.A1_T_Trho,
+            self.A2_u_Trho,
+            self.A2_P_Trho,
+            self.A2_c_Trho,
+            self.A2_s_Trho,
+        )
