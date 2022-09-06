@@ -1310,15 +1310,15 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
             A2_Z = sesame.A2_u_CMS19_He
         elif Z_choice == "s":
             A2_Z = sesame.A2_s_CMS19_He
-    elif mat_id == gv.id_CMS19_HHe:
-        A1_log_T = sesame.A1_log_T_CMS19_HHe
-        A1_log_rho = sesame.A1_log_rho_CMS19_HHe
+    elif mat_id == gv.id_CD21_HHe:
+        A1_log_T = sesame.A1_log_T_CD21_HHe
+        A1_log_rho = sesame.A1_log_rho_CD21_HHe
         if Z_choice == "P":
-            A2_Z = sesame.A2_P_CMS19_HHe
+            A2_Z = sesame.A2_P_CD21_HHe
         elif Z_choice == "u":
-            A2_Z = sesame.A2_u_CMS19_HHe
+            A2_Z = sesame.A2_u_CD21_HHe
         elif Z_choice == "s":
-            A2_Z = sesame.A2_s_CMS19_HHe
+            A2_Z = sesame.A2_s_CD21_HHe
     else:
         raise ValueError("Invalid material ID")
     A1_T = np.exp(A1_log_T)
@@ -1406,7 +1406,7 @@ def plot_all_SESAME_tables():
         "AQUA",
         "CMS19_H",
         "CMS19_He",
-        "CMS19_HHe",
+        "CD21_HHe",
         "ANEOS_forsterite",
         "ANEOS_iron",
         "ANEOS_Fe85Si15",

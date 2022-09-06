@@ -585,8 +585,8 @@ def check_loaded_eos_tables():
         A1_mat.remove("CMS19_H")
     if len(eos.sesame.A1_rho_CMS19_He) == 1:
         A1_mat.remove("CMS19_He")
-    if len(eos.sesame.A1_rho_CMS19_HHe) == 1:
-        A1_mat.remove("CMS19_HHe")
+    if len(eos.sesame.A1_rho_CD21_HHe) == 1:
+        A1_mat.remove("CD21_HHe")
 
     return A1_mat
 
@@ -854,20 +854,20 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_log_c_CMS19_He,
             eos.sesame.A2_log_s_CMS19_He,
         ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_He)
-    if "CMS19_HHe" in A1_mat and len(eos.sesame.A1_rho_CMS19_HHe) == 1:
+    if "CD21_HHe" in A1_mat and len(eos.sesame.A1_rho_CD21_HHe) == 1:
         (
-            eos.sesame.A1_rho_CMS19_HHe,
-            eos.sesame.A1_T_CMS19_HHe,
-            eos.sesame.A2_u_CMS19_HHe,
-            eos.sesame.A2_P_CMS19_HHe,
-            eos.sesame.A2_c_CMS19_HHe,
-            eos.sesame.A2_s_CMS19_HHe,
-            eos.sesame.A1_log_rho_CMS19_HHe,
-            eos.sesame.A1_log_T_CMS19_HHe,
-            eos.sesame.A2_log_u_CMS19_HHe,
-            eos.sesame.A2_log_P_CMS19_HHe,
-            eos.sesame.A2_log_c_CMS19_HHe,
-            eos.sesame.A2_log_s_CMS19_HHe,
-        ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_HHe)
+            eos.sesame.A1_rho_CD21_HHe,
+            eos.sesame.A1_T_CD21_HHe,
+            eos.sesame.A2_u_CD21_HHe,
+            eos.sesame.A2_P_CD21_HHe,
+            eos.sesame.A2_c_CD21_HHe,
+            eos.sesame.A2_s_CD21_HHe,
+            eos.sesame.A1_log_rho_CD21_HHe,
+            eos.sesame.A1_log_T_CD21_HHe,
+            eos.sesame.A2_log_u_CD21_HHe,
+            eos.sesame.A2_log_P_CD21_HHe,
+            eos.sesame.A2_log_c_CD21_HHe,
+            eos.sesame.A2_log_s_CD21_HHe,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_CD21_HHe)
 
     return None

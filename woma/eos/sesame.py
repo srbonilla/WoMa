@@ -561,18 +561,18 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
 )
 (
-    A1_rho_CMS19_HHe,
-    A1_T_CMS19_HHe,
-    A2_u_CMS19_HHe,
-    A2_P_CMS19_HHe,
-    A2_c_CMS19_HHe,
-    A2_s_CMS19_HHe,
-    A1_log_rho_CMS19_HHe,
-    A1_log_T_CMS19_HHe,
-    A2_log_u_CMS19_HHe,
-    A2_log_P_CMS19_HHe,
-    A2_log_c_CMS19_HHe,
-    A2_log_s_CMS19_HHe,
+    A1_rho_CD21_HHe,
+    A1_T_CD21_HHe,
+    A2_u_CD21_HHe,
+    A2_P_CD21_HHe,
+    A2_c_CD21_HHe,
+    A2_s_CD21_HHe,
+    A1_log_rho_CD21_HHe,
+    A1_log_T_CD21_HHe,
+    A2_log_u_CD21_HHe,
+    A2_log_P_CD21_HHe,
+    A2_log_c_CD21_HHe,
+    A2_log_s_CD21_HHe,
 ) = (
     np.zeros(1),
     np.zeros(1),
@@ -702,14 +702,14 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             A2_Z = A2_u_CMS19_He
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_He
-    elif mat_id == gv.id_CMS19_HHe:
-        A1_log_rho, A1_log_T = (A1_log_rho_CMS19_HHe, A1_log_T_CMS19_HHe)
+    elif mat_id == gv.id_CD21_HHe:
+        A1_log_rho, A1_log_T = (A1_log_rho_CD21_HHe, A1_log_T_CD21_HHe)
         if Z_choice == "P":
-            A2_Z = A2_P_CMS19_HHe
+            A2_Z = A2_P_CD21_HHe
         elif Z_choice == "u":
-            A2_Z = A2_u_CMS19_HHe
+            A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
-            A2_Z = A2_s_CMS19_HHe
+            A2_Z = A2_s_CD21_HHe
     else:
         raise ValueError("Invalid material ID")
 
@@ -970,20 +970,20 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_log_Y = A2_log_u_CMS19_He
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CMS19_He
-    elif mat_id == gv.id_CMS19_HHe:
-        A1_log_rho = A1_log_rho_CMS19_HHe
+    elif mat_id == gv.id_CD21_HHe:
+        A1_log_rho = A1_log_rho_CD21_HHe
         if Z_choice == "P":
-            A2_Z = A2_P_CMS19_HHe
+            A2_Z = A2_P_CD21_HHe
         elif Z_choice == "u":
-            A2_Z = A2_u_CMS19_HHe
+            A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
-            A2_Z = A2_s_CMS19_HHe
+            A2_Z = A2_s_CD21_HHe
         if Y_choice == "P":
-            A2_log_Y = A2_log_P_CMS19_HHe
+            A2_log_Y = A2_log_P_CD21_HHe
         elif Y_choice == "u":
-            A2_log_Y = A2_log_u_CMS19_HHe
+            A2_log_Y = A2_log_u_CD21_HHe
         elif Y_choice == "s":
-            A2_log_Y = A2_log_s_CMS19_HHe
+            A2_log_Y = A2_log_s_CD21_HHe
     else:
         raise ValueError("Invalid material ID")
 
@@ -1261,20 +1261,20 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_log_X = A2_log_u_CMS19_He
         elif X_choice == "s":
             A2_log_X = A2_log_s_CMS19_He
-    elif mat_id == gv.id_CMS19_HHe:
-        A1_log_T = A1_log_T_CMS19_HHe
+    elif mat_id == gv.id_CD21_HHe:
+        A1_log_T = A1_log_T_CD21_HHe
         if Z_choice == "P":
-            A2_Z = A2_P_CMS19_HHe
+            A2_Z = A2_P_CD21_HHe
         elif Z_choice == "u":
-            A2_Z = A2_u_CMS19_HHe
+            A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
-            A2_Z = A2_s_CMS19_HHe
+            A2_Z = A2_s_CD21_HHe
         if X_choice == "P":
-            A2_log_X = A2_log_P_CMS19_HHe
+            A2_log_X = A2_log_P_CD21_HHe
         elif X_choice == "u":
-            A2_log_X = A2_log_u_CMS19_HHe
+            A2_log_X = A2_log_u_CD21_HHe
         elif X_choice == "s":
-            A2_log_X = A2_log_s_CMS19_HHe
+            A2_log_X = A2_log_s_CD21_HHe
     else:
         raise ValueError("Invalid material ID")
 
@@ -1447,11 +1447,11 @@ def P_u_rho(u, rho, mat_id):
             A1_log_rho_CMS19_He,
             A2_log_u_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A2_P, A1_log_rho, A2_log_u = (
-            A2_P_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A2_log_u_CMS19_HHe,
+            A2_P_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A2_log_u_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -1612,11 +1612,11 @@ def P_T_rho(T, rho, mat_id):
             A1_log_rho_CMS19_He,
             A1_log_T_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A2_P, A1_log_rho, A1_log_T = (
-            A2_P_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A1_log_T_CMS19_HHe,
+            A2_P_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A1_log_T_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -1746,11 +1746,11 @@ def T_rho_s(rho, s, mat_id):
             A1_log_rho_CMS19_He,
             A2_s_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A1_log_T, A1_log_rho, A2_s = (
-            A1_log_T_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A2_s_CMS19_HHe,
+            A1_log_T_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A2_s_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -1869,11 +1869,11 @@ def T_u_rho(u, rho, mat_id):
             A1_log_rho_CMS19_He,
             A2_u_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A1_log_T, A1_log_rho, A2_u = (
-            A1_log_T_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A2_u_CMS19_HHe,
+            A1_log_T_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A2_u_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -1995,11 +1995,11 @@ def u_rho_T(rho, T, mat_id):
             A1_log_rho_CMS19_He,
             A1_log_T_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A2_u, A1_log_rho, A1_log_T = (
-            A2_u_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A1_log_T_CMS19_HHe,
+            A2_u_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A1_log_T_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -2149,11 +2149,11 @@ def s_u_rho(u, rho, mat_id):
             A1_log_rho_CMS19_He,
             A2_log_u_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A2_s, A1_log_rho, A2_log_u = (
-            A2_s_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A2_log_u_CMS19_HHe,
+            A2_s_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A2_log_u_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -2309,11 +2309,11 @@ def s_rho_T(rho, T, mat_id):
             A1_log_rho_CMS19_He,
             A1_log_T_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A2_s, A1_log_rho, A1_log_T = (
-            A2_s_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A1_log_T_CMS19_HHe,
+            A2_s_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A1_log_T_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -2465,11 +2465,11 @@ def rho_u_P(u, P, mat_id, rho_ref):
             A1_log_rho_CMS19_He,
             A2_log_u_CMS19_He,
         )
-    elif mat_id == gv.id_CMS19_HHe:
+    elif mat_id == gv.id_CD21_HHe:
         A2_P, A1_log_rho, A2_log_u = (
-            A2_P_CMS19_HHe,
-            A1_log_rho_CMS19_HHe,
-            A2_log_u_CMS19_HHe,
+            A2_P_CD21_HHe,
+            A1_log_rho_CD21_HHe,
+            A2_log_u_CD21_HHe,
         )
     else:
         raise ValueError("Invalid material ID")

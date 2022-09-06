@@ -118,7 +118,7 @@ set by a base type ID (multiplied by 100) plus a minor type:
     + Haldemann, J. et al. (2020) AQUA: `AQUA` : `304`
     + Chabrier, G. et al. (2019) Hydrogen: `CMS19_H` : `305`
     + Chabrier, G. et al. (2019) Helium: `CMS19_He` : `306`
-    + Chabrier, G. et al. (2019) H/He mixture Y=0.275: `CMS19_HHe` : `307`
+    + Chabrier & Debras (2021) H/He mixture Y=0.245 (Jupiter): `CD21_HHe` : `307`
 + ANEOS (in SESAME-style tables): `4`
     + Forsterite (Stewart et al. 2019): `ANEOS_forsterite` : `400`
     + Iron (Stewart, zenodo.org/record/3866507): `ANEOS_iron` : `401`
