@@ -239,8 +239,8 @@ def impact_pos_vel_b_v_c_r(
         dimensionless impact parameter, or "B" for the impact angle in degrees.
 
     units_v_c : str (opt.)
-        The units of the contact speed: "m/s" (default), or "v_esc" for the
-        mutual escape speed.
+        The units of the contact speed: "m/s" (default), "v_esc" for the
+        mutual escape speed, or "v_inf" for the velocity at infinity.
 
     return_t : bool (opt.)
         If True, then also return the time until contact, e.g. to be used by
@@ -260,6 +260,7 @@ def impact_pos_vel_b_v_c_r(
     """
     mu = G * (M_t + M_i)
     v_esc = np.sqrt(2 * mu / (R_t + R_i))
+    r_c = R_t + R_i
 
     # Convert to b and v_c (m/s) if necessary
     if units_b == "b":
@@ -272,11 +273,13 @@ def impact_pos_vel_b_v_c_r(
         pass
     elif units_v_c == "v_esc":
         v_c *= v_esc
+    elif units_v_c == "v_inf":
+        v_inf = v_c
+        v_c = np.sqrt(v_inf**2 + 2 * mu / r_c)
     else:
         raise ValueError("Invalid units_v_c:", units_v_c)
 
     # Contact position
-    r_c = R_t + R_i
     y_c = b * r_c
     if r < r_c:
         raise ValueError(
@@ -467,8 +470,8 @@ def impact_pos_vel_b_v_c_t(
         dimensionless impact parameter, or "B" for the impact angle in degrees.
 
     units_v_c : str (opt.)
-        The units of the contact speed: "m/s" (default), or "v_esc" for the
-        mutual escape speed.
+        The units of the contact speed: "m/s" (default), "v_esc" for the
+        mutual escape speed, or "v_inf" for the velocity at infinity.
 
     r_max_factor : float (opt.)
         This times the sum of the body radii sets the maximum initial
