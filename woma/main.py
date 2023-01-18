@@ -1253,7 +1253,7 @@ class Planet:
         assert self.A1_M_layer[1] is not None
         self.M = self.A1_M_layer[0] + self.A1_M_layer[1]
 
-        self.A1_R_layer[0], self.R = L2_spherical.L2_find_R_R1_given_M1_M2(
+        R1, self.R = L2_spherical.L2_find_R_R1_given_M1_M2(
             self.num_prof,
             R_min,
             R_max,
@@ -1272,7 +1272,7 @@ class Planet:
             num_attempt=num_attempt,
             verbosity=verbosity,
         )
-        self.A1_R_layer[-1] = self.R
+        self.A1_R_layer = np.array([R1, self.R])
 
         if verbosity < 2:
             verbosity_2 = 0
@@ -1284,7 +1284,7 @@ class Planet:
                 end=" ",
                 flush=True,
             )
-        if verbosity >= 2:
+        elif verbosity >= 2:
             print("Tweaking M to avoid density peaks at the center of the planet...")
 
         self.M = L2_spherical.L2_find_M_given_R_R1(
