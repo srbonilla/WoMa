@@ -2388,6 +2388,7 @@ def rho_u_P(u, P, mat_id, rho_ref):
     """Compute the density from the specific internal energy and pressure.
     Start search for roots at the reference density. If there are are multiple
     roots, return the root with the smallest abs(log(root_rho) - log(rho_ref)).
+    Note: this algorithm is slightly different from the one used in SWIFT
 
     Parameters
     ----------

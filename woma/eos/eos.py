@@ -1024,6 +1024,8 @@ def rho_u_P(u, P, mat_id, rho_ref):
     mat_type = mat_id // gv.type_factor
     if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
         rho = sesame.rho_u_P(u, P, mat_id, rho_ref)
+    elif mat_type == gv.type_Til:
+        rho = tillotson.rho_u_P(u, P, mat_id, rho_ref)
     else:
         raise ValueError("Function not implemented for this material type")
     return rho
