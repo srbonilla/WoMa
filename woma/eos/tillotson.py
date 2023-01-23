@@ -501,37 +501,38 @@ def T_u_rho(u, rho, mat_id):
 
     return T
 
+
 @njit
 def NR_iter(rho_iter, curve, P, u, material):
-    
+
     """Carries out one Newton-Raphson iteration.
-    
+
     Parameters
     ----------
     rho_iter : float
         Previous iteration density (kg m^-3).
-        
+
     curve : str
         The Tillotson curve that is being considered.
-        
+
     P : float
         Pressure (Pa).
 
     u : float
         Specific internal energy (J kg^-1).
-        
+
     material : (float)
         Tillotson material parameters.
-        
+
     Returns
     -------
     rho_iter : float
         Next iteration density (kg m^-3).
-        
+
     P_fraction : float
         (P_iter - P)/P. Measure of how close we are to converging
     """
-    
+
     (
         rho_0,
         a,
@@ -547,8 +548,7 @@ def NR_iter(rho_iter, curve, P, u, material):
         P_min,
         eta_zero,
     ) = material
-    
-    
+
     eta_iter = rho_iter / rho_0
     eta_iter_sq = eta_iter * eta_iter
     mu_iter = eta_iter - 1.0
@@ -557,124 +557,160 @@ def NR_iter(rho_iter, curve, P, u, material):
     w_iter_inv = 1.0 / w_iter
     exp1 = np.exp(-beta * nu_iter)
     exp2 = np.exp(-alpha * nu_iter * nu_iter)
-    
+
     # Derivatives
-    dw_inv_drho_iter = (2 * u_0 * u * eta_iter / rho_0) / (u + u_0 * eta_iter_sq)**2
+    dw_inv_drho_iter = (2 * u_0 * u * eta_iter / rho_0) / (u + u_0 * eta_iter_sq) ** 2
     dmu_drho_iter = 1 / rho_0
-    dmu_sq_drho_iter =  (2 * rho_iter / rho_0**2 - 2 / rho_0)
+    dmu_sq_drho_iter = 2 * rho_iter / rho_0**2 - 2 / rho_0
     dexp1_drho_iter = beta * rho_0 * exp1 / rho_iter**2
     dexp2_drho_iter = 2 * alpha * rho_0 * (rho_0 - rho_iter) * exp2 / rho_iter**3
-    
+
     if curve == "cold" or curve == "hybrid":
-        P_c_iter = (a + b * w_iter_inv) * rho_iter * u + A * mu_iter + B * mu_iter * mu_iter - P
-        dP_c_drho_iter = (a + b * w_iter_inv) * u + b * u * rho_iter * dw_inv_drho_iter + A * dmu_drho_iter + B * dmu_sq_drho_iter
+        P_c_iter = (
+            (a + b * w_iter_inv) * rho_iter * u
+            + A * mu_iter
+            + B * mu_iter * mu_iter
+            - P
+        )
+        dP_c_drho_iter = (
+            (a + b * w_iter_inv) * u
+            + b * u * rho_iter * dw_inv_drho_iter
+            + A * dmu_drho_iter
+            + B * dmu_sq_drho_iter
+        )
         P_fraction = P_c_iter / P
-        
-    elif  curve == "cold_min" or curve == "hybrid_min":
-        P_c_iter = ((a + b * w_iter_inv) * rho_iter * u + A * mu_iter + B * mu_iter * mu_iter) * (eta_iter - eta_zero) / (eta_min - eta_zero) - P
-        dP_c_drho_iter = ((a + b * w_iter_inv) * u + b * u * rho_iter * dw_inv_drho_iter + A * dmu_drho_iter + B * dmu_sq_drho_iter)  * (eta_iter - eta_zero) / (eta_min - eta_zero) + \
-                         ((a + b * w_iter_inv) * rho_iter * u + A * mu_iter + B * mu_iter * mu_iter) * (1 / (rho_0 * (eta_min - eta_zero)))
+
+    elif curve == "cold_min" or curve == "hybrid_min":
+        P_c_iter = (
+            (a + b * w_iter_inv) * rho_iter * u + A * mu_iter + B * mu_iter * mu_iter
+        ) * (eta_iter - eta_zero) / (eta_min - eta_zero) - P
+        dP_c_drho_iter = (
+            (a + b * w_iter_inv) * u
+            + b * u * rho_iter * dw_inv_drho_iter
+            + A * dmu_drho_iter
+            + B * dmu_sq_drho_iter
+        ) * (eta_iter - eta_zero) / (eta_min - eta_zero) + (
+            (a + b * w_iter_inv) * rho_iter * u + A * mu_iter + B * mu_iter * mu_iter
+        ) * (
+            1 / (rho_0 * (eta_min - eta_zero))
+        )
         P_fraction = P_c_iter / P
-    
-    if  curve == "hot"  or curve == "hybrid"  or curve == "hybrid_min":
-        P_h_iter = a * rho_iter * u + (b * rho_iter * u * w_iter_inv + A * mu_iter * exp1) * exp2 - P
-        dP_h_drho_iter = a * u + \
-                        (b * u * w_iter_inv + b * u * rho_iter * dw_inv_drho_iter + A * mu_iter * dexp1_drho_iter + A * exp1 * dmu_drho_iter) * exp2 + \
-                        (b * rho_iter * u * w_iter_inv + A * mu_iter * exp1) * dexp2_drho_iter
+
+    if curve == "hot" or curve == "hybrid" or curve == "hybrid_min":
+        P_h_iter = (
+            a * rho_iter * u
+            + (b * rho_iter * u * w_iter_inv + A * mu_iter * exp1) * exp2
+            - P
+        )
+        dP_h_drho_iter = (
+            a * u
+            + (
+                b * u * w_iter_inv
+                + b * u * rho_iter * dw_inv_drho_iter
+                + A * mu_iter * dexp1_drho_iter
+                + A * exp1 * dmu_drho_iter
+            )
+            * exp2
+            + (b * rho_iter * u * w_iter_inv + A * mu_iter * exp1) * dexp2_drho_iter
+        )
         P_fraction = P_h_iter / P
-        
+
     if curve == "cold" or curve == "cold_min":
         rho_iter -= P_c_iter / dP_c_drho_iter
-        
+
     elif curve == "hot":
         rho_iter -= P_h_iter / dP_h_drho_iter
-        
+
     elif curve == "hybrid" or curve == "hybrid_min":
-        P_hybrid_iter =  ((u - u_iv) * P_h_iter + (u_cv - u) * P_c_iter) / (u_cv - u_iv)
-        dP_hybrid_drho_iter = ((u - u_iv) * dP_h_drho_iter + (u_cv - u) * dP_c_drho_iter) / (u_cv - u_iv)
+        P_hybrid_iter = ((u - u_iv) * P_h_iter + (u_cv - u) * P_c_iter) / (u_cv - u_iv)
+        dP_hybrid_drho_iter = (
+            (u - u_iv) * dP_h_drho_iter + (u_cv - u) * dP_c_drho_iter
+        ) / (u_cv - u_iv)
         rho_iter -= P_hybrid_iter / dP_hybrid_drho_iter
         P_fraction = P_hybrid_iter / P
-            
+
     return rho_iter, P_fraction
+
 
 @njit
 def curve_finder(eta, eta_min, u, u_iv, u_cv):
     """Finds possible curves given u. Orders based on likelihood of valid root, given eta.
-    
-    Parameters
-    ----------
-    eta : float
-        Density / rho_0.
-        
-     u : float
-        Specific internal energy (J kg^-1).
 
-     eta_min, u_iv, u_cv : floats
-        Tillotson material parameters.
-        
-    Returns
-    -------
-    possible_curves : [str]
-        Ordered list of possible curves. Possible curves are given by:
+     Parameters
+     ----------
+     eta : float
+         Density / rho_0.
 
-    u REGION 1
-    u < u_iv:
-        eta < eta_min:           cold_min
-        eta_min < eta:           cold
-    
-   u REGION 2 
-   u_iv < u < u_cv
-        eta < eta_min:           hybrid_min
-        eta_min < eta < 1:       hybrid
-        1 < eta:                 cold
-    
-    u REGION 3
-    u_cv < u
-        eta < 1:                 hot
-        1 < eta:                 cold
-        
-    NOTE: for a lot of EoS, eta_min = 0, so search this region last if given the option to save time for most EoS
+      u : float
+         Specific internal energy (J kg^-1).
+
+      eta_min, u_iv, u_cv : floats
+         Tillotson material parameters.
+
+     Returns
+     -------
+     possible_curves : [str]
+         Ordered list of possible curves. Possible curves are given by:
+
+     u REGION 1
+     u < u_iv:
+         eta < eta_min:           cold_min
+         eta_min < eta:           cold
+
+    u REGION 2
+    u_iv < u < u_cv
+         eta < eta_min:           hybrid_min
+         eta_min < eta < 1:       hybrid
+         1 < eta:                 cold
+
+     u REGION 3
+     u_cv < u
+         eta < 1:                 hot
+         1 < eta:                 cold
+
+     NOTE: for a lot of EoS, eta_min = 0, so search this region last if given the option to save time for most EoS
     """
-    
+
     # u REGION 1
     if u <= u_iv:
         if eta <= eta_min:
             possible_curves = ["cold_min", "cold"]
         else:
-             possible_curves = ["cold", "cold_min"]
-    # u REGION 2         
+            possible_curves = ["cold", "cold_min"]
+    # u REGION 2
     elif u <= u_cv:
         if eta <= eta_min:
             possible_curves = ["hybrid_min", "hybrid", "cold"]
-        elif  eta <= 1:
+        elif eta <= 1:
             possible_curves = ["hybrid", "cold", "hybrid_min"]
         else:
             possible_curves = ["cold", "hybrid", "hybrid_min"]
-        
-    # u REGION 3   
+
+    # u REGION 3
     else:
-        if  eta <= 1:
-             possible_curves = ["hot", "cold"]
+        if eta <= 1:
+            possible_curves = ["hot", "cold"]
         else:
             possible_curves = ["cold", "hot"]
-            
-    return  possible_curves
+
+    return possible_curves
+
 
 @njit
 def constrain_to_curve(rho, curve, rho_0, eta_min, u, u_iv, u_cv):
     """Constrains rho to the valid region of a curve.
-    
+
     Parameters
     ----------
     rho : float
         Density (kg m^-3).
-        
+
     curve : str
         The Tillotson curve that is being considered.
 
     rho_0, eta_min, u, u_iv, u_cv : floats
         Tillotson material parameters.
-        
+
     Returns
     -------
     rho : float
@@ -687,25 +723,26 @@ def constrain_to_curve(rho, curve, rho_0, eta_min, u, u_iv, u_cv):
             rho = min(rho, eta_min * rho_0)
         elif curve == "cold":
             rho = max(rho, eta_min * rho_0)
-    # u REGION 2         
+    # u REGION 2
     elif u <= u_cv:
         if curve == "hybrid_min":
             rho = min(rho, eta_min * rho_0)
-        elif  curve == "hybrid":
-            rho  = max(rho, eta_min * rho_0)
-            rho  = min(rho, rho_0)
+        elif curve == "hybrid":
+            rho = max(rho, eta_min * rho_0)
+            rho = min(rho, rho_0)
         elif curve == "cold":
-            rho  = max(rho, rho_0)
-        
-    # u REGION 3   
+            rho = max(rho, rho_0)
+
+    # u REGION 3
     else:
         if curve == "hot":
-            rho  = min(rho, rho_0)
+            rho = min(rho, rho_0)
         elif curve == "cold":
-            rho  = max(rho, rho_0)
-            
+            rho = max(rho, rho_0)
+
     return rho
-    
+
+
 @njit
 def rho_u_P(u, P, mat_id, rho_ref):
     """Compute the density from the internal energy and pressure.
@@ -714,7 +751,7 @@ def rho_u_P(u, P, mat_id, rho_ref):
     ----------
     u : float
         Specific internal energy (J kg^-1).
-        
+
     P : float
         Pressure (Pa).
 
@@ -723,14 +760,13 @@ def rho_u_P(u, P, mat_id, rho_ref):
 
     rho_ref : float
         Reference density. Pick root closest to this value.
-        
+
     Returns
     -------
     rho : float
         Density (kg m^-3).
     """
 
-    
     # Material constants for Tillotson EoS (SI)
     # mat_id, rho_0, a, b, A, B, u_0, u_iv, u_cv, alpha, beta, eta_min, P_min, eta_zero
     iron = np.array(
@@ -834,36 +870,37 @@ def rho_u_P(u, P, mat_id, rho_ref):
         eta_zero,
     ) = material[1:]
 
-    
     assert u_iv <= u_cv
-                        
+
     if P <= P_min or u == 0:
         return rho_ref
-    
+
     # We start search on the same curve as rho_ref, since this is most likely curve to find rho on
-    eta_ref = rho_ref / rho_0  
+    eta_ref = rho_ref / rho_0
 
     # Given u, what are the possible curves we can be on?
     # The output is ordered based on how likely the root is to be on that curve given eta_ref
-    possible_curves = curve_finder(eta_ref, eta_min, u, u_iv, u_cv)       
+    possible_curves = curve_finder(eta_ref, eta_min, u, u_iv, u_cv)
 
-    # Newton-Raphson        
+    # Newton-Raphson
     max_iter = 10
     tol = 1e-5
-    
+
     # Loop over all possible curves until we find a valid root
     for i, curve in enumerate(possible_curves):
-        
+
         # Our first rho_iter must be constrained to the valid region of the curve
         rho_iter = constrain_to_curve(rho_ref, curve, rho_0, eta_min, u, u_iv, u_cv)
         # set this to an arbitrary number so we definitely dont't think we converge straigt away
-        last_rho_iter = -1e5 
+        last_rho_iter = -1e5
         for j in range(max_iter):
-            
+
             # Carry out a Newton-Raphson iteration
             rho_iter, P_fraction = NR_iter(rho_iter, curve, P, u, material[1:])
             # Constrain the next iteration density to the valid region of the curve
-            rho_iter = constrain_to_curve(rho_iter, curve, rho_0, eta_min, u, u_iv, u_cv)
+            rho_iter = constrain_to_curve(
+                rho_iter, curve, rho_0, eta_min, u, u_iv, u_cv
+            )
 
             # Either we've converged ...
             if np.abs(P_fraction) < tol:
@@ -871,11 +908,9 @@ def rho_u_P(u, P, mat_id, rho_ref):
             # ... or we're stuck at the boundary ...
             elif rho_iter == last_rho_iter:
                 break
-            
+
             # ... or we loop again
             last_rho_iter = rho_iter
-            
-                
+
     raise ValueError("rho_u_P failed to converge")
     return rho_ref
-   
