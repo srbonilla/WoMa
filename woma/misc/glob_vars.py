@@ -1,5 +1,9 @@
 """
-WoMa global variables
+WoMa "global" variables.
+
+Note: Numba places odd requirements and limitations for e.g. global-scope
+variables and (avoiding) custom classes, which leads to some awkward or ugly but
+functional approaches here...
 """
 
 import os
@@ -32,7 +36,7 @@ Di_mat_id = {
     "HM80_HHe": Di_mat_type["HM80"] * type_factor,  # Hydrogen-helium atmosphere
     "HM80_ice": Di_mat_type["HM80"] * type_factor + 1,  # H20-CH4-NH3 ice mix
     "HM80_rock": Di_mat_type["HM80"] * type_factor + 2,  # SiO2-MgO-FeS-FeO rock mix
-    # SESAME
+    # SESAME etc
     "SESAME_iron": Di_mat_type["SESAME"] * type_factor,  # 2140
     "SESAME_basalt": Di_mat_type["SESAME"] * type_factor + 1,  # 7530
     "SESAME_water": Di_mat_type["SESAME"] * type_factor + 2,  # 7154
@@ -40,7 +44,7 @@ Di_mat_id = {
     "AQUA": Di_mat_type["SESAME"] * type_factor + 4,  # Haldemann+2020
     "CMS19_H": Di_mat_type["SESAME"] * type_factor + 5,  # Chabrier+2019 Hydrogen
     "CMS19_He": Di_mat_type["SESAME"] * type_factor + 6,  # Helium
-    "CMS19_HHe": Di_mat_type["SESAME"] * type_factor + 7,  # H/He mixture Y=0.275
+    "CD21_HHe": Di_mat_type["SESAME"] * type_factor + 7,  # H/He mixture Y=0.275
     # ANEOS
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
     "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
@@ -74,7 +78,7 @@ id_SS08_water = Di_mat_id["SS08_water"]
 id_AQUA = Di_mat_id["AQUA"]
 id_CMS19_H = Di_mat_id["CMS19_H"]
 id_CMS19_He = Di_mat_id["CMS19_He"]
-id_CMS19_HHe = Di_mat_id["CMS19_HHe"]
+id_CD21_HHe = Di_mat_id["CD21_HHe"]
 id_ANEOS_forsterite = Di_mat_id["ANEOS_forsterite"]
 id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
 id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
@@ -108,7 +112,7 @@ Fp_SS08_water = dir_data + "SS08_water.txt"
 Fp_AQUA = dir_data + "AQUA_H20.txt"
 Fp_CMS19_H = dir_data + "CMS19_H.txt"
 Fp_CMS19_He = dir_data + "CMS19_He.txt"
-Fp_CMS19_HHe = dir_data + "CMS19_HHe.txt"
+Fp_CD21_HHe = dir_data + "CD21_HHe.txt"
 # ANEOS tables
 Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.txt"
 Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.txt"

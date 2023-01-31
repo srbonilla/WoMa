@@ -1,4 +1,4 @@
-""" 
+"""
 WoMa Hubbard & MacFarlane (1980) equations of state
 """
 
@@ -41,17 +41,19 @@ A1_u_cold_HM80_rock = np.zeros(1)
 def load_table_HM80(Fp_table):
     """Load and return the table file data.
 
-    # header (four lines)
-    date
+    File contents
+    -------------
+    # header (11 lines)
+    version_date                                            (YYYYMMDD)
     log_rho_min  log_rho_max  num_rho  log_u_min  log_u_max  num_u
-    P_0_0   P_0_1   ...     P_0_num_u           # Array of pressures
-    P_1_0   ...     ...     P_1_num_u
-    ...     ...     ...     ...
-    P_num_rho_0     ...     P_num_rho_num_u
-    T_0_0   T_0_1   ...     T_0_num_u           # Array of temperatures
-    T_1_0   ...     ...     T_1_num_u
-    ...     ...     ...     ...
-    T_num_rho_0     ...     T_num_rho_num_u
+    P[0,0]         P[0,1]   ...   P[0,num_u]                (Pressures, Pa)
+    P[1,0]         ...      ...   P[1,num_u]
+    ...            ...      ...   ...
+    P[num_rho,0]   ...      ...   P[num_rho,num_u]
+    T[0,0]         T[0,1]   ...   T[0,num_u]                (Temperatures, K)
+    T[1,0]         ...      ...   T[1,num_u]
+    ...            ...      ...   ...
+    T[num_rho,0]   ...      ...   T[num_rho,num_u]
 
     Parameters
     ----------
@@ -89,11 +91,11 @@ def load_table_HM80(Fp_table):
     """
     # Parameters
     log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(
-        Fp_table, skip_header=6, max_rows=1
+        Fp_table, skip_header=12, max_rows=1
     )
 
     # Tables
-    A2_data = np.loadtxt(Fp_table, skiprows=7)
+    A2_data = np.loadtxt(Fp_table, skiprows=13)
 
     num_rho = int(num_rho)
     num_u = int(num_u)

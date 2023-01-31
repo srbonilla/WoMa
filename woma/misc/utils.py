@@ -239,8 +239,8 @@ def impact_pos_vel_b_v_c_r(
         dimensionless impact parameter, or "B" for the impact angle in degrees.
 
     units_v_c : str (opt.)
-        The units of the contact speed: "m/s" (default), or "v_esc" for the
-        mutual escape speed.
+        The units of the contact speed: "m/s" (default), "v_esc" for the
+        mutual escape speed, or "v_inf" for the velocity at infinity.
 
     return_t : bool (opt.)
         If True, then also return the time until contact, e.g. to be used by
@@ -260,6 +260,7 @@ def impact_pos_vel_b_v_c_r(
     """
     mu = G * (M_t + M_i)
     v_esc = np.sqrt(2 * mu / (R_t + R_i))
+    r_c = R_t + R_i
 
     # Convert to b and v_c (m/s) if necessary
     if units_b == "b":
@@ -272,11 +273,13 @@ def impact_pos_vel_b_v_c_r(
         pass
     elif units_v_c == "v_esc":
         v_c *= v_esc
+    elif units_v_c == "v_inf":
+        v_inf = v_c
+        v_c = np.sqrt(v_inf**2 + 2 * mu / r_c)
     else:
         raise ValueError("Invalid units_v_c:", units_v_c)
 
     # Contact position
-    r_c = R_t + R_i
     y_c = b * r_c
     if r < r_c:
         raise ValueError(
@@ -467,8 +470,8 @@ def impact_pos_vel_b_v_c_t(
         dimensionless impact parameter, or "B" for the impact angle in degrees.
 
     units_v_c : str (opt.)
-        The units of the contact speed: "m/s" (default), or "v_esc" for the
-        mutual escape speed.
+        The units of the contact speed: "m/s" (default), "v_esc" for the
+        mutual escape speed, or "v_inf" for the velocity at infinity.
 
     r_max_factor : float (opt.)
         This times the sum of the body radii sets the maximum initial
@@ -531,6 +534,7 @@ def impact_pos_vel_b_v_c_t(
 
 
 def check_loaded_eos_tables():
+    """###"""
     A1_mat = gv.Di_mat_id.keys()
     A1_mat = list(A1_mat)
 
@@ -584,8 +588,8 @@ def check_loaded_eos_tables():
         A1_mat.remove("CMS19_H")
     if len(eos.sesame.A1_rho_CMS19_He) == 1:
         A1_mat.remove("CMS19_He")
-    if len(eos.sesame.A1_rho_CMS19_HHe) == 1:
-        A1_mat.remove("CMS19_HHe")
+    if len(eos.sesame.A1_rho_CD21_HHe) == 1:
+        A1_mat.remove("CD21_HHe")
 
     return A1_mat
 
@@ -623,7 +627,6 @@ def load_eos_tables(A1_mat_input=None):
                 "%s not available. Check misc/glob_vars.py for available eos."
                 % (material)
             )
-            # raise ValueError("EoS not available.")
 
     # Check if tables are already loaded
     A1_mat_loaded = check_loaded_eos_tables()
@@ -854,20 +857,20 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_log_c_CMS19_He,
             eos.sesame.A2_log_s_CMS19_He,
         ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_He)
-    if "CMS19_HHe" in A1_mat and len(eos.sesame.A1_rho_CMS19_HHe) == 1:
+    if "CD21_HHe" in A1_mat and len(eos.sesame.A1_rho_CD21_HHe) == 1:
         (
-            eos.sesame.A1_rho_CMS19_HHe,
-            eos.sesame.A1_T_CMS19_HHe,
-            eos.sesame.A2_u_CMS19_HHe,
-            eos.sesame.A2_P_CMS19_HHe,
-            eos.sesame.A2_c_CMS19_HHe,
-            eos.sesame.A2_s_CMS19_HHe,
-            eos.sesame.A1_log_rho_CMS19_HHe,
-            eos.sesame.A1_log_T_CMS19_HHe,
-            eos.sesame.A2_log_u_CMS19_HHe,
-            eos.sesame.A2_log_P_CMS19_HHe,
-            eos.sesame.A2_log_c_CMS19_HHe,
-            eos.sesame.A2_log_s_CMS19_HHe,
-        ) = eos.sesame.load_table_SESAME(gv.Fp_CMS19_HHe)
+            eos.sesame.A1_rho_CD21_HHe,
+            eos.sesame.A1_T_CD21_HHe,
+            eos.sesame.A2_u_CD21_HHe,
+            eos.sesame.A2_P_CD21_HHe,
+            eos.sesame.A2_c_CD21_HHe,
+            eos.sesame.A2_s_CD21_HHe,
+            eos.sesame.A1_log_rho_CD21_HHe,
+            eos.sesame.A1_log_T_CD21_HHe,
+            eos.sesame.A2_log_u_CD21_HHe,
+            eos.sesame.A2_log_P_CD21_HHe,
+            eos.sesame.A2_log_c_CD21_HHe,
+            eos.sesame.A2_log_s_CD21_HHe,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_CD21_HHe)
 
     return None
