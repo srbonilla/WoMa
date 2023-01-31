@@ -158,10 +158,10 @@ class Material_HM80:
                 (
                     self.A1_c[0]
                     + self.A1_c[1] * T
-                    + self.A1_c[2] * T ** 2
+                    + self.A1_c[2] * T**2
                     + self.A1_c[3] * T * rho_cgs
                     + self.A1_c[4] * rho_cgs
-                    + self.A1_c[5] * rho_cgs ** 2
+                    + self.A1_c[5] * rho_cgs**2
                 )
                 * R_gas
                 * ut.SI_to_cgs.E
@@ -192,18 +192,18 @@ class Material_HM80:
             P = np.exp(
                 self.A1_p[0]
                 + self.A1_p[1] * y
-                + self.A1_p[2] * y ** 2
+                + self.A1_p[2] * y**2
                 + self.A1_p[3] * x * y
                 + self.A1_p[4] * x
-                + self.A1_p[5] * x ** 2
-                + self.A1_p[6] * x ** 3
-                + self.A1_p[7] * x ** 2 * y
+                + self.A1_p[5] * x**2
+                + self.A1_p[6] * x**3
+                + self.A1_p[7] * x**2 * y
             )
             P *= Mbar_to_Pa
         else:
             # Cold pressure (0 K)
             P = rho_cgs ** self.A1_p[0] * np.exp(
-                self.A1_p[1] + self.A1_p[2] * rho_cgs + self.A1_p[3] * rho_cgs ** 2
+                self.A1_p[1] + self.A1_p[2] * rho_cgs + self.A1_p[3] * rho_cgs**2
             )
             P *= Mbar_to_Pa
 
@@ -263,7 +263,7 @@ class Material_HM80:
             drho = rho - rho_prv
 
             P = self.P_rho_T(rho, 0)
-            du = P * rho ** -2 * drho
+            du = P * rho**-2 * drho
             u += du
             rho_prv = rho
 
@@ -277,7 +277,7 @@ class Material_HM80:
             drho = rho - rho_prv
 
             P = self.P_rho_T(rho, 0)
-            du = P * rho ** -2 * drho
+            du = P * rho**-2 * drho
             u += du
             rho_prv = rho
 
@@ -341,10 +341,10 @@ class Material_HM80:
                 (
                     self.A1_c[0]
                     + self.A1_c[1] * T / 2
-                    + self.A1_c[2] * T ** 2 / 3
+                    + self.A1_c[2] * T**2 / 3
                     + self.A1_c[3] * T / 2 * rho_cgs
                     + self.A1_c[4] * rho_cgs
-                    + self.A1_c[5] * rho_cgs ** 2
+                    + self.A1_c[5] * rho_cgs**2
                 )
                 * T
                 * R_gas
@@ -679,26 +679,26 @@ class Material_Chabrier_HHe:
     """Chabrier, Mazevet and Soubiran (2019) and Chabrier and Debras (2021) Hydrogen-Helium.
 
     To generate pure H or He EoS, use Chabrier, Mazevet and Soubiran (2019) tables.
-    
+
     To generate a H-He mixture, use the updated Chabrier and Debras (2021) H table.
 
     Parameters
     ----------
     version_date : int
         The file version date (YYYYMMDD).
-        
+
     Y : float
-        Helium mass fraction 0 <= Y <= 1  
-        
+        Helium mass fraction 0 <= Y <= 1
+
     input_format : str
         Either "Trho" or "TP" depending on format of input table(s)
-        
+
     Fp_H : str
         File path for Hydrogen EoS table
-    
+
     Fp_He : str
         File path for Helium EoS table
-    
+
     """
 
     def __init__(self, version_date, Y, input_format, Fp_H=None, Fp_He=None):
@@ -718,9 +718,9 @@ class Material_Chabrier_HHe:
         elif input_format == "TP":
             if Y == 0:
                 self.Fp_H = Fp_H
-            elif Y == 1:   
+            elif Y == 1:
                 self.Fp_He = Fp_He
-            else:    
+            else:
                 assert Fp_H is not None and Fp_He is not None
                 assert 0 <= Y <= 1
                 self.Fp_H = Fp_H
@@ -731,19 +731,19 @@ class Material_Chabrier_HHe:
     def load_table_Trho(self, file):
 
         """Load and return the table file data from table in Trho format.
-        
+
         Based on format of the downloadable tables from CMS19 and CD21
-    
+
         Parameters
         ----------
         file : str
             The table file path.
-    
+
         Returns
         -------
         A1_rho, A1_T : [float]
             Density (kg m^-3) and temperature (K) arrays.
-    
+
         A2_u, A2_P, A2_c, A2_s : [[float]]
             Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound speed
             (m s^-1), and sp. entropy (J K^-1 kg^-1).
@@ -785,8 +785,8 @@ class Material_Chabrier_HHe:
                     # Calculate sounds speed
                     XP = 1 / dlrho_dlP
                     XT = -dlrho_dlT / dlrho_dlP
-                    rho = 10 ** A1_rho[i_rho] * 10 ** 3
-                    P = 10 ** A2_P[i_rho, i_T] * 10 ** 9
+                    rho = 10 ** A1_rho[i_rho] * 10**3
+                    P = 10 ** A2_P[i_rho, i_T] * 10**9
                     c = 1 / ((rho / (XP * P)) * (1 - XT * div_ad))
 
                     # If negative, set to 0. This is only at edge of table
@@ -802,30 +802,30 @@ class Material_Chabrier_HHe:
                         A2_P[i_rho + 1, i_T] = A2_P[i_rho, i_T]
 
         # Convert from log10 and convert units
-        A1_rho = 10 ** (A1_rho) * 10 ** 3
+        A1_rho = 10 ** (A1_rho) * 10**3
         A1_T = 10 ** (A1_T)
-        A2_P = 10 ** (A2_P) * 10 ** 9
-        A2_u = 10 ** (A2_u) * 10 ** 6
-        A2_s = 10 ** (A2_s) * 10 ** 6
+        A2_P = 10 ** (A2_P) * 10**9
+        A2_u = 10 ** (A2_u) * 10**6
+        A2_s = 10 ** (A2_s) * 10**6
 
         return A1_T, A1_rho, A2_P, A2_u, A2_s, A2_c
 
     def load_table_TP(self, file):
 
         """Load and return the table file data from table in TP format.
-        
+
         Based on format of the downloadable tables from CMS19 and CD21
-    
+
         Parameters
         ----------
         file : str
             The table file path.
-    
+
         Returns
         -------
         A1_P, A1_T : [float]
             Pressure (Pa) and temperature (K) arrays.
-    
+
         A2_u, A2_rho, A2_c, A2_s : [[float]]
             Table arrays of sp. int. energy (J kg^-1), density (kg m^-3), sound speed
             (m s^-1), and sp. entropy (J K^-1 kg^-1).
@@ -867,8 +867,8 @@ class Material_Chabrier_HHe:
                     # Calculate sounds speed
                     XP = 1 / dlrho_dlP
                     XT = -dlrho_dlT / dlrho_dlP
-                    rho = 10 ** A2_rho[i_T, i_P] * 10 ** 3
-                    P = 10 ** A1_P[i_P] * 10 ** 9
+                    rho = 10 ** A2_rho[i_T, i_P] * 10**3
+                    P = 10 ** A1_P[i_P] * 10**9
                     c = 1 / ((rho / (XP * P)) * (1 - XT * div_ad))
 
                     # If negative, set to 0. This is only at edge of table
@@ -878,23 +878,23 @@ class Material_Chabrier_HHe:
                     A2_c[i_T, i_P] = np.sqrt(c)
 
         # Convert from log10 and convert units
-        A2_rho = 10 ** (A2_rho) * 10 ** 3
+        A2_rho = 10 ** (A2_rho) * 10**3
         A1_T = 10 ** (A1_T)
-        A1_P = 10 ** (A1_P) * 10 ** 9
-        A2_u = 10 ** (A2_u) * 10 ** 6
-        A2_s = 10 ** (A2_s) * 10 ** 6
+        A1_P = 10 ** (A1_P) * 10**9
+        A2_u = 10 ** (A2_u) * 10**6
+        A2_s = 10 ** (A2_s) * 10**6
 
         return A1_T, A1_P, A2_rho, A2_u, A2_s, A2_c
 
     def additive_volume_law(self):
 
         """Combine H and He tables at same T and P to make a H-He mix
-    
+
         Returns
         -------
         A1_P, A1_T : [float]
             Pressure (Pa) and temperature (K) arrays.
-    
+
         A2_u, A2_rho, A2_c, A2_s : [[float]]
             Table arrays of sp. int. energy (J kg^-1), density (kg m^-3), sound speed
             (m s^-1), and sp. entropy (J K^-1 kg^-1).
@@ -947,16 +947,16 @@ class Material_Chabrier_HHe:
         ----------
         T : float
             Temperature.
-    
+
         rho : float
             Density (kg m^-3).
-    
+
         A1_P, A1_T : [float]
             Pressure (Pa) and temperature (K) arrays. Axes of tables.
-            
+
         A2_rho : [[float]]
             Density (kg m^-3) table.
-    
+
         Returns
         -------
         P : float
@@ -1005,24 +1005,24 @@ class Material_Chabrier_HHe:
         ----------
         T : float
             Temperature.
-    
+
         rho : float
             Density (kg m^-3).
-            
+
         A2_X : [[float]]
             Table arrays of either sp. int. energy (J kg^-1), sound speed
             (m s^-1), or sp. entropy (J K^-1 kg^-1).
-    
+
         A1_T : [float]
             Temperature (K) arrays. Axes of tables.
-            
+
         A2_rho : [[float]]
             Density (kg m^-3) table.
-    
+
         Returns
         -------
         X : float
-            either sp. int. energy (J kg^-1), sound speed (m s^-1), or 
+            either sp. int. energy (J kg^-1), sound speed (m s^-1), or
             sp. entropy (J K^-1 kg^-1).
         """
 
@@ -1075,10 +1075,10 @@ class Material_Chabrier_HHe:
         ----------
         A1_rho, A1_T : [float]
             Density (kg m^-3) and temperature (K) arrays. desired axes of tables.
-            
+
         A2_rho : [[float]]
             Density (kg m^-3) table.
-    
+
         Returns
         -------
         A2_P_Trho, A2_u_Trho, A2_s_Trho, A2_c_Trho : [float]
@@ -1119,7 +1119,7 @@ class Material_Chabrier_HHe:
         ----------
         Fp_table : str
             The table file path.
-            
+
         A1_rho : [float]
             Density (kg m^-3) array.
         """
@@ -1127,13 +1127,23 @@ class Material_Chabrier_HHe:
         if self.input_format == "Trho":
             # If input table format is "Trho" we only need to load table
             if self.Y == 0:
-                self.A1_T_Trho, self.A1_rho_Trho, self.A2_P_Trho, self.A2_u_Trho, self.A2_s_Trho, self.A2_c_Trho = self.load_table_Trho(
-                    self.Fp_H
-                )
+                (
+                    self.A1_T_Trho,
+                    self.A1_rho_Trho,
+                    self.A2_P_Trho,
+                    self.A2_u_Trho,
+                    self.A2_s_Trho,
+                    self.A2_c_Trho,
+                ) = self.load_table_Trho(self.Fp_H)
             elif self.Y == 1:
-                self.A1_T_Trho, self.A1_rho_Trho, self.A2_P_Trho, self.A2_u_Trho, self.A2_s_Trho, self.A2_c_Trho = self.load_table_Trho(
-                    self.Fp_He
-                )
+                (
+                    self.A1_T_Trho,
+                    self.A1_rho_Trho,
+                    self.A2_P_Trho,
+                    self.A2_u_Trho,
+                    self.A2_s_Trho,
+                    self.A2_c_Trho,
+                ) = self.load_table_Trho(self.Fp_He)
             else:
                 raise ValueError(
                     'input_format "Trho" is only compatible with Y = 0 or 1'
@@ -1143,35 +1153,63 @@ class Material_Chabrier_HHe:
             assert A1_rho is not None
 
             if self.Y == 0:
-                self.A1_T_TP, self.A1_P_TP, self.A2_rho_TP, self.A2_u_TP, self.A2_s_TP, self.A2_c_TP = self.load_table_TP(
-                    self.Fp_H
-                )
+                (
+                    self.A1_T_TP,
+                    self.A1_P_TP,
+                    self.A2_rho_TP,
+                    self.A2_u_TP,
+                    self.A2_s_TP,
+                    self.A2_c_TP,
+                ) = self.load_table_TP(self.Fp_H)
 
             elif self.Y == 1:
-                self.A1_T_TP, self.A1_P_TP, self.A2_rho_TP, self.A2_u_TP, self.A2_s_TP, self.A2_c_TP = self.load_table_TP(
-                    self.Fp_He
-                )
+                (
+                    self.A1_T_TP,
+                    self.A1_P_TP,
+                    self.A2_rho_TP,
+                    self.A2_u_TP,
+                    self.A2_s_TP,
+                    self.A2_c_TP,
+                ) = self.load_table_TP(self.Fp_He)
 
             elif 0 < self.Y < 1:
 
-                self.A1_T_H_TP, self.A1_P_H_TP, self.A2_rho_H_TP, self.A2_u_H_TP, self.A2_s_H_TP, self.A2_c_H_TP = self.load_table_TP(
-                    self.Fp_H
-                )
-                self.A1_T_He_TP, self.A1_P_He_TP, self.A2_rho_He_TP, self.A2_u_He_TP, self.A2_s_He_TP, self.A2_c_He_TP = self.load_table_TP(
-                    self.Fp_He
-                )
+                (
+                    self.A1_T_H_TP,
+                    self.A1_P_H_TP,
+                    self.A2_rho_H_TP,
+                    self.A2_u_H_TP,
+                    self.A2_s_H_TP,
+                    self.A2_c_H_TP,
+                ) = self.load_table_TP(self.Fp_H)
+                (
+                    self.A1_T_He_TP,
+                    self.A1_P_He_TP,
+                    self.A2_rho_He_TP,
+                    self.A2_u_He_TP,
+                    self.A2_s_He_TP,
+                    self.A2_c_He_TP,
+                ) = self.load_table_TP(self.Fp_He)
                 # if Y isn't exacly 0 or 1 we need to combine tables to get mixture
-                self.A1_T_TP, self.A1_P_TP, self.A2_rho_TP, self.A2_u_TP, self.A2_s_TP, self.A2_c_TP = (
-                    self.additive_volume_law()
-                )
+                (
+                    self.A1_T_TP,
+                    self.A1_P_TP,
+                    self.A2_rho_TP,
+                    self.A2_u_TP,
+                    self.A2_s_TP,
+                    self.A2_c_TP,
+                ) = self.additive_volume_law()
 
             self.A1_T_Trho = self.A1_T_TP
             self.A1_rho_Trho = A1_rho
 
             # These are our final tables
-            self.A2_P_Trho, self.A2_u_Trho, self.A2_s_Trho, self.A2_c_Trho = self.transform_TP_to_Trho(
-                self.A1_rho_Trho, self.A1_T_Trho
-            )
+            (
+                self.A2_P_Trho,
+                self.A2_u_Trho,
+                self.A2_s_Trho,
+                self.A2_c_Trho,
+            ) = self.transform_TP_to_Trho(self.A1_rho_Trho, self.A1_T_Trho)
 
         else:
             raise ValueError('input_format must have value "Trho" or "TP"')

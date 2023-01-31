@@ -2486,7 +2486,7 @@ def rho_u_P(u, P, mat_id, rho_ref):
     A2_P = A2_P[1:, 1:]
     A1_log_rho = A1_log_rho[1:]
     A2_log_u = A2_log_u[1:, 1:]
-    
+
     # Convert inputs to log
     log_u = np.log(u)
     log_P = np.log(P)
