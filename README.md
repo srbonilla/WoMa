@@ -16,7 +16,7 @@ Kegerreis et al. [2019, MNRAS 487:4](https://doi.org/10.1093/mnras/stz1606))
 with modifications for spinning planets.
 
 Sergio Ruiz-Bonilla: sergio.ruiz-bonilla@durham.ac.uk  
-Jacob Kegerreis: jacob.kegerreis@durham.ac.uk
+Jacob Kegerreis: jacob.kegerreis@durham.ac.uk  
 Tom Sandnes: thomas.d.sandnes@durham.ac.uk
 
 If you find any bugs, potential improvements, or features worth adding, then
