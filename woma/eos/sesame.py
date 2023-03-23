@@ -588,6 +588,142 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
 )
 
+# Generic user-provided custom tables
+(
+    A1_rho_custom_0,
+    A1_T_custom_0,
+    A2_u_custom_0,
+    A2_P_custom_0,
+    A2_c_custom_0,
+    A2_s_custom_0,
+    A1_log_rho_custom_0,
+    A1_log_T_custom_0,
+    A2_log_u_custom_0,
+    A2_log_P_custom_0,
+    A2_log_c_custom_0,
+    A2_log_s_custom_0,
+) = (
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+)
+(
+    A1_rho_custom_1,
+    A1_T_custom_1,
+    A2_u_custom_1,
+    A2_P_custom_1,
+    A2_c_custom_1,
+    A2_s_custom_1,
+    A1_log_rho_custom_1,
+    A1_log_T_custom_1,
+    A2_log_u_custom_1,
+    A2_log_P_custom_1,
+    A2_log_c_custom_1,
+    A2_log_s_custom_1,
+) = (
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+)
+(
+    A1_rho_custom_2,
+    A1_T_custom_2,
+    A2_u_custom_2,
+    A2_P_custom_2,
+    A2_c_custom_2,
+    A2_s_custom_2,
+    A1_log_rho_custom_2,
+    A1_log_T_custom_2,
+    A2_log_u_custom_2,
+    A2_log_P_custom_2,
+    A2_log_c_custom_2,
+    A2_log_s_custom_2,
+) = (
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+)
+(
+    A1_rho_custom_3,
+    A1_T_custom_3,
+    A2_u_custom_3,
+    A2_P_custom_3,
+    A2_c_custom_3,
+    A2_s_custom_3,
+    A1_log_rho_custom_3,
+    A1_log_T_custom_3,
+    A2_log_u_custom_3,
+    A2_log_P_custom_3,
+    A2_log_c_custom_3,
+    A2_log_s_custom_3,
+) = (
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+)
+(
+    A1_rho_custom_4,
+    A1_T_custom_4,
+    A2_u_custom_4,
+    A2_P_custom_4,
+    A2_c_custom_4,
+    A2_s_custom_4,
+    A1_log_rho_custom_4,
+    A1_log_T_custom_4,
+    A2_log_u_custom_4,
+    A2_log_P_custom_4,
+    A2_log_c_custom_4,
+    A2_log_s_custom_4,
+) = (
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+)
 
 # ========
 # Generic
@@ -710,6 +846,46 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
             A2_Z = A2_s_CD21_HHe
+    elif mat_id == gv.id_custom_0:
+        A1_log_rho, A1_log_T = (A1_log_rho_custom_0, A1_log_T_custom_0)
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_0
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_0
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_0
+    elif mat_id == gv.id_custom_1:
+        A1_log_rho, A1_log_T = (A1_log_rho_custom_1, A1_log_T_custom_1)
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_1
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_1
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_1
+    elif mat_id == gv.id_custom_2:
+        A1_log_rho, A1_log_T = (A1_log_rho_custom_2, A1_log_T_custom_2)
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_2
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_2
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_2
+    elif mat_id == gv.id_custom_3:
+        A1_log_rho, A1_log_T = (A1_log_rho_custom_3, A1_log_T_custom_3)
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_3
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_3
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_3
+    elif mat_id == gv.id_custom_4:
+        A1_log_rho, A1_log_T = (A1_log_rho_custom_4, A1_log_T_custom_4)
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_4
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_4
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_4
     else:
         raise ValueError("Invalid material ID")
 
@@ -984,6 +1160,76 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_log_Y = A2_log_u_CD21_HHe
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CD21_HHe
+    elif mat_id == gv.id_custom_0:
+        A1_log_rho = A1_log_rho_custom_0
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_0
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_0
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_0
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_custom_0
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_custom_0
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_custom_0
+    elif mat_id == gv.id_custom_1:
+        A1_log_rho = A1_log_rho_custom_1
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_1
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_1
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_1
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_custom_1
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_custom_1
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_custom_1
+    elif mat_id == gv.id_custom_2:
+        A1_log_rho = A1_log_rho_custom_2
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_2
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_2
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_2
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_custom_2
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_custom_2
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_custom_2
+    elif mat_id == gv.id_custom_3:
+        A1_log_rho = A1_log_rho_custom_3
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_3
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_3
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_3
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_custom_3
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_custom_3
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_custom_3
+    elif mat_id == gv.id_custom_4:
+        A1_log_rho = A1_log_rho_custom_4
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_4
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_4
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_4
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_custom_4
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_custom_4
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_custom_4
     else:
         raise ValueError("Invalid material ID")
 
@@ -1275,6 +1521,76 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_log_X = A2_log_u_CD21_HHe
         elif X_choice == "s":
             A2_log_X = A2_log_s_CD21_HHe
+    elif mat_id == gv.id_custom_0:
+        A1_log_T = A1_log_T_custom_0
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_0
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_0
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_0
+        if X_choice == "P":
+            A2_log_X = A2_log_P_custom_0
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_custom_0
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_custom_0
+    elif mat_id == gv.id_custom_1:
+        A1_log_T = A1_log_T_custom_1
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_1
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_1
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_1
+        if X_choice == "P":
+            A2_log_X = A2_log_P_custom_1
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_custom_1
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_custom_1
+    elif mat_id == gv.id_custom_2:
+        A1_log_T = A1_log_T_custom_2
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_2
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_2
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_2
+        if X_choice == "P":
+            A2_log_X = A2_log_P_custom_2
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_custom_2
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_custom_2
+    elif mat_id == gv.id_custom_3:
+        A1_log_T = A1_log_T_custom_3
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_3
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_3
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_3
+        if X_choice == "P":
+            A2_log_X = A2_log_P_custom_3
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_custom_3
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_custom_3
+    elif mat_id == gv.id_custom_4:
+        A1_log_T = A1_log_T_custom_4
+        if Z_choice == "P":
+            A2_Z = A2_P_custom_4
+        elif Z_choice == "u":
+            A2_Z = A2_u_custom_4
+        elif Z_choice == "s":
+            A2_Z = A2_s_custom_4
+        if X_choice == "P":
+            A2_log_X = A2_log_P_custom_4
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_custom_4
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_custom_4
     else:
         raise ValueError("Invalid material ID")
 
@@ -1453,6 +1769,36 @@ def P_u_rho(u, rho, mat_id):
             A1_log_rho_CD21_HHe,
             A2_log_u_CD21_HHe,
         )
+    elif mat_id == gv.id_custom_0:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_0,
+            A1_log_rho_custom_0,
+            A2_log_u_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_1,
+            A1_log_rho_custom_1,
+            A2_log_u_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_2,
+            A1_log_rho_custom_2,
+            A2_log_u_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_3,
+            A1_log_rho_custom_3,
+            A2_log_u_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_4,
+            A1_log_rho_custom_4,
+            A2_log_u_custom_4,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -1618,6 +1964,36 @@ def P_T_rho(T, rho, mat_id):
             A1_log_rho_CD21_HHe,
             A1_log_T_CD21_HHe,
         )
+    elif mat_id == gv.id_custom_0:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_custom_0,
+            A1_log_rho_custom_0,
+            A1_log_T_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_custom_1,
+            A1_log_rho_custom_1,
+            A1_log_T_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_custom_2,
+            A1_log_rho_custom_2,
+            A1_log_T_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_custom_3,
+            A1_log_rho_custom_3,
+            A1_log_T_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_custom_4,
+            A1_log_rho_custom_4,
+            A1_log_T_custom_4,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -1752,6 +2128,36 @@ def T_rho_s(rho, s, mat_id):
             A1_log_rho_CD21_HHe,
             A2_s_CD21_HHe,
         )
+    elif mat_id == gv.id_custom_0:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_custom_0,
+            A1_log_rho_custom_0,
+            A2_s_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_custom_1,
+            A1_log_rho_custom_1,
+            A2_s_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_custom_2,
+            A1_log_rho_custom_2,
+            A2_s_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_custom_3,
+            A1_log_rho_custom_3,
+            A2_s_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_custom_4,
+            A1_log_rho_custom_4,
+            A2_s_custom_4,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -1874,6 +2280,36 @@ def T_u_rho(u, rho, mat_id):
             A1_log_T_CD21_HHe,
             A1_log_rho_CD21_HHe,
             A2_u_CD21_HHe,
+        )
+    elif mat_id == gv.id_custom_0:
+        A1_log_T, A1_log_rho, A2_u = (
+            A1_log_T_custom_0,
+            A1_log_rho_custom_0,
+            A2_u_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A1_log_T, A1_log_rho, A2_u = (
+            A1_log_T_custom_1,
+            A1_log_rho_custom_1,
+            A2_u_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A1_log_T, A1_log_rho, A2_u = (
+            A1_log_T_custom_2,
+            A1_log_rho_custom_2,
+            A2_u_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A1_log_T, A1_log_rho, A2_u = (
+            A1_log_T_custom_3,
+            A1_log_rho_custom_3,
+            A2_u_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A1_log_T, A1_log_rho, A2_u = (
+            A1_log_T_custom_4,
+            A1_log_rho_custom_4,
+            A2_u_custom_4,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -2000,6 +2436,36 @@ def u_rho_T(rho, T, mat_id):
             A2_u_CD21_HHe,
             A1_log_rho_CD21_HHe,
             A1_log_T_CD21_HHe,
+        )
+    elif mat_id == gv.id_custom_0:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_custom_0,
+            A1_log_rho_custom_0,
+            A1_log_T_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_custom_1,
+            A1_log_rho_custom_1,
+            A1_log_T_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_custom_2,
+            A1_log_rho_custom_2,
+            A1_log_T_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_custom_3,
+            A1_log_rho_custom_3,
+            A1_log_T_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_custom_4,
+            A1_log_rho_custom_4,
+            A1_log_T_custom_4,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -2154,6 +2620,36 @@ def s_u_rho(u, rho, mat_id):
             A2_s_CD21_HHe,
             A1_log_rho_CD21_HHe,
             A2_log_u_CD21_HHe,
+        )
+    elif mat_id == gv.id_custom_0:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_custom_0,
+            A1_log_rho_custom_0,
+            A2_log_u_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_custom_1,
+            A1_log_rho_custom_1,
+            A2_log_u_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_custom_2,
+            A1_log_rho_custom_2,
+            A2_log_u_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_custom_3,
+            A1_log_rho_custom_3,
+            A2_log_u_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_custom_4,
+            A1_log_rho_custom_4,
+            A2_log_u_custom_4,
         )
     else:
         raise ValueError("Invalid material ID")
@@ -2315,6 +2811,36 @@ def s_rho_T(rho, T, mat_id):
             A1_log_rho_CD21_HHe,
             A1_log_T_CD21_HHe,
         )
+    elif mat_id == gv.id_custom_0:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_custom_0,
+            A1_log_rho_custom_0,
+            A1_log_T_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_custom_1,
+            A1_log_rho_custom_1,
+            A1_log_T_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_custom_2,
+            A1_log_rho_custom_2,
+            A1_log_T_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_custom_3,
+            A1_log_rho_custom_3,
+            A1_log_T_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_custom_4,
+            A1_log_rho_custom_4,
+            A1_log_T_custom_4,
+        )
     else:
         raise ValueError("Invalid material ID")
 
@@ -2471,6 +2997,36 @@ def rho_u_P(u, P, mat_id, rho_ref):
             A2_P_CD21_HHe,
             A1_log_rho_CD21_HHe,
             A2_log_u_CD21_HHe,
+        )
+    elif mat_id == gv.id_custom_0:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_0,
+            A1_log_rho_custom_0,
+            A2_log_u_custom_0,
+        )
+    elif mat_id == gv.id_custom_1:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_1,
+            A1_log_rho_custom_1,
+            A2_log_u_custom_1,
+        )
+    elif mat_id == gv.id_custom_2:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_2,
+            A1_log_rho_custom_2,
+            A2_log_u_custom_2,
+        )
+    elif mat_id == gv.id_custom_3:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_3,
+            A1_log_rho_custom_3,
+            A2_log_u_custom_3,
+        )
+    elif mat_id == gv.id_custom_4:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_custom_4,
+            A1_log_rho_custom_4,
+            A2_log_u_custom_4,
         )
     else:
         raise ValueError("Invalid material ID")
