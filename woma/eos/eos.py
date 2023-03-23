@@ -49,7 +49,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         The chosen parameter (SI).
     """
     mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         return sesame.Z_rho_T(rho, T, mat_id, Z_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
@@ -149,7 +149,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             return hm80.T_u_rho(Y, rho, mat_id)
         else:
             raise ValueError("Not yet implemented for this EoS")
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         return sesame.Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
@@ -240,7 +240,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             return hm80.u_rho_T(X, T, mat_id)
         else:
             raise ValueError("Not yet implemented for this EoS")
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         return sesame.Z_X_T(X, T, mat_id, Z_choice, X_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
@@ -401,7 +401,7 @@ def P_u_rho(u, rho, mat_id):
         P = hm80.P_u_rho(u, rho, mat_id)
         if np.isnan(P):
             P = 0.0
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         P = sesame.P_u_rho(u, rho, mat_id)
         if np.isnan(P):
             P = 0.0
@@ -475,7 +475,7 @@ def P_T_rho(T, rho, mat_id):
         P = hm80.P_T_rho(T, rho, mat_id)
         if np.isnan(P):
             P = 0.0
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         P = sesame.P_T_rho(T, rho, mat_id)
         if np.isnan(P):
             P = 0.0
@@ -549,7 +549,7 @@ def T_u_rho(u, rho, mat_id):
         T = tillotson.T_u_rho(u, rho, mat_id)
     elif mat_type == gv.type_HM80:
         T = hm80.T_u_rho(u, rho, mat_id)
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         T = sesame.T_u_rho(u, rho, mat_id)
     else:
         raise ValueError("Invalid material ID")
@@ -622,7 +622,7 @@ def u_rho_T(rho, T, mat_id):
         u = tillotson.u_rho_T(rho, T, mat_id)
     elif mat_type == gv.type_HM80:
         u = hm80.u_rho_T(rho, T, mat_id)
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         u = sesame.u_rho_T(rho, T, mat_id)
     else:
         raise ValueError("Invalid material ID")
@@ -688,7 +688,7 @@ def s_rho_T(rho, T, mat_id):
         Specific entropy (J kg^-1 K^-1).
     """
     mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         s = sesame.s_rho_T(rho, T, mat_id)
     else:
         raise ValueError("Entropy not implemented for this material type.")
@@ -752,7 +752,7 @@ def s_u_rho(u, rho, mat_id):
         Specific entropy (J kg^-1 K^-1).
     """
     mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         s = sesame.s_u_rho(u, rho, mat_id)
     else:
         raise ValueError("Entropy not implemented for this material type.")
@@ -948,7 +948,7 @@ def rho_P_T(P, T, mat_id):
         elif mat_id == gv.id_HM80_rock:
             rho_min = 1e0
             rho_max = 40000
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         assert T > 0
         assert P > 0
 
@@ -1022,7 +1022,7 @@ def rho_u_P(u, P, mat_id, rho_ref):
         Density (kg m^-3).
     """
     mat_type = mat_id // gv.type_factor
-    if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
+    if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         rho = sesame.rho_u_P(u, P, mat_id, rho_ref)
     elif mat_type == gv.type_Til:
         rho = tillotson.rho_u_P(u, P, mat_id, rho_ref)

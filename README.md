@@ -96,6 +96,7 @@ for your application.
 
 So far, we have implemented several Tillotson, ANEOS, SESAME,
 and Hubbard & MacFarlane (1980) materials, with more on the way.
+Custom materials in SESAME-style tables can also be provided.
 
 Materials are set for each layer with `A1_mat_layer`
 using the following material names,
@@ -124,8 +125,11 @@ set by a base type ID (multiplied by 100) plus a minor type:
     + Forsterite (Stewart et al. 2019): `ANEOS_forsterite` : `400`
     + Iron (Stewart, zenodo.org/record/3866507): `ANEOS_iron` : `401`
     + Fe85Si15 (Stewart, zenodo.org/record/3866550): `ANEOS_Fe85Si15` : `402`
++ Custom (in SESAME-style tables): ``9``
+    + User-provided custom material(s): ``900``, ``901``, ..., ``904``
 
-These are defined in `woma/misc/glob_vars.py`.
+These are defined in `woma/misc/glob_vars.py`,
+including the file paths for custom tables.
 
 
 ### Temperature-density relations

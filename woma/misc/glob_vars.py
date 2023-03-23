@@ -21,6 +21,7 @@ Di_mat_type = {
     "HM80": 2,
     "SESAME": 3,
     "ANEOS": 4,
+    "custom": 9,
 }
 Di_mat_id = {
     # Ideal Gas
@@ -49,6 +50,12 @@ Di_mat_id = {
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
     "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
     "ANEOS_Fe85Si15": Di_mat_type["ANEOS"] * type_factor + 2,  # Stewart (2020)
+    # Generic user-provided custom tables
+    "custom_0": Di_mat_type["custom"] * type_factor,
+    "custom_1": Di_mat_type["custom"] * type_factor + 1,
+    "custom_2": Di_mat_type["custom"] * type_factor + 2,
+    "custom_3": Di_mat_type["custom"] * type_factor + 3,
+    "custom_4": Di_mat_type["custom"] * type_factor + 4,
 }
 # Invert so the ID are the keys
 Di_id_mat = {mat_id: mat for mat, mat_id in Di_mat_id.items()}
@@ -60,6 +67,7 @@ type_Til = Di_mat_type["Til"]
 type_HM80 = Di_mat_type["HM80"]
 type_SESAME = Di_mat_type["SESAME"]
 type_ANEOS = Di_mat_type["ANEOS"]
+type_custom = Di_mat_type["custom"]
 # IDs
 id_idg_HHe = Di_mat_id["idg_HHe"]
 id_idg_N2 = Di_mat_id["idg_N2"]
@@ -82,6 +90,11 @@ id_CD21_HHe = Di_mat_id["CD21_HHe"]
 id_ANEOS_forsterite = Di_mat_id["ANEOS_forsterite"]
 id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
 id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
+id_custom_0 = Di_mat_id["custom_0"]
+id_custom_1 = Di_mat_id["custom_1"]
+id_custom_2 = Di_mat_id["custom_2"]
+id_custom_3 = Di_mat_id["custom_3"]
+id_custom_4 = Di_mat_id["custom_4"]
 
 # T-rho relation types
 type_rho_pow = 1
@@ -117,3 +130,9 @@ Fp_CD21_HHe = dir_data + "CD21_HHe.txt"
 Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.txt"
 Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.txt"
 Fp_ANEOS_Fe85Si15 = dir_data + "ANEOS_Fe85Si15_S20.txt"
+# Generic user-provided custom tables
+Fp_custom_0 = dir_data + "custom_0.txt"
+Fp_custom_1 = dir_data + "custom_1.txt"
+Fp_custom_2 = dir_data + "custom_2.txt"
+Fp_custom_3 = dir_data + "custom_3.txt"
+Fp_custom_4 = dir_data + "custom_4.txt"

@@ -591,6 +591,18 @@ def check_loaded_eos_tables():
     if len(eos.sesame.A1_rho_CD21_HHe) == 1:
         A1_mat.remove("CD21_HHe")
 
+    # Check custom
+    if len(eos.sesame.A1_rho_custom_0) == 1:
+        A1_mat.remove("custom_0")
+    if len(eos.sesame.A1_rho_custom_1) == 1:
+        A1_mat.remove("custom_1")
+    if len(eos.sesame.A1_rho_custom_2) == 1:
+        A1_mat.remove("custom_2")
+    if len(eos.sesame.A1_rho_custom_3) == 1:
+        A1_mat.remove("custom_3")
+    if len(eos.sesame.A1_rho_custom_4) == 1:
+        A1_mat.remove("custom_4")
+
     return A1_mat
 
 
@@ -603,9 +615,11 @@ def load_eos_tables(A1_mat_input=None):
         List of the materials (or just one) to be loaded. Default None loads all
         materials available. See Di_mat_id in `misc/glob_vars.py`.
     """
-    # Load all tables (default)
+    # Load all tables (default) (except custom)
     if A1_mat_input is None:
         A1_mat = list(gv.Di_mat_id.keys())
+        for material in ["custom_%d" % i for i in range(5)]:
+            A1_mat.remove(material)
     elif not hasattr(A1_mat_input, "copy"):
         # Put a single input into a list
         A1_mat_input = [A1_mat_input]
@@ -645,7 +659,6 @@ def load_eos_tables(A1_mat_input=None):
     for k, v in sys.modules.items():
         if "woma" in k:
             to_reload.append(k)
-
     for k in to_reload:
         reload(sys.modules[k])
 
@@ -872,5 +885,82 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_log_c_CD21_HHe,
             eos.sesame.A2_log_s_CD21_HHe,
         ) = eos.sesame.load_table_SESAME(gv.Fp_CD21_HHe)
+
+    # Custom
+    if "custom_0" in A1_mat and len(eos.sesame.A1_rho_custom_0) == 1:
+        (
+            eos.sesame.A1_rho_custom_0,
+            eos.sesame.A1_T_custom_0,
+            eos.sesame.A2_u_custom_0,
+            eos.sesame.A2_P_custom_0,
+            eos.sesame.A2_c_custom_0,
+            eos.sesame.A2_s_custom_0,
+            eos.sesame.A1_log_rho_custom_0,
+            eos.sesame.A1_log_T_custom_0,
+            eos.sesame.A2_log_u_custom_0,
+            eos.sesame.A2_log_P_custom_0,
+            eos.sesame.A2_log_c_custom_0,
+            eos.sesame.A2_log_s_custom_0,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_custom_0)
+    if "custom_1" in A1_mat and len(eos.sesame.A1_rho_custom_1) == 1:
+        (
+            eos.sesame.A1_rho_custom_1,
+            eos.sesame.A1_T_custom_1,
+            eos.sesame.A2_u_custom_1,
+            eos.sesame.A2_P_custom_1,
+            eos.sesame.A2_c_custom_1,
+            eos.sesame.A2_s_custom_1,
+            eos.sesame.A1_log_rho_custom_1,
+            eos.sesame.A1_log_T_custom_1,
+            eos.sesame.A2_log_u_custom_1,
+            eos.sesame.A2_log_P_custom_1,
+            eos.sesame.A2_log_c_custom_1,
+            eos.sesame.A2_log_s_custom_1,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_custom_1)
+    if "custom_2" in A1_mat and len(eos.sesame.A1_rho_custom_2) == 1:
+        (
+            eos.sesame.A1_rho_custom_2,
+            eos.sesame.A1_T_custom_2,
+            eos.sesame.A2_u_custom_2,
+            eos.sesame.A2_P_custom_2,
+            eos.sesame.A2_c_custom_2,
+            eos.sesame.A2_s_custom_2,
+            eos.sesame.A1_log_rho_custom_2,
+            eos.sesame.A1_log_T_custom_2,
+            eos.sesame.A2_log_u_custom_2,
+            eos.sesame.A2_log_P_custom_2,
+            eos.sesame.A2_log_c_custom_2,
+            eos.sesame.A2_log_s_custom_2,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_custom_2)
+    if "custom_3" in A1_mat and len(eos.sesame.A1_rho_custom_3) == 1:
+        (
+            eos.sesame.A1_rho_custom_3,
+            eos.sesame.A1_T_custom_3,
+            eos.sesame.A2_u_custom_3,
+            eos.sesame.A2_P_custom_3,
+            eos.sesame.A2_c_custom_3,
+            eos.sesame.A2_s_custom_3,
+            eos.sesame.A1_log_rho_custom_3,
+            eos.sesame.A1_log_T_custom_3,
+            eos.sesame.A2_log_u_custom_3,
+            eos.sesame.A2_log_P_custom_3,
+            eos.sesame.A2_log_c_custom_3,
+            eos.sesame.A2_log_s_custom_3,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_custom_3)
+    if "custom_4" in A1_mat and len(eos.sesame.A1_rho_custom_4) == 1:
+        (
+            eos.sesame.A1_rho_custom_4,
+            eos.sesame.A1_T_custom_4,
+            eos.sesame.A2_u_custom_4,
+            eos.sesame.A2_P_custom_4,
+            eos.sesame.A2_c_custom_4,
+            eos.sesame.A2_s_custom_4,
+            eos.sesame.A1_log_rho_custom_4,
+            eos.sesame.A1_log_T_custom_4,
+            eos.sesame.A2_log_u_custom_4,
+            eos.sesame.A2_log_P_custom_4,
+            eos.sesame.A2_log_c_custom_4,
+            eos.sesame.A2_log_s_custom_4,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_custom_4)
 
     return None
