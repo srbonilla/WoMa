@@ -111,7 +111,7 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
         A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
         A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
         # Update the T-rho parameters
-        if mat_id == gv.id_HM80_HHe and T_rho_type_id == gv.type_adb:
+        if (mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended) and T_rho_type_id == gv.type_adb:
             T_rho_args = set_T_rho_args(
                 A1_T[i], A1_rho[i], T_rho_type_id, T_rho_args, mat_id
             )
@@ -211,7 +211,7 @@ def L1_integrate_out(
             A1_mat_id.append(0)
             break
         # Update the T-rho parameters
-        if T_rho_type_id == gv.type_adb and mat_id == gv.id_HM80_HHe:
+        if T_rho_type_id == gv.type_adb and (mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended or mat_id == gv.id_idg_HHe):
             T_rho_args = set_T_rho_args(
                 A1_T[-1],
                 A1_rho[-1],

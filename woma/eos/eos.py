@@ -632,6 +632,16 @@ def s_u_rho(u, rho, mat_id):
     mat_type = mat_id // gv.type_factor
     if mat_type in [gv.type_SESAME, gv.type_ANEOS]:
         s = sesame.s_u_rho(u, rho, mat_id)
+    elif mat_id==0:
+        s = idg.s_u_rho(u, rho, mat_id)
+    elif mat_id==200:
+        s = u # if HM80 HHe, set the entropy to be the internal energy
+    elif mat_id==200.5:
+        s = u # if HM80, set the entropy to be the internal energy
+    elif mat_id==201:
+        s = u # if HM80 ice, set the entropy to be the internal energy
+    elif mat_id==102:
+        s = u # if Tillotsen water, set the entropy to be the internal energy
     else:
         raise ValueError("Entropy not implemented for this material type.")
     return s
@@ -820,6 +830,9 @@ def rho_P_T(P, T, mat_id):
         if mat_id == gv.id_HM80_HHe:
             rho_min = 1e-1
             rho_max = 1e5
+        elif mat_id == gv.id_HM80_HHe_extended:
+            rho_min = 1e-10
+            rho_max = 1e3
         elif mat_id == gv.id_HM80_ice:
             rho_min = 1e0
             rho_max = 1e5

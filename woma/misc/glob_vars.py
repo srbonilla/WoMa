@@ -30,6 +30,7 @@ Di_mat_id = {
     "Til_basalt": Di_mat_type["Til"] * type_factor + 3,
     # Hubbard & MacFarlane (1980) Uranus/Neptune
     "HM80_HHe": Di_mat_type["HM80"] * type_factor,  # Hydrogen-helium atmosphere
+    "HM80_HHe_extended": Di_mat_type["HM80"] * type_factor + 0.5,  # Extended hydrogen-helium atmosphere
     "HM80_ice": Di_mat_type["HM80"] * type_factor + 1,  # H20-CH4-NH3 ice mix
     "HM80_rock": Di_mat_type["HM80"] * type_factor + 2,  # SiO2-MgO-FeS-FeO rock mix
     # SESAME
@@ -65,6 +66,7 @@ id_Til_granite = Di_mat_id["Til_granite"]
 id_Til_basalt = Di_mat_id["Til_basalt"]
 id_Til_water = Di_mat_id["Til_water"]
 id_HM80_HHe = Di_mat_id["HM80_HHe"]
+id_HM80_HHe_extended = Di_mat_id["HM80_HHe_extended"]
 id_HM80_ice = Di_mat_id["HM80_ice"]
 id_HM80_rock = Di_mat_id["HM80_rock"]
 id_SESAME_iron = Di_mat_id["SESAME_iron"]
@@ -95,6 +97,7 @@ Fp_u_cold_Til_basalt = dir_data + "u_cold_array_Til_basalt.npy"
 Fp_u_cold_Til_water = dir_data + "u_cold_array_Til_water.npy"
 # HM80 tables
 Fp_HM80_HHe = dir_data + "HM80_HHe.txt"
+Fp_HM80_HHe_extended = dir_data + "HM80_HHe_extended.txt"
 Fp_HM80_ice = dir_data + "HM80_ice.txt"
 Fp_HM80_rock = dir_data + "HM80_rock.txt"
 # HM80 cold curves

@@ -22,7 +22,7 @@ def idg_gamma(mat_id):
         Adiabatic index.
     """
     if mat_id == gv.id_idg_HHe:
-        return 1.4
+        return 5/3
     elif mat_id == gv.id_idg_N2:
         return 1.4
     elif mat_id == gv.id_idg_CO2:
@@ -164,5 +164,16 @@ def T_u_rho(u, rho, mat_id):
     T : float
         Temperature (K).
     """
-    raise ValueError("T_u_rho function not implemented for ideal gas.")
-    return 0.0
+    T = u / 9093.98
+    # raise ValueError("T_u_rho function not implemented for ideal gas.")
+    return T
+
+
+@njit
+def s_u_rho(u, rho, mat_id):
+    """Compute the entropy from the internal energy and density.
+    """
+
+    gamma = idg_gamma(mat_id)
+
+    return (gamma-1) * u * rho**(1-gamma)

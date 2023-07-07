@@ -172,7 +172,7 @@ def L2_integrate(
         A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
         A1_mat_id[i] = mat_id
         # Update the T-rho parameters
-        if mat_id == gv.id_HM80_HHe and T_rho_type_id == gv.type_adb:
+        if (mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended) and T_rho_type_id == gv.type_adb:
             T_rho_args = set_T_rho_args(
                 A1_T[i], A1_rho[i], T_rho_type_id, T_rho_args, mat_id
             )

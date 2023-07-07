@@ -47,7 +47,7 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
             # T rho^(1-gamma) = constant
             gamma = idg.idg_gamma(mat_id)
             return T_rho_args[0] * rho ** (gamma - 1)
-        elif mat_id == gv.id_HM80_HHe:
+        elif mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended:
             return hm80.T_rho_HM80_HHe(rho, T_rho_args[0], T_rho_args[1])
         elif mat_type in [gv.type_SESAME, gv.type_ANEOS]:
             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
@@ -103,7 +103,7 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
             gamma = idg.idg_gamma(mat_id)
             T_rho_args[0] = T * rho ** (1 - gamma)
 
-        elif mat_id == gv.id_HM80_HHe:
+        elif mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended:
             # T_rho_args = [rho_prv, T_prv]
             T_rho_args[0] = rho
             T_rho_args[1] = T

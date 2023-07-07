@@ -88,12 +88,20 @@ def load_table_HM80(Fp_table):
         2D arrays of natural logs of pressure (Pa) and temperature (K).
     """
     # Parameters
-    log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(
-        Fp_table, skip_header=6, max_rows=1
+    if Fp_table == gv.Fp_HM80_HHe_extended:
+        log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(
+        Fp_table, skip_header=12, max_rows=1
     )
+    else:
+        log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(
+            Fp_table, skip_header=6, max_rows=1
+        )
 
     # Tables
-    A2_data = np.loadtxt(Fp_table, skiprows=7)
+    if Fp_table == gv.Fp_HM80_HHe_extended:
+        A2_data = np.loadtxt(Fp_table, skiprows=13)
+    else:
+        A2_data = np.loadtxt(Fp_table, skiprows=7)
 
     num_rho = int(num_rho)
     num_u = int(num_u)
@@ -141,6 +149,29 @@ m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)
     log_u_step_HM80_HHe,
     A2_log_P_HM80_HHe,
     A2_log_T_HM80_HHe,
+) = (
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    float(0),
+    float(0),
+    int(0),
+    float(0),
+    np.zeros((1, 1)),
+    np.zeros((1, 1)),
+)
+(
+    log_rho_min_HM80_HHe_extended,
+    log_rho_max_HM80_HHe_extended,
+    num_rho_HM80_HHe_extended,
+    log_rho_step_HM80_HHe_extended,
+    log_u_min_HM80_HHe_extended,
+    log_u_max_HM80_HHe_extended,
+    num_u_HM80_HHe_extended,
+    log_u_step_HM80_HHe_extended,
+    A2_log_P_HM80_HHe_extended,
+    A2_log_T_HM80_HHe_extended,
 ) = (
     float(0),
     float(0),
@@ -231,6 +262,16 @@ def P_u_rho(u, rho, mat_id):
             num_u_HM80_HHe,
             log_u_step_HM80_HHe,
             A2_log_P_HM80_HHe,
+        )
+    elif mat_id == gv.id_HM80_HHe_extended:
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, A2_log_P) = (
+            log_rho_min_HM80_HHe_extended,
+            num_rho_HM80_HHe_extended,
+            log_rho_step_HM80_HHe_extended,
+            log_u_min_HM80_HHe_extended,
+            num_u_HM80_HHe_extended,
+            log_u_step_HM80_HHe_extended,
+            A2_log_P_HM80_HHe_extended,
         )
     elif mat_id == gv.id_HM80_ice:
         (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, A2_log_P) = (
@@ -331,6 +372,16 @@ def T_u_rho(u, rho, mat_id):
             log_u_step_HM80_HHe,
             A2_log_T_HM80_HHe,
         )
+    elif mat_id == gv.id_HM80_HHe_extended:
+        (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, A2_log_T) = (
+            log_rho_min_HM80_HHe_extended,
+            num_rho_HM80_HHe_extended,
+            log_rho_step_HM80_HHe_extended,
+            log_u_min_HM80_HHe_extended,
+            num_u_HM80_HHe_extended,
+            log_u_step_HM80_HHe_extended,
+            A2_log_T_HM80_HHe_extended,
+        )
     elif mat_id == gv.id_HM80_ice:
         (log_rho_min, num_rho, log_rho_step, log_u_min, num_u, log_u_step, A2_log_T) = (
             log_rho_min_HM80_ice,
@@ -413,7 +464,7 @@ def _rho_0(mat_id):
     rho_0 : float
         Density (kg m^-3).
     """
-    if mat_id == gv.id_HM80_HHe:
+    if mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended:
         return 0.0
     elif mat_id == gv.id_HM80_ice:
         return 947.8
@@ -444,7 +495,7 @@ def u_cold(rho, mat_id, N):
         Cold specific internal energy (J kg^-1).
     """
     assert rho >= 0
-    if mat_id == gv.id_HM80_HHe:
+    if mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended:
         return 0.0
 
     mat_type = mat_id // gv.type_factor
@@ -514,7 +565,7 @@ def u_cold_tab(rho, mat_id):
         Cold specific internal energy (J kg^-1).
     """
 
-    if mat_id == gv.id_HM80_HHe:
+    if mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended:
         return 0.0
     elif mat_id == gv.id_HM80_ice:
         u_cold_array = A1_u_cold_HM80_ice
@@ -580,7 +631,7 @@ def C_V_HM80(rho, T, mat_id):
     rho_cgs = rho * 1e-3
     R_gas_cgs = gv.R_gas * 1e7
 
-    if mat_id == gv.id_HM80_HHe:
+    if mat_id == gv.id_HM80_HHe or mat_id == gv.id_HM80_HHe_extended:
 
         A1_c = [2.3638, -4.9842e-5, 1.1788e-8, -3.8101e-4, 2.6182, 0.45053]
 
