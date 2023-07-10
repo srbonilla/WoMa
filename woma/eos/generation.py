@@ -517,7 +517,7 @@ m_mol_HHe = (2 * n_H2_n_He + 4) / (n_H2_n_He + 1)  # = 2.2857 g mol^-1
 
 mat_HM80_HHe = Material_HM80(
     "HM80_HHe",
-    version_date=20220822,
+    version_date=20230710,
     rho_0=5,
     rho_min=1e-1,
     rho_max=1e3,
@@ -542,7 +542,7 @@ mat_HM80_HHe = Material_HM80(
 )
 mat_HM80_ice = Material_HM80(
     "HM80_ice",
-    version_date=20220822,
+    version_date=20230710,
     rho_0=1000,
     rho_min=1e0,
     rho_max=6e3,
@@ -560,7 +560,7 @@ mat_HM80_ice = Material_HM80(
 )
 mat_HM80_rock = Material_HM80(
     "HM80_rock",
-    version_date=20220822,
+    version_date=20230710,
     rho_0=3000,
     rho_min=1e0,
     rho_max=2e4,
