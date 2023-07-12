@@ -559,6 +559,8 @@ def check_loaded_eos_tables():
     # Check HM80
     if len(eos.hm80.A2_log_P_HM80_HHe) == 1:
         A1_mat.remove("HM80_HHe")
+    if len(eos.hm80.A2_log_P_HM80_HHe_extended) == 1:
+        A1_mat.remove("HM80_HHe_extended")
     if len(eos.hm80.A2_log_P_HM80_ice) == 1:
         A1_mat.remove("HM80_ice")
     if len(eos.hm80.A2_log_P_HM80_rock) == 1:
@@ -688,6 +690,19 @@ def load_eos_tables(A1_mat_input=None):
             eos.hm80.A2_log_P_HM80_HHe,
             eos.hm80.A2_log_T_HM80_HHe,
         ) = eos.hm80.load_table_HM80(gv.Fp_HM80_HHe)
+    if "HM80_HHe_extended" in A1_mat and len(eos.hm80.A2_log_P_HM80_HHe_extended) == 1:
+        (
+            eos.hm80.log_rho_min_HM80_HHe_extended,
+            eos.hm80.log_rho_max_HM80_HHe_extended,
+            eos.hm80.num_rho_HM80_HHe_extended,
+            eos.hm80.log_rho_step_HM80_HHe_extended,
+            eos.hm80.log_u_min_HM80_HHe_extended,
+            eos.hm80.log_u_max_HM80_HHe_extended,
+            eos.hm80.num_u_HM80_HHe_extended,
+            eos.hm80.log_u_step_HM80_HHe_extended,
+            eos.hm80.A2_log_P_HM80_HHe_extended,
+            eos.hm80.A2_log_T_HM80_HHe_extended,
+        ) = eos.hm80.load_table_HM80(gv.Fp_HM80_HHe_extended)
     if "HM80_ice" in A1_mat and len(eos.hm80.A2_log_P_HM80_ice) == 1:
         eos.hm80.A1_u_cold_HM80_ice = eos.hm80.load_u_cold_array(gv.id_HM80_ice)
         (

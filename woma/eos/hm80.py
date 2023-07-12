@@ -91,11 +91,11 @@ def load_table_HM80(Fp_table):
     """
     # Parameters
     log_rho_min, log_rho_max, num_rho, log_u_min, log_u_max, num_u = np.genfromtxt(
-        Fp_table, skip_header=6, max_rows=1
+        Fp_table, skip_header=12, max_rows=1
     )
 
     # Tables
-    A2_data = np.loadtxt(Fp_table, skiprows=7)
+    A2_data = np.loadtxt(Fp_table, skiprows=13)
 
     num_rho = int(num_rho)
     num_u = int(num_u)

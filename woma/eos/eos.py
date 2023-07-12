@@ -759,7 +759,7 @@ def s_u_rho(u, rho, mat_id):
     elif mat_id==200:
         s = u # if HM80 HHe, set the entropy to be the internal energy
     elif mat_id==200.5:
-        s = u # if HM80, set the entropy to be the internal energy
+        s = u # if HM80 HHe, set the entropy to be the internal energy
     elif mat_id==201:
         s = u # if HM80 ice, set the entropy to be the internal energy
     elif mat_id==102:
@@ -953,7 +953,7 @@ def rho_P_T(P, T, mat_id):
             rho_min = 1e-1
             rho_max = 1e5
         elif mat_id == gv.id_HM80_HHe_extended:
-            rho_min = 1e-10
+            rho_min = 1e-5
             rho_max = 1e3
         elif mat_id == gv.id_HM80_ice:
             rho_min = 1e0
@@ -1124,6 +1124,8 @@ def plot_table_HM80(mat, Z_choice, A1_fig_ax=None):
     # Table to load
     if mat == "HM80_HHe":
         Fp_load = gv.Fp_HM80_HHe
+    elif mat == "HM80_HHe_extended":
+        Fp_load = gv.Fp_HM80_HHe_extended
     elif mat == "HM80_ice":
         Fp_load = gv.Fp_HM80_ice
     elif mat == "HM80_rock":
