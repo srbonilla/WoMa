@@ -19,5 +19,5 @@ from woma.misc.utils import (
 )
 from woma.spin_funcs.utils_spin import rho_at_r_z
 from woma.misc.io import save_particle_data
-from woma.eos import T_rho, tillotson, sesame, idg, hm80
+from woma.eos import T_rho, tillotson, sesame, idg, hm80, generation
 from woma.eos.eos import *

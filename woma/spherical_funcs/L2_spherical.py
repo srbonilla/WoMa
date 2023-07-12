@@ -1,5 +1,5 @@
 """
-WoMa 1 layer spherical functions 
+WoMa 1 layer spherical functions
 """
 
 import numpy as np
