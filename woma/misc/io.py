@@ -1,7 +1,7 @@
 """
 WoMa IO utilities
 
-The spherical and spinning planets' data and attributes can be conveniently 
+The spherical and spinning planets' data and attributes can be conveniently
 saved and loaded using HDF5 files (see www.hdfgroup.org and www.h5py.org).
 See .save(), .load(), and load_file in the Planet , SpinPlanet and
 ParticlePlanet classes.
@@ -309,23 +309,23 @@ def save_particle_data(
     grp.attrs["NumPart_Total"] = [num_particle, 0, 0, 0, 0, 0]
     grp.attrs["NumPart_Total_HighWord"] = [0, 0, 0, 0, 0, 0]
     grp.attrs["NumPart_ThisFile"] = [num_particle, 0, 0, 0, 0, 0]
-    grp.attrs["Time"] = 0.0
-    grp.attrs["NumFilesPerSnapshot"] = 1
+    grp.attrs["Time"] = [0.0]
+    grp.attrs["NumFilesPerSnapshot"] = [1]
     grp.attrs["MassTable"] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-    grp.attrs["Flag_Entropy_ICs"] = 0
-    grp.attrs["Dimension"] = 3
+    grp.attrs["Flag_Entropy_ICs"] = [0]
+    grp.attrs["Dimension"] = [3]
 
     # Runtime parameters
     grp = f.create_group("/RuntimePars")
-    grp.attrs["PeriodicBoundariesOn"] = 0
+    grp.attrs["PeriodicBoundariesOn"] = [0]
 
     # Units
     grp = f.create_group("/Units")
-    grp.attrs["Unit mass in cgs (U_M)"] = file_to_SI.m * SI_to_cgs.m
-    grp.attrs["Unit length in cgs (U_L)"] = file_to_SI.l * SI_to_cgs.l
-    grp.attrs["Unit time in cgs (U_t)"] = file_to_SI.t
-    grp.attrs["Unit current in cgs (U_I)"] = 1.0
-    grp.attrs["Unit temperature in cgs (U_T)"] = 1.0
+    grp.attrs["Unit mass in cgs (U_M)"] = [file_to_SI.m * SI_to_cgs.m]
+    grp.attrs["Unit length in cgs (U_L)"] = [file_to_SI.l * SI_to_cgs.l]
+    grp.attrs["Unit time in cgs (U_t)"] = [file_to_SI.t]
+    grp.attrs["Unit current in cgs (U_I)"] = [1.0]
+    grp.attrs["Unit temperature in cgs (U_T)"] = [1.0]
 
     # Particles
     grp = f.create_group("/PartType0")
