@@ -837,6 +837,10 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
     P_min = P_T_rho(T_min, rho_min, mat_id)
     T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
+    while T_max <= 0 and rho_max > rho_min:
+        # Try a lower rho_max
+        rho_max *= 0.95
+        T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
     P_max = P_T_rho(T_max, rho_max, mat_id)
     rho_mid = (rho_min + rho_max) / 2.0
     T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
