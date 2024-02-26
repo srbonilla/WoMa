@@ -1,5 +1,5 @@
 """
-WoMa 1 layer spherical functions 
+WoMa 1 layer spherical functions
 """
 
 import numpy as np
@@ -195,6 +195,14 @@ def L1_integrate_out(
     A1_u = [u]
     A1_mat_id = [mat_id]
     A1_rho = [eos.rho_P_T(A1_P[0], A1_T[0], mat_id)]
+    if T_rho_type_id == gv.type_adb and (T_rho_args[0] is None or np.isnan(T_rho_args[0])):
+        T_rho_args = set_T_rho_args(
+            A1_T[-1],
+            A1_rho[-1],
+            T_rho_type_id,
+            T_rho_args,
+            mat_id,
+        )
 
     # Integrate outwards until the minimum density (or zero pressure)
     while A1_rho[-1] > rho_min and A1_P[-1] > P_min:
