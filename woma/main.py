@@ -3595,6 +3595,8 @@ class ParticlePlanet:
         1       Standard (default)
         2       Extra
 
+    seed : int
+        A seed for the SEAGen random number generator.
 
     Attributes (in addition to the input parameters)
     ----------
@@ -3626,7 +3628,7 @@ class ParticlePlanet:
         The material ID of each particle. (See the README.md documentation.)
     """
 
-    def __init__(self, planet, N_particles, N_ngb=48, verbosity=1):
+    def __init__(self, planet, N_particles, N_ngb=48, verbosity=1, seed=None):
         self.N_particles = N_particles
         self.N_ngb = N_ngb
 
@@ -3644,6 +3646,7 @@ class ParticlePlanet:
                 planet.A1_T[1:],
                 planet.A1_P[1:],
                 verbosity=verbosity,
+                seed=seed,
             )
 
             self.A1_x = particles.A1_x
@@ -3695,6 +3698,7 @@ class ParticlePlanet:
                 planet.period,
                 N_ngb=self.N_ngb,
                 verbosity=verbosity,
+                seed=seed,
             )
 
             self.N_particles = self.A1_x.shape[0]

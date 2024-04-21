@@ -566,7 +566,18 @@ def picle_shell_masses(A1_R, A1_Z, A1_rho, A1_R_shell, A1_R_shell_outer):
 
 
 def place_particles(
-    A1_R, A1_Z, A1_rho, A1_mat_id, A1_P, A1_T, A1_u, N, period, N_ngb=48, verbosity=1
+    A1_R,
+    A1_Z,
+    A1_rho,
+    A1_mat_id,
+    A1_P,
+    A1_T,
+    A1_u,
+    N,
+    period,
+    N_ngb=48,
+    verbosity=1,
+    seed=None,
 ):
 
     """Particle placement for a spining profile.
@@ -592,6 +603,9 @@ def place_particles(
 
     N_ngb : int
         Number of neighbors in the SPH simulation.
+
+    seed : int
+        A seed for the SEAGen random number generator.
 
     Returns
     -------
@@ -639,8 +653,9 @@ def place_particles(
         verbosity_2 = verbosity
 
     particles = seagen.GenSphere(
-        N, A1_R[1:], A1_rho[1:], A1_mat_id[1:], verbosity=verbosity_2
+        N, A1_R[1:], A1_rho[1:], A1_mat_id[1:], verbosity=verbosity_2, seed=seed
     )
+    rng = particles.rng
 
     rho_model_eq = interp1d(A1_R, A1_rho)
     rho_model_po_inv = interp1d(A1_rho, A1_Z)
@@ -699,7 +714,7 @@ def place_particles(
             # Create analytical model for the shell
             theta_elip = np.linspace(0, np.pi, 100000)
 
-            particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i])
+            particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i], rng=rng)
 
             R_0 = A1_R_shell[i]
             Z_0 = A1_Z_shell[i]
@@ -718,7 +733,7 @@ def place_particles(
             # Create analytical model for the shell
             theta_elip = np.linspace(0, np.pi, 100000)
 
-            particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i])
+            particles = seagen.GenShell(A1_N_shell[i], A1_R_shell[i], rng=rng)
 
             R_0 = A1_R_shell[i]
             Z_0 = A1_Z_shell[i]
