@@ -6,7 +6,7 @@ with open("README.md", "r") as f:
 setuptools.setup(
     name="woma",
     packages=setuptools.find_packages(),
-    version="1.4.0",
+    version="1.4.1",
     description="WorldMaker",
     long_description=long_description,
     long_description_content_type="text/markdown",
