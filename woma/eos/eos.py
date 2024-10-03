@@ -1075,6 +1075,58 @@ def A1_rho_u_P(A1_u, A1_P, A1_mat_id, A1_rho_ref):
 
 
 # ========
+# Aliases
+# ========
+@njit
+def P_rho_u(rho, u, mat_id):
+    return P_u_rho(u, rho, mat_id)
+
+@njit
+def A1_P_rho_u(A1_rho, A1_u, A1_mat_id):
+    return A1_P_u_rho(A1_u, A1_rho, A1_mat_id)
+
+@njit
+def P_rho_T(rho, T, mat_id):
+    return P_T_rho(T, rho, mat_id)
+
+@njit
+def A1_P_rho_T(A1_rho, A1_T, A1_mat_id):
+    return A1_P_T_rho(A1_T, A1_rho, A1_mat_id)
+
+@njit
+def T_rho_u(rho, u, mat_id):
+    return T_u_rho(u, rho, mat_id)
+
+@njit
+def A1_T_rho_u(A1_rho, A1_u, A1_mat_id):
+    return A1_T_u_rho(A1_u, A1_rho, A1_mat_id)
+
+@njit
+def s_rho_u(rho, u, mat_id):
+    return s_u_rho(u, rho, mat_id)
+
+@njit
+def A1_s_rho_u(A1_rho, A1_u, A1_mat_id):
+    return A1_s_u_rho(A1_u, A1_rho, A1_mat_id)
+
+@njit
+def phase_rho_T(rho, T, mat_id):
+    return Z_rho_T(rho, T, mat_id, Z_choice="phase")
+
+@njit
+def A1_phase_rho_T(A1_rho, A1_T, A1_mat_id):
+    return A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice="phase")
+
+@njit
+def phase_rho_u(rho, u, mat_id):
+    return Z_rho_Y(rho, u, mat_id, Z_choice="phase", Y_choice="u")
+
+@njit
+def A1_phase_rho_u(A1_rho, A1_u, A1_mat_id):
+    return A1_Z_rho_Y(A1_rho, A1_u, A1_mat_id, Z_choice="phase", Y_choice="u")
+
+
+# ========
 # Plotting
 # ========
 # Table values
