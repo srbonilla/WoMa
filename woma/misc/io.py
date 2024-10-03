@@ -242,18 +242,18 @@ def save_particle_data(
     if A1_id is None:
         A1_id = np.arange(num_particle)
 
-    # Convert to file units
+    # Convert to file units (make copies to avoid altering the originals)
     SI_to_file = file_to_SI.inv()
     boxsize *= SI_to_file.l
-    A2_pos *= SI_to_file.l
-    A2_vel *= SI_to_file.v
-    A1_m *= SI_to_file.m
-    A1_h *= SI_to_file.l
-    A1_rho *= SI_to_file.rho
-    A1_P *= SI_to_file.P
-    A1_u *= SI_to_file.u
+    A2_pos = np.copy(A2_pos) * SI_to_file.l
+    A2_vel = np.copy(A2_vel) * SI_to_file.v
+    A1_m = np.copy(A1_m) * SI_to_file.m
+    A1_h = np.copy(A1_h) * SI_to_file.l
+    A1_rho = np.copy(A1_rho) * SI_to_file.rho
+    A1_P = np.copy(A1_P) * SI_to_file.P
+    A1_u = np.copy(A1_u) * SI_to_file.u
     if A1_s is not None:
-        A1_s *= SI_to_file.s
+        A1_s = np.copy(A1_s) * SI_to_file.s
 
     # Shift to box coordinates
     A2_pos += boxsize / 2.0

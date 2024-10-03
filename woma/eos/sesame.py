@@ -420,7 +420,7 @@ def load_phase_table_ANEOS_forsterite():
     np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
-# A2_phase_ANEOS_forsterite = load_phase_table_ANEOS_forsterite()
+A2_phase_ANEOS_forsterite = np.zeros((2, 2))
 (
     A1_rho_ANEOS_iron,
     A1_T_ANEOS_iron,
@@ -756,6 +756,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         The chosen parameter (SI).
     """
     # Unpack the arrays of Z, log(rho), and log(T)
+    A2_Z = np.zeros((2, 2))
     if mat_id == gv.id_SESAME_iron:
         A1_log_rho, A1_log_T = (A1_log_rho_SESAME_iron, A1_log_T_SESAME_iron)
         if Z_choice == "P":
@@ -796,8 +797,8 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
-        # elif Z_choice == "phase":
-        #     A2_Z = A2_phase_ANEOS_forsterite
+        elif Z_choice == "phase":
+            A2_Z = A2_phase_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
         A1_log_rho, A1_log_T = (A1_log_rho_ANEOS_iron, A1_log_T_ANEOS_iron)
         if Z_choice == "P":
@@ -890,7 +891,7 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
         raise ValueError("Invalid material ID")
 
     # Check necessary data loaded
-    if len(A1_log_rho) == 1:
+    if len(A1_log_rho) == 1 or A2_Z.shape == (2, 2):
         raise ValueError(
             "Please load the corresponding EoS table. See woma.load_eos_tables()."
         )
@@ -1004,6 +1005,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
         return Z_rho_T(rho, Y, mat_id, Z_choice)
 
     # Unpack the arrays of Z, log(rho), and log(Y)
+    A2_Z = np.zeros((2, 2))
     if mat_id == gv.id_SESAME_iron:
         A1_log_rho = A1_log_rho_SESAME_iron
         if Z_choice == "P":
@@ -1068,8 +1070,8 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
-        # elif Z_choice == "phase":
-        #     A2_Z = A2_phase_ANEOS_forsterite
+        elif Z_choice == "phase":
+            A2_Z = A2_phase_ANEOS_forsterite
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_forsterite
         elif Y_choice == "u":
@@ -1234,7 +1236,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
         raise ValueError("Invalid material ID")
 
     # Check necessary data loaded
-    if len(A1_log_rho) == 1:
+    if len(A1_log_rho) == 1 or A2_Z.shape == (2, 2):
         raise ValueError(
             "Please load the corresponding EoS table. See woma.load_eos_tables()."
         )
@@ -1365,6 +1367,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
         return Z_rho_T(X, T, mat_id, Z_choice)
 
     # Unpack the arrays of Z and log(X)
+    A2_Z = np.zeros((2, 2))
     if mat_id == gv.id_SESAME_iron:
         A1_log_T = A1_log_T_SESAME_iron
         if Z_choice == "P":
@@ -1429,8 +1432,8 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
-        # elif Z_choice == "phase":
-        #     A2_Z = A2_phase_ANEOS_forsterite
+        elif Z_choice == "phase":
+            A2_Z = A2_phase_ANEOS_forsterite
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_forsterite
         elif X_choice == "u":
@@ -1595,7 +1598,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
         raise ValueError("Invalid material ID")
 
     # Check necessary data loaded
-    if len(A1_log_T) == 1:
+    if len(A1_log_T) == 1 or A2_Z.shape == (2, 2):
         raise ValueError(
             "Please load the corresponding EoS table. See woma.load_eos_tables()."
         )
