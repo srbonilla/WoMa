@@ -14,7 +14,7 @@ from importlib import reload
 def _print_banner():
     print("\n")
     print("#  WoMa - World Maker")
-    print("#  sergio.ruiz-bonilla@durham.ac.uk")
+    print("#  jacob.kegerreis@durham.ac.uk")
     print("\n")
 
 
@@ -112,6 +112,55 @@ def add_whitespace(string, space):
         The padded string.
     """
     return "%s" % string + " " * (space - len("%s" % string))
+
+
+@njit
+def find_index_and_interp(x, A1_x):
+    """Return the index and interpolation factor of a value in an array.
+
+    Returns the two as a combined float array to keep numba happy.
+
+    Allows x outside A1_x. If so then intp will be < 0 or > 1.
+
+    Parameters
+    ----------
+    x : float
+        The value to find.
+
+    A1_x : [float]
+        The array to search.
+
+    Returns
+    -------
+    idx : int
+        The index of the last array element smaller than the value.
+
+        0               If x is below A1_x.
+        len(A1_x) - 2   If x is above A1_x.
+
+    intp : float
+        The interpolation factor for how far the values is from the
+        indexed array value to the next.
+
+        < 0     If x is below A1_x.
+        > 1     If x is above A1_x.
+    """
+    # assert np.all(np.sort(A1_x) == A1_x)
+
+    idx = np.searchsorted(A1_x, x, side="right") - 1
+    # Return error values if outside the array
+    if idx == -1:
+        idx = 0
+    elif idx >= len(A1_x) - 1:
+        idx = len(A1_x) - 2
+
+    # Check for duplicate elements
+    if A1_x[idx + 1] != A1_x[idx]:
+        intp = (x - A1_x[idx]) / (A1_x[idx + 1] - A1_x[idx])
+    else:
+        intp = 1.0
+
+    return np.array([idx, intp])
 
 
 @njit
@@ -591,6 +640,12 @@ def check_loaded_eos_tables():
     if len(eos.sesame.A1_rho_CD21_HHe) == 1:
         A1_mat.remove("CD21_HHe")
 
+    # Check mixed
+    if len(eos.mixed.A1_mix_mixed_HHe_rock) == 1:
+        A1_mat.remove("mixed_HHe_rock")
+    if len(eos.mixed.A1_mix_mixed_HHe_water) == 1:
+        A1_mat.remove("mixed_HHe_water")
+
     # Check custom
     if len(eos.sesame.A1_rho_custom_0) == 1:
         A1_mat.remove("custom_0")
@@ -651,8 +706,6 @@ def load_eos_tables(A1_mat_input=None):
         return None
     if all(x in A1_mat_loaded for x in A1_mat):
         return None
-
-    # print("Loading eos tables...")
 
     # Reload woma modules, need to recompile for numba
     to_reload = []
@@ -886,6 +939,28 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_log_c_CD21_HHe,
             eos.sesame.A2_log_s_CD21_HHe,
         ) = eos.sesame.load_table_SESAME(gv.Fp_CD21_HHe)
+
+    # Mixed
+    if "mixed_HHe_rock" in A1_mat and len(eos.mixed.A1_mix_mixed_HHe_rock) == 1:
+        (
+            eos.mixed.A1_mix_mixed_HHe_rock,
+            eos.mixed.A1_log_rho_mixed_HHe_rock,
+            eos.mixed.A1_log_T_mixed_HHe_rock,
+            eos.mixed.A3_u_mixed_HHe_rock,
+            eos.mixed.A3_P_mixed_HHe_rock,
+            eos.mixed.A3_c_mixed_HHe_rock,
+            eos.mixed.A3_s_mixed_HHe_rock,
+        ) = eos.mixed.load_table_mixed(gv.Fp_mixed_HHe_rock)
+    if "mixed_HHe_water" in A1_mat and len(eos.mixed.A1_mix_mixed_HHe_water) == 1:
+        (
+            eos.mixed.A1_mix_mixed_HHe_water,
+            eos.mixed.A1_log_rho_mixed_HHe_water,
+            eos.mixed.A1_log_T_mixed_HHe_water,
+            eos.mixed.A3_u_mixed_HHe_water,
+            eos.mixed.A3_P_mixed_HHe_water,
+            eos.mixed.A3_c_mixed_HHe_water,
+            eos.mixed.A3_s_mixed_HHe_water,
+        ) = eos.mixed.load_table_mixed(gv.Fp_mixed_HHe_water)
 
     # Custom
     if "custom_0" in A1_mat and len(eos.sesame.A1_rho_custom_0) == 1:

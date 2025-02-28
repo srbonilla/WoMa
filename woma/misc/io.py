@@ -87,6 +87,23 @@ Di_hdf5_particle_label = {  # Type
     "phi": "Potentials",  # f
     "T": "Temperatures",  # f
 }
+Di_hdf5_eos_label = {
+    # Attributes
+    "name": "Name",
+    "version_date": "VersionDate",
+    "Y/X": "HeliumHydrogenRatio",
+    "num_mix": "MixMassFractionCount",
+    "num_rho": "DensityCount",
+    "num_T": "TemperatureCount",
+    # Table data
+    "A1_mix": "MixMassFraction",
+    "A1_rho": "Density",
+    "A1_T": "Temperature",
+    "A3_u": "SpecificInternalEnergy",
+    "A3_P": "Pressure",
+    "A3_c": "SoundSpeed",
+    "A3_s": "SpecificEntropy",
+}
 
 
 def get_planet_data(f, param):

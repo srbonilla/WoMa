@@ -4,10 +4,11 @@ WoMa equations of state table generation.
 import sys
 import numpy as np
 from scipy.optimize import minimize_scalar
+import h5py
 
 from woma.misc import utils as ut
 from woma.misc import glob_vars as gv
-from woma.eos.sesame import find_index_and_interp
+from woma.misc import io
 
 # Gas constant (J K^-1 mol^-1)
 R_gas = 8.3145
@@ -969,14 +970,14 @@ class Material_Chabrier_HHe:
         # Convert to log
         log_T = np.log(T)
 
-        idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+        idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
         idx_T = int(idx_T_intp_T[0])
         intp_T = idx_T_intp_T[1]
 
-        idx_rho_1_intp_rho_1 = find_index_and_interp(rho, A2_rho[idx_T, :])
+        idx_rho_1_intp_rho_1 = ut.find_index_and_interp(rho, A2_rho[idx_T, :])
         idx_rho_1 = int(idx_rho_1_intp_rho_1[0])
         intp_rho_1 = idx_rho_1_intp_rho_1[1]
-        idx_rho_2_intp_rho_2 = find_index_and_interp(rho, A2_rho[idx_T + 1, :])
+        idx_rho_2_intp_rho_2 = ut.find_index_and_interp(rho, A2_rho[idx_T + 1, :])
         idx_rho_2 = int(idx_rho_2_intp_rho_2[0])
         intp_rho_2 = idx_rho_2_intp_rho_2[1]
 
@@ -1033,14 +1034,14 @@ class Material_Chabrier_HHe:
         log_T = np.log(T)
         log_rho = np.log(rho)
 
-        idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+        idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
         idx_T = int(idx_T_intp_T[0])
         intp_T = idx_T_intp_T[1]
 
-        idx_rho_1_intp_rho_1 = find_index_and_interp(log_rho, A2_log_rho[idx_T])
+        idx_rho_1_intp_rho_1 = ut.find_index_and_interp(log_rho, A2_log_rho[idx_T])
         idx_rho_1 = int(idx_rho_1_intp_rho_1[0])
         intp_rho_1 = idx_rho_1_intp_rho_1[1]
-        idx_rho_2_intp_rho_2 = find_index_and_interp(log_rho, A2_log_rho[idx_T + 1])
+        idx_rho_2_intp_rho_2 = ut.find_index_and_interp(log_rho, A2_log_rho[idx_T + 1])
         idx_rho_2 = int(idx_rho_2_intp_rho_2[0])
         intp_rho_2 = idx_rho_2_intp_rho_2[1]
 
@@ -1234,3 +1235,276 @@ class Material_Chabrier_HHe:
             self.A2_c_Trho,
             self.A2_s_Trho,
         )
+
+
+# ========
+# Mixed HHe with heavy elements
+# ========
+class Material_Mixed_HHe_Heavy:
+    """Mixed HHe with heavy elements, across a range of mixing mass fractions.
+
+    Additive-volumne mix of H/He (Saumon et al 1995) with heavy-element
+    quotidian EoS, from Vazan et al. (2013), based on More et al. (1988).
+
+    Parameters
+    ----------
+    name : str
+        The material name.
+
+    version_date : int
+        The file version date (YYYYMMDD).
+
+    dir : str
+        The directory containing the table files (raw and generated).
+
+    A1_mix_raw : [float]
+        The set of heavy element mass fractions provided as raw tables.
+    """
+
+    def __init__(self, name, version_date=None, dir=None, A1_mix_raw=None):
+        self.name = name
+        self.version_date = version_date
+        self.dir = dir
+        self.A1_mix_raw = A1_mix_raw
+        if self.A1_mix_raw is not None:
+            self.A1_mix_raw = np.unique(self.A1_mix_raw)
+
+    @property
+    def filename(self):
+        return "%s/%s.hdf5" % (self.dir, self.name)
+
+    def load_raw_table(self, mix):
+        """Load data from a raw table file, for a single mix value.
+
+        File contents
+        -------------
+        Each row contains:
+            0   i           Row index
+            1   X           Hydrogen mass fraction
+            2   Y           Helium mass fraction
+            3   Z           Heavy element mass fraction
+            4   logT        Temperature (log10(K))
+            5   logrho      Density (log10(g/cc))
+            6   p           Pressure (erg/cc)
+            7   u           Specific internal energy (erg/g)
+            8   s           Specific entropy (erg/g*K)
+            9   dpdrho      Change of pressure with density
+            10  dsdrho      Change of sp. entropy with density
+            11  dsdt        Change of sp. entropy with temperature
+            12  gamma       Heat capacity ratio
+            13  delad       Adiabatic gradient
+            14  rhoz        Density of heavy elements (probably?)
+            15  dfdy(H)     Helmholtz free energy (probably?)
+            16  dfdy(He)    Helmholtz free energy (probably?)
+            17  dfdy(Z)     Helmholtz free energy (probably?)
+
+        X, Y, Z=`mix` are constant per file.
+        Rows loop first over logrho with fixed logT, repeated for each logT.
+        The array of logrho is (usually?) the same for each logT (and each Z?).
+
+        Parameters
+        ----------
+        mix : float
+            The heavy element fraction.
+
+        Returns
+        -------
+        Y_X : float
+            The ratio of helium to hydrogen mass fraction.
+
+        A1_T, A1_rho : [float]
+            Temperature (K) and density (kg m^-3) arrays.
+
+        A2_u, A2_P, A2_c, A2_s : [[float]]
+            Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound
+            speed (m s^-1), and sp. entropy (J K^-1 kg^-1). Dimensions in order
+            of mix, rho, T.
+        """
+        # Load
+        filename = "%s/%s_Z%03d.txt" % (self.dir, self.name, np.round(mix * 100))
+        print("Loading %s..." % filename[-50:])
+        data = np.genfromtxt(
+            filename,
+            usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9, 12],
+            names=["X", "Y", "Z", "logT", "logrho", "P", "u", "s", "dpdrho", "gamma"],
+        )
+
+        # Extract and convert logs and cgs to SI
+        A1_X = data["X"]
+        A1_Y = data["Y"]
+        A1_mix = data["Z"]
+        A1_T_ = 10 ** data["logT"]
+        A1_rho_ = 10 ** data["logrho"] * ut.cgs_to_SI.rho
+        A1_P = data["P"] * ut.cgs_to_SI.P
+        A1_u = data["u"] * ut.cgs_to_SI.u
+        A1_s = data["s"] * ut.cgs_to_SI.s
+        A1_dpdrho = data["dpdrho"] * ut.cgs_to_SI.P / ut.cgs_to_SI.rho
+        A1_gamma = data["gamma"]
+
+        # Reshape
+        A1_T = np.unique(A1_T_)
+        A1_rho = np.unique(A1_rho_)
+        num_T = len(A1_T)
+        num_rho = len(A1_rho)
+        assert np.allclose(A1_T_, np.repeat(A1_T, num_rho))
+        assert np.allclose(A1_rho_, np.tile(A1_rho, num_T))
+        A2_P = A1_P.reshape(num_T, num_rho)
+        A2_u = A1_u.reshape(num_T, num_rho)
+        A2_s = A1_s.reshape(num_T, num_rho)
+        A2_dpdrho = A1_dpdrho.reshape(num_T, num_rho)
+        A2_gamma = A1_gamma.reshape(num_T, num_rho)
+
+        # Estimate sound speed
+        A2_c = np.sqrt(A2_gamma * A2_dpdrho)
+
+        # Mass ratios
+        assert np.allclose(A1_mix, mix)
+        if np.all(A1_X == 0):
+            Y_X = 0
+        else:
+            Y_X = A1_Y[0] / A1_X[0]
+            assert np.allclose(A1_Y / A1_X, Y_X)
+
+        print("Done")
+
+        return np.round(Y_X, 2), A1_T, A1_rho, A2_P, A2_u, A2_c, A2_s
+
+    def load_all_raw_tables(self):
+        """Load and accumulate data from all raw table files.
+
+        Returns
+        -------
+        Y_X : float
+            The ratio of helium to hydrogen mass fraction.
+
+        A1_mix, A1_rho, A1_T : [float]
+            Heavy-element mass fraction, density (kg m^-3) and temperature (K).
+
+        A3_u, A3_P, A3_c, A3_s : [[[float]]]
+            Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound
+            speed (m s^-1), and sp. entropy (J K^-1 kg^-1).
+        """
+        # Load the data for each mix value
+        A1_mix = self.A1_mix_raw
+        for i_mix, mix in enumerate(A1_mix):
+            Y_X_, A1_T_, A1_rho_, A2_u, A2_P, A2_c, A2_s = self.load_raw_table(mix)
+
+            # Accumulate data
+            if i_mix == 0:
+                Y_X = Y_X_
+                A1_T, A1_rho = A1_T_, A1_rho_
+                A3_u, A3_P, A3_c, A3_s = [A2_u], [A2_P], [A2_c], [A2_s]
+            else:
+                A3_u = np.append(A3_u, [A2_u], axis=0)
+                A3_P = np.append(A3_P, [A2_P], axis=0)
+                A3_c = np.append(A3_c, [A2_c], axis=0)
+                A3_s = np.append(A3_s, [A2_s], axis=0)
+                if mix < 1:
+                    assert Y_X == Y_X_
+                assert A1_T.shape, A1_T_.shape
+                assert A1_T.shape, A1_T_.shape
+                assert np.allclose(A1_rho, A1_rho_)
+                assert np.allclose(A1_rho, A1_rho_)
+
+        assert A3_u.shape == (len(A1_mix), len(A1_T), len(A1_rho))
+        assert A3_P.shape == (len(A1_mix), len(A1_T), len(A1_rho))
+        assert A3_c.shape == (len(A1_mix), len(A1_T), len(A1_rho))
+        assert A3_s.shape == (len(A1_mix), len(A1_T), len(A1_rho))
+
+        return Y_X, A1_mix, A1_T, A1_rho, A3_u, A3_P, A3_c, A3_s
+
+    def gen_write_table(self, filename=None):
+        """Load the raw tables and write the combined data to an HDF5 file.
+
+        See io.Di_hdf5_eos_label.
+
+        Parameters
+        ----------
+        filename : str (opt.)
+            The table file path, defaults to self.filename.
+
+        File contents
+        -------------
+        /Header
+            name : str
+                The material name.
+
+            version_date : int
+                The file version date (YYYYMMDD).
+
+            Y/X : float
+                The ratio of helium to hydrogen mass fraction.
+
+            num_mix, num_rho, num_T : int
+                Lengths of the 1D arrays (and thus the sizes of the 3D ones).
+
+        /table
+            A1_mix, A1_rho, A1_T : [float]
+                Heavy-element mass fraction, density (kg m^-3) and temperature (K).
+
+            A3_u, A3_P, A3_c, A3_s : [[[float]]]
+                Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound
+                speed (m s^-1), and sp. entropy (J K^-1 kg^-1). Dimensions in order
+                of mix, rho, T.
+
+        /Units
+            SI units for reference, matching SWIFT's hdf5 format.
+        """
+        if filename is None:
+            filename = self.filename
+
+        # Load and combine raw data
+        Y_X, A1_mix, A1_T, A1_rho, A3_u, A3_P, A3_c, A3_s = self.load_all_raw_tables()
+
+        print("Writing %s..." % filename[-50:])
+        with h5py.File(filename, "w") as f:
+            # Header
+            grp = f.create_group("/Header")
+            grp.attrs[io.Di_hdf5_eos_label["name"]] = self.name
+            grp.attrs[io.Di_hdf5_eos_label["version_date"]] = self.version_date
+            grp.attrs[io.Di_hdf5_eos_label["Y/X"]] = Y_X
+            grp.attrs[io.Di_hdf5_eos_label["num_mix"]] = len(A1_mix)
+            grp.attrs[io.Di_hdf5_eos_label["num_rho"]] = len(A1_rho)
+            grp.attrs[io.Di_hdf5_eos_label["num_T"]] = len(A1_T)
+
+            # Table data
+            grp = f.create_group("/table")
+            grp.create_dataset(io.Di_hdf5_eos_label["A1_mix"], data=A1_mix, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["A1_rho"], data=A1_rho, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["A1_T"], data=A1_T, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["A3_u"], data=A3_u, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["A3_P"], data=A3_P, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["A3_c"], data=A3_c, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["A3_s"], data=A3_s, dtype="f")
+
+            # Units
+            grp = f.create_group("/Units")
+            grp.attrs["Unit mass in cgs (U_M)"] = [1.0]
+            grp.attrs["Unit length in cgs (U_L)"] = [1.0]
+            grp.attrs["Unit time in cgs (U_t)"] = [1.0]
+            grp.attrs["Unit current in cgs (U_I)"] = [1.0]
+            grp.attrs["Unit temperature in cgs (U_T)"] = [1.0]
+
+        print("Done")
+
+
+mat_mixed_HHe_rock = Material_Mixed_HHe_Heavy(
+    "mixed_HHe_rock",
+    version_date="20250128",
+    dir=gv.dir_data + "mixed_HHe_rock/",
+    A1_mix_raw=np.append(np.arange(0, 1.01, 0.1), [0.02]),
+)
+mat_mixed_HHe_water = Material_Mixed_HHe_Heavy(
+    "mixed_HHe_water",
+    version_date="20250128",
+    dir=gv.dir_data + "mixed_HHe_water/",
+    A1_mix_raw=np.append(np.arange(0, 1.01, 0.1), [0.02]),
+)
+
+
+if __name__ == "__main__":
+    print(__file__)
+
+    # Generate tables
+    mat_mixed_HHe_rock.gen_write_table(gv.Fp_mixed_HHe_rock)
+    mat_mixed_HHe_water.gen_write_table(gv.Fp_mixed_HHe_water)
