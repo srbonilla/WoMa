@@ -87,6 +87,23 @@ Di_hdf5_particle_label = {  # Type
     "phi": "Potentials",  # f
     "T": "Temperatures",  # f
 }
+Di_hdf5_eos_label = {
+    # Attributes
+    "name": "Name",
+    "version_date": "VersionDate",
+    "Y/X": "HeliumHydrogenRatio",
+    "num_mix": "MixMassFractionCount",
+    "num_rho": "DensityCount",
+    "num_T": "TemperatureCount",
+    # Table data
+    "A1_mix": "MixMassFraction",
+    "A1_rho": "Density",
+    "A1_T": "Temperature",
+    "A3_u": "SpecificInternalEnergy",
+    "A3_P": "Pressure",
+    "A3_c": "SoundSpeed",
+    "A3_s": "SpecificEntropy",
+}
 
 
 def get_planet_data(f, param):
@@ -242,18 +259,18 @@ def save_particle_data(
     if A1_id is None:
         A1_id = np.arange(num_particle)
 
-    # Convert to file units
+    # Convert to file units (make copies to avoid altering the originals)
     SI_to_file = file_to_SI.inv()
     boxsize *= SI_to_file.l
-    A2_pos *= SI_to_file.l
-    A2_vel *= SI_to_file.v
-    A1_m *= SI_to_file.m
-    A1_h *= SI_to_file.l
-    A1_rho *= SI_to_file.rho
-    A1_P *= SI_to_file.P
-    A1_u *= SI_to_file.u
+    A2_pos = np.copy(A2_pos) * SI_to_file.l
+    A2_vel = np.copy(A2_vel) * SI_to_file.v
+    A1_m = np.copy(A1_m) * SI_to_file.m
+    A1_h = np.copy(A1_h) * SI_to_file.l
+    A1_rho = np.copy(A1_rho) * SI_to_file.rho
+    A1_P = np.copy(A1_P) * SI_to_file.P
+    A1_u = np.copy(A1_u) * SI_to_file.u
     if A1_s is not None:
-        A1_s *= SI_to_file.s
+        A1_s = np.copy(A1_s) * SI_to_file.s
 
     # Shift to box coordinates
     A2_pos += boxsize / 2.0
@@ -332,14 +349,19 @@ def save_particle_data(
     grp.create_dataset(Di_hdf5_particle_label["pos"], data=A2_pos, dtype="d")
     grp.create_dataset(Di_hdf5_particle_label["vel"], data=A2_vel, dtype="f")
     grp.create_dataset(Di_hdf5_particle_label["m"], data=A1_m, dtype="f")
-    grp.create_dataset(Di_hdf5_particle_label["h"], data=A1_h, dtype="f")
-    grp.create_dataset(Di_hdf5_particle_label["rho"], data=A1_rho, dtype="f")
+    dset_h = grp.create_dataset(Di_hdf5_particle_label["h"], data=A1_h, dtype="f")
+    dset_u = grp.create_dataset(Di_hdf5_particle_label["u"], data=A1_u, dtype="f")
+    dset_rho = grp.create_dataset(Di_hdf5_particle_label["rho"], data=A1_rho, dtype="f")
     grp.create_dataset(Di_hdf5_particle_label["P"], data=A1_P, dtype="f")
-    grp.create_dataset(Di_hdf5_particle_label["u"], data=A1_u, dtype="f")
     grp.create_dataset(Di_hdf5_particle_label["id"], data=A1_id, dtype="L")
     grp.create_dataset(Di_hdf5_particle_label["mat_id"], data=A1_mat_id, dtype="i")
     if A1_s is not None:
         grp.create_dataset(Di_hdf5_particle_label["s"], data=A1_s, dtype="f")
+
+    # Alias links to match GADGET-2 initial conditions (as used by SWIFT)
+    f["/PartType0/SmoothingLength"] = dset_h
+    f["/PartType0/InternalEnergy"] = dset_u
+    f["/PartType0/Density"] = dset_rho
 
     if verbosity >= 1:
         print('Saved "%s"' % f.filename[-64:])
