@@ -1315,10 +1315,10 @@ class Material_Mixed_HHe_Heavy:
         A1_T, A1_rho : [float]
             Temperature (K) and density (kg m^-3) arrays.
 
-        A2_u, A2_P, A2_c, A2_s : [[float]]
-            Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound
+        A2_P, A2_u, A2_c, A2_s : [[float]]
+            Table arrays of pressure (Pa), sp. int. energy (J kg^-1), sound
             speed (m s^-1), and sp. entropy (J K^-1 kg^-1). Dimensions in order
-            of mix, rho, T.
+            of rho, T.
         """
         # Load
         filename = "%s/%s_Z%03d.txt" % (self.dir, self.name, np.round(mix * 100))
@@ -1348,14 +1348,24 @@ class Material_Mixed_HHe_Heavy:
         num_rho = len(A1_rho)
         assert np.allclose(A1_T_, np.repeat(A1_T, num_rho))
         assert np.allclose(A1_rho_, np.tile(A1_rho, num_T))
-        A2_P = A1_P.reshape(num_T, num_rho)
-        A2_u = A1_u.reshape(num_T, num_rho)
-        A2_s = A1_s.reshape(num_T, num_rho)
-        A2_dpdrho = A1_dpdrho.reshape(num_T, num_rho)
-        A2_gamma = A1_gamma.reshape(num_T, num_rho)
+        A2_P = A1_P.reshape(num_T, num_rho).T
+        A2_u = A1_u.reshape(num_T, num_rho).T
+        A2_s = A1_s.reshape(num_T, num_rho).T
+        A2_dpdrho = A1_dpdrho.reshape(num_T, num_rho).T
+        A2_gamma = A1_gamma.reshape(num_T, num_rho).T
 
         # Estimate sound speed
         A2_c = np.sqrt(A2_gamma * A2_dpdrho)
+
+        # Enforce dP/drho (at fixed T) and du/dT (at fixed rho) >= 0
+        for i_T in range(num_T):
+            for i_rho in range(num_rho - 1):
+                if A2_P[i_rho + 1, i_T] < A2_P[i_rho, i_T]:
+                    A2_P[i_rho + 1, i_T] = A2_P[i_rho, i_T]
+        for i_rho in range(num_rho):
+            for i_T in range(num_T - 1, 0, -1):
+                if A2_u[i_rho, i_T - 1] > A2_u[i_rho, i_T]:
+                    A2_u[i_rho, i_T - 1] = A2_u[i_rho, i_T]
 
         # Mass ratios
         assert np.allclose(A1_mix, mix)
@@ -1380,14 +1390,14 @@ class Material_Mixed_HHe_Heavy:
         A1_mix, A1_rho, A1_T : [float]
             Heavy-element mass fraction, density (kg m^-3) and temperature (K).
 
-        A3_u, A3_P, A3_c, A3_s : [[[float]]]
-            Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound
+        A3_P, A3_u, A3_c, A3_s : [[[float]]]
+            Table arrays of pressure (Pa), sp. int. energy (J kg^-1), sound
             speed (m s^-1), and sp. entropy (J K^-1 kg^-1).
         """
         # Load the data for each mix value
         A1_mix = self.A1_mix_raw
         for i_mix, mix in enumerate(A1_mix):
-            Y_X_, A1_T_, A1_rho_, A2_u, A2_P, A2_c, A2_s = self.load_raw_table(mix)
+            Y_X_, A1_T_, A1_rho_, A2_P, A2_u, A2_c, A2_s = self.load_raw_table(mix)
 
             # Accumulate data
             if i_mix == 0:
@@ -1411,7 +1421,7 @@ class Material_Mixed_HHe_Heavy:
         assert A3_c.shape == (len(A1_mix), len(A1_T), len(A1_rho))
         assert A3_s.shape == (len(A1_mix), len(A1_T), len(A1_rho))
 
-        return Y_X, A1_mix, A1_T, A1_rho, A3_u, A3_P, A3_c, A3_s
+        return Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s
 
     def gen_write_table(self, filename=None):
         """Load the raw tables and write the combined data to an HDF5 file.
@@ -1454,7 +1464,7 @@ class Material_Mixed_HHe_Heavy:
             filename = self.filename
 
         # Load and combine raw data
-        Y_X, A1_mix, A1_T, A1_rho, A3_u, A3_P, A3_c, A3_s = self.load_all_raw_tables()
+        Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s = self.load_all_raw_tables()
 
         print("Writing %s..." % filename[-50:])
         with h5py.File(filename, "w") as f:
@@ -1472,8 +1482,8 @@ class Material_Mixed_HHe_Heavy:
             grp.create_dataset(io.Di_hdf5_eos_label["A1_mix"], data=A1_mix, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["A1_rho"], data=A1_rho, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["A1_T"], data=A1_T, dtype="f")
-            grp.create_dataset(io.Di_hdf5_eos_label["A3_u"], data=A3_u, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["A3_P"], data=A3_P, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["A3_u"], data=A3_u, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["A3_c"], data=A3_c, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["A3_s"], data=A3_s, dtype="f")
 

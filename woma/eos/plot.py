@@ -10,6 +10,7 @@ from numba import njit
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import os
 
 from woma.misc import glob_vars as gv
 from woma.eos import tillotson, sesame, idg, hm80, mixed
@@ -163,106 +164,106 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
 
     # Load table data
     if mat_id == gv.id_SESAME_iron:
-        A1_log_T = SESAME.A1_log_T_SESAME_iron
-        A1_log_rho = SESAME.A1_log_rho_SESAME_iron
+        A1_log_T = sesame.A1_log_T_SESAME_iron
+        A1_log_rho = sesame.A1_log_rho_SESAME_iron
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_SESAME_iron
+            A2_Z = sesame.A2_P_SESAME_iron
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_SESAME_iron
+            A2_Z = sesame.A2_u_SESAME_iron
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_SESAME_iron
+            A2_Z = sesame.A2_s_SESAME_iron
     elif mat_id == gv.id_SESAME_basalt:
-        A1_log_T = SESAME.A1_log_T_SESAME_basalt
-        A1_log_rho = SESAME.A1_log_rho_SESAME_basalt
+        A1_log_T = sesame.A1_log_T_SESAME_basalt
+        A1_log_rho = sesame.A1_log_rho_SESAME_basalt
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_SESAME_basalt
+            A2_Z = sesame.A2_P_SESAME_basalt
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_SESAME_basalt
+            A2_Z = sesame.A2_u_SESAME_basalt
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_SESAME_basalt
+            A2_Z = sesame.A2_s_SESAME_basalt
     elif mat_id == gv.id_SESAME_water:
-        A1_log_T = SESAME.A1_log_T_SESAME_water
-        A1_log_rho = SESAME.A1_log_rho_SESAME_water
+        A1_log_T = sesame.A1_log_T_SESAME_water
+        A1_log_rho = sesame.A1_log_rho_SESAME_water
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_SESAME_water
+            A2_Z = sesame.A2_P_SESAME_water
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_SESAME_water
+            A2_Z = sesame.A2_u_SESAME_water
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_SESAME_water
+            A2_Z = sesame.A2_s_SESAME_water
     elif mat_id == gv.id_SS08_water:
-        A1_log_T = SESAME.A1_log_T_SS08_water
-        A1_log_rho = SESAME.A1_log_rho_SS08_water
+        A1_log_T = sesame.A1_log_T_SS08_water
+        A1_log_rho = sesame.A1_log_rho_SS08_water
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_SS08_water
+            A2_Z = sesame.A2_P_SS08_water
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_SS08_water
+            A2_Z = sesame.A2_u_SS08_water
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_SS08_water
+            A2_Z = sesame.A2_s_SS08_water
     elif mat_id == gv.id_ANEOS_forsterite:
-        A1_log_T = SESAME.A1_log_T_ANEOS_forsterite
-        A1_log_rho = SESAME.A1_log_rho_ANEOS_forsterite
+        A1_log_T = sesame.A1_log_T_ANEOS_forsterite
+        A1_log_rho = sesame.A1_log_rho_ANEOS_forsterite
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_ANEOS_forsterite
+            A2_Z = sesame.A2_P_ANEOS_forsterite
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_ANEOS_forsterite
+            A2_Z = sesame.A2_u_ANEOS_forsterite
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_ANEOS_forsterite
+            A2_Z = sesame.A2_s_ANEOS_forsterite
         # elif Z_choice == "phase":
-        #     A2_Z = SESAME.A2_phase_ANEOS_forsterite
+        #     A2_Z = sesame.A2_phase_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
-        A1_log_T = SESAME.A1_log_T_ANEOS_iron
-        A1_log_rho = SESAME.A1_log_rho_ANEOS_iron
+        A1_log_T = sesame.A1_log_T_ANEOS_iron
+        A1_log_rho = sesame.A1_log_rho_ANEOS_iron
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_ANEOS_iron
+            A2_Z = sesame.A2_P_ANEOS_iron
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_ANEOS_iron
+            A2_Z = sesame.A2_u_ANEOS_iron
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_ANEOS_iron
+            A2_Z = sesame.A2_s_ANEOS_iron
     elif mat_id == gv.id_ANEOS_Fe85Si15:
-        A1_log_T = SESAME.A1_log_T_ANEOS_Fe85Si15
-        A1_log_rho = SESAME.A1_log_rho_ANEOS_Fe85Si15
+        A1_log_T = sesame.A1_log_T_ANEOS_Fe85Si15
+        A1_log_rho = sesame.A1_log_rho_ANEOS_Fe85Si15
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_ANEOS_Fe85Si15
+            A2_Z = sesame.A2_P_ANEOS_Fe85Si15
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_ANEOS_Fe85Si15
+            A2_Z = sesame.A2_u_ANEOS_Fe85Si15
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_ANEOS_Fe85Si15
+            A2_Z = sesame.A2_s_ANEOS_Fe85Si15
     elif mat_id == gv.id_AQUA:
-        A1_log_T = SESAME.A1_log_T_AQUA
-        A1_log_rho = SESAME.A1_log_rho_AQUA
+        A1_log_T = sesame.A1_log_T_AQUA
+        A1_log_rho = sesame.A1_log_rho_AQUA
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_AQUA
+            A2_Z = sesame.A2_P_AQUA
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_AQUA
+            A2_Z = sesame.A2_u_AQUA
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_AQUA
+            A2_Z = sesame.A2_s_AQUA
     elif mat_id == gv.id_CMS19_H:
-        A1_log_T = SESAME.A1_log_T_CMS19_H
-        A1_log_rho = SESAME.A1_log_rho_CMS19_H
+        A1_log_T = sesame.A1_log_T_CMS19_H
+        A1_log_rho = sesame.A1_log_rho_CMS19_H
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_CMS19_H
+            A2_Z = sesame.A2_P_CMS19_H
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_CMS19_H
+            A2_Z = sesame.A2_u_CMS19_H
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_CMS19_H
+            A2_Z = sesame.A2_s_CMS19_H
     elif mat_id == gv.id_CMS19_He:
-        A1_log_T = SESAME.A1_log_T_CMS19_He
-        A1_log_rho = SESAME.A1_log_rho_CMS19_He
+        A1_log_T = sesame.A1_log_T_CMS19_He
+        A1_log_rho = sesame.A1_log_rho_CMS19_He
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_CMS19_He
+            A2_Z = sesame.A2_P_CMS19_He
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_CMS19_He
+            A2_Z = sesame.A2_u_CMS19_He
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_CMS19_He
+            A2_Z = sesame.A2_s_CMS19_He
     elif mat_id == gv.id_CD21_HHe:
-        A1_log_T = SESAME.A1_log_T_CD21_HHe
-        A1_log_rho = SESAME.A1_log_rho_CD21_HHe
+        A1_log_T = sesame.A1_log_T_CD21_HHe
+        A1_log_rho = sesame.A1_log_rho_CD21_HHe
         if Z_choice == "P":
-            A2_Z = SESAME.A2_P_CD21_HHe
+            A2_Z = sesame.A2_P_CD21_HHe
         elif Z_choice == "u":
-            A2_Z = SESAME.A2_u_CD21_HHe
+            A2_Z = sesame.A2_u_CD21_HHe
         elif Z_choice == "s":
-            A2_Z = SESAME.A2_s_CD21_HHe
+            A2_Z = sesame.A2_s_CD21_HHe
     else:
         raise ValueError("Invalid material ID")
     A1_T = np.exp(A1_log_T)
@@ -280,6 +281,9 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
     vmin = np.nanmin(A2_Z[A2_Z > 0])
     vmax = np.nanmax(A2_Z[A2_Z < np.inf])
     norm = mpl.colors.LogNorm()
+    if "_H" in mat and Z_choice == "s":
+        vmax = min(vmax, 1e7)
+        vmin = max(vmin, 1e2)
 
     # Figure
     if A1_fig_ax is None:
@@ -290,17 +294,27 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
         plt.figure(fig.number)
 
     # Roughly adjust marker size by number of points
-    s_def = 3**2
+    s_def = 5**2
     num_def = 200
     s = min(s_def, (np.sqrt(s_def) * num_def / max(num_rho, num_T)) ** 2)
 
     # Plot each row
     for i_T, T in enumerate(A1_T):
+        # Raise very low edge rho,T for visibility
+        T_min = 0.01 * A1_T[1]
+        if i_T == 0 and T < T_min:
+            T = T_min
+            m = "v"
+            s_ = s * 0.5**2
+        else:
+            m = "."
+            s_ = s
+
         scat = ax.scatter(
             A1_rho,
             np.full(num_rho, T),
-            marker=".",
-            s=s,
+            marker=m,
+            s=s_,
             c=A2_Z[:, i_T],
             edgecolor="none",
             cmap=cmap,
@@ -314,9 +328,9 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
         ax.scatter(
             A1_rho[A1_sel_zero],
             np.full(num_rho, T)[A1_sel_zero],
-            marker=".",
-            s=s,
-            c="0.4",
+            marker=m,
+            s=s_,
+            c="0.6",
             edgecolor="none",
         )
 
@@ -359,7 +373,9 @@ def plot_all_SESAME_tables():
             fig, ax = plot_table_SESAME(mat, param)
 
             if fig is not None:
-                Fp_save = "%s_table_%s_rho_T.png" % (mat, param)
+                dir = "plots/%s" % mat
+                os.makedirs(dir, exist_ok=True)
+                Fp_save = "%s/%s_table_%s_rho_T.png" % (dir, mat, param)
                 plt.savefig(Fp_save, dpi=600)
                 plt.close()
                 print('Saved "%s"' % Fp_save)
@@ -440,7 +456,7 @@ def plot_table_mixed(mat, Z_choice, mix, A1_fig_ax=None):
     cmap = plt.get_cmap("viridis")
     vmin = np.nanmin(A2_Z[A2_Z > 0])
     vmax = np.nanmax(A2_Z[A2_Z < np.inf])
-    norm = mpl.colors.LogNorm()
+    norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
 
     # Figure
     if A1_fig_ax is None:
@@ -450,23 +466,16 @@ def plot_table_mixed(mat, Z_choice, mix, A1_fig_ax=None):
         fig, ax = A1_fig_ax
         plt.figure(fig.number)
 
-    # Roughly adjust marker size by number of points
-    s_def = 7**2
-    num_def = 200
-    s = min(s_def, (np.sqrt(s_def) * num_def / max(num_rho, num_T)) ** 2)
-
     # Plot each row
     for i_T, T in enumerate(A1_T):
         scat = ax.scatter(
             A1_rho,
             np.full(num_rho, T),
-            marker=".",
-            s=s,
+            marker="s",
+            s=4.25**2,
             c=A2_Z[:, i_T],
             edgecolor="none",
             cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
             norm=norm,
         )
 
@@ -475,8 +484,8 @@ def plot_table_mixed(mat, Z_choice, mix, A1_fig_ax=None):
         ax.scatter(
             A1_rho[A1_sel_zero],
             np.full(num_rho, T)[A1_sel_zero],
-            marker=".",
-            s=s,
+            marker="s",
+            s=4.25**2,
             c="0.4",
             edgecolor="none",
         )
@@ -514,7 +523,9 @@ def plot_all_mixed_tables():
                 fig, ax = plot_table_mixed(mat.name, param, mix)
 
                 if fig is not None:
-                    Fp_save = "%s_%.2f_table_%s_rho_T.png" % (mat.name, mix, param)
+                    dir = "plots/mixed_HHe_%s" % param
+                    os.makedirs(dir, exist_ok=True)
+                    Fp_save = "%s/%s_%.2f_table_%s_rho_T.png" % (dir, mat.name, mix, param)
                     plt.savefig(Fp_save, dpi=600)
                     plt.close()
                     print('Saved "%s"' % Fp_save)
@@ -608,7 +619,7 @@ def plot_eos_Z_X_iso_Y(
     # Parameter labels and default limits
     Di_choice_label_min_max = {
         "P": [r"Pressure (Pa)", 3e4, 1e12],
-        "u": [r"Specific internal energy (J kg$^{-1}$)", 1e4, 1e8],
+        "u": [r"Specific internal energy (J kg$^{-1}$)", 1e4, 1e10],
         "s": [r"Specific entropy (J K$^{-1}$ kg$^{-1}$)", 3e1, 3e5],
         "rho": [r"Density (kg m$^{-3}$)", 3e0, 3e4],
         "T": [r"Temperature (K)", 1e2, 1e5],
@@ -826,16 +837,16 @@ def plot_mixed_eos_Z_X_iso_Y(
         assert X_choice == "rho"
         assert "mix_" not in W_choice
     else:
-        assert X_choice == "rho"
+        assert X_choice in ["rho", "T"]
         assert W_choice == "A1_mix"
 
     # Parameter labels and default limits
     Di_choice_label_min_max = {
-        "P": [r"Pressure (Pa)", 1.5e6, 1.5e11],
-        "u": [r"Specific internal energy (J kg$^{-1}$)", 1e2, 1e14],
+        "P": [r"Pressure (Pa)", 3e1, 3e15],
+        "u": [r"Specific internal energy (J kg$^{-1}$)", 1e6, 7e10],
         "s": [r"Specific entropy (J K$^{-1}$ kg$^{-1}$)", 3e2, 5e5],
         "c": [r"Sound speed (m s$^{-1}$)", 1e1, 1e8],
-        "rho": [r"Density (kg m$^{-3}$)", 1e-2, 3e4],
+        "rho": [r"Density (kg m$^{-3}$)", 1e-4, 3e4],
         "T": [r"Temperature (K)", 1e2, 1e5],
         "mix_rock": [r"Mixed mass fraction of rock", 0, 1],
         "mix_water": [r"Mixed mass fraction of water", 0, 1],
@@ -893,10 +904,19 @@ def plot_mixed_eos_Z_X_iso_Y(
                 Z_choice=Z_choice,
                 Y_choice=W_choice,
             )
-    else:
+    elif X_choice == "rho":
         for i_Y, Y in enumerate(A1_Y):
             A2_Z[i_Y] = mixed.A1_Z_rho_Y_mix(
                 A1_rho=A1_X,
+                A1_Y=np.full(num_X, Y),
+                A1_A1_mix=np.full((num_X, len(W)), W),
+                Z_choice=Z_choice,
+                Y_choice=Y_choice,
+            )
+    elif X_choice == "T":
+        for i_Y, Y in enumerate(A1_Y):
+            A2_Z[i_Y] = mixed.A1_Z_T_Y_mix(
+                A1_T=A1_X,
                 A1_Y=np.full(num_X, Y),
                 A1_A1_mix=np.full((num_X, len(W)), W),
                 Z_choice=Z_choice,
@@ -991,11 +1011,12 @@ def plot_mixed_eos_Z_X_iso_Y(
 def test_plot_mixed_eos_iso_lines():
     """Test plots for mixed materials."""
     # Fixed mix_rock,water combinations
-    X_choice = "rho"
-    for Z_choice, Y_choice in [
-        ["P", "T"],
-        ["P", "u"],
-        ["u", "T"],
+    for Z_choice, X_choice, Y_choice in [
+        ["P", "rho", "T"],
+        ["P", "T", "rho"],
+        ["u", "rho", "T"],
+        ["u", "T", "rho"],
+        ["P", "rho", "u"],
     ]:
         for A1_mix in [
             [0.0, 0.0],
@@ -1043,7 +1064,7 @@ def test_plot_mixed_eos_iso_lines():
             # Figure
             fig = plt.figure(figsize=(8, 8))
             ax = fig.gca()
-
+    
             # Plot
             plot_mixed_eos_Z_X_iso_Y(
                 Z_choice=Z_choice,
@@ -1053,7 +1074,7 @@ def test_plot_mixed_eos_iso_lines():
                 W=rho,
                 A1_fig_ax=[fig, ax],
             )
-
+    
             # Save the figure
             Fp_save = "mixed_eos_%s_%s_%s_rho%g.png" % (
                 Z_choice,
@@ -1066,72 +1087,22 @@ def test_plot_mixed_eos_iso_lines():
             print('Saved "%s"' % Fp_save)
 
 
-def test_compare_rock_P_rho_iso_T():
-    """Test plotting P(rho) for several rock-like EoS for various fixed T."""
-    # Figure
-    fig = plt.figure(figsize=(8, 8))
-    ax = fig.gca()
-
-    # Materials
-    A2_mat_ls = [
-        ["ANEOS_forsterite", "-"],
-        ["SESAME_basalt", "--"],
-        ["Til_basalt", "-."],
-        ["HM80_rock", ":"],
-    ]
-    # Linestyle legend
-    A1_mat_line = []
-    for mat, ls in A2_mat_ls:
-        A1_mat_line.append(ax.plot([], [], c="k", lw=1, ls=ls, label=mat)[0])
-    ax.add_artist(plt.legend(handles=A1_mat_line, loc="lower right"))
-
-    # Plot each material
-    for i, (mat, ls) in enumerate(A2_mat_ls):
-        print("Plotting %s..." % mat)
-        if "mixed" in mat:
-            plot_mixed_eos_Z_X_iso_Y(
-                Z_choice="P",
-                X_choice="rho",
-                Y_choice="T",
-                W_choice="A1_mix",
-                W=[1, 0],
-                A1_fig_ax=[fig, ax],
-            )
-        else:
-            plot_eos_Z_X_iso_Y(
-                mat=mat,
-                Z_choice="P",
-                X_choice="rho",
-                Y_choice="T",
-                num_Y=10,
-                num_label=None if (i == 0) else 0,
-                ls=ls,
-                A1_fig_ax=[fig, ax],
-            )
-
-    # Save the figure
-    Fp_save = "test_compare_rock_P_rho_iso_T.png"
-    plt.savefig(Fp_save, dpi=300)
-    plt.close()
-    print('Saved "%s"' % Fp_save)
-
-
 if __name__ == "__main__":
     print(__file__)
 
     # plot_all_HM80_tables()
     # plot_all_SESAME_tables()
     # plot_all_mixed_tables()
-    # test_plot_mixed_eos_iso_lines()
+    test_plot_mixed_eos_iso_lines()
 
     # Test
-    ut.load_eos_tables(["mixed_HHe_rock", "mixed_HHe_water"])
-    A1_mix = [0.234, 0.0]
-    rho = 4e3
-    T = 2e4
-    P = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="P")
-    print("P(mix=[%g,%g], rho=%g, T=%g) = %g" % (A1_mix[0], A1_mix[1], rho, T, P))
-    u = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="u")
-    print("u(mix=[%g,%g], rho=%g, T=%g) = %g" % (A1_mix[0], A1_mix[1], rho, T, u))
-    P = mixed.Z_rho_Y(rho, u, A1_mix, Z_choice="P", Y_choice="u")
-    print("P(mix=[%g,%g], rho=%g, u=%g) = %g" % (A1_mix[0], A1_mix[1], rho, u, P))
+    # ut.load_eos_tables(["mixed_HHe_rock", "mixed_HHe_water"])
+    # A1_mix = [0.234, 0.0]
+    # rho = 4e3
+    # T = 2e4
+    # P = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="P")
+    # print("P(mix=[%g,%g], rho=%g, T=%g) = %g" % (A1_mix[0], A1_mix[1], rho, T, P))
+    # u = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="u")
+    # print("u(mix=[%g,%g], rho=%g, T=%g) = %g" % (A1_mix[0], A1_mix[1], rho, T, u))
+    # P = mixed.Z_rho_Y(rho, u, A1_mix, Z_choice="P", Y_choice="u")
+    # print("P(mix=[%g,%g], rho=%g, u=%g) = %g" % (A1_mix[0], A1_mix[1], rho, u, P))
