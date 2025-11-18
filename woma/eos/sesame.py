@@ -94,12 +94,10 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
 
     # first element of A1_rho and A1_T cannot be == 0
     # because interpolation is in log rho, log T
-    ### but we discard those in the interpolation functions anyway?
-    small = A1_rho[1] * 0.0001
     if A1_rho[0] <= 0:
-        A1_rho[0] = small
+        A1_rho[0] = A1_rho[1] * 1e-5
     if A1_T[0] <= 0:
-        A1_T[0] = small
+        A1_T[0] = A1_T[1] * 1e-5
 
     # Non-negative elements
     assert np.all(A1_rho > 0)
@@ -1241,10 +1239,6 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             "Please load the corresponding EoS table. See woma.load_eos_tables()."
         )
 
-    # Ignore the first elements of rho = 0, T = 0
-    A2_Z = A2_Z[1:, 1:]
-    A2_log_Y = A2_log_Y[1:, 1:]
-
     # Convert to log
     log_rho = np.log(rho)
     log_Y = np.log(Y)
@@ -1254,7 +1248,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
@@ -1603,10 +1597,6 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             "Please load the corresponding EoS table. See woma.load_eos_tables()."
         )
 
-    # Ignore the first elements of rho = 0, T = 0
-    A2_Z = A2_Z[1:, 1:]
-    A2_log_X = A2_log_X[1:, 1:]
-
     # Convert to log
     log_T = np.log(T)
     log_X = np.log(X)
@@ -1616,7 +1606,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T[1:])
+    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
@@ -1812,10 +1802,6 @@ def P_u_rho(u, rho, mat_id):
             + "Use the woma.load_eos_tables function.\n"
         )
 
-    # Ignore the first elements of rho = 0, T = 0
-    A2_P = A2_P[1:, 1:]
-    A2_log_u = A2_log_u[1:, 1:]
-
     # Convert to log
     log_rho = np.log(rho)
     log_u = np.log(u)
@@ -1825,7 +1811,7 @@ def P_u_rho(u, rho, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
@@ -2480,9 +2466,6 @@ def u_rho_T(rho, T, mat_id):
             + "Use the woma.load_eos_tables function.\n"
         )
 
-    # Ignore the first elements of rho = 0, T = 0
-    A2_u = A2_u[1:, 1:]
-
     # Convert to log
     log_rho = np.log(rho)
     log_T = np.log(T * 1)  # why is numba so weird?
@@ -2492,12 +2475,12 @@ def u_rho_T(rho, T, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T[1:])
+    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
@@ -2664,10 +2647,6 @@ def s_u_rho(u, rho, mat_id):
             + "Use the woma.load_eos_tables function.\n"
         )
 
-    # Ignore the first elements of rho = 0, T = 0
-    A2_s = A2_s[1:, 1:]
-    A2_log_u = A2_log_u[1:, 1:]
-
     # Convert to log
     log_rho = np.log(rho)
     log_u = np.log(u)
@@ -2677,7 +2656,7 @@ def s_u_rho(u, rho, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
@@ -2854,9 +2833,6 @@ def s_rho_T(rho, T, mat_id):
             + "Use the woma.load_eos_tables function.\n"
         )
 
-    # Ignore the first elements of rho = 0, T = 0
-    A2_s = A2_s[1:, 1:]
-
     # Convert to log
     log_rho = np.log(rho)
     log_T = np.log(T)
@@ -2866,12 +2842,12 @@ def s_rho_T(rho, T, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho[1:])
+    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T[1:])
+    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
@@ -3040,11 +3016,6 @@ def rho_u_P(u, P, mat_id, rho_ref):
             "Please load the corresponding SESAME table.\n"
             + "Use the woma.load_eos_tables function.\n"
         )
-
-    # Ignore the first elements of rho = 0, T = 0
-    A2_P = A2_P[1:, 1:]
-    A1_log_rho = A1_log_rho[1:]
-    A2_log_u = A2_log_u[1:, 1:]
 
     # Convert inputs to log
     log_u = np.log(u)
