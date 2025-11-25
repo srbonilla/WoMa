@@ -87,7 +87,7 @@ def plot_table_HM80(mat, Z_choice, A1_fig_ax=None):
     cmap = plt.get_cmap("viridis")
     vmin = np.nanmin(A2_Z)
     vmax = np.nanmax(A2_Z)
-    norm = mpl.colors.LogNorm()
+    norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
 
     # Plot each row
     for i_u, u in enumerate(A1_u):
@@ -99,8 +99,6 @@ def plot_table_HM80(mat, Z_choice, A1_fig_ax=None):
             c=A2_Z[:, i_u],
             edgecolor="none",
             cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
             norm=norm,
         )
 
@@ -280,10 +278,10 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
     cmap = plt.get_cmap("viridis")
     vmin = np.nanmin(A2_Z[A2_Z > 0])
     vmax = np.nanmax(A2_Z[A2_Z < np.inf])
-    norm = mpl.colors.LogNorm()
     if "_H" in mat and Z_choice == "s":
         vmax = min(vmax, 1e7)
         vmin = max(vmin, 1e2)
+    norm = mpl.colors.LogNorm(vmin=vmin, vmax=vmax)
 
     # Figure
     if A1_fig_ax is None:
@@ -318,8 +316,6 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
             c=A2_Z[:, i_T],
             edgecolor="none",
             cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
             norm=norm,
         )
 
@@ -357,19 +353,19 @@ def plot_table_SESAME(mat, Z_choice, A1_fig_ax=None):
 
 def plot_all_SESAME_tables():
     for mat in [
-        # "SESAME_iron",
-        # "SESAME_basalt",
-        # "SESAME_water",
-        # "SS08_water",
-        # "AQUA",
+        "SESAME_iron",
+        "SESAME_basalt",
+        "SESAME_water",
+        "SS08_water",
+        "AQUA",
         "CMS19_H",
         "CMS19_He",
         "CD21_HHe",
-        # "ANEOS_forsterite",
-        # "ANEOS_iron",
-        # "ANEOS_Fe85Si15",
+        "ANEOS_forsterite",
+        "ANEOS_iron",
+        "ANEOS_Fe85Si15",
     ]:
-        for param in "P", "u", "s":
+        for param in ["P", "u", "s"]:
             fig, ax = plot_table_SESAME(mat, param)
 
             if fig is not None:
@@ -711,8 +707,6 @@ def plot_eos_Z_X_iso_Y(
             [],
             c=[],
             cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
             norm=norm,
             lw=lw,
             ls=ls,
@@ -980,8 +974,6 @@ def plot_mixed_eos_Z_X_iso_Y(
             [],
             c=[],
             cmap=cmap,
-            vmin=vmin,
-            vmax=vmax,
             norm=norm,
             lw=lw,
             ls=ls,
@@ -1093,16 +1085,4 @@ if __name__ == "__main__":
     # plot_all_HM80_tables()
     # plot_all_SESAME_tables()
     # plot_all_mixed_tables()
-    test_plot_mixed_eos_iso_lines()
-
-    # Test
-    # ut.load_eos_tables(["mixed_HHe_rock", "mixed_HHe_water"])
-    # A1_mix = [0.234, 0.0]
-    # rho = 4e3
-    # T = 2e4
-    # P = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="P")
-    # print("P(mix=[%g,%g], rho=%g, T=%g) = %g" % (A1_mix[0], A1_mix[1], rho, T, P))
-    # u = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="u")
-    # print("u(mix=[%g,%g], rho=%g, T=%g) = %g" % (A1_mix[0], A1_mix[1], rho, T, u))
-    # P = mixed.Z_rho_Y(rho, u, A1_mix, Z_choice="P", Y_choice="u")
-    # print("P(mix=[%g,%g], rho=%g, u=%g) = %g" % (A1_mix[0], A1_mix[1], rho, u, P))
+    # test_plot_mixed_eos_iso_lines()
