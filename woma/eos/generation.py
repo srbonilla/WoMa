@@ -1,7 +1,8 @@
 """
 WoMa equations of state table generation.
 """
-import sys
+
+import sys, os
 import numpy as np
 from scipy.optimize import minimize_scalar
 import h5py
@@ -730,7 +731,6 @@ class Material_Chabrier_HHe:
             raise ValueError('input_format must have value "Trho" or "TP"')
 
     def load_table_Trho(self, file):
-
         """Load and return the table file data from table in Trho format.
 
         Based on format of the downloadable tables from CMS19 and CD21
@@ -812,7 +812,6 @@ class Material_Chabrier_HHe:
         return A1_T, A1_rho, A2_P, A2_u, A2_s, A2_c
 
     def load_table_TP(self, file):
-
         """Load and return the table file data from table in TP format.
 
         Based on format of the downloadable tables from CMS19 and CD21
@@ -888,7 +887,6 @@ class Material_Chabrier_HHe:
         return A1_T, A1_P, A2_rho, A2_u, A2_s, A2_c
 
     def additive_volume_law(self):
-
         """Combine H and He tables at same T and P to make a H-He mix
 
         Returns
@@ -940,7 +938,6 @@ class Material_Chabrier_HHe:
         return A1_T, A1_P, A2_rho, A2_u, A2_s, A2_c
 
     def P_T_rho(self, T, rho, A1_P, A1_T, A2_rho):
-
         """Compute the pressure from the temperature and density.
         Similar to functions in e.g. sesame.py
 
@@ -998,7 +995,6 @@ class Material_Chabrier_HHe:
         return P
 
     def X_T_rho(self, T, rho, A2_X, A1_T, A2_rho):
-
         """Compute the internal energy/entropy/sound speed from the temperature and density.
         Similar to functions in e.g. sesame.py
 
@@ -1069,7 +1065,6 @@ class Material_Chabrier_HHe:
         return np.exp(X)
 
     def transform_TP_to_Trho(self, A1_rho, A1_T):
-
         """Convert tabes in TP forma to Trho format
 
         Parameters
@@ -1113,7 +1108,6 @@ class Material_Chabrier_HHe:
         return A2_P_Trho, A2_u_Trho, A2_s_Trho, A2_c_Trho
 
     def write_table(self, Fp_table, A1_rho=None):
-
         """Generates and writes tables to SESAME-style file
 
         Parameters
@@ -1273,7 +1267,7 @@ class Material_Mixed_HHe_Heavy:
     def filename(self):
         return "%s/%s.hdf5" % (self.dir, self.name)
 
-    def load_raw_table(self, mix):
+    def _load_raw_table(self, mix):
         """Load data from a raw table file, for a single mix value.
 
         File contents
@@ -1302,6 +1296,156 @@ class Material_Mixed_HHe_Heavy:
         Rows loop first over logrho with fixed logT, repeated for each logT.
         The array of logrho is (usually?) the same for each logT (and each Z?).
 
+        See load_raw_table().
+        """
+        # Alternate raw file format for some materials (same output)
+        if "iron" in self.name:
+            return self.load_raw_table_alt(mix)
+
+        # Load
+        filename = "%s/%s_Z%03d.txt" % (self.dir, self.name, np.round(mix * 100))
+        print("Loading %s..." % filename[-50:])
+        data = np.genfromtxt(
+            filename,
+            usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9, 12],
+            names=["X", "Y", "Z", "logT", "logrho", "P", "u", "s", "dPdrho", "gamma"],
+        )
+
+        # Extract and convert logs and cgs to SI
+        A1_X = data["X"]
+        A1_Y = data["Y"]
+        A1_mix = data["Z"]
+        A1_T_ = 10 ** data["logT"]
+        A1_rho_ = 10 ** data["logrho"] * ut.cgs_to_SI.rho
+        A1_P = data["P"] * ut.cgs_to_SI.P
+        A1_u = data["u"] * ut.cgs_to_SI.u
+        A1_s = data["s"] * ut.cgs_to_SI.s
+        A1_dPdrho = data["dPdrho"] * ut.cgs_to_SI.P / ut.cgs_to_SI.rho
+        A1_gamma = data["gamma"]
+
+        # Reshape
+        A1_T = np.unique(A1_T_)
+        A1_rho = np.unique(A1_rho_)
+        num_T = len(A1_T)
+        num_rho = len(A1_rho)
+        assert np.allclose(A1_T_, np.repeat(A1_T, num_rho))
+        assert np.allclose(A1_rho_, np.tile(A1_rho, num_T))
+        A2_P = A1_P.reshape(num_T, num_rho).T
+        A2_u = A1_u.reshape(num_T, num_rho).T
+        A2_s = A1_s.reshape(num_T, num_rho).T
+        A2_dPdrho = A1_dPdrho.reshape(num_T, num_rho).T
+        A2_gamma = A1_gamma.reshape(num_T, num_rho).T
+
+        # Mass ratios
+        assert np.allclose(A1_mix, mix)
+        if mix in [0, 1]:
+            Y_X = 0
+            Y_X = np.nan
+        else:
+            Y_X = A1_Y[0] / A1_X[0]
+            assert np.allclose(A1_Y / A1_X, Y_X)
+
+        return num_T, num_rho, Y_X, A1_T, A1_rho, A2_P, A2_u, A2_dPdrho, A2_gamma, A2_s
+
+    def _load_raw_table_alt(self, mix):
+        """Load data from a raw table file (alternate format), for a single mix value.
+
+        Pre-processing
+        --------------
+        Some columns are not separated from each other. First find-replace "-" --> " -"
+        in original file to separate them, and then revert "E -" --> "E-" to not break
+        standard-form numbers:
+        `find ./ -name "*.txt" -exec sed -i "s/-/ -/g" {} \; -exec sed -i "s/E -/E-/g" {} \;`
+
+        File contents
+        -------------
+        Header, 2 lines (line 1: names, line 2: values):
+            version, X, Z, num logTs, logT min, logT max, del logT, num logRhos,
+            logRho min, logRho max, del logRho
+
+        Sub-headers, 2 lines, between each block of constant logT.
+
+        Each data row contains:
+            0   logT        Temperature (log10(K))
+            1   logRho      Density (log10(g/cc))
+            2   logPgas     Pressure (log10(erg/cc))
+            3   logU        Specific internal energy (log10(erg/g))
+            4   logS        Specific entropy (log10(erg/g*K))
+            5   dP_dRho     Change of pressure with density
+            6   dP_dT       Change of pressure with temperature
+            7   Cp          Specific heat capacity at const pressure
+            8   Cv          Specific heat capacity at const volume
+            9   dE_dRho     Change of internal energy with density
+            10  dS_dT       Change of sp. entropy with temperature
+            11  dS_dRho     Change of sp. entropy with density
+            12  mu          ?
+            13  log_free_e  ?
+            14  gamma1      d ln P/d ln rho at constant entropy
+            15  gamma3      d ln T/d ln rho at constant entropy
+            16  grad_ad     Adiabatic gradient
+            17  eta         Electron degeneracy parameter (probably?)
+
+        X, Z=`mix` are constant per file.
+        Rows loop first over logrho with fixed logT, repeated for each logT.
+        The array of logrho is (usually?) the same for each logT (and each Z?).
+
+        See load_raw_table().
+        """
+        # Load
+        filename = "%s/%s_Z%03d.txt" % (self.dir, self.name, np.round(mix * 100))
+        print("Loading %s..." % filename[-50:])
+        # Slightly different format (no headers nor subheaders) for mix=0
+        if mix in [0, 1]:
+            X = 0
+            Y_X = np.nan
+        else:
+            header_data = np.genfromtxt(
+                filename,
+                skip_header=1,
+                max_rows=1,
+                usecols=[1, 2],
+                names=["X", "Z"],
+                comments="l",  # sub-headers begin with "logT"
+            )
+            X = header_data["X"]
+            assert np.isclose(mix, header_data["Z"])
+            Y = 1 - mix - X
+            Y_X = Y / X
+        data = np.genfromtxt(
+            filename,
+            skip_header=0 if mix == 0 else 2,
+            usecols=[0, 1, 2, 3, 4, 5, 14],
+            names=["logT", "logrho", "logP", "logu", "logs", "dPdrho", "gamma"],
+            comments="l",  # sub-headers begin with "logT"
+        )
+
+        # Extract and convert logs and cgs to SI
+        A1_T_ = 10 ** data["logT"]
+        A1_rho_ = 10 ** data["logrho"] * ut.cgs_to_SI.rho
+        A1_P = 10 ** data["logP"] * ut.cgs_to_SI.P
+        A1_u = 10 ** data["logu"] * ut.cgs_to_SI.u
+        A1_s = 10 ** data["logs"] * ut.cgs_to_SI.s
+        A1_dPdrho = data["dPdrho"] * ut.cgs_to_SI.P / ut.cgs_to_SI.rho
+        A1_gamma = data["gamma"]
+
+        # Reshape
+        A1_T = np.unique(A1_T_)
+        A1_rho = np.unique(A1_rho_)
+        num_T = len(A1_T)
+        num_rho = len(A1_rho)
+        assert np.allclose(A1_T_, np.repeat(A1_T, num_rho))
+        assert np.allclose(A1_rho_, np.tile(A1_rho, num_T))
+        A2_P = A1_P.reshape(num_T, num_rho).T
+        A2_u = A1_u.reshape(num_T, num_rho).T
+        A2_s = A1_s.reshape(num_T, num_rho).T
+        A2_dPdrho = A1_dPdrho.reshape(num_T, num_rho).T
+        A2_gamma = A1_gamma.reshape(num_T, num_rho).T
+
+        return num_T, num_rho, Y_X, A1_T, A1_rho, A2_P, A2_u, A2_dPdrho, A2_gamma, A2_s
+
+    def load_raw_table(self, mix):
+        """Load and check data from a raw table file, for a single mix value.
+
         Parameters
         ----------
         mix : float
@@ -1321,59 +1465,51 @@ class Material_Mixed_HHe_Heavy:
             of rho, T.
         """
         # Load
-        filename = "%s/%s_Z%03d.txt" % (self.dir, self.name, np.round(mix * 100))
-        print("Loading %s..." % filename[-50:])
-        data = np.genfromtxt(
-            filename,
-            usecols=[1, 2, 3, 4, 5, 6, 7, 8, 9, 12],
-            names=["X", "Y", "Z", "logT", "logrho", "P", "u", "s", "dpdrho", "gamma"],
-        )
-
-        # Extract and convert logs and cgs to SI
-        A1_X = data["X"]
-        A1_Y = data["Y"]
-        A1_mix = data["Z"]
-        A1_T_ = 10 ** data["logT"]
-        A1_rho_ = 10 ** data["logrho"] * ut.cgs_to_SI.rho
-        A1_P = data["P"] * ut.cgs_to_SI.P
-        A1_u = data["u"] * ut.cgs_to_SI.u
-        A1_s = data["s"] * ut.cgs_to_SI.s
-        A1_dpdrho = data["dpdrho"] * ut.cgs_to_SI.P / ut.cgs_to_SI.rho
-        A1_gamma = data["gamma"]
-
-        # Reshape
-        A1_T = np.unique(A1_T_)
-        A1_rho = np.unique(A1_rho_)
-        num_T = len(A1_T)
-        num_rho = len(A1_rho)
-        assert np.allclose(A1_T_, np.repeat(A1_T, num_rho))
-        assert np.allclose(A1_rho_, np.tile(A1_rho, num_T))
-        A2_P = A1_P.reshape(num_T, num_rho).T
-        A2_u = A1_u.reshape(num_T, num_rho).T
-        A2_s = A1_s.reshape(num_T, num_rho).T
-        A2_dpdrho = A1_dpdrho.reshape(num_T, num_rho).T
-        A2_gamma = A1_gamma.reshape(num_T, num_rho).T
+        if "iron" in self.name:
+            (
+                num_T,
+                num_rho,
+                Y_X,
+                A1_T,
+                A1_rho,
+                A2_P,
+                A2_u,
+                A2_dPdrho,
+                A2_gamma,
+                A2_s,
+            ) = self._load_raw_table_alt(mix)
+        else:
+            (
+                num_T,
+                num_rho,
+                Y_X,
+                A1_T,
+                A1_rho,
+                A2_P,
+                A2_u,
+                A2_dPdrho,
+                A2_gamma,
+                A2_s,
+            ) = self._load_raw_table(mix)
 
         # Estimate sound speed
-        A2_c = np.sqrt(A2_gamma * A2_dpdrho)
+        A2_c = np.sqrt(A2_gamma * A2_dPdrho)
 
-        # Enforce dP/drho (at fixed T) and du/dT (at fixed rho) >= 0
+        # Enforce dP/drho (at fixed T)
         for i_T in range(num_T):
             for i_rho in range(num_rho - 1):
                 if A2_P[i_rho + 1, i_T] < A2_P[i_rho, i_T]:
                     A2_P[i_rho + 1, i_T] = A2_P[i_rho, i_T]
+        # and du/dT (at fixed rho) >= 0
         for i_rho in range(num_rho):
             for i_T in range(num_T - 1, 0, -1):
                 if A2_u[i_rho, i_T - 1] > A2_u[i_rho, i_T]:
                     A2_u[i_rho, i_T - 1] = A2_u[i_rho, i_T]
-
-        # Mass ratios
-        assert np.allclose(A1_mix, mix)
-        if np.all(A1_X == 0):
-            Y_X = 0
-        else:
-            Y_X = A1_Y[0] / A1_X[0]
-            assert np.allclose(A1_Y / A1_X, Y_X)
+        # and c > 0
+        for i_T in range(num_T):
+            for i_rho in range(num_rho):
+                if A2_c[i_rho, i_T] <= 0:
+                    A2_c[i_rho, i_T] = A2_c[i_rho - 1, i_T]
 
         print("Done")
 
@@ -1409,17 +1545,19 @@ class Material_Mixed_HHe_Heavy:
                 A3_P = np.append(A3_P, [A2_P], axis=0)
                 A3_c = np.append(A3_c, [A2_c], axis=0)
                 A3_s = np.append(A3_s, [A2_s], axis=0)
-                if mix < 1:
-                    assert Y_X == Y_X_
-                assert A1_T.shape, A1_T_.shape
-                assert A1_T.shape, A1_T_.shape
+                if np.isnan(Y_X):
+                    Y_X = Y_X_
+                if not np.isnan(Y_X_):
+                    assert Y_X_ == Y_X
+                assert A1_T.shape == A1_T_.shape
+                assert A1_rho.shape == A1_rho_.shape
                 assert np.allclose(A1_rho, A1_rho_)
-                assert np.allclose(A1_rho, A1_rho_)
+                assert np.allclose(A1_T, A1_T_)
 
-        assert A3_u.shape == (len(A1_mix), len(A1_T), len(A1_rho))
-        assert A3_P.shape == (len(A1_mix), len(A1_T), len(A1_rho))
-        assert A3_c.shape == (len(A1_mix), len(A1_T), len(A1_rho))
-        assert A3_s.shape == (len(A1_mix), len(A1_T), len(A1_rho))
+        assert A3_u.shape == (len(A1_mix), len(A1_rho), len(A1_T))
+        assert A3_P.shape == A3_u.shape
+        assert A3_c.shape == A3_u.shape
+        assert A3_s.shape == A3_u.shape
 
         return Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s
 
@@ -1510,6 +1648,12 @@ mat_mixed_HHe_water = Material_Mixed_HHe_Heavy(
     dir=gv.dir_data + "mixed_HHe_water/",
     A1_mix_raw=np.append(np.arange(0, 1.01, 0.1), [0.02]),
 )
+mat_mixed_HHe_iron = Material_Mixed_HHe_Heavy(
+    "mixed_HHe_iron",
+    version_date="20260203",
+    dir=gv.dir_data + "mixed_HHe_iron/",
+    A1_mix_raw=np.append(np.arange(0, 1.01, 0.1), [0.02]),
+)
 
 
 if __name__ == "__main__":
@@ -1518,3 +1662,4 @@ if __name__ == "__main__":
     # Generate tables
     mat_mixed_HHe_rock.gen_write_table(gv.Fp_mixed_HHe_rock)
     mat_mixed_HHe_water.gen_write_table(gv.Fp_mixed_HHe_water)
+    mat_mixed_HHe_iron.gen_write_table(gv.Fp_mixed_HHe_iron)

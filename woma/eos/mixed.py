@@ -1,6 +1,7 @@
 """
 WoMa mixed HHe with heavy elements equations of state
 """
+
 import numpy as np
 from numba import njit
 import h5py
@@ -38,13 +39,16 @@ def load_table_mixed(filename):
     assert A3_P.shape == (num_mix, num_rho, num_T)
     assert A3_c.shape == (num_mix, num_rho, num_T)
     assert A3_s.shape == (num_mix, num_rho, num_T)
-    
+
     return A1_mix, np.log(A1_rho), np.log(A1_T), A3_u, A3_P, A3_c, A3_s
 
 
 # ========
 # Awkwardly initialise tables as global variables needed for numba
 # ========
+A1_mixed_mat_id = np.array(
+    [gv.id_mixed_HHe_rock, gv.id_mixed_HHe_water, gv.id_mixed_HHe_iron]
+)
 (
     A1_mix_mixed_HHe_rock,
     A1_log_rho_mixed_HHe_rock,
@@ -79,13 +83,30 @@ def load_table_mixed(filename):
     np.zeros((2, 2, 2)),
     np.zeros((2, 2, 2)),
 )
+(
+    A1_mix_mixed_HHe_iron,
+    A1_log_rho_mixed_HHe_iron,
+    A1_log_T_mixed_HHe_iron,
+    A3_u_mixed_HHe_iron,
+    A3_P_mixed_HHe_iron,
+    A3_c_mixed_HHe_iron,
+    A3_s_mixed_HHe_iron,
+) = (
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2, 2)),
+    np.zeros((2, 2, 2)),
+    np.zeros((2, 2, 2)),
+    np.zeros((2, 2, 2)),
+)
 
 
 # ========
 # Generic
 # ========
 @njit
-def _Z_rho_T(rho, T, mat_id, mix, Z_choice):
+def _Z_rho_T_single(rho, T, mat_id, mix, Z_choice):
     """Compute an equation of state parameter from the density and temperature.
 
     For a single heavy mixed component.
@@ -146,6 +167,20 @@ def _Z_rho_T(rho, T, mat_id, mix, Z_choice):
             A3_Z = A3_c_mixed_HHe_water
         elif Z_choice == "s":
             A3_Z = A3_s_mixed_HHe_water
+    elif mat_id == gv.id_mixed_HHe_iron:
+        A1_mix, A1_log_rho, A1_log_T = (
+            A1_mix_mixed_HHe_iron,
+            A1_log_rho_mixed_HHe_iron,
+            A1_log_T_mixed_HHe_iron,
+        )
+        if Z_choice == "P":
+            A3_Z = A3_P_mixed_HHe_iron
+        elif Z_choice == "u":
+            A3_Z = A3_u_mixed_HHe_iron
+        elif Z_choice == "c":
+            A3_Z = A3_c_mixed_HHe_iron
+        elif Z_choice == "s":
+            A3_Z = A3_s_mixed_HHe_iron
     else:
         raise ValueError("Invalid material ID")
 
@@ -234,30 +269,29 @@ def Z_rho_T(rho, T, A1_mix, Z_choice):
             s       Specific entropy (J K^-1 kg^-1).
 
     A1_mix : [float]
-        Mixing mass fraction of each heavy component, currently [rock, water].
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Returns
     -------
     Z : float
         The chosen parameter (SI).
     """
-    # Component parameters
-    mix_rock, mix_water = A1_mix
-    if mix_rock == 0 and mix_water == 0:
-        return _Z_rho_T(rho, T, gv.id_mixed_HHe_rock, 0, Z_choice)
-    if mix_rock > 0:
-        Z_rock = _Z_rho_T(rho, T, gv.id_mixed_HHe_rock, mix_rock, Z_choice)
-    if mix_water > 0:
-        Z_water = _Z_rho_T(rho, T, gv.id_mixed_HHe_water, mix_water, Z_choice)
 
-    # Combine and/or return
-    if mix_rock > 0 and mix_water > 0:
-        f_rock = mix_rock / (mix_rock + mix_water)
-        return f_rock * Z_rock + (1 - f_rock) * Z_water
-    elif mix_rock > 0:
-        return Z_rock
-    else:
-        return Z_water
+    # No heavy-element fraction
+    mix_tot = sum(A1_mix)
+    if mix_tot == 0:
+        return _Z_rho_T_single(rho, T, A1_mixed_mat_id[0], 0, Z_choice)
+
+    # Accumulate contribution from each non-zero mix
+    Z = 0
+    for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
+        if mix > 0:
+            # Evaluate for this single heavy mix
+            Z_mat = _Z_rho_T_single(rho, T, mat_id, mix, Z_choice)
+
+            Z += Z_mat * mix / mix_tot
+
+    return Z
 
 
 @njit
@@ -274,7 +308,7 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mix, Z_choice):
         Temperatures (K).
 
     A1_mix : [float]
-        Constant mixing mass fraction of each heavy component: [rock, water].
+        Constant mixing mass fraction of each heavy component: [rock, water, iron].
 
     Z_choice : str
         The parameter to calculate, choose from:
@@ -291,9 +325,9 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mix, Z_choice):
 
     assert A1_rho.ndim == 1
     assert A1_T.ndim == 1
-    assert A1_mat_id.ndim == 1
+    assert A1_mix.ndim == 1
     assert A1_rho.shape[0] == A1_T.shape[0]
-    assert A1_rho.shape[0] == A1_mat_id.shape[0]
+    assert A1_mix.shape[0] == A1_mixed_mat_id.shape[0]
 
     A1_Z = np.zeros_like(A1_rho)
 
@@ -304,11 +338,9 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mix, Z_choice):
 
 
 @njit
-def _Z_rho_Y(rho, Y, mat_id, mix, Z_choice, Y_choice):
+def _Z_rho_Y_single(rho, Y, mat_id, mix, Z_choice, Y_choice):
     """Compute an equation of state parameter from the density and another
-    parameter, for mixed EoS with (one or) multiple heavy mixed components.
-
-    For a single heavy mixed component.
+    parameter, for mixed EoS with a single mixed component.
 
     Parameters
     ----------
@@ -337,7 +369,7 @@ def _Z_rho_Y(rho, Y, mat_id, mix, Z_choice, Y_choice):
         The chosen parameter (SI).
     """
     if Y_choice == "T":
-        return _Z_rho_T(rho, Y, mat_id, mix, Z_choice)
+        return _Z_rho_T_single(rho, Y, mat_id, mix, Z_choice)
 
     # Unpack the arrays of Z, mix, log(rho), and log(T)
     A3_Z = np.zeros((2, 2, 2), dtype=np.float32)
@@ -385,6 +417,28 @@ def _Z_rho_Y(rho, Y, mat_id, mix, Z_choice, Y_choice):
             A3_Y = A3_c_mixed_HHe_water
         elif Y_choice == "s":
             A3_Y = A3_s_mixed_HHe_water
+    elif mat_id == gv.id_mixed_HHe_iron:
+        A1_mix, A1_log_rho, A1_log_T = (
+            A1_mix_mixed_HHe_iron,
+            A1_log_rho_mixed_HHe_iron,
+            A1_log_T_mixed_HHe_iron,
+        )
+        if Z_choice == "P":
+            A3_Z = A3_P_mixed_HHe_iron
+        elif Z_choice == "u":
+            A3_Z = A3_u_mixed_HHe_iron
+        elif Z_choice == "c":
+            A3_Z = A3_c_mixed_HHe_iron
+        elif Z_choice == "s":
+            A3_Z = A3_s_mixed_HHe_iron
+        if Y_choice == "P":
+            A3_Y = A3_P_mixed_HHe_iron
+        elif Y_choice == "u":
+            A3_Y = A3_u_mixed_HHe_iron
+        elif Y_choice == "c":
+            A3_Y = A3_c_mixed_HHe_iron
+        elif Y_choice == "s":
+            A3_Y = A3_s_mixed_HHe_iron
     else:
         raise ValueError("Invalid material ID")
 
@@ -486,7 +540,7 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
         The chosen input parameter (SI).
 
     A1_mix : [float]
-        Mixing mass fraction of each heavy component, currently [rock, water].
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Z_choice, Y_choice : str
         The parameter to calculate, and the other input parameter, choose from:
@@ -500,22 +554,21 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
     Z : float
         The chosen parameter (SI).
     """
-    # Component parameters
-    mix_rock, mix_water = A1_mix
-    if mix_rock > 0 or mix_water == 0:
-        # Either mix_rock > 0 or mix_rock = mix_water = 0
-        Z_rock = _Z_rho_Y(rho, Y, gv.id_mixed_HHe_rock, mix_rock, Z_choice, Y_choice)
-    if mix_water > 0:
-        Z_water = _Z_rho_Y(rho, Y, gv.id_mixed_HHe_water, mix_water, Z_choice, Y_choice)
+    # No heavy-element fraction
+    mix_tot = sum(A1_mix)
+    if mix_tot == 0:
+        return _Z_rho_Y_single(rho, Y, A1_mixed_mat_id[0], 0, Z_choice, Y_choice)
 
-    # Combine and/or return
-    if mix_water == 0:
-        return Z_rock
-    elif mix_rock == 0:
-        return Z_water
-    else:
-        f_rock = mix_rock / (mix_rock + mix_water)
-        return f_rock * Z_rock + (1 - f_rock) * Z_water
+    # Accumulate contribution from each non-zero mix
+    Z = 0
+    for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
+        if mix > 0:
+            # Evaluate for this single heavy mix
+            Z_mat = _Z_rho_Y_single(rho, Y, mat_id, mix, Z_choice, Y_choice)
+
+            Z += Z_mat * mix / mix_tot
+
+    return Z
 
 
 @njit
@@ -532,7 +585,7 @@ def A1_Z_rho_Y_mix(A1_rho, A1_Y, A1_A1_mix, Z_choice, Y_choice):
         The chosen input parameter (SI).
 
     A1_A1_mix : [[float]]
-        Mixing mass fractions of each heavy component, currently [rock, water].
+        Mixing mass fractions of each heavy component, currently [rock, water, iron].
 
     Z_choice, Y_choice : str
         The parameter to calculate, and the other input parameter, choose from:
@@ -562,11 +615,9 @@ def A1_Z_rho_Y_mix(A1_rho, A1_Y, A1_A1_mix, Z_choice, Y_choice):
 
 
 @njit
-def _Z_T_Y(T, Y, mat_id, mix, Z_choice, Y_choice):
+def _Z_T_Y_single(T, Y, mat_id, mix, Z_choice, Y_choice):
     """Compute an equation of state parameter from the temperature and another
-   parameter, for mixed EoS with (one or) multiple heavy mixed components.
-
-    For a single heavy mixed component.
+    parameter, for mixed EoS with a single mixed component.
 
     Parameters
     ----------
@@ -595,7 +646,7 @@ def _Z_T_Y(T, Y, mat_id, mix, Z_choice, Y_choice):
         The chosen parameter (SI).
     """
     if Y_choice == "rho":
-        return _Z_rho_T(Y, T, mat_id, mix, Z_choice)
+        return _Z_rho_T_single(Y, T, mat_id, mix, Z_choice)
 
     # Unpack the arrays of Z, mix, log(rho), and log(T)
     A3_Z = np.zeros((2, 2, 2), dtype=np.float32)
@@ -643,6 +694,28 @@ def _Z_T_Y(T, Y, mat_id, mix, Z_choice, Y_choice):
             A3_Y = A3_c_mixed_HHe_water
         elif Y_choice == "s":
             A3_Y = A3_s_mixed_HHe_water
+    elif mat_id == gv.id_mixed_HHe_iron:
+        A1_mix, A1_log_rho, A1_log_T = (
+            A1_mix_mixed_HHe_iron,
+            A1_log_rho_mixed_HHe_iron,
+            A1_log_T_mixed_HHe_iron,
+        )
+        if Z_choice == "P":
+            A3_Z = A3_P_mixed_HHe_iron
+        elif Z_choice == "u":
+            A3_Z = A3_u_mixed_HHe_iron
+        elif Z_choice == "c":
+            A3_Z = A3_c_mixed_HHe_iron
+        elif Z_choice == "s":
+            A3_Z = A3_s_mixed_HHe_iron
+        if Y_choice == "P":
+            A3_Y = A3_P_mixed_HHe_iron
+        elif Y_choice == "u":
+            A3_Y = A3_u_mixed_HHe_iron
+        elif Y_choice == "c":
+            A3_Y = A3_c_mixed_HHe_iron
+        elif Y_choice == "s":
+            A3_Y = A3_s_mixed_HHe_iron
     else:
         raise ValueError("Invalid material ID")
 
@@ -744,7 +817,7 @@ def Z_T_Y(T, Y, A1_mix, Z_choice, Y_choice):
         The chosen input parameter (SI).
 
     A1_mix : [float]
-        Mixing mass fraction of each heavy component, currently [rock, water].
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Z_choice, Y_choice : str
         The parameter to calculate, and the other input parameter, choose from:
@@ -758,22 +831,21 @@ def Z_T_Y(T, Y, A1_mix, Z_choice, Y_choice):
     Z : float
         The chosen parameter (SI).
     """
-    # Component parameters
-    mix_rock, mix_water = A1_mix
-    if mix_rock > 0 or mix_water == 0:
-        # Either mix_rock > 0 or mix_rock = mix_water = 0
-        Z_rock = _Z_T_Y(T, Y, gv.id_mixed_HHe_rock, mix_rock, Z_choice, Y_choice)
-    if mix_water > 0:
-        Z_water = _Z_T_Y(T, Y, gv.id_mixed_HHe_water, mix_water, Z_choice, Y_choice)
+    # No heavy-element fraction
+    mix_tot = sum(A1_mix)
+    if mix_tot == 0:
+        return _Z_T_Y_single(T, Y, A1_mixed_mat_id[0], 0, Z_choice, Y_choice)
 
-    # Combine and/or return
-    if mix_water == 0:
-        return Z_rock
-    elif mix_rock == 0:
-        return Z_water
-    else:
-        f_rock = mix_rock / (mix_rock + mix_water)
-        return f_rock * Z_rock + (1 - f_rock) * Z_water
+    # Accumulate contribution from each non-zero mix
+    Z = 0
+    for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
+        if mix > 0:
+            # Evaluate for this single heavy mix
+            Z_mat = _Z_T_Y_single(T, Y, mat_id, mix, Z_choice, Y_choice)
+
+            Z += Z_mat * mix / mix_tot
+
+    return Z
 
 
 @njit
@@ -790,7 +862,7 @@ def A1_Z_T_Y_mix(A1_T, A1_Y, A1_A1_mix, Z_choice, Y_choice):
         The chosen input parameter (SI).
 
     A1_A1_mix : [[float]]
-        Mixing mass fractions of each heavy component, currently [rock, water].
+        Mixing mass fractions of each heavy component, currently [rock, water, iron].
 
     Z_choice, Y_choice : str
         The parameter to calculate, and the other input parameter, choose from:

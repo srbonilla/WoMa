@@ -439,6 +439,20 @@ def plot_table_mixed(mat, Z_choice, mix, A1_fig_ax=None):
             A3_Z = mixed.A3_c_mixed_HHe_water
         elif Z_choice == "s":
             A3_Z = mixed.A3_s_mixed_HHe_water
+    elif mat_id == gv.id_mixed_HHe_iron:
+        A1_mix, A1_log_rho, A1_log_T = (
+            mixed.A1_mix_mixed_HHe_iron,
+            mixed.A1_log_rho_mixed_HHe_iron,
+            mixed.A1_log_T_mixed_HHe_iron,
+        )
+        if Z_choice == "P":
+            A3_Z = mixed.A3_P_mixed_HHe_iron
+        elif Z_choice == "u":
+            A3_Z = mixed.A3_u_mixed_HHe_iron
+        elif Z_choice == "c":
+            A3_Z = mixed.A3_c_mixed_HHe_iron
+        elif Z_choice == "s":
+            A3_Z = mixed.A3_s_mixed_HHe_iron
     else:
         raise ValueError("Invalid material ID")
     A1_T = np.exp(A1_log_T)
@@ -468,7 +482,7 @@ def plot_table_mixed(mat, Z_choice, mix, A1_fig_ax=None):
             A1_rho,
             np.full(num_rho, T),
             marker="s",
-            s=4.25**2,
+            s=3.5 * 2 if "iron" in mat else 4.25**2,
             c=A2_Z[:, i_T],
             edgecolor="none",
             cmap=cmap,
@@ -481,7 +495,7 @@ def plot_table_mixed(mat, Z_choice, mix, A1_fig_ax=None):
             A1_rho[A1_sel_zero],
             np.full(num_rho, T)[A1_sel_zero],
             marker="s",
-            s=4.25**2,
+            s=3.5 * 2 if "iron" in mat else 4.25**2,
             c="0.4",
             edgecolor="none",
         )
@@ -500,7 +514,7 @@ def plot_table_mixed(mat, Z_choice, mix, A1_fig_ax=None):
     # Axes etc
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_xlabel(r"Density ($\rm{kg m}^{-3}$)")
+    ax.set_xlabel(r"Density ($\rm{kg\;m}^{-3}$)")
     ax.set_ylabel(r"Temperature (K)")
     ax.set_title(r"%s, mix=%g, $%s(\rho, T)$" % (mat, mix, Z_choice))
 
@@ -513,15 +527,21 @@ def plot_all_mixed_tables():
     for mat in [
         generation.mat_mixed_HHe_rock,
         generation.mat_mixed_HHe_water,
+        generation.mat_mixed_HHe_iron,
     ]:
-        for mix in mat.A1_mix_raw:
+        for mix in np.append(mat.A1_mix_raw, [0.4567]):
             for param in ["P", "u", "s", "c"]:
                 fig, ax = plot_table_mixed(mat.name, param, mix)
 
                 if fig is not None:
                     dir = "plots/mixed_HHe_%s" % param
                     os.makedirs(dir, exist_ok=True)
-                    Fp_save = "%s/%s_%.2f_table_%s_rho_T.png" % (dir, mat.name, mix, param)
+                    Fp_save = "%s/%s_%.2f_table_%s_rho_T.png" % (
+                        dir,
+                        mat.name,
+                        mix,
+                        param,
+                    )
                     plt.savefig(Fp_save, dpi=600)
                     plt.close()
                     print('Saved "%s"' % Fp_save)
@@ -812,7 +832,7 @@ def plot_mixed_eos_Z_X_iso_Y(
         The figure and axes.
     """
     # Load tables, if necessary
-    ut.load_eos_tables(["mixed_HHe_rock", "mixed_HHe_water"])
+    ut.load_eos_tables(["mixed_HHe_rock", "mixed_HHe_water", "mixed_HHe_iron"])
 
     # Figure
     if A1_fig_ax is None:
@@ -844,6 +864,7 @@ def plot_mixed_eos_Z_X_iso_Y(
         "T": [r"Temperature (K)", 1e2, 1e5],
         "mix_rock": [r"Mixed mass fraction of rock", 0, 1],
         "mix_water": [r"Mixed mass fraction of water", 0, 1],
+        "mix_iron": [r"Mixed mass fraction of iron", 0, 1],
     }
     X_label, X_min_def, X_max_def = Di_choice_label_min_max[X_choice]
     Y_label, Y_min_def, Y_max_def = Di_choice_label_min_max[Y_choice]
@@ -875,11 +896,13 @@ def plot_mixed_eos_Z_X_iso_Y(
     # Calculate Z(X, Y)
     A2_Z = np.empty((num_Y, num_X))
     if "mix_" in X_choice:
-        A1_A1_mix = np.zeros((num_X, 2))
+        A1_A1_mix = np.zeros((num_X, 3))
         if X_choice == "mix_rock":
             A1_A1_mix[:, 0] = A1_X
-        else:
+        elif X_choice == "mix_water":
             A1_A1_mix[:, 1] = A1_X
+        elif X_choice == "mix_iron":
+            A1_A1_mix[:, 2] = A1_X
 
         for i_Y, Y in enumerate(A1_Y):
             A2_Z[i_Y] = mixed.A1_Z_rho_Y_mix(
@@ -888,15 +911,6 @@ def plot_mixed_eos_Z_X_iso_Y(
                 A1_A1_mix=A1_A1_mix,
                 Z_choice=Z_choice,
                 Y_choice=Y_choice,
-            )
-    elif "mix_" in Y_choice:
-        for i_Y, Y in enumerate(A1_Y):
-            A2_Z[i_Y] = mixed.A1_Z_rho_Y_mix(
-                A1_rho=A1_X,
-                A1_Y=np.full(num_X, W),
-                A1_A1_mix=np.full((num_X, len(A1_mix)), A1_mix),
-                Z_choice=Z_choice,
-                Y_choice=W_choice,
             )
     elif X_choice == "rho":
         for i_Y, Y in enumerate(A1_Y):
@@ -962,7 +976,7 @@ def plot_mixed_eos_Z_X_iso_Y(
 
     # Print constant input W
     if W_choice == "A1_mix":
-        const_label = "r, w = %.3g, %.3g" % (W[0], W[1])
+        const_label = "r, w = %.3g, %.3g, %.3g" % (W[0], W[1], W[2])
     else:
         const_label = "%s = %.3g" % (W_choice, W)
     handles.append(ax.plot([], [], c="w", alpha=0, label=const_label)[0])
@@ -1002,22 +1016,25 @@ def plot_mixed_eos_Z_X_iso_Y(
 
 def test_plot_mixed_eos_iso_lines():
     """Test plots for mixed materials."""
-    # Fixed mix_rock,water combinations
+    # Fixed mix_rock,water,iron combinations
     for Z_choice, X_choice, Y_choice in [
         ["P", "rho", "T"],
         ["P", "T", "rho"],
         ["u", "rho", "T"],
         ["u", "T", "rho"],
         ["P", "rho", "u"],
+        ["c", "rho", "u"],
     ]:
         for A1_mix in [
-            [0.0, 0.0],
-            [0.234, 0.0],
-            [1.0, 0.0],
-            [0.0, 0.234],
-            [0.0, 1.0],
-            [0.234, 0.234],
-            [1.0, 1.0],
+            [0.0, 0.0, 0.0],
+            [0.234, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [0.0, 0.234, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.234],
+            [0.0, 0.0, 1.0],
+            [0.234, 0.234, 0.234],
+            [1.0, 1.0, 1.0],
         ]:
             # Figure
             fig = plt.figure(figsize=(8, 8))
@@ -1034,9 +1051,13 @@ def test_plot_mixed_eos_iso_lines():
             )
 
             # Save the figure
-            Fp_save = "mixed_eos_r%.3f_w%.3f_%s_%s_%s.png" % (
+            dir = "plots/mixed_HHe_%s_%s_iso_%s" % (Z_choice, X_choice, Y_choice)
+            os.makedirs(dir, exist_ok=True)
+            Fp_save = "%s/mixed_eos_r%.3f_w%.3f_i%.3f_%s_%s_%s.png" % (
+                dir,
                 A1_mix[0],
                 A1_mix[1],
+                A1_mix[2],
                 Z_choice,
                 X_choice,
                 Y_choice,
@@ -1049,14 +1070,16 @@ def test_plot_mixed_eos_iso_lines():
     for Z_choice, X_choice, Y_choice in [
         ["P", "mix_rock", "T"],
         ["P", "mix_water", "T"],
+        ["P", "mix_iron", "T"],
         ["P", "mix_rock", "u"],
         ["P", "mix_water", "u"],
+        ["P", "mix_iron", "u"],
     ]:
         for rho in [2e3, 4e3, 6e3]:
             # Figure
             fig = plt.figure(figsize=(8, 8))
             ax = fig.gca()
-    
+
             # Plot
             plot_mixed_eos_Z_X_iso_Y(
                 Z_choice=Z_choice,
@@ -1066,9 +1089,11 @@ def test_plot_mixed_eos_iso_lines():
                 W=rho,
                 A1_fig_ax=[fig, ax],
             )
-    
+
             # Save the figure
-            Fp_save = "mixed_eos_%s_%s_%s_rho%g.png" % (
+            dir = "plots/mixed_HHe_%s_mix_iso_%s" % (Z_choice, Y_choice)
+            Fp_save = "%s/mixed_eos_%s_%s_%s_rho%g.png" % (
+                dir,
                 Z_choice,
                 X_choice,
                 Y_choice,
@@ -1085,4 +1110,4 @@ if __name__ == "__main__":
     # plot_all_HM80_tables()
     # plot_all_SESAME_tables()
     # plot_all_mixed_tables()
-    # test_plot_mixed_eos_iso_lines()
+    test_plot_mixed_eos_iso_lines()

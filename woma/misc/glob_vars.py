@@ -52,8 +52,10 @@ Di_mat_id = {
     "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
     "ANEOS_Fe85Si15": Di_mat_type["ANEOS"] * type_factor + 2,  # Stewart (2020)
     # Mixed
-    "mixed_HHe_rock": Di_mat_type["mixed"] * type_factor,  # Vazan et al. (2013)
-    "mixed_HHe_water": Di_mat_type["mixed"] * type_factor + 1,
+    "mixed_HHe_heavy": Di_mat_type["mixed"] * type_factor,  # Vazan et al. (2013)
+    "mixed_HHe_rock": Di_mat_type["mixed"] * type_factor + 1,
+    "mixed_HHe_water": Di_mat_type["mixed"] * type_factor + 2,
+    "mixed_HHe_iron": Di_mat_type["mixed"] * type_factor + 3,
     # Generic user-provided custom tables
     "custom_0": Di_mat_type["custom"] * type_factor,
     "custom_1": Di_mat_type["custom"] * type_factor + 1,
@@ -97,6 +99,7 @@ id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
 id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
 id_mixed_HHe_rock = Di_mat_id["mixed_HHe_rock"]
 id_mixed_HHe_water = Di_mat_id["mixed_HHe_water"]
+id_mixed_HHe_iron = Di_mat_id["mixed_HHe_iron"]
 id_custom_0 = Di_mat_id["custom_0"]
 id_custom_1 = Di_mat_id["custom_1"]
 id_custom_2 = Di_mat_id["custom_2"]
@@ -140,6 +143,7 @@ Fp_ANEOS_Fe85Si15 = dir_data + "ANEOS_Fe85Si15_S20.txt"
 # Mixed tables
 Fp_mixed_HHe_rock = dir_data + "mixed_HHe_rock.hdf5"
 Fp_mixed_HHe_water = dir_data + "mixed_HHe_water.hdf5"
+Fp_mixed_HHe_iron = dir_data + "mixed_HHe_iron.hdf5"
 # Generic user-provided custom tables
 Fp_custom_0 = dir_data + "custom_0.txt"
 Fp_custom_1 = dir_data + "custom_1.txt"

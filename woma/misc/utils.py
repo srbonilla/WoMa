@@ -428,8 +428,7 @@ def impact_pos_vel_b_v_c_r(
                     np.sqrt(2 * mu * w**3)
                 )
                 t_c = (
-                    np.sqrt(wr_c**2 + wr_c)
-                    - np.log(np.sqrt(wr_c) + np.sqrt(1 + wr_c))
+                    np.sqrt(wr_c**2 + wr_c) - np.log(np.sqrt(wr_c) + np.sqrt(1 + wr_c))
                 ) / (np.sqrt(2 * mu * w**3))
         # Not radial
         else:
@@ -645,6 +644,8 @@ def check_loaded_eos_tables():
         A1_mat.remove("mixed_HHe_rock")
     if len(eos.mixed.A1_mix_mixed_HHe_water) == 1:
         A1_mat.remove("mixed_HHe_water")
+    if len(eos.mixed.A1_mix_mixed_HHe_iron) == 1:
+        A1_mat.remove("mixed_HHe_iron")
 
     # Check custom
     if len(eos.sesame.A1_rho_custom_0) == 1:
@@ -961,6 +962,16 @@ def load_eos_tables(A1_mat_input=None):
             eos.mixed.A3_c_mixed_HHe_water,
             eos.mixed.A3_s_mixed_HHe_water,
         ) = eos.mixed.load_table_mixed(gv.Fp_mixed_HHe_water)
+    if "mixed_HHe_iron" in A1_mat and len(eos.mixed.A1_mix_mixed_HHe_iron) == 1:
+        (
+            eos.mixed.A1_mix_mixed_HHe_iron,
+            eos.mixed.A1_log_rho_mixed_HHe_iron,
+            eos.mixed.A1_log_T_mixed_HHe_iron,
+            eos.mixed.A3_u_mixed_HHe_iron,
+            eos.mixed.A3_P_mixed_HHe_iron,
+            eos.mixed.A3_c_mixed_HHe_iron,
+            eos.mixed.A3_s_mixed_HHe_iron,
+        ) = eos.mixed.load_table_mixed(gv.Fp_mixed_HHe_iron)
 
     # Custom
     if "custom_0" in A1_mat and len(eos.sesame.A1_rho_custom_0) == 1:
