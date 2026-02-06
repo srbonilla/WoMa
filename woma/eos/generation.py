@@ -7,6 +7,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 import h5py
 
+from woma.eos import mixed
 from woma.misc import utils as ut
 from woma.misc import glob_vars as gv
 from woma.misc import io
@@ -1478,6 +1479,15 @@ class Material_Mixed_HHe_Heavy:
                 A2_gamma,
                 A2_s,
             ) = self._load_raw_table_alt(mix)
+
+            # Estimate sound speed (data missing from table, use mixed rock EoS instead)
+            # May need to disable @njit in mixed.py, would be good to fix but rarely needed
+            ut.load_eos_tables("mixed_HHe_rock")
+            A2_c = np.zeros_like(A2_P)
+            for i_T in range(num_T):
+                for i_rho in range(num_rho):
+                    A2_c[i_rho, i_T] = mixed._Z_rho_T_single(
+                        A1_rho[i_rho], A1_T[i_T], gv.id_mixed_HHe_rock, mix, "c")
         else:
             (
                 num_T,
@@ -1492,10 +1502,10 @@ class Material_Mixed_HHe_Heavy:
                 A2_s,
             ) = self._load_raw_table(mix)
 
-        # Estimate sound speed
-        A2_c = np.sqrt(A2_gamma * A2_dPdrho)
+            # Estimate sound speed
+            A2_c = np.sqrt(A2_gamma * A2_dPdrho)
 
-        # Enforce dP/drho (at fixed T)
+        # Enforce dP/drho (at fixed T) >= 0
         for i_T in range(num_T):
             for i_rho in range(num_rho - 1):
                 if A2_P[i_rho + 1, i_T] < A2_P[i_rho, i_T]:
