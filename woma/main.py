@@ -305,6 +305,7 @@ class Planet:
 
     def print_info(self):
         """Print the main properties."""
+
         # Print and catch if any variables are None
         def print_try(string, variables):
             try:
@@ -2391,6 +2392,7 @@ class SpinPlanet:
 
     def print_info(self):
         """Print the main properties."""
+
         # Print and catch if any variables are None
         def print_try(string, variables):
             try:
@@ -2522,13 +2524,13 @@ class SpinPlanet:
             # Attributes
             grp.attrs[io.Di_hdf5_planet_label["num_layer"]] = self.planet.num_layer
             grp.attrs[io.Di_hdf5_planet_label["mat_layer"]] = self.planet.A1_mat_layer
-            grp.attrs[
-                io.Di_hdf5_planet_label["mat_id_layer"]
-            ] = self.planet.A1_mat_id_layer
+            grp.attrs[io.Di_hdf5_planet_label["mat_id_layer"]] = (
+                self.planet.A1_mat_id_layer
+            )
             grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.planet.A1_T_rho_type
-            grp.attrs[
-                io.Di_hdf5_planet_label["T_rho_type_id"]
-            ] = self.planet.A1_T_rho_type_id
+            grp.attrs[io.Di_hdf5_planet_label["T_rho_type_id"]] = (
+                self.planet.A1_T_rho_type_id
+            )
             grp.attrs[io.Di_hdf5_planet_label["T_rho_args"]] = self.planet.A1_T_rho_args
             grp.attrs[io.Di_hdf5_planet_label["R_layer"]] = self.planet.A1_R_layer
             grp.attrs[io.Di_hdf5_planet_label["M_layer"]] = self.planet.A1_M_layer
@@ -3637,6 +3639,16 @@ class ParticlePlanet:
         utils.load_eos_tables(planet.A1_mat_layer)
 
         if not hasattr(planet, "period") or planet.period in [None, 0, np.nan]:
+            # Miscellaneous extra parameters
+            if hasattr(planet, "Di_param_A1_misc_prof"):
+                Di_param_A1_misc_prof = {
+                    param: planet.Di_param_A1_misc_prof[param][1:]
+                    for param in planet.Di_param_A1_misc_prof.keys()
+                }
+            else:
+                Di_param_A1_misc_prof = None
+
+            # Generate all the particle positions and properties
             particles = seagen.GenSphere(
                 self.N_particles,
                 planet.A1_r[1:],
@@ -3647,6 +3659,7 @@ class ParticlePlanet:
                 planet.A1_P[1:],
                 verbosity=verbosity,
                 seed=seed,
+                Di_param_A1_misc_prof=Di_param_A1_misc_prof,
             )
 
             self.A1_x = particles.A1_x
@@ -3662,6 +3675,8 @@ class ParticlePlanet:
             self.A1_P = particles.A1_P
             self.A1_mat_id = particles.A1_mat
             self.A1_id = np.arange(self.A1_m.shape[0])
+            if Di_param_A1_misc_prof is not None:
+                self.Di_param_A1_misc = particles.Di_param_A1_misc
 
             # Smoothing lengths, crudely estimated from the densities
             w_edge = 2  # r/h at which the kernel goes to zero
@@ -3785,6 +3800,7 @@ class ParticlePlanet:
         if verbosity >= 1:
             print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
 
+        # Optional extra data
         if do_entropies:
             # Calculate the entropies if not already set
             if not hasattr(self, "A1_s"):
@@ -3792,7 +3808,25 @@ class ParticlePlanet:
             A1_s = self.A1_s
         else:
             A1_s = None
+        if hasattr(self, "Di_param_A1_misc_prof"):
+            Di_param_A1_misc = self.Di_param_A1_misc
 
+            if any(param[:4] == "mix_" for param in Di_param_A1_misc.keys()):
+                # Convert material mixes to combined array
+                Di_param_A1_misc["mixes"] = [
+                    Di_param_A1_misc[param]
+                    for param in Di_param_A1_misc.keys()
+                    if param[:4] == "mix_"
+                ]
+
+                # Remove the no-longer-needed individual mix arrays
+                for param in Di_param_A1_misc.keys():
+                    if param[:4] == "mix_":
+                        del Di_param_A1_misc[param]
+        else:
+            Di_param_A1_misc = None
+
+        # Save to file
         with h5py.File(filename, "w") as f:
             io.save_particle_data(
                 f,
@@ -3806,6 +3840,7 @@ class ParticlePlanet:
                 self.A1_mat_id,
                 A1_id=None,
                 A1_s=A1_s,
+                Di_param_A1_misc=Di_param_A1_misc,
                 boxsize=boxsize,
                 file_to_SI=file_to_SI,
                 verbosity=verbosity,

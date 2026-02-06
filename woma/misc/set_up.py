@@ -9,6 +9,7 @@ import sys
 from woma.misc import glob_vars as gv
 from woma.eos import tillotson
 
+
 # Set up equation of state data
 def set_up(verbosity=1):
     """Fetch or create equation of state files if they don't exist.

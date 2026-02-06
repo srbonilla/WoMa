@@ -74,8 +74,8 @@ Di_hdf5_spin_label = {
     "mat_id": "Spheroid Material IDs",
 }
 Di_hdf5_particle_label = {  # Type
-    "pos": "Coordinates",  # d
-    "vel": "Velocities",  # f
+    "pos": "Coordinates",  # [d]
+    "vel": "Velocities",  # [f]
     "m": "Masses",  # f
     "h": "SmoothingLengths",  # f
     "u": "InternalEnergies",  # f
@@ -86,6 +86,7 @@ Di_hdf5_particle_label = {  # Type
     "mat_id": "MaterialIDs",  # i
     "phi": "Potentials",  # f
     "T": "Temperatures",  # f
+    "mixes": "MaterialMixes",  # [f]
 }
 Di_hdf5_eos_label = {
     # Attributes
@@ -224,6 +225,7 @@ def save_particle_data(
     A1_mat_id,
     A1_id=None,
     A1_s=None,
+    Di_param_A1_misc=None,
     boxsize=0,
     file_to_SI=SI_to_SI,
     verbosity=1,
@@ -246,6 +248,10 @@ def save_particle_data(
 
     A1_s : [float] (opt.)
         The particle specific entropies.
+
+    Di_param_A1_misc : {str: [float]} (opt.)
+        Dictionary of parameter names and arrays of other particle values.
+        Assume floats and already in the desired file units.
 
     boxsize : float (opt.)
         The simulation box side length (m). If provided, then the origin will be
@@ -357,6 +363,18 @@ def save_particle_data(
     grp.create_dataset(Di_hdf5_particle_label["mat_id"], data=A1_mat_id, dtype="i")
     if A1_s is not None:
         grp.create_dataset(Di_hdf5_particle_label["s"], data=A1_s, dtype="f")
+    if Di_param_A1_misc is not None:
+        for param in Di_param_A1_misc.keys():
+            if param in Di_hdf5_particle_label.keys():
+                grp.create_dataset(
+                    Di_hdf5_particle_label[param],
+                    data=Di_param_A1_misc[param],
+                    dtype="f",
+                )
+            else:
+                print(
+                    "Warning: no hdf5 label set for misc param ", param, " so not saved"
+                )
 
     # Alias links to match GADGET-2 initial conditions (as used by SWIFT)
     f["/PartType0/SmoothingLength"] = dset_h
