@@ -1487,7 +1487,8 @@ class Material_Mixed_HHe_Heavy:
             for i_T in range(num_T):
                 for i_rho in range(num_rho):
                     A2_c[i_rho, i_T] = mixed._Z_rho_T_single(
-                        A1_rho[i_rho], A1_T[i_T], gv.id_mixed_HHe_rock, mix, "c")
+                        A1_rho[i_rho], A1_T[i_T], gv.id_mixed_HHe_rock, mix, "c"
+                    )
         else:
             (
                 num_T,
@@ -1619,14 +1620,14 @@ class Material_Mixed_HHe_Heavy:
             # Header
             grp = f.create_group("/Header")
             grp.attrs[io.Di_hdf5_eos_label["name"]] = self.name
-            grp.attrs[io.Di_hdf5_eos_label["version_date"]] = self.version_date
+            grp.attrs[io.Di_hdf5_eos_label["version_date"]] = int(self.version_date)
             grp.attrs[io.Di_hdf5_eos_label["Y/X"]] = Y_X
             grp.attrs[io.Di_hdf5_eos_label["num_mix"]] = len(A1_mix)
             grp.attrs[io.Di_hdf5_eos_label["num_rho"]] = len(A1_rho)
             grp.attrs[io.Di_hdf5_eos_label["num_T"]] = len(A1_T)
 
             # Table data
-            grp = f.create_group("/table")
+            grp = f.create_group("/Table")
             grp.create_dataset(io.Di_hdf5_eos_label["A1_mix"], data=A1_mix, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["A1_rho"], data=A1_rho, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["A1_T"], data=A1_T, dtype="f")

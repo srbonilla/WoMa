@@ -39,6 +39,11 @@ Di_hdf5_planet_label = {
     "u": "Profile Specific Internal Energies",
     "P": "Profile Pressures",
     "mat_id": "Profile Material IDs",
+    # Misc
+    "misc": "Miscellaneous parameters",
+    "mix_rock": "Profile mix rock",
+    "mix_water": "Profile mix water",
+    "mix_iron": "Profile mix iron",
 }
 Di_hdf5_spin_label = {
     # Attributes

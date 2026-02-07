@@ -213,7 +213,8 @@ class Planet:
             e = "Temperature at surface must be provided."
             raise ValueError(e)
         if self.P_s is not None:
-            self.rho_s = eos.rho_P_T(self.P_s, self.T_s, self.A1_mat_id_layer[-1])
+            if self.rho_s is None:
+                self.rho_s = eos.rho_P_T(self.P_s, self.T_s, self.A1_mat_id_layer[-1])
         elif self.rho_s is not None:
             if do_T_from_fixed_s:
                 self.T_s = eos.sesame.T_rho_s(
@@ -454,6 +455,26 @@ class Planet:
             grp.create_dataset(
                 io.Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
             )
+            
+            if hasattr(self, "Di_param_A1_misc_prof"):
+                # Misc profile data
+                grp.attrs[io.Di_hdf5_planet_label["misc"]] = (
+                    list(self.Di_param_A1_misc_prof.keys())
+                )
+
+                for param in self.Di_param_A1_misc_prof.keys():
+                    if param in io.Di_hdf5_planet_label.keys():
+                        grp.create_dataset(
+                            io.Di_hdf5_planet_label[param],
+                            data=self.Di_param_A1_misc_prof[param],
+                            dtype="d",
+                        )
+                    else:
+                        print(
+                            "Warning: no hdf5 label set for misc profile ",
+                            param,
+                            " so not saved",
+                        )
 
         if verbosity >= 1:
             print("Done")
@@ -524,6 +545,14 @@ class Planet:
                     "mat_id",
                 ],
             )
+
+            # Load misc profile data if available
+            try:
+                self.Di_param_A1_misc_prof = {}
+                for param in io.get_planet_data(f, "misc"):
+                    self.Di_param_A1_misc_prof[param] = io.get_planet_data(f, param)
+            except KeyError:
+                self.Di_param_A1_misc_prof = None
 
         self.update_attributes()
 
@@ -3640,7 +3669,10 @@ class ParticlePlanet:
 
         if not hasattr(planet, "period") or planet.period in [None, 0, np.nan]:
             # Miscellaneous extra parameters
-            if hasattr(planet, "Di_param_A1_misc_prof"):
+            if (
+                hasattr(planet, "Di_param_A1_misc_prof")
+                and planet.Di_param_A1_misc_prof is not None
+            ):
                 Di_param_A1_misc_prof = {
                     param: planet.Di_param_A1_misc_prof[param][1:]
                     for param in planet.Di_param_A1_misc_prof.keys()

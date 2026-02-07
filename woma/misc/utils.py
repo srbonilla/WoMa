@@ -646,6 +646,13 @@ def check_loaded_eos_tables():
         A1_mat.remove("mixed_HHe_water")
     if len(eos.mixed.A1_mix_mixed_HHe_iron) == 1:
         A1_mat.remove("mixed_HHe_iron")
+    if (
+        len(eos.mixed.A1_mix_mixed_HHe_rock)
+        + len(eos.mixed.A1_mix_mixed_HHe_water)
+        + len(eos.mixed.A1_mix_mixed_HHe_iron)
+        == 3
+    ):
+        A1_mat.remove("mixed_HHe_heavy")
 
     # Check custom
     if len(eos.sesame.A1_rho_custom_0) == 1:
@@ -942,7 +949,11 @@ def load_eos_tables(A1_mat_input=None):
         ) = eos.sesame.load_table_SESAME(gv.Fp_CD21_HHe)
 
     # Mixed
-    if "mixed_HHe_rock" in A1_mat and len(eos.mixed.A1_mix_mixed_HHe_rock) == 1:
+    if (
+        "mixed_HHe_rock" in A1_mat
+        or "mixed_HHe_heavy" in A1_mat
+        and len(eos.mixed.A1_mix_mixed_HHe_rock) == 1
+    ):
         (
             eos.mixed.A1_mix_mixed_HHe_rock,
             eos.mixed.A1_log_rho_mixed_HHe_rock,
@@ -952,7 +963,11 @@ def load_eos_tables(A1_mat_input=None):
             eos.mixed.A3_c_mixed_HHe_rock,
             eos.mixed.A3_s_mixed_HHe_rock,
         ) = eos.mixed.load_table_mixed(gv.Fp_mixed_HHe_rock)
-    if "mixed_HHe_water" in A1_mat and len(eos.mixed.A1_mix_mixed_HHe_water) == 1:
+    if (
+        "mixed_HHe_water" in A1_mat
+        or "mixed_HHe_heavy" in A1_mat
+        and len(eos.mixed.A1_mix_mixed_HHe_water) == 1
+    ):
         (
             eos.mixed.A1_mix_mixed_HHe_water,
             eos.mixed.A1_log_rho_mixed_HHe_water,
@@ -962,7 +977,11 @@ def load_eos_tables(A1_mat_input=None):
             eos.mixed.A3_c_mixed_HHe_water,
             eos.mixed.A3_s_mixed_HHe_water,
         ) = eos.mixed.load_table_mixed(gv.Fp_mixed_HHe_water)
-    if "mixed_HHe_iron" in A1_mat and len(eos.mixed.A1_mix_mixed_HHe_iron) == 1:
+    if (
+        "mixed_HHe_iron" in A1_mat
+        or "mixed_HHe_heavy" in A1_mat
+        and len(eos.mixed.A1_mix_mixed_HHe_iron) == 1
+    ):
         (
             eos.mixed.A1_mix_mixed_HHe_iron,
             eos.mixed.A1_log_rho_mixed_HHe_iron,
