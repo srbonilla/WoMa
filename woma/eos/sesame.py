@@ -678,6 +678,7 @@ A2_phase_ANEOS_forsterite = np.zeros((2, 2))
     np.zeros((2, 2)),
 )
 
+
 # ========
 # Generic
 # ========
@@ -967,12 +968,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SESAME_iron
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_iron
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SESAME_iron
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SESAME_iron
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SESAME_iron
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SESAME_iron
     elif mat_id == gv.id_SESAME_basalt:
         A1_log_rho = A1_log_rho_SESAME_basalt
         if Z_choice == "P":
@@ -981,12 +986,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SESAME_basalt
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_basalt
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_basalt
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SESAME_basalt
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SESAME_basalt
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SESAME_basalt
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SESAME_basalt
     elif mat_id == gv.id_SESAME_water:
         A1_log_rho = A1_log_rho_SESAME_water
         if Z_choice == "P":
@@ -995,12 +1004,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SESAME_water
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_water
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SESAME_water
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SESAME_water
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SESAME_water
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SESAME_water
     elif mat_id == gv.id_SS08_water:
         A1_log_rho = A1_log_rho_SS08_water
         if Z_choice == "P":
@@ -1009,12 +1022,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SS08_water
         elif Z_choice == "s":
             A2_Z = A2_s_SS08_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SS08_water
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SS08_water
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SS08_water
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SS08_water
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SS08_water
     elif mat_id == gv.id_ANEOS_forsterite:
         A1_log_rho = A1_log_rho_ANEOS_forsterite
         if Z_choice == "P":
@@ -1023,12 +1040,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_forsterite
         elif Z_choice == "phase":
             A2_Z = A2_phase_ANEOS_forsterite
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_forsterite
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_ANEOS_forsterite
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_ANEOS_forsterite
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
@@ -1039,12 +1060,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_iron
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_iron
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_iron
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_ANEOS_iron
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_ANEOS_iron
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_ANEOS_iron
     elif mat_id == gv.id_ANEOS_Fe85Si15:
         A1_log_rho = A1_log_rho_ANEOS_Fe85Si15
         if Z_choice == "P":
@@ -1053,12 +1078,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_Fe85Si15
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_Fe85Si15
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_Fe85Si15
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_Fe85Si15
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_ANEOS_Fe85Si15
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_ANEOS_Fe85Si15
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_ANEOS_Fe85Si15
     elif mat_id == gv.id_AQUA:
         A1_log_rho = A1_log_rho_AQUA
         if Z_choice == "P":
@@ -1067,12 +1096,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_AQUA
         elif Z_choice == "s":
             A2_Z = A2_s_AQUA
+        elif Z_choice == "c":
+            A2_Z = A2_c_AQUA
         if Y_choice == "P":
             A2_log_Y = A2_log_P_AQUA
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_AQUA
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_AQUA
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_AQUA
     elif mat_id == gv.id_CMS19_H:
         A1_log_rho = A1_log_rho_CMS19_H
         if Z_choice == "P":
@@ -1081,12 +1114,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_CMS19_H
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_H
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_H
         if Y_choice == "P":
             A2_log_Y = A2_log_P_CMS19_H
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_CMS19_H
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CMS19_H
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_CMS19_H
     elif mat_id == gv.id_CMS19_He:
         A1_log_rho = A1_log_rho_CMS19_He
         if Z_choice == "P":
@@ -1095,12 +1132,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_CMS19_He
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_He
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_He
         if Y_choice == "P":
             A2_log_Y = A2_log_P_CMS19_He
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_CMS19_He
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CMS19_He
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_CMS19_He
     elif mat_id == gv.id_CD21_HHe:
         A1_log_rho = A1_log_rho_CD21_HHe
         if Z_choice == "P":
@@ -1109,12 +1150,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
             A2_Z = A2_s_CD21_HHe
+        elif Z_choice == "c":
+            A2_Z = A2_c_CD21_HHe
         if Y_choice == "P":
             A2_log_Y = A2_log_P_CD21_HHe
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_CD21_HHe
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CD21_HHe
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_CD21_HHe
     elif mat_id == gv.id_custom_0:
         A1_log_rho = A1_log_rho_custom_0
         if Z_choice == "P":
@@ -1123,12 +1168,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_0
         elif Z_choice == "s":
             A2_Z = A2_s_custom_0
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_0
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_0
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_0
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_0
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_0
     elif mat_id == gv.id_custom_1:
         A1_log_rho = A1_log_rho_custom_1
         if Z_choice == "P":
@@ -1137,12 +1186,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_1
         elif Z_choice == "s":
             A2_Z = A2_s_custom_1
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_1
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_1
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_1
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_1
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_1
     elif mat_id == gv.id_custom_2:
         A1_log_rho = A1_log_rho_custom_2
         if Z_choice == "P":
@@ -1151,12 +1204,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_2
         elif Z_choice == "s":
             A2_Z = A2_s_custom_2
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_2
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_2
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_2
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_2
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_2
     elif mat_id == gv.id_custom_3:
         A1_log_rho = A1_log_rho_custom_3
         if Z_choice == "P":
@@ -1165,12 +1222,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_3
         elif Z_choice == "s":
             A2_Z = A2_s_custom_3
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_3
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_3
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_3
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_3
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_3
     elif mat_id == gv.id_custom_4:
         A1_log_rho = A1_log_rho_custom_4
         if Z_choice == "P":
@@ -1179,12 +1240,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_4
         elif Z_choice == "s":
             A2_Z = A2_s_custom_4
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_4
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_4
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_4
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_4
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_4
     else:
         raise ValueError("Invalid material ID")
 
@@ -1329,12 +1394,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SESAME_iron
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_iron
         if X_choice == "P":
             A2_log_X = A2_log_P_SESAME_iron
         elif X_choice == "u":
             A2_log_X = A2_log_u_SESAME_iron
         elif X_choice == "s":
             A2_log_X = A2_log_s_SESAME_iron
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SESAME_iron
     elif mat_id == gv.id_SESAME_basalt:
         A1_log_T = A1_log_T_SESAME_basalt
         if Z_choice == "P":
@@ -1343,12 +1412,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SESAME_basalt
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_basalt
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_basalt
         if X_choice == "P":
             A2_log_X = A2_log_P_SESAME_basalt
         elif X_choice == "u":
             A2_log_X = A2_log_u_SESAME_basalt
         elif X_choice == "s":
             A2_log_X = A2_log_s_SESAME_basalt
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SESAME_basalt
     elif mat_id == gv.id_SESAME_water:
         A1_log_T = A1_log_T_SESAME_water
         if Z_choice == "P":
@@ -1357,12 +1430,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SESAME_water
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_water
         if X_choice == "P":
             A2_log_X = A2_log_P_SESAME_water
         elif X_choice == "u":
             A2_log_X = A2_log_u_SESAME_water
         elif X_choice == "s":
             A2_log_X = A2_log_s_SESAME_water
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SESAME_water
     elif mat_id == gv.id_SS08_water:
         A1_log_T = A1_log_T_SS08_water
         if Z_choice == "P":
@@ -1371,12 +1448,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SS08_water
         elif Z_choice == "s":
             A2_Z = A2_s_SS08_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SS08_water
         if X_choice == "P":
             A2_log_X = A2_log_P_SS08_water
         elif X_choice == "u":
             A2_log_X = A2_log_u_SS08_water
         elif X_choice == "s":
             A2_log_X = A2_log_s_SS08_water
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SS08_water
     elif mat_id == gv.id_ANEOS_forsterite:
         A1_log_T = A1_log_T_ANEOS_forsterite
         if Z_choice == "P":
@@ -1385,12 +1466,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_forsterite
         elif Z_choice == "phase":
             A2_Z = A2_phase_ANEOS_forsterite
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_forsterite
         elif X_choice == "u":
             A2_log_X = A2_log_u_ANEOS_forsterite
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_ANEOS_forsterite
         elif X_choice == "s":
             A2_log_X = A2_log_s_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
@@ -1401,12 +1486,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_iron
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_iron
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_iron
         elif X_choice == "u":
             A2_log_X = A2_log_u_ANEOS_iron
         elif X_choice == "s":
             A2_log_X = A2_log_s_ANEOS_iron
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_ANEOS_iron
     elif mat_id == gv.id_ANEOS_Fe85Si15:
         A1_log_T = A1_log_T_ANEOS_Fe85Si15
         if Z_choice == "P":
@@ -1415,12 +1504,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_Fe85Si15
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_Fe85Si15
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_Fe85Si15
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_Fe85Si15
         elif X_choice == "u":
             A2_log_X = A2_log_u_ANEOS_Fe85Si15
         elif X_choice == "s":
             A2_log_X = A2_log_s_ANEOS_Fe85Si15
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_ANEOS_Fe85Si15
     elif mat_id == gv.id_AQUA:
         A1_log_T = A1_log_T_AQUA
         if Z_choice == "P":
@@ -1429,12 +1522,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_AQUA
         elif Z_choice == "s":
             A2_Z = A2_s_AQUA
+        elif Z_choice == "c":
+            A2_Z = A2_c_AQUA
         if X_choice == "P":
             A2_log_X = A2_log_P_AQUA
         elif X_choice == "u":
             A2_log_X = A2_log_u_AQUA
         elif X_choice == "s":
             A2_log_X = A2_log_s_AQUA
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_AQUA
     elif mat_id == gv.id_CMS19_H:
         A1_log_T = A1_log_T_CMS19_H
         if Z_choice == "P":
@@ -1443,12 +1540,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_CMS19_H
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_H
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_H
         if X_choice == "P":
             A2_log_X = A2_log_P_CMS19_H
         elif X_choice == "u":
             A2_log_X = A2_log_u_CMS19_H
         elif X_choice == "s":
             A2_log_X = A2_log_s_CMS19_H
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_CMS19_H
     elif mat_id == gv.id_CMS19_He:
         A1_log_T = A1_log_T_CMS19_He
         if Z_choice == "P":
@@ -1457,12 +1558,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_CMS19_He
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_He
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_He
         if X_choice == "P":
             A2_log_X = A2_log_P_CMS19_He
         elif X_choice == "u":
             A2_log_X = A2_log_u_CMS19_He
         elif X_choice == "s":
             A2_log_X = A2_log_s_CMS19_He
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_CMS19_He
     elif mat_id == gv.id_CD21_HHe:
         A1_log_T = A1_log_T_CD21_HHe
         if Z_choice == "P":
@@ -1471,12 +1576,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
             A2_Z = A2_s_CD21_HHe
+        elif Z_choice == "c":
+            A2_Z = A2_c_CD21_HHe
         if X_choice == "P":
             A2_log_X = A2_log_P_CD21_HHe
         elif X_choice == "u":
             A2_log_X = A2_log_u_CD21_HHe
         elif X_choice == "s":
             A2_log_X = A2_log_s_CD21_HHe
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_CD21_HHe
     elif mat_id == gv.id_custom_0:
         A1_log_T = A1_log_T_custom_0
         if Z_choice == "P":
@@ -1485,12 +1594,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_0
         elif Z_choice == "s":
             A2_Z = A2_s_custom_0
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_0
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_0
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_0
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_0
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_0
     elif mat_id == gv.id_custom_1:
         A1_log_T = A1_log_T_custom_1
         if Z_choice == "P":
@@ -1499,12 +1612,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_1
         elif Z_choice == "s":
             A2_Z = A2_s_custom_1
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_1
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_1
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_1
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_1
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_1
     elif mat_id == gv.id_custom_2:
         A1_log_T = A1_log_T_custom_2
         if Z_choice == "P":
@@ -1513,12 +1630,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_2
         elif Z_choice == "s":
             A2_Z = A2_s_custom_2
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_2
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_2
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_2
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_2
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_2
     elif mat_id == gv.id_custom_3:
         A1_log_T = A1_log_T_custom_3
         if Z_choice == "P":
@@ -1527,12 +1648,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_3
         elif Z_choice == "s":
             A2_Z = A2_s_custom_3
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_3
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_3
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_3
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_3
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_3
     elif mat_id == gv.id_custom_4:
         A1_log_T = A1_log_T_custom_4
         if Z_choice == "P":
@@ -1541,12 +1666,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_4
         elif Z_choice == "s":
             A2_Z = A2_s_custom_4
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_4
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_4
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_4
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_4
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_4
     else:
         raise ValueError("Invalid material ID")
 
