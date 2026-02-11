@@ -1110,4 +1110,4 @@ if __name__ == "__main__":
     # plot_all_HM80_tables()
     # plot_all_SESAME_tables()
     # plot_all_mixed_tables()
-    test_plot_mixed_eos_iso_lines()
+    # test_plot_mixed_eos_iso_lines()

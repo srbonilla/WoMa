@@ -19,7 +19,7 @@ from woma.misc import utils as ut
 # Generic
 # ========
 @njit
-def Z_rho_T(rho, T, mat_id, Z_choice):
+def Z_rho_T(rho, T, mat_id, Z_choice, A1_mix=None):
     """Compute an equation of state parameter from the density and temperature,
     for any EoS.
 
@@ -41,6 +41,9 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             s       Specific entropy.
             phase   Phase KPA flag.
 
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
+
     Returns
     -------
     Z : float
@@ -49,12 +52,14 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
     mat_type = mat_id // gv.type_factor
     if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         return sesame.Z_rho_T(rho, T, mat_id, Z_choice)
+    elif mat_type == gv.type_mixed:
+        return mixed.Z_rho_T(rho, T, A1_mix, Z_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
 
 
 @njit
-def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
+def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice, A1_A1_mix=None):
     """Compute equation of state parameters from arrays of density and
     temperature, for any EoS.
 
@@ -76,6 +81,9 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
             s       Specific entropy.
             phase   Phase KPA flag.
 
+    A1_A1_mix : [[float]] (opt.)
+        Mixing mass fractions.
+
     Returns
     -------
     A1_Z : float
@@ -91,13 +99,19 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mat_id, Z_choice):
     A1_Z = np.zeros_like(A1_rho)
 
     for i, rho in enumerate(A1_rho):
-        A1_Z[i] = Z_rho_T(A1_rho[i], A1_T[i], A1_mat_id[i], Z_choice)
+        A1_Z[i] = Z_rho_T(
+            A1_rho[i],
+            A1_T[i],
+            A1_mat_id[i],
+            Z_choice,
+            A1_mix=A1_A1_mix[i] if A1_A1_mix is not None else None,
+        )
 
     return A1_Z
 
 
 @njit
-def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
+def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice, A1_mix=None):
     """Compute an equation of state parameter from the density and another
     parameter, for any EoS.
 
@@ -118,6 +132,9 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             u       Specific internal energy.
             s       Specific entropy.
             phase   Phase KPA flag (Z_choice only).
+
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Returns
     -------
@@ -149,12 +166,14 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             raise ValueError("Not yet implemented for this EoS")
     elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         return sesame.Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice)
+    elif mat_type == gv.type_mixed:
+        return mixed.Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
 
 
 @njit
-def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
+def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice, A1_A1_mix=None):
     """Compute equation of state parameters from arrays of density and
     another parameter, for any EoS.
 
@@ -176,6 +195,9 @@ def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
             s       Specific entropy.
             phase   Phase KPA flag (Z_choice only).
 
+    A1_A1_mix : [[float]] (opt.)
+        Mixing mass fractions.
+
     Returns
     -------
     A1_Z : float
@@ -190,13 +212,20 @@ def A1_Z_rho_Y(A1_rho, A1_Y, A1_mat_id, Z_choice, Y_choice):
     A1_Z = np.zeros_like(A1_rho)
 
     for i, rho in enumerate(A1_rho):
-        A1_Z[i] = Z_rho_Y(A1_rho[i], A1_Y[i], A1_mat_id[i], Z_choice, Y_choice)
+        A1_Z[i] = Z_rho_Y(
+            A1_rho[i],
+            A1_Y[i],
+            A1_mat_id[i],
+            Z_choice,
+            Y_choice,
+            A1_mix=A1_A1_mix[i] if A1_A1_mix is not None else None,
+        )
 
     return A1_Z
 
 
 @njit
-def Z_X_T(X, T, mat_id, Z_choice, X_choice):
+def Z_X_T(X, T, mat_id, Z_choice, X_choice, A1_mix=None):
     """Compute an equation of state parameter from another parameter and the
     temperature, for any EoS.
 
@@ -217,6 +246,9 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             u       Specific internal energy.
             s       Specific entropy.
             phase   Phase KPA flag (Z_choice only).
+
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Returns
     -------
@@ -240,12 +272,14 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             raise ValueError("Not yet implemented for this EoS")
     elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         return sesame.Z_X_T(X, T, mat_id, Z_choice, X_choice)
+    elif mat_type == gv.type_mixed:
+        return mixed.Z_X_T(X, T, A1_mix, Z_choice, X_choice)
     else:
         raise ValueError("Not yet implemented for this EoS")
 
 
 @njit
-def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
+def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice, A1_A1_mix=None):
     """Compute equation of state parameters from arrays of density and
     another parameter, for any EoS.
 
@@ -267,6 +301,9 @@ def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
             s       Specific entropy.
             phase   Phase KPA flag (Z_choice only).
 
+    A1_A1_mix : [[float]] (opt.)
+        Mixing mass fractions.
+
     Returns
     -------
     A1_Z : float
@@ -281,13 +318,20 @@ def A1_Z_X_T(A1_X, A1_T, A1_mat_id, Z_choice, X_choice):
     A1_Z = np.zeros_like(A1_X)
 
     for i, X in enumerate(A1_X):
-        A1_Z[i] = Z_X_T(A1_X[i], A1_T[i], A1_mat_id[i], Z_choice, X_choice)
+        A1_Z[i] = Z_X_T(
+            A1_X[i],
+            A1_T[i],
+            A1_mat_id[i],
+            Z_choice,
+            X_choice,
+            A1_mix=A1_A1_mix[i] if A1_A1_mix is not None else None,
+        )
 
     return A1_Z
 
 
 @njit
-def Z_X_Y(X, Y, mat_id, Z_choice, X_choice, Y_choice):
+def Z_X_Y(X, Y, mat_id, Z_choice, X_choice, Y_choice, A1_mix=None):
     """Compute an equation of state parameter from another two parameters.
 
     e.g. Z(X, Y) = P(rho, T) = pressure(density, temperature).
@@ -308,25 +352,28 @@ def Z_X_Y(X, Y, mat_id, Z_choice, X_choice, Y_choice):
             s       Specific entropy.
             phase   Phase KPA flag (Z_choice only).
 
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
+
     Returns
     -------
     Z : float
         The chosen parameter (SI).
     """
     if X_choice == "rho":
-        return Z_rho_Y(X, Y, mat_id, Z_choice, Y_choice)
+        return Z_rho_Y(X, Y, mat_id, Z_choice, Y_choice, A1_mix=A1_mix)
     elif Y_choice == "rho":
-        return Z_rho_Y(Y, X, mat_id, Z_choice, X_choice)
+        return Z_rho_Y(Y, X, mat_id, Z_choice, X_choice, A1_mix=A1_mix)
     elif Y_choice == "T":
-        return Z_X_T(X, Y, mat_id, Z_choice, X_choice)
+        return Z_X_T(X, Y, mat_id, Z_choice, X_choice, A1_mix=A1_mix)
     elif X_choice == "T":
-        return Z_X_T(Y, X, mat_id, Z_choice, Y_choice)
+        return Z_X_T(Y, X, mat_id, Z_choice, Y_choice, A1_mix=A1_mix)
     else:
         raise ValueError("Not yet implemented for this EoS")
 
 
 @njit
-def A1_Z_X_Y(A1_X, A1_Y, A1_mat_id, Z_choice, X_choice, Y_choice):
+def A1_Z_X_Y(A1_X, A1_Y, A1_mat_id, Z_choice, X_choice, Y_choice, A1_A1_mix=None):
     """Compute equation of state parameters from arrays of two other parameters.
 
     e.g. Z(X, Y) = P(rho, T) = pressures(densities, temperatures).
@@ -347,6 +394,9 @@ def A1_Z_X_Y(A1_X, A1_Y, A1_mat_id, Z_choice, X_choice, Y_choice):
             s       Specific entropy.
             phase   Phase KPA flag (Z_choice only).
 
+    A1_A1_mix : [[float]] (opt.)
+        Mixing mass fractions.
+
     Returns
     -------
     A1_Z : float
@@ -361,7 +411,15 @@ def A1_Z_X_Y(A1_X, A1_Y, A1_mat_id, Z_choice, X_choice, Y_choice):
     A1_Z = np.zeros_like(A1_X)
 
     for i in range(len(A1_Z)):
-        A1_Z[i] = Z_X_Y(A1_X[i], A1_Y[i], A1_mat_id[i], Z_choice, X_choice, Y_choice)
+        A1_Z[i] = Z_X_Y(
+            A1_X[i],
+            A1_Y[i],
+            A1_mat_id[i],
+            Z_choice,
+            X_choice,
+            Y_choice,
+            A1_mix=A1_A1_mix[i] if A1_A1_mix is not None else None,
+        )
 
     return A1_Z
 
@@ -521,7 +579,7 @@ def A1_P_T_rho(A1_T, A1_rho, A1_mat_id):
 # Temperature
 # ========
 @njit
-def T_u_rho(u, rho, mat_id):
+def T_u_rho(u, rho, mat_id, A1_mix=None):
     """Compute the pressure from the density and temperature, for any EoS.
 
     Parameters
@@ -534,6 +592,9 @@ def T_u_rho(u, rho, mat_id):
 
     mat_id : int
         Material ID.
+
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Returns
     -------
@@ -549,13 +610,15 @@ def T_u_rho(u, rho, mat_id):
         T = hm80.T_u_rho(u, rho, mat_id)
     elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         T = sesame.T_u_rho(u, rho, mat_id)
+    elif mat_type == gv.type_mixed:
+        T = mixed.Z_rho_Y(rho, u, A1_mix, Z_choice="T", Y_choice="u")
     else:
         raise ValueError("Invalid material ID")
     return T
 
 
 @njit
-def A1_T_u_rho(A1_u, A1_rho, A1_mat_id):
+def A1_T_u_rho(A1_u, A1_rho, A1_mat_id, A1_A1_mix=None):
     """Compute the pressures from arrays of density and temperature, for any
     EoS.
 
@@ -569,6 +632,9 @@ def A1_T_u_rho(A1_u, A1_rho, A1_mat_id):
 
     A1_mat_id : [int]
         Material ID.
+
+    A1_A1_mix : [[float]] (opt.)
+        Mixing mass fractions.
 
     Returns
     -------
@@ -585,7 +651,12 @@ def A1_T_u_rho(A1_u, A1_rho, A1_mat_id):
     A1_T = np.zeros_like(A1_u)
 
     for i, u in enumerate(A1_u):
-        A1_T[i] = T_u_rho(A1_u[i], A1_rho[i], A1_mat_id[i])
+        A1_T[i] = T_u_rho(
+            A1_u[i],
+            A1_rho[i],
+            A1_mat_id[i],
+            A1_mix=A1_A1_mix[i] if A1_A1_mix is not None else None,
+        )
 
     return A1_T
 
