@@ -455,11 +455,11 @@ class Planet:
             grp.create_dataset(
                 io.Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
             )
-            
+
             if hasattr(self, "Di_param_A1_misc_prof"):
                 # Misc profile data
-                grp.attrs[io.Di_hdf5_planet_label["misc"]] = (
-                    list(self.Di_param_A1_misc_prof.keys())
+                grp.attrs[io.Di_hdf5_planet_label["misc"]] = list(
+                    self.Di_param_A1_misc_prof.keys()
                 )
 
                 for param in self.Di_param_A1_misc_prof.keys():
@@ -3840,19 +3840,20 @@ class ParticlePlanet:
             A1_s = self.A1_s
         else:
             A1_s = None
-        if hasattr(self, "Di_param_A1_misc_prof"):
+        if hasattr(self, "Di_param_A1_misc"):
             Di_param_A1_misc = self.Di_param_A1_misc
 
             if any(param[:4] == "mix_" for param in Di_param_A1_misc.keys()):
                 # Convert material mixes to combined array
-                Di_param_A1_misc["mixes"] = [
+                A1_A1_mixes = [
                     Di_param_A1_misc[param]
                     for param in Di_param_A1_misc.keys()
                     if param[:4] == "mix_"
                 ]
+                Di_param_A1_misc["mixes"] = A1_A1_mixes
 
                 # Remove the no-longer-needed individual mix arrays
-                for param in Di_param_A1_misc.keys():
+                for param in list(Di_param_A1_misc.keys()):
                     if param[:4] == "mix_":
                         del Di_param_A1_misc[param]
         else:
