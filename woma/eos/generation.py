@@ -1516,11 +1516,30 @@ class Material_Mixed_HHe_Heavy:
             for i_T in range(num_T - 1, 0, -1):
                 if A2_u[i_rho, i_T - 1] > A2_u[i_rho, i_T]:
                     A2_u[i_rho, i_T - 1] = A2_u[i_rho, i_T]
-        # and c > 0
+        # and u > 0 (and > 1e-312), c > 0, s > 0
+        u_tiny = np.amin(A2_u[A2_u > 1e-7]) * 1e-7
+        c_tiny = np.amin(A2_c[A2_c > 0]) * 1e-7
+        s_tiny = np.amin(A2_s[A2_s > 0]) * 1e-7
         for i_T in range(num_T):
             for i_rho in range(num_rho):
+                # Replace with previous value if positive, otherwise a tiny value
+                if A2_u[i_rho, i_T] <= 1e-7:
+                    if (u_prev := A2_u[i_rho - 1, i_T]) > 0:
+                        A2_u[i_rho, i_T] = u_prev
+                    else:
+                        A2_u[i_rho, i_T] = u_tiny
+
                 if A2_c[i_rho, i_T] <= 0:
-                    A2_c[i_rho, i_T] = A2_c[i_rho - 1, i_T]
+                    if (c_prev := A2_c[i_rho - 1, i_T]) > 0:
+                        A2_c[i_rho, i_T] = c_prev
+                    else:
+                        A2_c[i_rho, i_T] = c_tiny
+
+                if A2_s[i_rho, i_T] <= 0:
+                    if (s_prev := A2_s[i_rho - 1, i_T]) > 0:
+                        A2_s[i_rho, i_T] = s_prev
+                    else:
+                        A2_s[i_rho, i_T] = s_tiny
 
         print("Done")
 
