@@ -276,9 +276,9 @@ def Z_rho_T(rho, T, A1_mix, Z_choice):
     Z : float
         The chosen parameter (SI).
     """
+    mix_tot = sum(A1_mix)
 
     # No heavy-element fraction
-    mix_tot = sum(A1_mix)
     if mix_tot == 0:
         return _Z_rho_T_single(rho, T, A1_mixed_mat_id[0], 0, Z_choice)
 
@@ -286,8 +286,8 @@ def Z_rho_T(rho, T, A1_mix, Z_choice):
     Z = 0
     for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
         if mix > 0:
-            # Evaluate for this single heavy mix
-            Z_mat = _Z_rho_T_single(rho, T, mat_id, mix, Z_choice)
+            # Evaluate for this single heavy--HHe mix (total HHe fraction stays fixed)
+            Z_mat = _Z_rho_T_single(rho, T, mat_id, mix_tot, Z_choice)
 
             Z += Z_mat * mix / mix_tot
 
@@ -714,8 +714,9 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
     Z : float
         The chosen parameter (SI).
     """
-    # No heavy-element fraction
     mix_tot = sum(A1_mix)
+    
+    # No heavy-element fraction
     if mix_tot == 0:
         return _Z_rho_Y_single(rho, Y, A1_mixed_mat_id[0], 0, Z_choice, Y_choice)
 
@@ -723,8 +724,8 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
     Z = 0
     for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
         if mix > 0:
-            # Evaluate for this single heavy mix
-            Z_mat = _Z_rho_Y_single(rho, Y, mat_id, mix, Z_choice, Y_choice)
+            # Evaluate for this single heavy--HHe mix (total HHe fraction stays fixed)
+            Z_mat = _Z_rho_Y_single(rho, Y, mat_id, mix_tot, Z_choice, Y_choice)
 
             Z += Z_mat * mix / mix_tot
 
@@ -991,8 +992,9 @@ def Z_X_T(X, T, A1_mix, Z_choice, X_choice):
     Z : float
         The chosen parameter (SI).
     """
-    # No heavy-element fraction
     mix_tot = sum(A1_mix)
+    
+    # No heavy-element fraction
     if mix_tot == 0:
         return _Z_X_T_single(X, T, A1_mixed_mat_id[0], 0, Z_choice, X_choice)
 
@@ -1000,8 +1002,8 @@ def Z_X_T(X, T, A1_mix, Z_choice, X_choice):
     Z = 0
     for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
         if mix > 0:
-            # Evaluate for this single heavy mix
-            Z_mat = _Z_X_T_single(X, T, mat_id, mix, Z_choice, X_choice)
+            # Evaluate for this single heavy--HHe mix (total HHe fraction stays fixed)
+            Z_mat = _Z_X_T_single(X, T, mat_id, mix_tot, Z_choice, X_choice)
 
             Z += Z_mat * mix / mix_tot
 

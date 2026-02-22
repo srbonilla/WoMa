@@ -3845,11 +3845,13 @@ class ParticlePlanet:
 
             if any(param[:4] == "mix_" for param in Di_param_A1_misc.keys()):
                 # Convert material mixes to combined array
-                A1_A1_mixes = [
-                    Di_param_A1_misc[param]
-                    for param in Di_param_A1_misc.keys()
-                    if param[:4] == "mix_"
-                ]
+                A1_A1_mixes = np.transpose(
+                    [
+                        Di_param_A1_misc[param]
+                        for param in Di_param_A1_misc.keys()
+                        if param[:4] == "mix_"
+                    ]
+                )
                 Di_param_A1_misc["mixes"] = A1_A1_mixes
 
                 # Remove the no-longer-needed individual mix arrays
