@@ -165,24 +165,23 @@ def find_index_and_interp(x, A1_x):
 
 @njit
 def moi(A1_r, A1_rho):
-    """Compute the moment of inertia for a planet with spherical symmetry.
+    """Compute the moment of inertia of a spherical profile.
 
     Parameters
     ----------
     A1_r : [float]
-        Radii of the planet (m).
+        Profile (outer) radius of each spherical shell (m).
 
     A1_rho : [float]
-        Densities at each radii (kg m^-3).
+        Density of each shell (kg m^-3).
 
     Returns
-    ----------
+    -------
     MoI : float
         Moment of inertia (kg m^2).
     """
-    dr = np.abs(A1_r[0] - A1_r[1])
-    r4 = np.power(A1_r, 4)
-    MoI = 2 * np.pi * (4 / 3) * np.sum(r4 * A1_rho) * dr
+    A1_dr = np.append(A1_r[0], A1_r[1:] - A1_r[:-1])
+    MoI = 4 * np.pi * (2 / 3) * np.sum(A1_r**4 * A1_rho * A1_dr)
 
     return MoI
 
