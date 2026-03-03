@@ -196,6 +196,11 @@ def L1_integrate_out(
     A1_mat_id = [mat_id]
     A1_rho = [eos.rho_P_T(A1_P[0], A1_T[0], mat_id)]
 
+    # Set the T-rho relation parameters
+    T_rho_args = set_T_rho_args(
+        A1_T[0], A1_rho[0], T_rho_type_id, T_rho_args, A1_mat_id[0]
+    )
+
     # Integrate outwards until the minimum density (or zero pressure)
     while A1_rho[-1] > rho_min and A1_P[-1] > P_min:
         A1_r.append(A1_r[-1] + dr)
@@ -219,6 +224,7 @@ def L1_integrate_out(
                 T_rho_args,
                 mat_id,
             )
+
         rho = eos.find_rho(
             A1_P[-1],
             mat_id,
