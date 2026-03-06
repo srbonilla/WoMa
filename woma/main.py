@@ -2052,7 +2052,7 @@ class Planet:
             print("Done")
             self.print_info()
 
-    def gen_prof_L3_find_R_R1_R2_given_M1_M2_M3(self):  ### WIP
+    def gen_prof_L3_find_R_R1_R2_given_M1_M2_M3(self):
         return None
 
 
@@ -2331,8 +2331,7 @@ class SpinPlanet:
         self.A1_R_layer = np.array([self.A1_R[idx] for idx in self.A1_idx_layer_eq])
 
         # Find polar radii by interpolating between the polar densities
-        rho_model_po_inv = interp1d(self.A1_rho_po, self.A1_r_po)
-        self.A1_Z = rho_model_po_inv(self.A1_rho)
+        self.A1_Z = np.interp(self.A1_rho, self.A1_rho_po[::-1], self.A1_r_po[::-1])
         self.A1_Z_layer = np.array([self.A1_Z[idx] for idx in self.A1_idx_layer_eq])
 
         self.A1_mat_id = np.ones_like(self.A1_R)
