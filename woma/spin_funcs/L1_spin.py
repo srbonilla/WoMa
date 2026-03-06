@@ -3,7 +3,6 @@ WoMa 1 layer spinning functions
 """
 
 import numpy as np
-from scipy.interpolate import interp1d
 from numba import njit, jit
 
 from woma.spin_funcs import utils_spin as us
@@ -44,10 +43,8 @@ def V_eq_po_from_rho(A1_r_eq, A1_rho_eq, A1_r_po, A1_rho_po, period):
     assert A1_r_eq.shape[0] == A1_rho_eq.shape[0]
     assert A1_r_po.shape[0] == A1_rho_po.shape[0]
 
-    rho_model_po_inv = interp1d(A1_rho_po, A1_r_po, fill_value="extrapolate")
-
     A1_R = A1_r_eq
-    A1_Z = rho_model_po_inv(A1_rho_eq)
+    A1_Z = np.interp(A1_rho_eq, A1_rho_po, A1_r_po)
 
     A1_V_eq = np.zeros(A1_r_eq.shape)
     A1_V_po = np.zeros(A1_r_po.shape)
