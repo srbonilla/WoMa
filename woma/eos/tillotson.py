@@ -504,7 +504,6 @@ def T_u_rho(u, rho, mat_id):
 
 @njit
 def NR_iter(rho_iter, curve, P, u, material):
-
     """Carries out one Newton-Raphson iteration.
 
     Parameters

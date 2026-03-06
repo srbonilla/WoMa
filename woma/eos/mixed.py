@@ -715,7 +715,7 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
         The chosen parameter (SI).
     """
     mix_tot = sum(A1_mix)
-    
+
     # No heavy-element fraction
     if mix_tot == 0:
         return _Z_rho_Y_single(rho, Y, A1_mixed_mat_id[0], 0, Z_choice, Y_choice)
@@ -993,7 +993,7 @@ def Z_X_T(X, T, A1_mix, Z_choice, X_choice):
         The chosen parameter (SI).
     """
     mix_tot = sum(A1_mix)
-    
+
     # No heavy-element fraction
     if mix_tot == 0:
         return _Z_X_T_single(X, T, A1_mixed_mat_id[0], 0, Z_choice, X_choice)
