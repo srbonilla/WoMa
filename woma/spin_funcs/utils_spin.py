@@ -11,6 +11,7 @@ import seagen
 from woma.misc import glob_vars as gv
 from woma.spin_funcs import L1_spin, L2_spin, L3_spin
 
+
 # Spining model functions
 @njit
 def Kellogg_V_r_indef(r, R, Z, x):
@@ -429,9 +430,7 @@ def vol_i_partial(theta, R, Z):
     """
 
     i = -np.sqrt(2) * R**2 * np.cos(theta)
-    i = i / np.sqrt(
-        1 / R**2 + 1 / Z**2 + (-1 / R**2 + 1 / Z**2) * np.cos(2 * theta)
-    )
+    i = i / np.sqrt(1 / R**2 + 1 / Z**2 + (-1 / R**2 + 1 / Z**2) * np.cos(2 * theta))
     i = i + R**2 * Z
 
     return i
@@ -579,7 +578,6 @@ def place_particles(
     verbosity=1,
     seed=None,
 ):
-
     """Particle placement for a spining profile.
 
     Parameters

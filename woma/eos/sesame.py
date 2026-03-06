@@ -9,53 +9,6 @@ from woma.misc import glob_vars as gv
 from woma.misc import utils as ut
 
 
-@njit
-def find_index_and_interp(x, A1_x):
-    """Return the index and interpolation factor of a value in an array.
-
-    Allows x outside A1_x. If so then intp will be < 0 or > 1.
-
-    Parameters
-    ----------
-    x : float
-        The value to find.
-
-    A1_x : [float]
-        The array to search.
-
-    Returns
-    -------
-    idx : int
-        The index of the last array element smaller than the value.
-
-        0               If x is below A1_x.
-        len(A1_x) - 2   If x is above A1_x.
-
-    intp : float
-        The interpolation factor for how far the values is from the
-        indexed array value to the next.
-
-        < 0     If x is below A1_x.
-        > 1     If x is above A1_x.
-    """
-    # assert np.all(np.sort(A1_x) == A1_x)
-
-    idx = np.searchsorted(A1_x, x, side="right") - 1
-    # Return error values if outside the array
-    if idx == -1:
-        idx = 0
-    elif idx >= len(A1_x) - 1:
-        idx = len(A1_x) - 2
-
-    # Check for duplicate elements
-    if A1_x[idx + 1] != A1_x[idx]:
-        intp = (x - A1_x[idx]) / (A1_x[idx + 1] - A1_x[idx])
-    else:
-        intp = 1.0
-
-    return np.array([idx, intp])
-
-
 def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
     """Prepare SESAME-like tables to be used.
 
@@ -723,6 +676,7 @@ A2_phase_ANEOS_forsterite = np.zeros((2, 2))
     np.zeros((2, 2)),
 )
 
+
 # ========
 # Generic
 # ========
@@ -903,12 +857,12 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
@@ -1012,12 +966,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SESAME_iron
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_iron
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SESAME_iron
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SESAME_iron
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SESAME_iron
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SESAME_iron
     elif mat_id == gv.id_SESAME_basalt:
         A1_log_rho = A1_log_rho_SESAME_basalt
         if Z_choice == "P":
@@ -1026,12 +984,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SESAME_basalt
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_basalt
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_basalt
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SESAME_basalt
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SESAME_basalt
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SESAME_basalt
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SESAME_basalt
     elif mat_id == gv.id_SESAME_water:
         A1_log_rho = A1_log_rho_SESAME_water
         if Z_choice == "P":
@@ -1040,12 +1002,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SESAME_water
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_water
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SESAME_water
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SESAME_water
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SESAME_water
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SESAME_water
     elif mat_id == gv.id_SS08_water:
         A1_log_rho = A1_log_rho_SS08_water
         if Z_choice == "P":
@@ -1054,12 +1020,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_SS08_water
         elif Z_choice == "s":
             A2_Z = A2_s_SS08_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SS08_water
         if Y_choice == "P":
             A2_log_Y = A2_log_P_SS08_water
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_SS08_water
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_SS08_water
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_SS08_water
     elif mat_id == gv.id_ANEOS_forsterite:
         A1_log_rho = A1_log_rho_ANEOS_forsterite
         if Z_choice == "P":
@@ -1068,12 +1038,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_forsterite
         elif Z_choice == "phase":
             A2_Z = A2_phase_ANEOS_forsterite
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_forsterite
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_ANEOS_forsterite
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_ANEOS_forsterite
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
@@ -1084,12 +1058,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_iron
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_iron
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_iron
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_ANEOS_iron
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_ANEOS_iron
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_ANEOS_iron
     elif mat_id == gv.id_ANEOS_Fe85Si15:
         A1_log_rho = A1_log_rho_ANEOS_Fe85Si15
         if Z_choice == "P":
@@ -1098,12 +1076,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_ANEOS_Fe85Si15
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_Fe85Si15
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_Fe85Si15
         if Y_choice == "P":
             A2_log_Y = A2_log_P_ANEOS_Fe85Si15
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_ANEOS_Fe85Si15
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_ANEOS_Fe85Si15
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_ANEOS_Fe85Si15
     elif mat_id == gv.id_AQUA:
         A1_log_rho = A1_log_rho_AQUA
         if Z_choice == "P":
@@ -1112,12 +1094,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_AQUA
         elif Z_choice == "s":
             A2_Z = A2_s_AQUA
+        elif Z_choice == "c":
+            A2_Z = A2_c_AQUA
         if Y_choice == "P":
             A2_log_Y = A2_log_P_AQUA
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_AQUA
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_AQUA
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_AQUA
     elif mat_id == gv.id_CMS19_H:
         A1_log_rho = A1_log_rho_CMS19_H
         if Z_choice == "P":
@@ -1126,12 +1112,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_CMS19_H
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_H
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_H
         if Y_choice == "P":
             A2_log_Y = A2_log_P_CMS19_H
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_CMS19_H
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CMS19_H
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_CMS19_H
     elif mat_id == gv.id_CMS19_He:
         A1_log_rho = A1_log_rho_CMS19_He
         if Z_choice == "P":
@@ -1140,12 +1130,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_CMS19_He
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_He
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_He
         if Y_choice == "P":
             A2_log_Y = A2_log_P_CMS19_He
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_CMS19_He
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CMS19_He
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_CMS19_He
     elif mat_id == gv.id_CD21_HHe:
         A1_log_rho = A1_log_rho_CD21_HHe
         if Z_choice == "P":
@@ -1154,12 +1148,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
             A2_Z = A2_s_CD21_HHe
+        elif Z_choice == "c":
+            A2_Z = A2_c_CD21_HHe
         if Y_choice == "P":
             A2_log_Y = A2_log_P_CD21_HHe
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_CD21_HHe
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_CD21_HHe
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_CD21_HHe
     elif mat_id == gv.id_custom_0:
         A1_log_rho = A1_log_rho_custom_0
         if Z_choice == "P":
@@ -1168,12 +1166,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_0
         elif Z_choice == "s":
             A2_Z = A2_s_custom_0
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_0
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_0
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_0
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_0
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_0
     elif mat_id == gv.id_custom_1:
         A1_log_rho = A1_log_rho_custom_1
         if Z_choice == "P":
@@ -1182,12 +1184,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_1
         elif Z_choice == "s":
             A2_Z = A2_s_custom_1
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_1
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_1
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_1
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_1
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_1
     elif mat_id == gv.id_custom_2:
         A1_log_rho = A1_log_rho_custom_2
         if Z_choice == "P":
@@ -1196,12 +1202,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_2
         elif Z_choice == "s":
             A2_Z = A2_s_custom_2
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_2
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_2
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_2
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_2
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_2
     elif mat_id == gv.id_custom_3:
         A1_log_rho = A1_log_rho_custom_3
         if Z_choice == "P":
@@ -1210,12 +1220,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_3
         elif Z_choice == "s":
             A2_Z = A2_s_custom_3
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_3
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_3
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_3
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_3
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_3
     elif mat_id == gv.id_custom_4:
         A1_log_rho = A1_log_rho_custom_4
         if Z_choice == "P":
@@ -1224,12 +1238,16 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_u_custom_4
         elif Z_choice == "s":
             A2_Z = A2_s_custom_4
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_4
         if Y_choice == "P":
             A2_log_Y = A2_log_P_custom_4
         elif Y_choice == "u":
             A2_log_Y = A2_log_u_custom_4
         elif Y_choice == "s":
             A2_log_Y = A2_log_s_custom_4
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_custom_4
     else:
         raise ValueError("Invalid material ID")
 
@@ -1248,15 +1266,15 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # Y (in this and the next density slice of the 2D Y array)
-    idx_Y_1_intp_Y_1 = find_index_and_interp(log_Y, A2_log_Y[idx_rho])
+    idx_Y_1_intp_Y_1 = ut.find_index_and_interp(log_Y, A2_log_Y[idx_rho])
     idx_Y_1 = int(idx_Y_1_intp_Y_1[0])
     intp_Y_1 = idx_Y_1_intp_Y_1[1]
-    idx_Y_2_intp_Y_2 = find_index_and_interp(log_Y, A2_log_Y[idx_rho + 1])
+    idx_Y_2_intp_Y_2 = ut.find_index_and_interp(log_Y, A2_log_Y[idx_rho + 1])
     idx_Y_2 = int(idx_Y_2_intp_Y_2[0])
     intp_Y_2 = idx_Y_2_intp_Y_2[1]
 
@@ -1370,12 +1388,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SESAME_iron
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_iron
         if X_choice == "P":
             A2_log_X = A2_log_P_SESAME_iron
         elif X_choice == "u":
             A2_log_X = A2_log_u_SESAME_iron
         elif X_choice == "s":
             A2_log_X = A2_log_s_SESAME_iron
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SESAME_iron
     elif mat_id == gv.id_SESAME_basalt:
         A1_log_T = A1_log_T_SESAME_basalt
         if Z_choice == "P":
@@ -1384,12 +1406,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SESAME_basalt
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_basalt
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_basalt
         if X_choice == "P":
             A2_log_X = A2_log_P_SESAME_basalt
         elif X_choice == "u":
             A2_log_X = A2_log_u_SESAME_basalt
         elif X_choice == "s":
             A2_log_X = A2_log_s_SESAME_basalt
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SESAME_basalt
     elif mat_id == gv.id_SESAME_water:
         A1_log_T = A1_log_T_SESAME_water
         if Z_choice == "P":
@@ -1398,12 +1424,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SESAME_water
         elif Z_choice == "s":
             A2_Z = A2_s_SESAME_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SESAME_water
         if X_choice == "P":
             A2_log_X = A2_log_P_SESAME_water
         elif X_choice == "u":
             A2_log_X = A2_log_u_SESAME_water
         elif X_choice == "s":
             A2_log_X = A2_log_s_SESAME_water
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SESAME_water
     elif mat_id == gv.id_SS08_water:
         A1_log_T = A1_log_T_SS08_water
         if Z_choice == "P":
@@ -1412,12 +1442,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_SS08_water
         elif Z_choice == "s":
             A2_Z = A2_s_SS08_water
+        elif Z_choice == "c":
+            A2_Z = A2_c_SS08_water
         if X_choice == "P":
             A2_log_X = A2_log_P_SS08_water
         elif X_choice == "u":
             A2_log_X = A2_log_u_SS08_water
         elif X_choice == "s":
             A2_log_X = A2_log_s_SS08_water
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_SS08_water
     elif mat_id == gv.id_ANEOS_forsterite:
         A1_log_T = A1_log_T_ANEOS_forsterite
         if Z_choice == "P":
@@ -1426,12 +1460,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_forsterite
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_forsterite
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_forsterite
         elif Z_choice == "phase":
             A2_Z = A2_phase_ANEOS_forsterite
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_forsterite
         elif X_choice == "u":
             A2_log_X = A2_log_u_ANEOS_forsterite
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_ANEOS_forsterite
         elif X_choice == "s":
             A2_log_X = A2_log_s_ANEOS_forsterite
     elif mat_id == gv.id_ANEOS_iron:
@@ -1442,12 +1480,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_iron
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_iron
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_iron
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_iron
         elif X_choice == "u":
             A2_log_X = A2_log_u_ANEOS_iron
         elif X_choice == "s":
             A2_log_X = A2_log_s_ANEOS_iron
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_ANEOS_iron
     elif mat_id == gv.id_ANEOS_Fe85Si15:
         A1_log_T = A1_log_T_ANEOS_Fe85Si15
         if Z_choice == "P":
@@ -1456,12 +1498,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_ANEOS_Fe85Si15
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_Fe85Si15
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_Fe85Si15
         if X_choice == "P":
             A2_log_X = A2_log_P_ANEOS_Fe85Si15
         elif X_choice == "u":
             A2_log_X = A2_log_u_ANEOS_Fe85Si15
         elif X_choice == "s":
             A2_log_X = A2_log_s_ANEOS_Fe85Si15
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_ANEOS_Fe85Si15
     elif mat_id == gv.id_AQUA:
         A1_log_T = A1_log_T_AQUA
         if Z_choice == "P":
@@ -1470,12 +1516,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_AQUA
         elif Z_choice == "s":
             A2_Z = A2_s_AQUA
+        elif Z_choice == "c":
+            A2_Z = A2_c_AQUA
         if X_choice == "P":
             A2_log_X = A2_log_P_AQUA
         elif X_choice == "u":
             A2_log_X = A2_log_u_AQUA
         elif X_choice == "s":
             A2_log_X = A2_log_s_AQUA
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_AQUA
     elif mat_id == gv.id_CMS19_H:
         A1_log_T = A1_log_T_CMS19_H
         if Z_choice == "P":
@@ -1484,12 +1534,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_CMS19_H
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_H
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_H
         if X_choice == "P":
             A2_log_X = A2_log_P_CMS19_H
         elif X_choice == "u":
             A2_log_X = A2_log_u_CMS19_H
         elif X_choice == "s":
             A2_log_X = A2_log_s_CMS19_H
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_CMS19_H
     elif mat_id == gv.id_CMS19_He:
         A1_log_T = A1_log_T_CMS19_He
         if Z_choice == "P":
@@ -1498,12 +1552,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_CMS19_He
         elif Z_choice == "s":
             A2_Z = A2_s_CMS19_He
+        elif Z_choice == "c":
+            A2_Z = A2_c_CMS19_He
         if X_choice == "P":
             A2_log_X = A2_log_P_CMS19_He
         elif X_choice == "u":
             A2_log_X = A2_log_u_CMS19_He
         elif X_choice == "s":
             A2_log_X = A2_log_s_CMS19_He
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_CMS19_He
     elif mat_id == gv.id_CD21_HHe:
         A1_log_T = A1_log_T_CD21_HHe
         if Z_choice == "P":
@@ -1512,12 +1570,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_CD21_HHe
         elif Z_choice == "s":
             A2_Z = A2_s_CD21_HHe
+        elif Z_choice == "c":
+            A2_Z = A2_c_CD21_HHe
         if X_choice == "P":
             A2_log_X = A2_log_P_CD21_HHe
         elif X_choice == "u":
             A2_log_X = A2_log_u_CD21_HHe
         elif X_choice == "s":
             A2_log_X = A2_log_s_CD21_HHe
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_CD21_HHe
     elif mat_id == gv.id_custom_0:
         A1_log_T = A1_log_T_custom_0
         if Z_choice == "P":
@@ -1526,12 +1588,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_0
         elif Z_choice == "s":
             A2_Z = A2_s_custom_0
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_0
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_0
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_0
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_0
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_0
     elif mat_id == gv.id_custom_1:
         A1_log_T = A1_log_T_custom_1
         if Z_choice == "P":
@@ -1540,12 +1606,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_1
         elif Z_choice == "s":
             A2_Z = A2_s_custom_1
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_1
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_1
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_1
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_1
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_1
     elif mat_id == gv.id_custom_2:
         A1_log_T = A1_log_T_custom_2
         if Z_choice == "P":
@@ -1554,12 +1624,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_2
         elif Z_choice == "s":
             A2_Z = A2_s_custom_2
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_2
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_2
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_2
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_2
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_2
     elif mat_id == gv.id_custom_3:
         A1_log_T = A1_log_T_custom_3
         if Z_choice == "P":
@@ -1568,12 +1642,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_3
         elif Z_choice == "s":
             A2_Z = A2_s_custom_3
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_3
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_3
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_3
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_3
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_3
     elif mat_id == gv.id_custom_4:
         A1_log_T = A1_log_T_custom_4
         if Z_choice == "P":
@@ -1582,12 +1660,16 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_u_custom_4
         elif Z_choice == "s":
             A2_Z = A2_s_custom_4
+        elif Z_choice == "c":
+            A2_Z = A2_c_custom_4
         if X_choice == "P":
             A2_log_X = A2_log_P_custom_4
         elif X_choice == "u":
             A2_log_X = A2_log_u_custom_4
         elif X_choice == "s":
             A2_log_X = A2_log_s_custom_4
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_custom_4
     else:
         raise ValueError("Invalid material ID")
 
@@ -1606,15 +1688,15 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
     # X (in this and the next temperature slice of the 2D X array)
-    idx_X_1_intp_X_1 = find_index_and_interp(log_X, A2_log_X[:, idx_T])
+    idx_X_1_intp_X_1 = ut.find_index_and_interp(log_X, A2_log_X[:, idx_T])
     idx_X_1 = int(idx_X_1_intp_X_1[0])
     intp_X_1 = idx_X_1_intp_X_1[1]
-    idx_X_2_intp_X_2 = find_index_and_interp(log_X, A2_log_X[:, idx_T + 1])
+    idx_X_2_intp_X_2 = ut.find_index_and_interp(log_X, A2_log_X[:, idx_T + 1])
     idx_X_2 = int(idx_X_2_intp_X_2[0])
     intp_X_2 = idx_X_2_intp_X_2[1]
 
@@ -1811,15 +1893,15 @@ def P_u_rho(u, rho, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # u (in this and the next density slice of the 2D u array)
-    idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
+    idx_u_1_intp_u_1 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho])
     idx_u_1 = int(idx_u_1_intp_u_1[0])
     intp_u_1 = idx_u_1_intp_u_1[1]
-    idx_u_2_intp_u_2 = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
+    idx_u_2_intp_u_2 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
     idx_u_2 = int(idx_u_2_intp_u_2[0])
     intp_u_2 = idx_u_2_intp_u_2[1]
 
@@ -2002,12 +2084,12 @@ def P_T_rho(T, rho, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
@@ -2160,15 +2242,15 @@ def T_rho_s(rho, s, mat_id):
     # Convert to log
     log_rho = np.log(rho)
 
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # s (in this and the next density slice of the 2D s array)
-    idx_s_1_intp_s_1 = find_index_and_interp(s, A2_s[idx_rho])
+    idx_s_1_intp_s_1 = ut.find_index_and_interp(s, A2_s[idx_rho])
     idx_s_1 = int(idx_s_1_intp_s_1[0])
     intp_s_1 = idx_s_1_intp_s_1[1]
-    idx_s_2_intp_s_2 = find_index_and_interp(s, A2_s[idx_rho + 1])
+    idx_s_2_intp_s_2 = ut.find_index_and_interp(s, A2_s[idx_rho + 1])
     idx_s_2 = int(idx_s_2_intp_s_2[0])
     intp_s_2 = idx_s_2_intp_s_2[1]
 
@@ -2313,15 +2395,15 @@ def T_u_rho(u, rho, mat_id):
     # Convert to log
     log_rho = np.log(rho)
 
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # s (in this and the next density slice of the 2D u array)
-    idx_u_1_intp_u_1 = find_index_and_interp(u, A2_u[idx_rho])
+    idx_u_1_intp_u_1 = ut.find_index_and_interp(u, A2_u[idx_rho])
     idx_u_1 = int(idx_u_1_intp_u_1[0])
     intp_u_1 = idx_u_1_intp_u_1[1]
-    idx_u_2_intp_u_2 = find_index_and_interp(u, A2_u[idx_rho + 1])
+    idx_u_2_intp_u_2 = ut.find_index_and_interp(u, A2_u[idx_rho + 1])
     idx_u_2 = int(idx_u_2_intp_u_2[0])
     intp_u_2 = idx_u_2_intp_u_2[1]
 
@@ -2475,12 +2557,12 @@ def u_rho_T(rho, T, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
@@ -2656,15 +2738,15 @@ def s_u_rho(u, rho, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # u (in this and the next density slice of the 2D u array)
-    idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
+    idx_u_1_intp_u_1 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho])
     idx_u_1 = int(idx_u_1_intp_u_1[0])
     intp_u_1 = idx_u_1_intp_u_1[1]
-    idx_u_2_intp_u_2 = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
+    idx_u_2_intp_u_2 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
     idx_u_2 = int(idx_u_2_intp_u_2[0])
     intp_u_2 = idx_u_2_intp_u_2[1]
 
@@ -2842,12 +2924,12 @@ def s_rho_T(rho, T, mat_id):
     # formula to extrapolate using the edge and edge-but-one values.
 
     # Density
-    idx_rho_intp_rho = find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
-    idx_T_intp_T = find_index_and_interp(log_T, A1_log_T)
+    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
     idx_T = int(idx_T_intp_T[0])
     intp_T = idx_T_intp_T[1]
 
@@ -3023,7 +3105,7 @@ def rho_u_P(u, P, mat_id, rho_ref):
     log_rho_ref = np.log(rho_ref)
 
     # Find rounded down index of reference density. This is where we start our search
-    idx_rho_intp_rho_ref = find_index_and_interp(log_rho_ref, A1_log_rho)
+    idx_rho_intp_rho_ref = ut.find_index_and_interp(log_rho_ref, A1_log_rho)
     idx_rho_ref = int(idx_rho_intp_rho_ref[0])
 
     # If no roots are found in the current search range, we increase search range
@@ -3064,9 +3146,9 @@ def rho_u_P(u, P, mat_id, rho_ref):
     while closest_root == 0 and counter1 < max_counter:
         # Increase search range by search_factor_log_rho
         log_rho_max += search_factor_log_rho
-        idx_rho_above_max = int(find_index_and_interp(log_rho_max, A1_log_rho)[0])
+        idx_rho_above_max = int(ut.find_index_and_interp(log_rho_max, A1_log_rho)[0])
         log_rho_min -= search_factor_log_rho
-        idx_rho_below_min = int(find_index_and_interp(log_rho_min, A1_log_rho)[0])
+        idx_rho_below_min = int(ut.find_index_and_interp(log_rho_min, A1_log_rho)[0])
 
         counter2 = 0
         # If table densities have large enough increments that increasing search range
@@ -3077,9 +3159,13 @@ def rho_u_P(u, P, mat_id, rho_ref):
             or idx_rho_above_max < idx_rho_above_min
         ) and counter2 < max_counter:
             log_rho_max += search_factor_log_rho
-            idx_rho_above_max = int(find_index_and_interp(log_rho_max, A1_log_rho)[0])
+            idx_rho_above_max = int(
+                ut.find_index_and_interp(log_rho_max, A1_log_rho)[0]
+            )
             log_rho_min -= search_factor_log_rho
-            idx_rho_below_min = int(find_index_and_interp(log_rho_min, A1_log_rho)[0])
+            idx_rho_below_min = int(
+                ut.find_index_and_interp(log_rho_min, A1_log_rho)[0]
+            )
             counter2 += 1
 
         # When searching above/below, we are looking for where the pressure P(rho, u)
@@ -3094,10 +3180,10 @@ def rho_u_P(u, P, mat_id, rho_ref):
             # but instead calculate the pressure for both intp_rho=0 and intp_rho=1
 
             # u (in this and the next density slice of the 2D u array)
-            idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
+            idx_u_1_intp_u_1 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho])
             idx_u_1 = int(idx_u_1_intp_u_1[0])
             intp_u_1 = idx_u_1_intp_u_1[1]
-            idx_u_2_intp_u_2 = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
+            idx_u_2_intp_u_2 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
             idx_u_2 = int(idx_u_2_intp_u_2[0])
             intp_u_2 = idx_u_2_intp_u_2[1]
 
@@ -3181,15 +3267,17 @@ def rho_u_P(u, P, mat_id, rho_ref):
         # since we're only looking for the closest root.
         if closest_root:
             log_rho_min = log_rho_ref - (np.log(closest_root) - log_rho_ref)
-            idx_rho_below_min = int(find_index_and_interp(log_rho_min, A1_log_rho)[0])
+            idx_rho_below_min = int(
+                ut.find_index_and_interp(log_rho_min, A1_log_rho)[0]
+            )
 
         # Now look for roots below rho_ref
         for idx_rho in range(idx_rho_below_max, idx_rho_below_min - 1, -1):
             # u (in this and the next density slice of the 2D u array)
-            idx_u_1_intp_u_1 = find_index_and_interp(log_u, A2_log_u[idx_rho])
+            idx_u_1_intp_u_1 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho])
             idx_u_1 = int(idx_u_1_intp_u_1[0])
             intp_u_1 = idx_u_1_intp_u_1[1]
-            idx_u_2_intp_u_2 = find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
+            idx_u_2_intp_u_2 = ut.find_index_and_interp(log_u, A2_log_u[idx_rho + 1])
             idx_u_2 = int(idx_u_2_intp_u_2[0])
             intp_u_2 = idx_u_2_intp_u_2[1]
 
