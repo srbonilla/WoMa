@@ -4,9 +4,11 @@ WoMa SESAME, ANEOS, and other (in ~SESAME-style tables) equations of state
 
 import numpy as np
 from numba import njit
+import h5py
 
 from woma.misc import glob_vars as gv
 from woma.misc import utils as ut
+from woma.misc import io
 
 
 def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
@@ -101,7 +103,7 @@ def prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0):
         print("fraction:", count / n_row / n_col)
 
 
-def load_table_SESAME(Fp_table):
+def load_table_SESAME_txt(Fp_table):
     """Load and return the table file data.
 
     File contents: see write_table_SESAME().
@@ -153,6 +155,48 @@ def load_table_SESAME(Fp_table):
 
     # Prepare table
     prepare_table_SESAME(A1_rho, A1_T, A2_P, A2_u, A2_s, verbosity=0)
+
+    return (
+        A1_rho,
+        A1_T,
+        A2_u,
+        A2_P,
+        A2_c,
+        A2_s,
+        np.log(A1_rho),
+        np.log(A1_T),
+        np.log(A2_u),
+        np.log(A2_P),
+        np.log(A2_c),
+        np.log(A2_s),
+    )
+
+
+def load_table_SESAME(Fp_table):
+    """Load the table data from hdf5. See Material_SESAME.write_table()."""
+    with h5py.File(Fp_table, "r") as f:
+        # Header attributes
+        name = f["Header"].attrs[io.Di_hdf5_eos_label["name"]]
+        version_date = f["Header"].attrs[io.Di_hdf5_eos_label["version_date"]]
+        reference = f["Header"].attrs[io.Di_hdf5_eos_label["reference"]]
+        num_rho = f["Header"].attrs[io.Di_hdf5_eos_label["num_rho"]]
+        num_T = f["Header"].attrs[io.Di_hdf5_eos_label["num_T"]]
+
+        # Table data
+        A1_rho = f["Table/" + io.Di_hdf5_eos_label["rho"]][()]
+        A1_T = f["Table/" + io.Di_hdf5_eos_label["T"]][()]
+        A2_u = f["Table/" + io.Di_hdf5_eos_label["u"]][()]
+        A2_P = f["Table/" + io.Di_hdf5_eos_label["P"]][()]
+        A2_c = f["Table/" + io.Di_hdf5_eos_label["c"]][()]
+        A2_s = f["Table/" + io.Di_hdf5_eos_label["s"]][()]
+
+    # Checks
+    assert num_rho == len(A1_rho)
+    assert num_T == len(A1_T)
+    assert A2_u.shape == (num_rho, num_T)
+    assert A2_P.shape == (num_rho, num_T)
+    assert A2_c.shape == (num_rho, num_T)
+    assert A2_s.shape == (num_rho, num_T)
 
     return (
         A1_rho,

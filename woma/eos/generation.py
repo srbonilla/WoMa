@@ -7,7 +7,7 @@ import numpy as np
 from scipy.optimize import minimize_scalar
 import h5py
 
-from woma.eos import mixed
+from woma.eos import mixed, sesame
 from woma.misc import utils as ut
 from woma.misc import glob_vars as gv
 from woma.misc import io
@@ -590,96 +590,439 @@ def write_all_HM80_tables():
 # ========
 # SESAME and SESAME-style
 # ========
-def write_table_SESAME(
-    Fp_table, name, version_date, A1_rho, A1_T, A2_u, A2_P, A2_c, A2_s
-):
-    """Write the data to a file, in a SESAME-like format plus header info, etc.
+class Material_SESAME:
+    """Hubbard & MacFarlane (1980) materials.
 
-    File contents
-    -------------
-    # header (12 lines)
-    version_date                                                (YYYYMMDD)
-    num_rho  num_T
-    rho[0]   rho[1]  ...  rho[num_rho]                          (kg/m^3)
-    T[0]     T[1]    ...  T[num_T]                              (K)
-    u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s, J/K/kg)
-    u[1, 0]                 ...         ...         ...
-    ...                     ...         ...         ...
-    u[num_rho-1, 0]         ...         ...         ...
-    u[0, 1]                 ...         ...         ...
-    ...                     ...         ...         ...
-    u[num_rho-1, num_T-1]   ...         ...         s[num_rho-1, num_T-1]
+    Some attributes apply to only hydrogen--helium or to only the ice and rock.
+
+    Note: HM80's EoS parameter units are cgs and Mbar, not SI.
 
     Parameters
     ----------
-    Fp_table : str
-        The table file path.
-
     name : str
         The material name.
 
     version_date : int
         The file version date (YYYYMMDD).
-
-    A1_rho, A1_T : [float]
-        Density (kg m^-3) and temperature (K) arrays.
-
-    A2_u, A2_P, A2_c, A2_s : [[float]]
-        Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound speed
-        (m s^-1), and sp. entropy (J K^-1 kg^-1).
     """
-    Fp_table = ut.check_end(Fp_table, ".txt")
-    num_rho = len(A1_rho)
-    num_T = len(A1_T)
 
-    with open(Fp_table, "w") as f:
-        # Header
-        f.write("# Material %s\n" % name)
-        f.write(
-            "# version_date                                                (YYYYMMDD)\n"
-            "# num_rho  num_T\n"
-            "# rho[0]   rho[1]  ...  rho[num_rho-1]                        (kg/m^3)\n"
-            "# T[0]     T[1]    ...  T[num_T-1]                            (K)\n"
-            "# u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s, J/K/kg)\n"
-            "# u[1, 0]                 ...         ...         ...\n"
-            "# ...                     ...         ...         ...\n"
-            "# u[num_rho-1, 0]         ...         ...         ...\n"
-            "# u[0, 1]                 ...         ...         ...\n"
-            "# ...                     ...         ...         ...\n"
-            "# u[num_rho-1, num_T-1]   ...         ...         s[num_rho-1, num_T-1]\n"
+    def __init__(self, name, version_date, reference=""):
+        self.name = name
+        self.version_date = version_date
+        self.reference = reference
+        self.Fp_table = gv.dir_data + self.name + ".hdf5"
+
+    def _load_raw_table_AQUA(self):
+        """Load and convert the AQUA EoS data (Haldemann et al., 2020; Cano Amoros et al., 2026).
+
+        Raw txt table: rho, T (original)
+        -------------
+        21 lines header
+
+        # Label   Unit     Format  Description
+        rho       kg/m^3   E14.8   Density     (1501 x log spaced)
+        temp      K        E14.8   Temperature ( 301 x log spaced)
+        press     Pa       E14.8   Pressure
+        ad_grad   1        E14.8   Adiabatic temperature gradient, (dlog(T)/dlog(P))_S
+        s         J/(kg*K) E14.8   Specific entropy
+        u         J/kg     E14.8   Specific internal energy
+        c         m/s      E14.8   Bulk speed of sound
+        mmw       kg/mol   E14.8   Mean molecular weight
+        x_ion     1        E14.8   Ionization fraction   ( x_ion = N_e/N_tot )
+        x_d       1        E14.8   Dissociation fraction ( x_d   = 1 - N_H2O/N_tot )
+        phase     1        I3      Phase id:
+            vapor+ice: 0,
+            vapor+liquid: 1,
+            ice+liquid: 2,
+            vapor: 3,
+            liquid: 4,
+            supercritical+superionic: 5,
+            ice-Ih: -1,
+            ice-II: -2,
+            ice-III: -3,
+            ice-V: -5,
+            ice-VI:-6,
+            ice-VII/X: -7,
+            ice-Ih+ice-II: -12,
+            ice-Ih+ice-III: -13,
+            ice-II+ice-III: -23,
+            ice-II+ice-V: -25,
+            ice-II+ice-VI: -26,
+            ice-III+ice-V: -35,
+            ice-III+ice-VI: -36,
+            ice-VI+ice-VII: -67,
+            ice-X+superionic: -10
+
+        Raw csv table: P, T (updated entropies)
+        -------------
+        1 line header
+
+        # Label              Units       Explanations
+        pressure             Pa          Pressure (1093 x log spaced)
+        temperature          K           Temperature (278 x log spaced)
+        density              kg/m3       Density
+        entropy              J/kg/K      Specific entropy (1)
+        internal_energy      J/kg        Specific internal energy
+        dlnS_dlnP_T          ---         Logarithmic derivative of entropy with respect to pressure at constant temperature
+        dlnS_dlnT_P          ---         Logarithmic derivative of entropy with respect to temperature at constant pressure
+        ad_grad              ---         Adiabatic gradient from -(dlnS_dlnP_T)/(dlnS_dlnT_P)
+        phase                ---         Phase ID (2), as above plus: 0 = extrapolated ice
+        flag                 ---         Interpolation flag (3)
+        """
+        # Load the raw data
+        filename = gv.dir_data + "AQUA_H2O_raw.txt"
+        print("Loading %s..." % filename[-50:])
+        data = np.genfromtxt(
+            filename,
+            skip_header=21,
+            names=[
+                "rho",
+                "T",
+                "P",
+                "ad_grad",
+                "s",
+                "u",
+                "c",
+                "mmw",
+                "x_ion",
+                "x_d",
+                "phase",
+            ],
         )
 
-        # Metadata
-        f.write("%d \n" % version_date)
-        f.write("%d %d \n" % (num_rho, num_T))
+        # Extract and reshape
+        A1_rho = np.unique(data["rho"])
+        A1_T = np.unique(data["T"])
+        num_rho = len(A1_rho)
+        num_T = len(A1_T)
+        assert np.allclose(data["rho"], np.repeat(A1_rho, num_T))
+        assert np.allclose(data["T"], np.tile(A1_T, num_rho))
+        A2_P = data["P"].reshape(num_rho, num_T)
+        A2_s = data["s"].reshape(num_rho, num_T)
+        A2_u = data["u"].reshape(num_rho, num_T)
+        A2_c = data["c"].reshape(num_rho, num_T)
 
-        # Density and temperature arrays
-        for i_rho in range(num_rho):
-            f.write("%.8e " % A1_rho[i_rho])
-        f.write("\n")
-        for i_T in range(num_T):
-            f.write("%.8e " % A1_T[i_T])
-        f.write("\n")
+        # Load the raw data with revised entropies (can't just use these since not rho--T space)
+        filename = gv.dir_data + "AQUA_rev_raw.csv"
+        print("Loading %s..." % filename[-50:])
+        data_rev = np.genfromtxt(
+            filename,
+            delimiter=",",
+            skip_header=1,
+            names=[
+                "P",
+                "T",
+                "rho",
+                "s",
+                "u",
+                "dlnS_dlnP_T",
+                "dlnS_dlnT_P",
+                "ad_grad",
+                "phase",
+                "flag",
+            ],
+        )
 
-        # Table arrays
-        for i_T in range(num_T):
-            for i_rho in range(num_rho):
-                f.write(
-                    "%.8e %.8e %.8e %.8e \n"
-                    % (
-                        A2_u[i_rho, i_T],
-                        A2_P[i_rho, i_T],
-                        A2_c[i_rho, i_T],
-                        A2_s[i_rho, i_T],
-                    )
+        # Extract and reshape
+        A1_P_rev = np.unique(data_rev["P"])
+        A1_T_rev = np.unique(data_rev["T"])
+        num_P_rev = len(A1_P_rev)
+        num_T_rev = len(A1_T_rev)
+        assert np.allclose(data_rev["P"], np.repeat(A1_P_rev, num_T_rev))
+        assert np.allclose(data_rev["T"], np.tile(A1_T_rev, num_P_rev))
+        A2_rho_rev = data_rev["rho"].reshape(num_P_rev, num_T_rev).T
+        A2_s_rev = data_rev["s"].reshape(num_P_rev, num_T_rev).T
+
+        # Replace the entropies
+        for i_rho, rho in enumerate(A1_rho):
+            for i_T, T in enumerate(A1_T):
+                # 2D interpolation (bilinear with log(T), log(rho)) to find s_rev(T, rho).
+
+                # Convert to log
+                log_rho = np.log(rho)
+                log_T = np.log(T)
+                A2_log_rho = np.log(A2_rho_rev)
+                A1_log_T = np.log(A1_T_rev)
+
+                # Temperature
+                idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
+                idx_T = int(idx_T_intp_T[0])
+                intp_T = idx_T_intp_T[1]
+
+                # Density (in this and the next temperature slice of the 2D T array)
+                idx_rho_1_intp_rho_1 = ut.find_index_and_interp(
+                    log_rho, A2_log_rho[idx_T]
                 )
+                idx_rho_1 = int(idx_rho_1_intp_rho_1[0])
+                intp_rho_1 = idx_rho_1_intp_rho_1[1]
+                idx_rho_2_intp_rho_2 = ut.find_index_and_interp(
+                    log_rho, A2_log_rho[idx_T + 1]
+                )
+                idx_rho_2 = int(idx_rho_2_intp_rho_2[0])
+                intp_rho_2 = idx_rho_2_intp_rho_2[1]
+
+                # Table values
+                s_1 = A2_s_rev[idx_T, idx_rho_1]
+                s_2 = A2_s_rev[idx_T, idx_rho_1 + 1]
+                s_3 = A2_s_rev[idx_T + 1, idx_rho_2]
+                s_4 = A2_s_rev[idx_T + 1, idx_rho_2 + 1]
+
+                # s(T, rho)
+                s = (1 - intp_T) * (
+                    (1 - intp_rho_1) * s_1 + intp_rho_1 * s_2
+                ) + intp_T * ((1 - intp_rho_2) * s_3 + intp_rho_2 * s_4)
+
+                # Set the revised entropy
+                A2_s[i_rho, i_T] = s
+
+        return A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s
+
+    def write_table_txt(
+        self, Fp_table, name, version_date, A1_rho, A1_T, A2_u, A2_P, A2_c, A2_s
+    ):
+        """Write the data to a file, in a SESAME-like format plus header info, etc.
+
+        Deprecated, replaced by HDF5 format with write_table().
+
+        File contents
+        -------------
+        # header (12 lines)
+        version_date                                                (YYYYMMDD)
+        num_rho  num_T
+        rho[0]   rho[1]  ...  rho[num_rho]                          (kg/m^3)
+        T[0]     T[1]    ...  T[num_T]                              (K)
+        u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s, J/K/kg)
+        u[1, 0]                 ...         ...         ...
+        ...                     ...         ...         ...
+        u[num_rho-1, 0]         ...         ...         ...
+        u[0, 1]                 ...         ...         ...
+        ...                     ...         ...         ...
+        u[num_rho-1, num_T-1]   ...         ...         s[num_rho-1, num_T-1]
+
+        Parameters
+        ----------
+        Fp_table : str
+            The table file path.
+
+        name : str
+            The material name.
+
+        version_date : int
+            The file version date (YYYYMMDD).
+
+        A1_rho, A1_T : [float]
+            Density (kg m^-3) and temperature (K) arrays.
+
+        A2_u, A2_P, A2_c, A2_s : [[float]]
+            Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound speed
+            (m s^-1), and sp. entropy (J K^-1 kg^-1).
+        """
+        Fp_table = ut.check_end(Fp_table, ".txt")
+        num_rho = len(A1_rho)
+        num_T = len(A1_T)
+
+        with open(Fp_table, "w") as f:
+            # Header
+            f.write("# Material %s\n" % name)
+            f.write(
+                "# version_date                                                (YYYYMMDD)\n"
+                "# num_rho  num_T\n"
+                "# rho[0]   rho[1]  ...  rho[num_rho-1]                        (kg/m^3)\n"
+                "# T[0]     T[1]    ...  T[num_T-1]                            (K)\n"
+                "# u[0, 0]                 P[0, 0]     c[0, 0]     s[0, 0]     (J/kg, Pa, m/s, J/K/kg)\n"
+                "# u[1, 0]                 ...         ...         ...\n"
+                "# ...                     ...         ...         ...\n"
+                "# u[num_rho-1, 0]         ...         ...         ...\n"
+                "# u[0, 1]                 ...         ...         ...\n"
+                "# ...                     ...         ...         ...\n"
+                "# u[num_rho-1, num_T-1]   ...         ...         s[num_rho-1, num_T-1]\n"
+            )
+
+            # Metadata
+            f.write("%d \n" % version_date)
+            f.write("%d %d \n" % (num_rho, num_T))
+
+            # Density and temperature arrays
+            for i_rho in range(num_rho):
+                f.write("%.8e " % A1_rho[i_rho])
+            f.write("\n")
+            for i_T in range(num_T):
+                f.write("%.8e " % A1_T[i_T])
+            f.write("\n")
+
+            # Table arrays
+            for i_T in range(num_T):
+                for i_rho in range(num_rho):
+                    f.write(
+                        "%.8e %.8e %.8e %.8e \n"
+                        % (
+                            A2_u[i_rho, i_T],
+                            A2_P[i_rho, i_T],
+                            A2_c[i_rho, i_T],
+                            A2_s[i_rho, i_T],
+                        )
+                    )
+
+    def write_table(self, Fp_table, A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s):
+        """Write the data to an HDF5 file.
+
+        See io.Di_hdf5_eos_label.
+
+        Parameters
+        ----------
+        filename : str (opt.)
+            The table file path, defaults to self.filename.
+
+        File contents
+        -------------
+        /Header
+            name : str
+                The material name.
+
+            version_date : int
+                The file version date (YYYYMMDD).
+
+            num_rho, num_T : int
+                Lengths of the 1D arrays (and thus the sizes of the 2D ones).
+
+        /table
+            A1_rho, A1_T : [float]
+                Density (kg m^-3) and temperature (K).
+
+            A2_u, A2_P, A2_c, A2_s : [[float]]
+                Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound
+                speed (m s^-1), and sp. entropy (J K^-1 kg^-1). Dimensions in order
+                of rho, T.
+
+        /Units
+            SI units for reference, matching SWIFT's hdf5 format.
+        """
+        print("Writing %s..." % Fp_table[-50:])
+        with h5py.File(Fp_table, "w") as f:
+            # Header
+            grp = f.create_group("/Header")
+            grp.attrs[io.Di_hdf5_eos_label["name"]] = self.name
+            grp.attrs[io.Di_hdf5_eos_label["reference"]] = self.reference
+            grp.attrs[io.Di_hdf5_eos_label["version_date"]] = int(self.version_date)
+            grp.attrs[io.Di_hdf5_eos_label["num_rho"]] = len(A1_rho)
+            grp.attrs[io.Di_hdf5_eos_label["num_T"]] = len(A1_T)
+
+            # Table data
+            grp = f.create_group("/Table")
+            grp.create_dataset(io.Di_hdf5_eos_label["rho"], data=A1_rho, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["T"], data=A1_T, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["P"], data=A2_P, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["u"], data=A2_u, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["c"], data=A2_c, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["s"], data=A2_s, dtype="f")
+
+            # Units
+            grp = f.create_group("/Units")
+            grp.attrs["Unit mass in cgs (U_M)"] = [1.0]
+            grp.attrs["Unit length in cgs (U_L)"] = [1.0]
+            grp.attrs["Unit time in cgs (U_t)"] = [1.0]
+            grp.attrs["Unit current in cgs (U_I)"] = [1.0]
+            grp.attrs["Unit temperature in cgs (U_T)"] = [1.0]
+
+        print("Done")
+
+    def gen_write_table(self):
+        # Load data
+        if "AQUA" in self.name:
+            A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s = self._load_raw_table_AQUA()
+        else:
+            # Load from old txt style table
+            (
+                A1_rho,
+                A1_T,
+                A2_u,
+                A2_P,
+                A2_c,
+                A2_s,
+                A1_log_rho,
+                A1_log_T,
+                A2_log_u,
+                A2_log_P,
+                A2_log_c,
+                A2_log_s,
+            ) = sesame.load_table_SESAME_txt(self.Fp_table[:-5] + ".txt")
+
+        # Create the converted table
+        self.write_table(
+            Fp_table=self.Fp_table,
+            A1_rho=A1_rho,
+            A1_T=A1_T,
+            A2_u=A2_u,
+            A2_P=A2_P,
+            A2_c=A2_c,
+            A2_s=A2_s,
+        )
+
+
+mat_SESAME_iron = Material_SESAME(
+    name="SESAME_iron_2140",
+    version_date="20260518",
+    reference="SESAME 2140",
+)
+mat_SESAME_basalt = Material_SESAME(
+    name="SESAME_basalt_7530",
+    version_date="20260518",
+    reference="SESAME 7530",
+)
+mat_SESAME_water = Material_SESAME(
+    name="SESAME_water_7154",
+    version_date="20260518",
+    reference="SESAME 7154",
+)
+mat_SS08_water = Material_SESAME(
+    name="SS08_water",
+    version_date="20260518",
+    reference="Senft and Stewart (2008)",
+)
+mat_AQUA_H2O = Material_SESAME(
+    name="AQUA_H2O",
+    version_date="20260518",
+    reference="Haldemann et al. (2020); Cano Amoros et al. (2026)",
+)
+mat_CMS19_H = Material_SESAME(
+    name="CMS19_H",
+    version_date="20260518",
+    reference="Chabrier et al. (2019)",
+)
+mat_CMS19_He = Material_SESAME(
+    name="CMS19_He",
+    version_date="20260518",
+    reference="Chabrier et al. (2019)",
+)
+mat_CD21_HHe = Material_SESAME(
+    name="CD21_HHe",
+    version_date="20260518",
+    reference="Chabrier and Debras (2021)",
+)
+mat_ANEOS_forsterite = Material_SESAME(
+    name="ANEOS_forsterite_S19",
+    version_date="20260518",
+    reference="Stewart et al. (2019)",
+)
+mat_ANEOS_iron = Material_SESAME(
+    name="ANEOS_iron_S20",
+    version_date="20260518",
+    reference="Stewart et al. (2020)",
+)
+mat_ANEOS_Fe85Si15 = Material_SESAME(
+    name="ANEOS_Fe85Si15_S20",
+    version_date="20260518",
+    reference="Stewart et al. (2020)",
+)
 
 
 # ========
-# Chabrier, Mazevet and Soubiran (2019) and Chabrier and Debras (2021)
+# Chabrier, Mazevet, and Soubiran (2019) and Chabrier and Debras (2021)
 # ========
 class Material_Chabrier_HHe:
     """Chabrier, Mazevet and Soubiran (2019) and Chabrier and Debras (2021) Hydrogen-Helium.
+
+    ##Needs to be updated following new Material_SESAME class and hdf5 format etc##
 
     To generate pure H or He EoS, use Chabrier, Mazevet and Soubiran (2019) tables.
 
@@ -701,7 +1044,6 @@ class Material_Chabrier_HHe:
 
     Fp_He : str
         File path for Helium EoS table
-
     """
 
     def __init__(self, version_date, Y, input_format, Fp_H=None, Fp_He=None):
@@ -1647,13 +1989,13 @@ class Material_Mixed_HHe_Heavy:
 
             # Table data
             grp = f.create_group("/Table")
-            grp.create_dataset(io.Di_hdf5_eos_label["A1_mix"], data=A1_mix, dtype="f")
-            grp.create_dataset(io.Di_hdf5_eos_label["A1_rho"], data=A1_rho, dtype="f")
-            grp.create_dataset(io.Di_hdf5_eos_label["A1_T"], data=A1_T, dtype="f")
-            grp.create_dataset(io.Di_hdf5_eos_label["A3_P"], data=A3_P, dtype="f")
-            grp.create_dataset(io.Di_hdf5_eos_label["A3_u"], data=A3_u, dtype="f")
-            grp.create_dataset(io.Di_hdf5_eos_label["A3_c"], data=A3_c, dtype="f")
-            grp.create_dataset(io.Di_hdf5_eos_label["A3_s"], data=A3_s, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["mix"], data=A1_mix, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["rho"], data=A1_rho, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["T"], data=A1_T, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["P"], data=A3_P, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["u"], data=A3_u, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["c"], data=A3_c, dtype="f")
+            grp.create_dataset(io.Di_hdf5_eos_label["s"], data=A3_s, dtype="f")
 
             # Units
             grp = f.create_group("/Units")
@@ -1690,6 +2032,18 @@ if __name__ == "__main__":
     print(__file__)
 
     # Generate tables
-    mat_mixed_HHe_rock.gen_write_table(gv.Fp_mixed_HHe_rock)
-    mat_mixed_HHe_water.gen_write_table(gv.Fp_mixed_HHe_water)
-    mat_mixed_HHe_iron.gen_write_table(gv.Fp_mixed_HHe_iron)
+    # mat_mixed_HHe_rock.gen_write_table(gv.Fp_mixed_HHe_rock)
+    # mat_mixed_HHe_water.gen_write_table(gv.Fp_mixed_HHe_water)
+    # mat_mixed_HHe_iron.gen_write_table(gv.Fp_mixed_HHe_iron)
+
+    # mat_SESAME_iron.gen_write_table()
+    # mat_SESAME_basalt.gen_write_table()
+    # mat_SESAME_water.gen_write_table()
+    # mat_SS08_water.gen_write_table()
+    # mat_AQUA_H2O.gen_write_table()
+    # mat_CMS19_H.gen_write_table()
+    # mat_CMS19_He.gen_write_table()
+    # mat_CD21_HHe.gen_write_table()
+    # mat_ANEOS_forsterite.gen_write_table()
+    # mat_ANEOS_iron.gen_write_table()
+    # mat_ANEOS_Fe85Si15.gen_write_table()
