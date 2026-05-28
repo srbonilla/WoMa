@@ -859,7 +859,7 @@ def A1_s_u_rho(A1_u, A1_rho, A1_mat_id):
     A1_s = np.zeros_like(A1_u)
 
     for i, u in enumerate(A1_u):
-        A1_s[i] = s_u_rho(A1_u[i], A1_rho[i], A1_mat_id[i])
+        A1_s[i] = s_u_rho(u, A1_rho[i], A1_mat_id[i])
 
     return A1_s
 

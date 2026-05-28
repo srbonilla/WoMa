@@ -23,13 +23,13 @@ def load_table_mixed(filename):
         num_T = f["Header"].attrs[io.Di_hdf5_eos_label["num_T"]]
 
         # Table data
-        A1_mix = f["Table/" + io.Di_hdf5_eos_label["A1_mix"]][()]
-        A1_rho = f["Table/" + io.Di_hdf5_eos_label["A1_rho"]][()]
-        A1_T = f["Table/" + io.Di_hdf5_eos_label["A1_T"]][()]
-        A3_u = f["Table/" + io.Di_hdf5_eos_label["A3_u"]][()]
-        A3_P = f["Table/" + io.Di_hdf5_eos_label["A3_P"]][()]
-        A3_c = f["Table/" + io.Di_hdf5_eos_label["A3_c"]][()]
-        A3_s = f["Table/" + io.Di_hdf5_eos_label["A3_s"]][()]
+        A1_mix = f["Table/" + io.Di_hdf5_eos_label["mix"]][()]
+        A1_rho = f["Table/" + io.Di_hdf5_eos_label["rho"]][()]
+        A1_T = f["Table/" + io.Di_hdf5_eos_label["T"]][()]
+        A3_u = f["Table/" + io.Di_hdf5_eos_label["u"]][()]
+        A3_P = f["Table/" + io.Di_hdf5_eos_label["P"]][()]
+        A3_c = f["Table/" + io.Di_hdf5_eos_label["c"]][()]
+        A3_s = f["Table/" + io.Di_hdf5_eos_label["s"]][()]
 
     # Checks
     assert num_mix == len(A1_mix)
@@ -276,6 +276,9 @@ def Z_rho_T(rho, T, A1_mix, Z_choice):
     Z : float
         The chosen parameter (SI).
     """
+    if A1_mix is None:
+        raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
+
     mix_tot = sum(A1_mix)
 
     # No heavy-element fraction
@@ -714,6 +717,9 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
     Z : float
         The chosen parameter (SI).
     """
+    if A1_mix is None:
+        raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
+
     mix_tot = sum(A1_mix)
 
     # No heavy-element fraction
@@ -992,6 +998,9 @@ def Z_X_T(X, T, A1_mix, Z_choice, X_choice):
     Z : float
         The chosen parameter (SI).
     """
+    if A1_mix is None:
+        raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
+
     mix_tot = sum(A1_mix)
 
     # No heavy-element fraction

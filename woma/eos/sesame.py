@@ -183,12 +183,12 @@ def load_table_SESAME(Fp_table):
         num_T = f["Header"].attrs[io.Di_hdf5_eos_label["num_T"]]
 
         # Table data
-        A1_rho = f["Table/" + io.Di_hdf5_eos_label["rho"]][()]
-        A1_T = f["Table/" + io.Di_hdf5_eos_label["T"]][()]
-        A2_u = f["Table/" + io.Di_hdf5_eos_label["u"]][()]
-        A2_P = f["Table/" + io.Di_hdf5_eos_label["P"]][()]
-        A2_c = f["Table/" + io.Di_hdf5_eos_label["c"]][()]
-        A2_s = f["Table/" + io.Di_hdf5_eos_label["s"]][()]
+        A1_rho = f["Table/" + io.Di_hdf5_eos_label["rho"]][()].astype(np.float64)
+        A1_T = f["Table/" + io.Di_hdf5_eos_label["T"]][()].astype(np.float64)
+        A2_u = f["Table/" + io.Di_hdf5_eos_label["u"]][()].astype(np.float64)
+        A2_P = f["Table/" + io.Di_hdf5_eos_label["P"]][()].astype(np.float64)
+        A2_c = f["Table/" + io.Di_hdf5_eos_label["c"]][()].astype(np.float64)
+        A2_s = f["Table/" + io.Di_hdf5_eos_label["s"]][()].astype(np.float64)
 
     # Checks
     assert num_rho == len(A1_rho)
@@ -219,7 +219,7 @@ def load_phase_table_ANEOS_forsterite():
 
     See https://github.com/ststewart/aneos-forsterite-2019 etc.
 
-    ###WIP
+    ##WIP
     """
     import os, sys
 
