@@ -51,6 +51,7 @@ Di_mat_id = {
     "ANEOS_forsterite": Di_mat_type["ANEOS"] * type_factor,  # Stewart et al. (2019)
     "ANEOS_iron": Di_mat_type["ANEOS"] * type_factor + 1,  # Stewart (2020)
     "ANEOS_Fe85Si15": Di_mat_type["ANEOS"] * type_factor + 2,  # Stewart (2020)
+    "ANEOS_pyrolite": Di_mat_type["ANEOS"] * type_factor + 3,  # Stewart (2022)
     # Mixed
     "mixed_HHe_heavy": Di_mat_type["mixed"] * type_factor,  # Vazan et al. (2013)
     "mixed_HHe_rock": Di_mat_type["mixed"] * type_factor + 1,
@@ -97,6 +98,7 @@ id_CD21_HHe = Di_mat_id["CD21_HHe"]
 id_ANEOS_forsterite = Di_mat_id["ANEOS_forsterite"]
 id_ANEOS_iron = Di_mat_id["ANEOS_iron"]
 id_ANEOS_Fe85Si15 = Di_mat_id["ANEOS_Fe85Si15"]
+id_ANEOS_pyrolite = Di_mat_id["ANEOS_pyrolite"]
 id_mixed_HHe_heavy = Di_mat_id["mixed_HHe_heavy"]
 id_mixed_HHe_rock = Di_mat_id["mixed_HHe_rock"]
 id_mixed_HHe_water = Di_mat_id["mixed_HHe_water"]
@@ -141,6 +143,7 @@ Fp_CD21_HHe = dir_data + "CD21_HHe.txt"
 Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.txt"
 Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.txt"
 Fp_ANEOS_Fe85Si15 = dir_data + "ANEOS_Fe85Si15_S20.txt"
+Fp_ANEOS_pyrolite = dir_data + "ANEOS_pyrolite_2022.txt"
 # Mixed tables
 Fp_mixed_HHe_rock = dir_data + "mixed_HHe_rock.hdf5"
 Fp_mixed_HHe_water = dir_data + "mixed_HHe_water.hdf5"

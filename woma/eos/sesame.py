@@ -426,6 +426,33 @@ A2_phase_ANEOS_forsterite = np.zeros((2, 2))
     np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
+(
+    A1_rho_ANEOS_pyrolite,
+    A1_T_ANEOS_pyrolite,
+    A2_u_ANEOS_pyrolite,
+    A2_P_ANEOS_pyrolite,
+    A2_c_ANEOS_pyrolite,
+    A2_s_ANEOS_pyrolite,
+    A1_log_rho_ANEOS_pyrolite,
+    A1_log_T_ANEOS_pyrolite,
+    A2_log_u_ANEOS_pyrolite,
+    A2_log_P_ANEOS_pyrolite,
+    A2_log_c_ANEOS_pyrolite,
+    A2_log_s_ANEOS_pyrolite,
+) = (
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros(1),
+    np.zeros(1),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+    np.zeros((2, 2)),
+)
 
 # AQUA
 (
@@ -767,6 +794,14 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             A2_Z = A2_u_ANEOS_Fe85Si15
         elif Z_choice == "s":
             A2_Z = A2_s_ANEOS_Fe85Si15
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A1_log_rho, A1_log_T = (A1_log_rho_ANEOS_pyrolite, A1_log_T_ANEOS_pyrolite)
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_pyrolite
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_pyrolite
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_pyrolite
     elif mat_id == gv.id_AQUA:
         A1_log_rho, A1_log_T = (A1_log_rho_AQUA, A1_log_T_AQUA)
         if Z_choice == "P":
@@ -1086,6 +1121,24 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_log_Y = A2_log_s_ANEOS_Fe85Si15
         elif Y_choice == "c":
             A2_log_Y = A2_log_c_ANEOS_Fe85Si15
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A1_log_rho = A1_log_rho_ANEOS_pyrolite
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_pyrolite
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_pyrolite
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_pyrolite
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_pyrolite
+        if Y_choice == "P":
+            A2_log_Y = A2_log_P_ANEOS_pyrolite
+        elif Y_choice == "u":
+            A2_log_Y = A2_log_u_ANEOS_pyrolite
+        elif Y_choice == "s":
+            A2_log_Y = A2_log_s_ANEOS_pyrolite
+        elif Y_choice == "c":
+            A2_log_Y = A2_log_c_ANEOS_pyrolite
     elif mat_id == gv.id_AQUA:
         A1_log_rho = A1_log_rho_AQUA
         if Z_choice == "P":
@@ -1508,6 +1561,24 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_log_X = A2_log_s_ANEOS_Fe85Si15
         elif X_choice == "c":
             A2_log_X = A2_log_c_ANEOS_Fe85Si15
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A1_log_T = A1_log_T_ANEOS_pyrolite
+        if Z_choice == "P":
+            A2_Z = A2_P_ANEOS_pyrolite
+        elif Z_choice == "u":
+            A2_Z = A2_u_ANEOS_pyrolite
+        elif Z_choice == "s":
+            A2_Z = A2_s_ANEOS_pyrolite
+        elif Z_choice == "c":
+            A2_Z = A2_c_ANEOS_pyrolite
+        if X_choice == "P":
+            A2_log_X = A2_log_P_ANEOS_pyrolite
+        elif X_choice == "u":
+            A2_log_X = A2_log_u_ANEOS_pyrolite
+        elif X_choice == "s":
+            A2_log_X = A2_log_s_ANEOS_pyrolite
+        elif X_choice == "c":
+            A2_log_X = A2_log_c_ANEOS_pyrolite
     elif mat_id == gv.id_AQUA:
         A1_log_T = A1_log_T_AQUA
         if Z_choice == "P":
@@ -1824,6 +1895,12 @@ def P_u_rho(u, rho, mat_id):
             A1_log_rho_ANEOS_Fe85Si15,
             A2_log_u_ANEOS_Fe85Si15,
         )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A2_log_u_ANEOS_pyrolite,
+        )
     elif mat_id == gv.id_AQUA:
         A2_P, A1_log_rho, A2_log_u = (A2_P_AQUA, A1_log_rho_AQUA, A2_log_u_AQUA)
     elif mat_id == gv.id_CMS19_H:
@@ -2015,6 +2092,12 @@ def P_T_rho(T, rho, mat_id):
             A1_log_rho_ANEOS_Fe85Si15,
             A1_log_T_ANEOS_Fe85Si15,
         )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A2_P, A1_log_rho, A1_log_T = (
+            A2_P_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A1_log_T_ANEOS_pyrolite,
+        )
     elif mat_id == gv.id_AQUA:
         A2_P, A1_log_rho, A1_log_T = (A2_P_AQUA, A1_log_rho_AQUA, A1_log_T_AQUA)
     elif mat_id == gv.id_CMS19_H:
@@ -2179,6 +2262,12 @@ def T_rho_s(rho, s, mat_id):
             A1_log_rho_ANEOS_Fe85Si15,
             A2_s_ANEOS_Fe85Si15,
         )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A1_log_T, A1_log_rho, A2_s = (
+            A1_log_T_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A2_s_ANEOS_pyrolite,
+        )
     elif mat_id == gv.id_AQUA:
         A1_log_T, A1_log_rho, A2_s = (A1_log_T_AQUA, A1_log_rho_AQUA, A2_s_AQUA)
     elif mat_id == gv.id_CMS19_H:
@@ -2331,6 +2420,12 @@ def T_u_rho(u, rho, mat_id):
             A1_log_T_ANEOS_Fe85Si15,
             A1_log_rho_ANEOS_Fe85Si15,
             A2_u_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A1_log_T, A1_log_rho, A2_u = (
+            A1_log_T_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A2_u_ANEOS_pyrolite,
         )
     elif mat_id == gv.id_AQUA:
         A1_log_T, A1_log_rho, A2_u = (A1_log_T_AQUA, A1_log_rho_AQUA, A2_u_AQUA)
@@ -2487,6 +2582,12 @@ def u_rho_T(rho, T, mat_id):
             A2_u_ANEOS_Fe85Si15,
             A1_log_rho_ANEOS_Fe85Si15,
             A1_log_T_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A2_u, A1_log_rho, A1_log_T = (
+            A2_u_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A1_log_T_ANEOS_pyrolite,
         )
     elif mat_id == gv.id_AQUA:
         A2_u, A1_log_rho, A1_log_T = (A2_u_AQUA, A1_log_rho_AQUA, A1_log_T_AQUA)
@@ -2668,6 +2769,12 @@ def s_u_rho(u, rho, mat_id):
             A2_s_ANEOS_Fe85Si15,
             A1_log_rho_ANEOS_Fe85Si15,
             A2_log_u_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A2_s, A1_log_rho, A2_log_u = (
+            A2_s_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A2_log_u_ANEOS_pyrolite,
         )
     elif mat_id == gv.id_AQUA:
         A2_s, A1_log_rho, A2_log_u = (A2_s_AQUA, A1_log_rho_AQUA, A2_log_u_AQUA)
@@ -2855,6 +2962,12 @@ def s_rho_T(rho, T, mat_id):
             A1_log_rho_ANEOS_Fe85Si15,
             A1_log_T_ANEOS_Fe85Si15,
         )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A2_s, A1_log_rho, A1_log_T = (
+            A2_s_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A1_log_T_ANEOS_pyrolite,
+        )
     elif mat_id == gv.id_AQUA:
         A2_s, A1_log_rho, A1_log_T = (A2_s_AQUA, A1_log_rho_AQUA, A1_log_T_AQUA)
     elif mat_id == gv.id_CMS19_H:
@@ -3038,6 +3151,12 @@ def rho_u_P(u, P, mat_id, rho_ref):
             A2_P_ANEOS_Fe85Si15,
             A1_log_rho_ANEOS_Fe85Si15,
             A2_log_u_ANEOS_Fe85Si15,
+        )
+    elif mat_id == gv.id_ANEOS_pyrolite:
+        A2_P, A1_log_rho, A2_log_u = (
+            A2_P_ANEOS_pyrolite,
+            A1_log_rho_ANEOS_pyrolite,
+            A2_log_u_ANEOS_pyrolite,
         )
     elif mat_id == gv.id_AQUA:
         A2_P, A1_log_rho, A2_log_u = (A2_P_AQUA, A1_log_rho_AQUA, A2_log_u_AQUA)
