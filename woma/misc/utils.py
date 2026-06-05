@@ -627,6 +627,8 @@ def check_loaded_eos_tables():
         A1_mat.remove("ANEOS_iron")
     if len(eos.sesame.A1_rho_ANEOS_Fe85Si15) == 1:
         A1_mat.remove("ANEOS_Fe85Si15")
+    if len(eos.sesame.A1_rho_ANEOS_pyrolite) == 1:
+        A1_mat.remove("ANEOS_pyrolite")
 
     if len(eos.sesame.A1_rho_AQUA) == 1:
         A1_mat.remove("AQUA")
@@ -886,6 +888,21 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_log_c_ANEOS_Fe85Si15,
             eos.sesame.A2_log_s_ANEOS_Fe85Si15,
         ) = eos.sesame.load_table_SESAME(gv.Fp_ANEOS_Fe85Si15)
+    if "ANEOS_pyrolite" in A1_mat and len(eos.sesame.A1_rho_ANEOS_pyrolite) == 1:
+        (
+            eos.sesame.A1_rho_ANEOS_pyrolite,
+            eos.sesame.A1_T_ANEOS_pyrolite,
+            eos.sesame.A2_u_ANEOS_pyrolite,
+            eos.sesame.A2_P_ANEOS_pyrolite,
+            eos.sesame.A2_c_ANEOS_pyrolite,
+            eos.sesame.A2_s_ANEOS_pyrolite,
+            eos.sesame.A1_log_rho_ANEOS_pyrolite,
+            eos.sesame.A1_log_T_ANEOS_pyrolite,
+            eos.sesame.A2_log_u_ANEOS_pyrolite,
+            eos.sesame.A2_log_P_ANEOS_pyrolite,
+            eos.sesame.A2_log_c_ANEOS_pyrolite,
+            eos.sesame.A2_log_s_ANEOS_pyrolite,
+        ) = eos.sesame.load_table_SESAME(gv.Fp_ANEOS_pyrolite)
     if "AQUA" in A1_mat and len(eos.sesame.A1_rho_AQUA) == 1:
         (
             eos.sesame.A1_rho_AQUA,

@@ -125,6 +125,7 @@ set by a base type ID (multiplied by 100) plus a minor type:
     + Forsterite (Stewart et al. 2019): `ANEOS_forsterite` : `400`
     + Iron (Stewart, zenodo.org/record/3866507): `ANEOS_iron` : `401`
     + Fe85Si15 (Stewart, zenodo.org/record/3866550): `ANEOS_Fe85Si15` : `402`
+    + Pyrolite ([Stewart 2022](https://github.com/ststewart/aneos-pyrolite-2022)): `ANEOS_pyrolite` : `403`
 + Custom (in SESAME-style tables): ``9``
     + User-provided custom material(s): ``900``, ``901``, ..., ``904``
 
