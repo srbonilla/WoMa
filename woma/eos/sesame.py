@@ -214,7 +214,7 @@ def load_table_SESAME(Fp_table):
     )
 
 
-def load_phase_table_ANEOS_forsterite():
+def load_phase_table_ANEOS_forsterite_txt():
     """Load and return the 2D array of KPA flag phase IDs.
 
     See https://github.com/ststewart/aneos-forsterite-2019 etc.
@@ -272,6 +272,29 @@ def load_phase_table_ANEOS_forsterite():
     )
 
     return NewEOS.KPA.T
+
+
+def load_phase_table_SESAME(Fp_table):
+    """Load the table phase-ID data from hdf5. See Material_SESAME.write_table()."""
+    with h5py.File(Fp_table, "r") as f:
+        # Header attributes
+        name = f["Header"].attrs[io.Di_hdf5_eos_label["name"]]
+        version_date = f["Header"].attrs[io.Di_hdf5_eos_label["version_date"]]
+        reference = f["Header"].attrs[io.Di_hdf5_eos_label["reference"]]
+        num_rho = f["Header"].attrs[io.Di_hdf5_eos_label["num_rho"]]
+        num_T = f["Header"].attrs[io.Di_hdf5_eos_label["num_T"]]
+
+        # Table data
+        A1_rho = f["Table/" + io.Di_hdf5_eos_label["rho"]][()].astype(np.float64)
+        A1_T = f["Table/" + io.Di_hdf5_eos_label["T"]][()].astype(np.float64)
+        A2_phase = f["Table/" + io.Di_hdf5_eos_label["phase"]][()].astype(np.float64)
+
+    # Checks
+    assert num_rho == len(A1_rho)
+    assert num_T == len(A1_T)
+    assert A2_phase.shape == (num_rho, num_T)
+
+    return A2_phase
 
 
 # ========
@@ -499,6 +522,7 @@ A2_phase_ANEOS_forsterite = np.zeros((2, 2))
     np.zeros((2, 2)),
     np.zeros((2, 2)),
 )
+A2_phase_AQUA = np.zeros((2, 2))
 
 # CMS19
 (
@@ -819,6 +843,8 @@ def Z_rho_T(rho, T, mat_id, Z_choice):
             A2_Z = A2_u_AQUA
         elif Z_choice == "s":
             A2_Z = A2_s_AQUA
+        elif Z_choice == "phase":
+            A2_Z = A2_phase_AQUA
     elif mat_id == gv.id_CMS19_H:
         A1_log_rho, A1_log_T = (A1_log_rho_CMS19_H, A1_log_T_CMS19_H)
         if Z_choice == "P":
@@ -1140,6 +1166,8 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
             A2_Z = A2_s_AQUA
         elif Z_choice == "c":
             A2_Z = A2_c_AQUA
+        elif Z_choice == "phase":
+            A2_Z = A2_phase_AQUA
         if Y_choice == "P":
             A2_log_Y = A2_log_P_AQUA
         elif Y_choice == "u":
@@ -1562,6 +1590,8 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
             A2_Z = A2_s_AQUA
         elif Z_choice == "c":
             A2_Z = A2_c_AQUA
+        elif Z_choice == "phase":
+            A2_Z = A2_phase_AQUA
         if X_choice == "P":
             A2_log_X = A2_log_P_AQUA
         elif X_choice == "u":

@@ -581,7 +581,7 @@ def impact_pos_vel_b_v_c_t(
 
 
 def check_loaded_eos_tables():
-    """###"""
+    """Check which EoS tables have been successfully loaded."""
     A1_mat = gv.Di_mat_id.keys()
     A1_mat = list(A1_mat)
 
@@ -855,7 +855,9 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_log_c_ANEOS_forsterite,
             eos.sesame.A2_log_s_ANEOS_forsterite,
         ) = eos.sesame.load_table_SESAME(gv.Fp_ANEOS_forsterite)
-        ##WIP eos.sesame.A2_phase_ANEOS_forsterite = eos.sesame.load_phase_table_ANEOS_forsterite()
+        eos.sesame.A2_phase_ANEOS_forsterite = eos.sesame.load_phase_table_SESAME(
+            gv.Fp_ANEOS_forsterite
+        )
     if "ANEOS_iron" in A1_mat and len(eos.sesame.A1_rho_ANEOS_iron) == 1:
         (
             eos.sesame.A1_rho_ANEOS_iron,
@@ -901,6 +903,7 @@ def load_eos_tables(A1_mat_input=None):
             eos.sesame.A2_log_c_AQUA,
             eos.sesame.A2_log_s_AQUA,
         ) = eos.sesame.load_table_SESAME(gv.Fp_AQUA)
+        eos.sesame.A2_phase_AQUA = eos.sesame.load_phase_table_SESAME(gv.Fp_AQUA)
     if "CMS19_H" in A1_mat and len(eos.sesame.A1_rho_CMS19_H) == 1:
         (
             eos.sesame.A1_rho_CMS19_H,

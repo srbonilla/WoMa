@@ -588,14 +588,12 @@ def write_all_HM80_tables():
 
 
 # ========
-# SESAME and SESAME-style
+# SESAME and other (originally) SESAME-style-tabulated materials, etc
 # ========
 class Material_SESAME:
-    """Hubbard & MacFarlane (1980) materials.
+    """SESAME and other tabulated materials, etc.
 
-    Some attributes apply to only hydrogen--helium or to only the ice and rock.
-
-    Note: HM80's EoS parameter units are cgs and Mbar, not SI.
+    Also used as the format for ANEOS and various other modern materials.
 
     Parameters
     ----------
@@ -701,8 +699,10 @@ class Material_SESAME:
         A2_s = data["s"].reshape(num_rho, num_T)
         A2_u = data["u"].reshape(num_rho, num_T)
         A2_c = data["c"].reshape(num_rho, num_T)
+        A2_phase = data["phase"].reshape(num_rho, num_T)
 
-        # Load the raw data with revised entropies (can't just use these since not rho--T space)
+        # Revised entropies
+        # Load the raw data (can't just use them directly since not rho--T space)
         filename = gv.dir_data + "AQUA_rev_raw.csv"
         print("Loading %s..." % filename[-50:])
         data_rev = np.genfromtxt(
@@ -775,7 +775,7 @@ class Material_SESAME:
                 # Set the revised entropy
                 A2_s[i_rho, i_T] = s
 
-        return A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s
+        return A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s, A2_phase
 
     def write_table_txt(
         self, Fp_table, name, version_date, A1_rho, A1_T, A2_u, A2_P, A2_c, A2_s
@@ -863,7 +863,9 @@ class Material_SESAME:
                         )
                     )
 
-    def write_table(self, Fp_table, A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s):
+    def write_table(
+        self, Fp_table, A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s, A2_phase=None
+    ):
         """Write the data to an HDF5 file.
 
         See io.Di_hdf5_eos_label.
@@ -915,6 +917,10 @@ class Material_SESAME:
             grp.create_dataset(io.Di_hdf5_eos_label["u"], data=A2_u, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["c"], data=A2_c, dtype="f")
             grp.create_dataset(io.Di_hdf5_eos_label["s"], data=A2_s, dtype="f")
+            if A2_phase is not None:
+                grp.create_dataset(
+                    io.Di_hdf5_eos_label["phase"], data=A2_phase, dtype="i"
+                )
 
             # Units
             grp = f.create_group("/Units")
@@ -929,7 +935,7 @@ class Material_SESAME:
     def gen_write_table(self):
         # Load data
         if "AQUA" in self.name:
-            A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s = self._load_raw_table_AQUA()
+            A1_rho, A1_T, A2_P, A2_u, A2_c, A2_s, A2_phase = self._load_raw_table_AQUA()
         else:
             # Load from old txt style table
             (
@@ -947,6 +953,12 @@ class Material_SESAME:
                 A2_log_s,
             ) = sesame.load_table_SESAME_txt(self.Fp_table[:-5] + ".txt")
 
+            # Phase IDs
+            if self.name == "ANEOS_forsterite_S19":
+                A2_phase = sesame.load_phase_table_ANEOS_forsterite_txt()
+            else:
+                A2_phase = None
+
         # Create the converted table
         self.write_table(
             Fp_table=self.Fp_table,
@@ -956,6 +968,7 @@ class Material_SESAME:
             A2_P=A2_P,
             A2_c=A2_c,
             A2_s=A2_s,
+            A2_phase=A2_phase,
         )
 
 

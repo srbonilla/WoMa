@@ -26,3 +26,23 @@ build/
 dist/
 woma.egg-info/
 *.sh
+
+# Dev
+woma/data/ANEOS_Fe85Si15_S20.txt
+woma/data/ANEOS_forsterite_S19.txt
+woma/data/ANEOS_iron_S20.txt
+woma/data/AQUA_H2O.txt
+woma/data/AQUA_H2O_raw.txt
+woma/data/CD21_HHe.txt
+woma/data/CMS19_H.txt
+woma/data/CMS19_He.txt
+woma/data/SESAME_basalt_7530.txt
+woma/data/SESAME_iron_2140.txt
+woma/data/SESAME_water_7154.txt
+woma/data/SS08_water.txt
+woma/data/aneos-Fe85Si15-2020/
+woma/data/aneos-forsterite-2019/
+woma/data/aneos-iron-2020/
+woma/data/mixed_HHe_iron/
+woma/data/mixed_HHe_rock/
+woma/data/mixed_HHe_water/

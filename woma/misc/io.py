@@ -110,6 +110,7 @@ Di_hdf5_eos_label = {
     "P": "Pressure",
     "c": "SoundSpeed",
     "s": "SpecificEntropy",
+    "phase": "PhaseID",
 }
 
 
