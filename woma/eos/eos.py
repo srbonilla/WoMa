@@ -503,7 +503,7 @@ def A1_P_u_rho(A1_u, A1_rho, A1_mat_id):
 
 
 @njit
-def P_T_rho(T, rho, mat_id):
+def P_T_rho(T, rho, mat_id, A1_mix=None):
     """Compute the pressure from the temperature and density, for any EoS.
 
     Parameters
@@ -516,6 +516,9 @@ def P_T_rho(T, rho, mat_id):
 
     mat_id : int
         Material ID.
+
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Returns
     -------
@@ -535,6 +538,8 @@ def P_T_rho(T, rho, mat_id):
         P = sesame.P_T_rho(T, rho, mat_id)
         if np.isnan(P):
             P = 0.0
+    elif mat_type == gv.type_mixed:
+        P = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="P")
     else:
         raise ValueError("Invalid material ID")
     return P
@@ -665,7 +670,7 @@ def A1_T_u_rho(A1_u, A1_rho, A1_mat_id, A1_A1_mix=None):
 # Specific internal energy
 # ========
 @njit
-def u_rho_T(rho, T, mat_id):
+def u_rho_T(rho, T, mat_id, A1_mix=None):
     """Compute the specific internal energy from the density and temperature, for any EoS.
 
     Parameters
@@ -678,6 +683,9 @@ def u_rho_T(rho, T, mat_id):
 
     mat_id : int
         Material ID.
+
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Returns
     -------
@@ -693,6 +701,8 @@ def u_rho_T(rho, T, mat_id):
         u = hm80.u_rho_T(rho, T, mat_id)
     elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         u = sesame.u_rho_T(rho, T, mat_id)
+    elif mat_type == gv.type_mixed:
+        u = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="u")
     else:
         raise ValueError("Invalid material ID")
     return u
@@ -737,7 +747,7 @@ def A1_u_rho_T(A1_rho, A1_T, A1_mat_id):
 # Specific entropy
 # ========
 @njit
-def s_rho_T(rho, T, mat_id):
+def s_rho_T(rho, T, mat_id, A1_mix=None):
     """Compute the specific entropy from the density and temperature, for any EoS.
 
     Parameters
@@ -751,6 +761,9 @@ def s_rho_T(rho, T, mat_id):
     mat_id : int
         Material ID.
 
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
+
     Returns
     -------
     s : float
@@ -759,13 +772,15 @@ def s_rho_T(rho, T, mat_id):
     mat_type = mat_id // gv.type_factor
     if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         s = sesame.s_rho_T(rho, T, mat_id)
+    elif mat_type == gv.type_mixed:
+        u = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="s")
     else:
         raise ValueError("Entropy not implemented for this material type.")
     return s
 
 
 @njit
-def A1_s_rho_T(A1_rho, A1_T, A1_mat_id):
+def A1_s_rho_T(A1_rho, A1_T, A1_mat_id, A1_A1_mix=None):
     """Compute the specific entropies from arrays of density and temperature,
     for any EoS.
 
@@ -779,6 +794,9 @@ def A1_s_rho_T(A1_rho, A1_T, A1_mat_id):
 
     A1_mat_id : [int]
         Material ID.
+
+    A1_A1_mix : [[float]] (opt.)
+        Mixing mass fractions.
 
     Returns
     -------
@@ -794,7 +812,12 @@ def A1_s_rho_T(A1_rho, A1_T, A1_mat_id):
     A1_s = np.zeros_like(A1_T)
 
     for i, rho in enumerate(A1_rho):
-        A1_s[i] = s_rho_T(A1_rho[i], A1_T[i], A1_mat_id[i])
+        A1_s[i] = s_rho_T(
+            A1_rho[i],
+            A1_T[i],
+            A1_mat_id[i],
+            A1_mix=A1_A1_mix[i] if A1_A1_mix is not None else None,
+        )
 
     return A1_s
 
@@ -868,7 +891,7 @@ def A1_s_u_rho(A1_u, A1_rho, A1_mat_id):
 # Density
 # ========
 @njit
-def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
+def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max, A1_mix=None):
     """Find the density that satisfies P(u(rho), rho) = P_des, for any EoS.
 
     Parameters
@@ -891,6 +914,9 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     rho_max : float
         Upper bound for where to look the root (kg m^-3).
 
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
+
     Returns
     -------
     rho_mid : float
@@ -903,27 +929,27 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
 
     tolerance = 1e-5
 
-    T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
-    P_min = P_T_rho(T_min, rho_min, mat_id)
-    T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
-    P_max = P_T_rho(T_max, rho_max, mat_id)
+    T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id, A1_mix)
+    P_min = P_T_rho(T_min, rho_min, mat_id, A1_mix)
+    T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id, A1_mix)
+    P_max = P_T_rho(T_max, rho_max, mat_id, A1_mix)
     rho_mid = (rho_min + rho_max) / 2.0
-    T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
-    P_mid = P_T_rho(T_mid, rho_mid, mat_id)
+    T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id, A1_mix)
+    P_mid = P_T_rho(T_mid, rho_mid, mat_id, A1_mix)
     rho_aux = rho_min + 1e-6
-    T_aux = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id)
-    P_aux = P_T_rho(T_aux, rho_aux, mat_id)
+    T_aux = T_rho(rho_aux, T_rho_type, T_rho_args, mat_id, A1_mix)
+    P_aux = P_T_rho(T_aux, rho_aux, mat_id, A1_mix)
 
     if (P_min < P_des < P_max) or (P_min > P_des > P_max):
         max_counter = 200
         counter = 0
         while np.abs(rho_max - rho_min) > tolerance and counter < max_counter:
-            T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
-            P_min = P_T_rho(T_min, rho_min, mat_id)
-            T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
-            P_max = P_T_rho(T_max, rho_max, mat_id)
-            T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
-            P_mid = P_T_rho(T_mid, rho_mid, mat_id)
+            T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id, A1_mix)
+            P_min = P_T_rho(T_min, rho_min, mat_id, A1_mix)
+            T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id, A1_mix)
+            P_max = P_T_rho(T_max, rho_max, mat_id, A1_mix)
+            T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id, A1_mix)
+            P_mid = P_T_rho(T_mid, rho_mid, mat_id, A1_mix)
 
             f0 = P_des - P_min
             f2 = P_des - P_mid
@@ -941,13 +967,13 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
     elif P_min == P_des == P_aux != P_max and P_min < P_max:
         while np.abs(rho_max - rho_min) > tolerance:
             rho_mid = (rho_min + rho_max) / 2.0
-            T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id)
-            P_min = P_T_rho(T_min, rho_min, mat_id)
-            T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id)
-            P_max = P_T_rho(T_max, rho_max, mat_id)
+            T_min = T_rho(rho_min, T_rho_type, T_rho_args, mat_id, A1_mix)
+            P_min = P_T_rho(T_min, rho_min, mat_id, A1_mix)
+            T_max = T_rho(rho_max, T_rho_type, T_rho_args, mat_id, A1_mix)
+            P_max = P_T_rho(T_max, rho_max, mat_id, A1_mix)
             rho_mid = (rho_min + rho_max) / 2.0
-            T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id)
-            P_mid = P_T_rho(T_mid, rho_mid, mat_id)
+            T_mid = T_rho(rho_mid, T_rho_type, T_rho_args, mat_id, A1_mix)
+            P_mid = P_T_rho(T_mid, rho_mid, mat_id, A1_mix)
 
             if P_mid == P_des:
                 rho_min = rho_mid
@@ -959,27 +985,23 @@ def find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, rho_max):
         return rho_mid
 
     elif P_des < P_min < P_max:
-        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min / 2, rho_max)
+        return find_rho(
+            P_des, mat_id, T_rho_type, T_rho_args, rho_min / 2, rho_max, A1_mix
+        )
     elif P_des > P_max > P_min:
-        return find_rho(P_des, mat_id, T_rho_type, T_rho_args, rho_min, 2 * rho_max)
+        return find_rho(
+            P_des, mat_id, T_rho_type, T_rho_args, rho_min, 2 * rho_max, A1_mix
+        )
     elif P_des > P_min > P_max:
         return rho_min
     elif P_des < P_max < P_min:
         return rho_max
     else:
-        # For debugging
-        # print("  P_des", P_des)
-        # print("  mat_id", mat_id)
-        # print("  T_rho_type, T_rho_args", T_rho_type, T_rho_args)
-        # print("  rho_min, rho_max", rho_min, rho_max)
-        # print("  T_min, T_max", T_min, T_max)
-        # print("  P_min, P_max", P_min, P_max)
-        e = "Critical error in find_rho."
-        raise ValueError(e)
+        raise Exception("Critical error in find_rho.")
 
 
 @njit
-def rho_P_T(P, T, mat_id):
+def rho_P_T(P, T, mat_id, A1_mix=None):
     """Compute the density from the pressure and temperature, for any EoS.
 
     Parameters
@@ -992,6 +1014,10 @@ def rho_P_T(P, T, mat_id):
 
     mat_id : int
         Material ID.
+
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
+
 
     Returns
     -------
@@ -1017,7 +1043,7 @@ def rho_P_T(P, T, mat_id):
         elif mat_id == gv.id_HM80_rock:
             rho_min = 1e0
             rho_max = 40000
-    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
+    elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom, gv.type_mixed]:
         assert T > 0
         assert P > 0
 
@@ -1026,24 +1052,27 @@ def rho_P_T(P, T, mat_id):
     else:
         raise ValueError("Invalid material ID")
 
-    return find_rho(P, mat_id, 1, [float(T), 0.0], rho_min, rho_max)
+    return find_rho(P, mat_id, 1, [float(T), 0.0], rho_min, rho_max, A1_mix)
 
 
 @njit
-def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
+def A1_rho_P_T(A1_P, A1_T, A1_mat_id, A1_A1_mix=None):
     """Compute the densities from arrays of pressure and temperature, for any
     EoS.
 
     Parameters
     ----------
     A1_P : [float]
-        Pressure (Pa).
+        Pressures (Pa).
 
     A1_T : [float]
-        Temperature (K).
+        Temperatures (K).
 
     A1_mat_id : [int]
-        Material ID.
+        Material IDs.
+
+    A1_A1_mix : [[float]] (opt.)
+        Mixing mass fractions.
 
     Returns
     -------
@@ -1059,7 +1088,12 @@ def A1_rho_P_T(A1_P, A1_T, A1_mat_id):
     A1_rho = np.zeros_like(A1_P)
 
     for i, P in enumerate(A1_P):
-        A1_rho[i] = rho_P_T(A1_P[i], A1_T[i], A1_mat_id[i])
+        A1_rho[i] = rho_P_T(
+            A1_P[i],
+            A1_T[i],
+            A1_mat_id[i],
+            A1_mix=A1_A1_mix[i] if A1_A1_mix is not None else None,
+        )
 
     return A1_rho
 

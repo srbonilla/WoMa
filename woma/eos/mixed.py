@@ -710,6 +710,7 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
             P       Pressure.
             u       Specific internal energy.
             s       Specific entropy.
+            T       Temperature.
             phase   Phase KPA flag (Z_choice only).
 
     Returns

@@ -25,9 +25,11 @@ def L2_integrate(
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
+    A1_mix_L1,
     mat_id_L2,
     T_rho_type_id_L2,
     T_rho_args_L2,
+    A1_mix_L2,
 ):
     """Integration of a 2 layer spherical planet.
 
@@ -63,6 +65,9 @@ def L2_integrate(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
+    A1_mix_L1 : int
+        Material mixing fractions for layer 1.
+
     mat_id_L2 : int
         Material id for layer 2.
 
@@ -71,6 +76,9 @@ def L2_integrate(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
+
+    A1_mix_L2 : int
+        Material mixing fractions for layer 2.
 
     Returns
     -------
@@ -94,19 +102,24 @@ def L2_integrate(
 
     A1_mat_id : [float]
         The ID of the material at each profile radius.
-    """
-    A1_r = np.linspace(R, 0, int(num_prof))
-    A1_m_enc = np.zeros(A1_r.shape)
-    A1_P = np.zeros(A1_r.shape)
-    A1_T = np.zeros(A1_r.shape)
-    A1_rho = np.zeros(A1_r.shape)
-    A1_u = np.zeros(A1_r.shape)
-    A1_mat_id = np.zeros(A1_r.shape)
 
-    u_s = eos.u_rho_T(rho_s, T_s, mat_id_L2)
+    A1_A1_mix : [[float]]
+        The material mixes at each profile radius.
+    """
+    num_prof = int(num_prof)
+    A1_r = np.linspace(R, 0, num_prof)
+    A1_m_enc = np.zeros(num_prof)
+    A1_P = np.zeros(num_prof)
+    A1_T = np.zeros(num_prof)
+    A1_rho = np.zeros(num_prof)
+    A1_u = np.zeros(num_prof)
+    A1_mat_id = np.zeros(num_prof) * mat_id_L2
+    A1_A1_mix = np.zeros((num_prof, gv.num_mix))
+
+    u_s = eos.u_rho_T(rho_s, T_s, mat_id_L2, A1_mix_L2)
     # Set the T-rho relation
     T_rho_args_L2 = set_T_rho_args(
-        T_s, rho_s, T_rho_type_id_L2, T_rho_args_L2, mat_id_L2
+        T_s, rho_s, T_rho_type_id_L2, T_rho_args_L2, mat_id_L2, A1_mix_L2
     )
 
     dr = A1_r[0] - A1_r[1]
@@ -117,6 +130,7 @@ def L2_integrate(
     A1_rho[0] = rho_s
     A1_u[0] = u_s
     A1_mat_id[0] = mat_id_L2
+    A1_A1_mix[0] = A1_mix_L2
 
     for i in range(1, A1_r.shape[0]):
         # Layer 2
@@ -125,6 +139,7 @@ def L2_integrate(
             mat_id = mat_id_L2
             T_rho_type_id = T_rho_type_id_L2
             T_rho_args = T_rho_args_L2
+            A1_mix = A1_mix_L2
             rho0 = rho
 
         # Layer 1, 2 boundary
@@ -138,16 +153,23 @@ def L2_integrate(
                     T_rho_args_L1,
                     A1_rho[i - 1],
                     1e5,
+                    A1_mix_L1,
                 )
             else:
-                rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1)
+                rho = eos.rho_P_T(A1_P[i - 1], A1_T[i - 1], mat_id_L1, A1_mix_L1)
                 T_rho_args_L1 = set_T_rho_args(
-                    A1_T[i - 1], rho, T_rho_type_id_L1, T_rho_args_L1, mat_id_L1
+                    A1_T[i - 1],
+                    rho,
+                    T_rho_type_id_L1,
+                    T_rho_args_L1,
+                    mat_id_L1,
+                    A1_mix_L1,
                 )
 
             mat_id = mat_id_L1
             T_rho_type_id = T_rho_type_id_L1
             T_rho_args = T_rho_args_L1
+            A1_mix = A1_mix_L1
             rho0 = A1_rho[i - 1]
 
         # Layer 1
@@ -156,6 +178,7 @@ def L2_integrate(
             mat_id = mat_id_L1
             T_rho_type_id = T_rho_type_id_L1
             T_rho_args = T_rho_args_L1
+            A1_mix = A1_mix_L1
             rho0 = A1_rho[i - 1]
 
         A1_m_enc[i] = A1_m_enc[i - 1] - 4 * np.pi * A1_r[i - 1] ** 2 * rho * dr
@@ -167,10 +190,12 @@ def L2_integrate(
             T_rho_args,
             rho0,
             1.1 * rho,
+            A1_mix,
         )
-        A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
-        A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
+        A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id, A1_mix)
+        A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id, A1_mix)
         A1_mat_id[i] = mat_id
+        A1_A1_mix[i] = A1_mix
         # Update the T-rho parameters
         if mat_id == gv.id_HM80_HHe and T_rho_type_id == gv.type_adb:
             T_rho_args = set_T_rho_args(
@@ -180,7 +205,7 @@ def L2_integrate(
         if A1_m_enc[i] < 0:
             break
 
-    return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
+    return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix
 
 
 def L2_find_M_given_R_R1(
@@ -194,9 +219,11 @@ def L2_find_M_given_R_R1(
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
+    A1_mix_L1,
     mat_id_L2,
     T_rho_type_id_L2,
     T_rho_args_L2,
+    A1_mix_L2,
     num_attempt=40,
     tol=0.01,
     verbosity=1,
@@ -236,6 +263,9 @@ def L2_find_M_given_R_R1(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
+    A1_mix_L1 : int
+        Material mixing fractions for layer 1.
+
     mat_id_L2 : int
         Material id for layer 2.
 
@@ -244,6 +274,9 @@ def L2_find_M_given_R_R1(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
+
+    A1_mix_L2 : int
+        Material mixing fractions for layer 2.
 
     num_attempt : float
         Maximum number of iterations to perform.
@@ -274,7 +307,7 @@ def L2_find_M_given_R_R1(
 
         M_try = (M_min + M_max) * 0.5
 
-        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix = L2_integrate(
             num_prof,
             R,
             M_try,
@@ -285,9 +318,11 @@ def L2_find_M_given_R_R1(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            A1_mix_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
+            A1_mix_L2,
         )
 
         if A1_m_enc[-1] > 0.0:
@@ -333,9 +368,11 @@ def L2_find_R_given_M_R1(
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
+    A1_mix_L1,
     mat_id_L2,
     T_rho_type_id_L2,
     T_rho_args_L2,
+    A1_mix_L2,
     num_attempt=40,
     tol=0.01,
     verbosity=1,
@@ -375,6 +412,9 @@ def L2_find_R_given_M_R1(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
+    A1_mix_L1 : int
+        Material mixing fractions for layer 1.
+
     mat_id_L2 : int
         Material id for layer 2.
 
@@ -383,6 +423,9 @@ def L2_find_R_given_M_R1(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
+
+    A1_mix_L2 : int
+        Material mixing fractions for layer 2.
 
     num_attempt : float
         Maximum number of iterations to perform.
@@ -404,7 +447,7 @@ def L2_find_R_given_M_R1(
     for i in range(num_attempt):
         R_try = (R_min + R_max) * 0.5
 
-        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix = L2_integrate(
             num_prof,
             R_try,
             M,
@@ -415,9 +458,11 @@ def L2_find_R_given_M_R1(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            A1_mix_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
+            A1_mix_L2,
         )
 
         if A1_m_enc[-1] > 0.0:
@@ -472,9 +517,11 @@ def L2_find_R1_given_M_R(
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
+    A1_mix_L1,
     mat_id_L2,
     T_rho_type_id_L2,
     T_rho_args_L2,
+    A1_mix_L2,
     num_attempt=40,
     tol=0.01,
     verbosity=1,
@@ -511,6 +558,9 @@ def L2_find_R1_given_M_R(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
+    A1_mix_L1 : int
+        Material mixing fractions for layer 1.
+
     mat_id_L2 : int
         Material id for layer 2.
 
@@ -519,6 +569,9 @@ def L2_find_R1_given_M_R(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
+
+    A1_mix_L2 : int
+        Material mixing fractions for layer 2.
 
     num_attempt : float
         Maximum number of iterations to perform.
@@ -540,7 +593,7 @@ def L2_find_R1_given_M_R(
     for i in range(num_attempt):
         R1_try = (R1_min + R1_max) * 0.5
 
-        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix = L2_integrate(
             num_prof,
             R,
             M,
@@ -551,9 +604,11 @@ def L2_find_R1_given_M_R(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            A1_mix_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
+            A1_mix_L2,
         )
 
         if A1_m_enc[-1] > 0.0:
@@ -610,9 +665,11 @@ def L2_find_R_R1_given_M1_M2(
     mat_id_L1,
     T_rho_type_id_L1,
     T_rho_args_L1,
+    A1_mix_L1,
     mat_id_L2,
     T_rho_type_id_L2,
     T_rho_args_L2,
+    A1_mix_L2,
     num_attempt=40,
     tol=0.01,
     verbosity=1,
@@ -655,6 +712,9 @@ def L2_find_R_R1_given_M1_M2(
     T_rho_args_L1 : [float]
         Extra arguments to determine the relation in layer 1.
 
+    A1_mix_L1 : int
+        Material mixing fractions for layer 1.
+
     mat_id_L2 : int
         Material id for layer 2.
 
@@ -663,6 +723,9 @@ def L2_find_R_R1_given_M1_M2(
 
     T_rho_args_L2 : [float]
         Extra arguments to determine the relation in layer 2.
+
+    A1_mix_L2 : int
+        Material mixing fractions for layer 2.
 
     num_attempt : float
         Maximum number of iterations to perform.
@@ -697,9 +760,11 @@ def L2_find_R_R1_given_M1_M2(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            A1_mix_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
+            A1_mix_L2,
             tol=tol,
             num_attempt=num_attempt,
             verbosity=0,
@@ -723,9 +788,11 @@ def L2_find_R_R1_given_M1_M2(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            A1_mix_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
+            A1_mix_L2,
             tol=tol,
             num_attempt=num_attempt,
             verbosity=0,
@@ -748,15 +815,17 @@ def L2_find_R_R1_given_M1_M2(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            A1_mix_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
+            A1_mix_L2,
             num_attempt=num_attempt,
             tol=tol,
             verbosity=0,
         )
 
-        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L2_integrate(
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix = L2_integrate(
             num_prof,
             R_try,
             M,
@@ -767,12 +836,22 @@ def L2_find_R_R1_given_M1_M2(
             mat_id_L1,
             T_rho_type_id_L1,
             T_rho_args_L1,
+            A1_mix_L1,
             mat_id_L2,
             T_rho_type_id_L2,
             T_rho_args_L2,
+            A1_mix_L2,
         )
 
-        M1_try = A1_m_enc[A1_mat_id == mat_id_L1][0]
+        # Resulting L1 mass
+        if mat_id_L1 == gv.id_mixed_HHe_heavy and mat_id_L2 == gv.id_mixed_HHe_heavy:
+            # Select layers by different mix fractions
+            A1_mix_diff = np.abs(np.diff(A1_A1_mix[:, 0]))
+            for i in range(1, gv.num_mix):
+                A1_mix_diff += np.abs(np.diff(A1_A1_mix[:, i]))
+            M1_try = A1_m_enc[np.where(A1_mix_diff > 2 * np.mean(A1_mix_diff))[0][0]]
+        else:
+            M1_try = A1_m_enc[A1_mat_id == mat_id_L1][0]
 
         if M1_try > M1:
             R_min = R_try

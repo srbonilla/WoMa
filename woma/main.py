@@ -49,6 +49,10 @@ class Planet:
         The name of the material in each layer, from the central layer outwards.
         See Di_mat_id in `eos/eos.py`.
 
+    A1_A1_mix_layer : [[float]] (opt.)
+        For mixed_HHe_heavy materials, the mixing mass fractions of each heavy
+        component, currently [rock, water, iron].
+
     A1_T_rho_type : [int]
         The type of temperature-density relation in each layer, from the central
         layer outwards. See Di_mat_id in `eos/eos.py`.
@@ -116,12 +120,16 @@ class Planet:
 
     A1_mat_id : [int]
         The ID of the material at each profile radius.
+
+    A1_A1_mix : [int]
+        The mixing mass fractions of each heavy component at each profile radius.
     """
 
     def __init__(
         self,
         name=None,
         A1_mat_layer=None,
+        A1_A1_mix_layer=None,
         A1_T_rho_type=None,
         P_s=None,
         T_s=None,
@@ -147,6 +155,7 @@ class Planet:
     ):
         self.name = name
         self.A1_mat_layer = A1_mat_layer
+        self.A1_A1_mix_layer = A1_A1_mix_layer
         self.A1_T_rho_type = A1_T_rho_type
         self.P_s = P_s
         self.T_s = T_s
@@ -184,6 +193,8 @@ class Planet:
         else:
             # Placeholder
             self.num_layer = 1
+        if self.A1_A1_mix_layer is None:
+            self.A1_A1_mix_layer = [None] * self.num_layer
 
         # Temperature--density relation
         if self.A1_T_rho_type is not None:
@@ -214,13 +225,23 @@ class Planet:
             raise ValueError(e)
         if self.P_s is not None:
             if self.rho_s is None:
-                self.rho_s = eos.rho_P_T(self.P_s, self.T_s, self.A1_mat_id_layer[-1])
+                self.rho_s = eos.rho_P_T(
+                    self.P_s,
+                    self.T_s,
+                    self.A1_mat_id_layer[-1],
+                    self.A1_A1_mix_layer[-1],
+                )
         elif self.rho_s is not None:
             if do_T_from_fixed_s:
                 self.T_s = eos.sesame.T_rho_s(
-                    self.rho_s, self.A1_T_rho_args[-1][0], self.A1_mat_id_layer[-1]
+                    self.rho_s,
+                    self.A1_T_rho_args[-1][0],
+                    self.A1_mat_id_layer[-1],
+                    self.A1_A1_mix_layer[-1],
                 )
-            self.P_s = eos.P_T_rho(self.T_s, self.rho_s, self.A1_mat_id_layer[-1])
+            self.P_s = eos.P_T_rho(
+                self.T_s, self.rho_s, self.A1_mat_id_layer[-1], self.A1_A1_mix_layer[-1]
+            )
             if self.P_s <= 0:
                 e = (
                     "Pressure at surface computed is not positive.\n"
@@ -267,11 +288,21 @@ class Planet:
             self.A1_rho = self.A1_rho[::-1]
             self.A1_u = self.A1_u[::-1]
             self.A1_mat_id = self.A1_mat_id[::-1]
+            self.A1_A1_mix = self.A1_A1_mix[::-1]
 
         # Index of the outer edge of each layer
-        self.A1_idx_layer = np.append(
-            np.where(np.diff(self.A1_mat_id) != 0)[0], self.num_prof - 1
-        )
+        if np.all(np.array(self.A1_mat_layer) == "mixed_HHe_heavy"):
+            # Select layers by different mix fractions
+            A1_mix_diff = np.abs(np.diff(self.A1_A1_mix[:, 0]))
+            for i in range(1, gv.num_mix):
+                A1_mix_diff += np.abs(np.diff(self.A1_A1_mix[:, i]))
+            self.A1_idx_layer = np.append(
+                np.where(A1_mix_diff > 2 * np.mean(A1_mix_diff))[0], self.num_prof - 1
+            )
+        else:
+            self.A1_idx_layer = np.append(
+                np.where(np.diff(self.A1_mat_id) != 0)[0], self.num_prof - 1
+            )
 
         # Boundary radii
         self.A1_R_layer = self.A1_r[self.A1_idx_layer]
@@ -430,6 +461,7 @@ class Planet:
             grp.attrs[io.Di_hdf5_planet_label["num_layer"]] = self.num_layer
             grp.attrs[io.Di_hdf5_planet_label["mat_layer"]] = self.A1_mat_layer
             grp.attrs[io.Di_hdf5_planet_label["mat_id_layer"]] = self.A1_mat_id_layer
+            grp.attrs[io.Di_hdf5_planet_label["mixes_layer"]] = self.A1_A1_mix_layer
             grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.A1_T_rho_type
             grp.attrs[io.Di_hdf5_planet_label["T_rho_type_id"]] = self.A1_T_rho_type_id
             grp.attrs[io.Di_hdf5_planet_label["T_rho_args"]] = self.A1_T_rho_args
@@ -454,6 +486,9 @@ class Planet:
             grp.create_dataset(io.Di_hdf5_planet_label["u"], data=self.A1_u, dtype="d")
             grp.create_dataset(
                 io.Di_hdf5_planet_label["mat_id"], data=self.A1_mat_id, dtype="i"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["mixes"], data=self.A1_A1_mix, dtype="d"
             )
 
             if hasattr(self, "Di_param_A1_misc_prof"):
@@ -498,6 +533,7 @@ class Planet:
                 self.num_layer,
                 self.A1_mat_layer,
                 self.A1_mat_id_layer,
+                self.A1_A1_mix_layer,
                 self.A1_T_rho_type,
                 self.A1_T_rho_type_id,
                 self.A1_T_rho_args,
@@ -517,6 +553,7 @@ class Planet:
                 self.A1_P,
                 self.A1_u,
                 self.A1_mat_id,
+                self.A1_A1_mix,
             ) = io.multi_get_planet_data(
                 f,
                 [
@@ -524,6 +561,7 @@ class Planet:
                     "num_layer",
                     "mat_layer",
                     "mat_id_layer",
+                    "mixes_layer",
                     "T_rho_type",
                     "T_rho_type_id",
                     "T_rho_args",
@@ -543,6 +581,7 @@ class Planet:
                     "P",
                     "u",
                     "mat_id",
+                    "mixes",
                 ],
             )
 
@@ -598,6 +637,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L1_spherical.L1_integrate(
             self.num_prof,
             self.R,
@@ -608,6 +648,7 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
         )
 
         self.update_attributes()
@@ -710,6 +751,7 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
         )
 
         self.update_attributes()
@@ -777,6 +819,7 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
         )
 
         self.update_attributes()
@@ -922,6 +965,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L2_spherical.L2_integrate(
             self.num_prof,
             self.R,
@@ -933,9 +977,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
         )
 
         self.update_attributes()
@@ -984,9 +1030,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
             tol=tol,
             num_attempt=num_attempt,
             verbosity=verbosity,
@@ -1016,9 +1064,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
             tol=tol_M_tweak,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
@@ -1032,6 +1082,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L2_spherical.L2_integrate(
             self.num_prof,
             self.R,
@@ -1043,9 +1094,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
         )
 
         self.update_attributes()
@@ -1092,9 +1145,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
             tol=tol,
             num_attempt=num_attempt,
             verbosity=verbosity,
@@ -1108,6 +1163,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L2_spherical.L2_integrate(
             self.num_prof,
             self.R,
@@ -1119,9 +1175,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
         )
 
         self.update_attributes()
@@ -1174,9 +1232,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
             tol=tol,
             num_attempt=num_attempt,
             verbosity=verbosity,
@@ -1207,9 +1267,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
             tol=tol_M_tweak,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
@@ -1226,6 +1288,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L2_spherical.L2_integrate(
             self.num_prof,
             self.R,
@@ -1237,9 +1300,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
         )
 
         self.update_attributes()
@@ -1295,9 +1360,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
             tol=tol,
             num_attempt=num_attempt,
             verbosity=verbosity,
@@ -1328,9 +1395,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
             tol=tol_M_tweak,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
@@ -1347,6 +1416,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L2_spherical.L2_integrate(
             self.num_prof,
             self.R,
@@ -1358,9 +1428,11 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             self.A1_mat_id_layer[1],
             self.A1_T_rho_type_id[1],
             self.A1_T_rho_args[1],
+            self.A1_A1_mix_layer[1],
         )
 
         self.update_attributes()
@@ -2334,16 +2406,30 @@ class SpinPlanet:
         self.A1_Z = np.interp(self.A1_rho, self.A1_rho_po[::-1], self.A1_r_po[::-1])
         self.A1_Z_layer = np.array([self.A1_Z[idx] for idx in self.A1_idx_layer_eq])
 
-        self.A1_mat_id = np.ones_like(self.A1_R)
-        self.A1_T = np.ones_like(self.A1_R)
-        self.A1_P = np.ones_like(self.A1_R)
-        self.A1_u = np.ones_like(self.A1_R)
+        num_R = len(self.A1_R)
+        self.A1_mat_id = np.zeros(num_R)
+        self.A1_A1_mix = np.zeros(
+            (num_R, gv.num_mix)
+        )  ## not yet actually usable for spinning planets
+        self.A1_T = np.zeros(num_R)
+        self.A1_P = np.zeros(num_R)
+        self.A1_u = np.zeros(num_R)
 
         self.A1_mat_id[:] = self.A1_mat_id_layer[0]
+        if self.A1_A1_mix_layer[0] is not None:
+            self.A1_A1_mix[:] = self.A1_A1_mix_layer[0]
         if self.num_layer >= 2:
             self.A1_mat_id[(self.A1_idx_layer_eq[0] + 1) :] = self.A1_mat_id_layer[1]
+            if self.A1_A1_mix_layer[1] is not None:
+                self.A1_A1_mix[(self.A1_idx_layer_eq[0] + 1) :] = self.A1_A1_mix_layer[
+                    1
+                ]
         if self.num_layer >= 3:
             self.A1_mat_id[(self.A1_idx_layer_eq[1] + 1) :] = self.A1_mat_id_layer[2]
+            if self.A1_A1_mix_layer[2] is not None:
+                self.A1_A1_mix[(self.A1_idx_layer_eq[1] + 1) :] = self.A1_A1_mix_layer[
+                    2
+                ]
 
         # Set values through each layer
         for i, rho in enumerate(self.A1_rho[: self.A1_idx_layer_eq[0] + 1]):
@@ -2352,10 +2438,14 @@ class SpinPlanet:
                 self.A1_T_rho_type_id[0],
                 self.A1_T_rho_args[0],
                 self.A1_mat_id_layer[0],
+                self.A1_A1_mix_layer[0],
             )
-            self.A1_u[i] = eos.u_rho_T(rho, self.A1_T[i], self.A1_mat_id[i])
-            # self.A1_P[i] = eos.P_u_rho(self.A1_u[i], rho, self.A1_mat_id[i])
-            self.A1_P[i] = eos.P_T_rho(self.A1_T[i], rho, self.A1_mat_id[i])
+            self.A1_u[i] = eos.u_rho_T(
+                rho, self.A1_T[i], self.A1_mat_id[i], self.A1_A1_mix[i]
+            )
+            self.A1_P[i] = eos.P_T_rho(
+                self.A1_T[i], rho, self.A1_mat_id[i], self.A1_A1_mix[i]
+            )
 
         if self.num_layer >= 2:
             for i, rho in enumerate(
@@ -2367,10 +2457,14 @@ class SpinPlanet:
                     self.A1_T_rho_type_id[1],
                     self.A1_T_rho_args[1],
                     self.A1_mat_id_layer[1],
+                    self.A1_A1_mix_layer[1],
                 )
-                self.A1_u[j] = eos.u_rho_T(rho, self.A1_T[j], self.A1_mat_id[j])
-                # self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id[j])
-                self.A1_P[j] = eos.P_T_rho(self.A1_T[j], rho, self.A1_mat_id[j])
+                self.A1_u[j] = eos.u_rho_T(
+                    rho, self.A1_T[j], self.A1_mat_id[j], self.A1_A1_mix[j]
+                )
+                self.A1_P[j] = eos.P_T_rho(
+                    self.A1_T[j], rho, self.A1_mat_id[j], self.A1_A1_mix[j]
+                )
         if self.num_layer >= 3:
             for i, rho in enumerate(
                 self.A1_rho[self.A1_idx_layer_eq[1] + 1 : self.A1_idx_layer_eq[2] + 1]
@@ -2381,10 +2475,14 @@ class SpinPlanet:
                     self.A1_T_rho_type_id[2],
                     self.A1_T_rho_args[2],
                     self.A1_mat_id_layer[2],
+                    self.A1_A1_mix_layer[2],
                 )
-                self.A1_u[j] = eos.u_rho_T(rho, self.A1_T[j], self.A1_mat_id[j])
-                # self.A1_P[j] = eos.P_u_rho(self.A1_u[j], rho, self.A1_mat_id[j])
-                self.A1_P[j] = eos.P_T_rho(self.A1_T[j], rho, self.A1_mat_id[j])
+                self.A1_u[j] = eos.u_rho_T(
+                    rho, self.A1_T[j], self.A1_mat_id[j], self.A1_A1_mix[j]
+                )
+                self.A1_P[j] = eos.P_T_rho(
+                    self.A1_T[j], rho, self.A1_mat_id[j], self.A1_A1_mix[j]
+                )
 
         # Boundary values
         self.P_0 = self.A1_P[0]
@@ -2462,6 +2560,13 @@ class SpinPlanet:
             (
                 utils.add_whitespace("mat_id", space),
                 utils.format_array_string(self.A1_mat_id_layer, "%d"),
+            ),
+        )
+        print_try(
+            "    %s = %s ",
+            (
+                utils.add_whitespace("A1_mix", space),
+                utils.format_array_string(self.A1_A1_mix_layer, "%.3g"),
             ),
         )
         print_try(
@@ -2555,6 +2660,9 @@ class SpinPlanet:
             grp.attrs[io.Di_hdf5_planet_label["mat_id_layer"]] = (
                 self.planet.A1_mat_id_layer
             )
+            grp.attrs[io.Di_hdf5_planet_label["mixes_layer"]] = (
+                self.planet.A1_A1_mix_layer
+            )
             grp.attrs[io.Di_hdf5_planet_label["T_rho_type"]] = self.planet.A1_T_rho_type
             grp.attrs[io.Di_hdf5_planet_label["T_rho_type_id"]] = (
                 self.planet.A1_T_rho_type_id
@@ -2589,6 +2697,9 @@ class SpinPlanet:
             )
             grp.create_dataset(
                 io.Di_hdf5_planet_label["mat_id"], data=self.planet.A1_mat_id, dtype="i"
+            )
+            grp.create_dataset(
+                io.Di_hdf5_planet_label["mixes"], data=self.planet.A1_A1_mix, dtype="d"
             )
 
             # Spinning planet group
@@ -2664,6 +2775,7 @@ class SpinPlanet:
                 self.num_layer,
                 self.A1_mat_layer,
                 self.A1_mat_id_layer,
+                self.A1_A1_mix_layer,
                 self.A1_T_rho_type,
                 self.A1_T_rho_type_id,
                 self.A1_T_rho_args,
@@ -2690,6 +2802,7 @@ class SpinPlanet:
                 self.A1_P,
                 self.A1_u,
                 self.A1_mat_id,
+                self.A1_A1_mix,
             ) = io.multi_get_spin_planet_data(
                 f,
                 [
@@ -2698,6 +2811,7 @@ class SpinPlanet:
                     "num_layer",
                     "mat_layer",
                     "mat_id_layer",
+                    "mixes_layer",
                     "T_rho_type",
                     "T_rho_type_id",
                     "T_rho_args",
@@ -2724,6 +2838,7 @@ class SpinPlanet:
                     "P",
                     "u",
                     "mat_id",
+                    "mixes",
                 ],
             )
 
@@ -3677,7 +3792,11 @@ class ParticlePlanet:
                     for param in planet.Di_param_A1_misc_prof.keys()
                 }
             else:
-                Di_param_A1_misc_prof = None
+                Di_param_A1_misc_prof = {}
+            if np.any(np.array(planet.A1_mat_layer) == "mixed_HHe_heavy"):
+                Di_param_A1_misc_prof["mix_rock"] = planet.A1_A1_mix[:, 0]
+                Di_param_A1_misc_prof["mix_water"] = planet.A1_A1_mix[:, 1]
+                Di_param_A1_misc_prof["mix_iron"] = planet.A1_A1_mix[:, 2]
 
             # Generate all the particle positions and properties
             particles = seagen.GenSphere(
@@ -3690,7 +3809,10 @@ class ParticlePlanet:
                 planet.A1_P[1:],
                 verbosity=verbosity,
                 seed=seed,
-                Di_param_A1_misc_prof=Di_param_A1_misc_prof,
+                Di_param_A1_misc_prof={
+                    param: Di_param_A1_misc_prof[param][1:]
+                    for param in Di_param_A1_misc_prof.keys()
+                },
             )
 
             self.A1_x = particles.A1_x
@@ -3793,7 +3915,9 @@ class ParticlePlanet:
         A1_s : [float]
             The specific entropy of each particle (J K^-1 kg^-1).
         """
-        self.A1_s = eos.A1_s_rho_T(self.A1_rho, self.A1_T, self.A1_mat_id)
+        self.A1_s = eos.A1_s_rho_T(
+            self.A1_rho, self.A1_T, self.A1_mat_id, self.A1_A1_mix
+        )
 
     def save(
         self,
@@ -3844,14 +3968,14 @@ class ParticlePlanet:
 
             if any(param[:4] == "mix_" for param in Di_param_A1_misc.keys()):
                 # Convert material mixes to combined array
-                A1_A1_mixes = np.transpose(
+                A1_A1_mix = np.transpose(
                     [
                         Di_param_A1_misc[param]
                         for param in Di_param_A1_misc.keys()
                         if param[:4] == "mix_"
                     ]
                 )
-                Di_param_A1_misc["mixes"] = A1_A1_mixes
+                Di_param_A1_misc["mixes"] = A1_A1_mix
 
                 # Remove the no-longer-needed individual mix arrays
                 for param in list(Di_param_A1_misc.keys()):

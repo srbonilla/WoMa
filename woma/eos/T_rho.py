@@ -6,11 +6,11 @@ from numba import njit
 import numpy as np
 
 from woma.misc import glob_vars as gv
-from woma.eos import tillotson, sesame, idg, hm80
+from woma.eos import tillotson, sesame, idg, hm80, mixed
 
 
 @njit
-def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
+def T_rho(rho, T_rho_type_id, T_rho_args, mat_id, A1_mix=np.zeros(gv.num_mix)):
     """Compute the temperature from the density using the chosen relation.
 
     Parameters
@@ -26,6 +26,9 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
 
     mat_id : int
         The material ID.
+
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Returns
     -------
@@ -51,6 +54,8 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
             return hm80.T_rho_HM80_HHe(rho, T_rho_args[0], T_rho_args[1])
         elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
+        elif mat_type == gv.type_mixed:
+            return mixed.Z_rho_Y(rho, T_rho_args[0], A1_mix, Z_choice="T", Y_choice="s")
         else:
             raise ValueError("Adiabatic not implemented for this material type")
 
@@ -58,6 +63,8 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
     elif T_rho_type_id == gv.type_ent:
         if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
             return sesame.T_rho_s(rho, T_rho_args[0], mat_id)
+        elif mat_type == gv.type_mixed:
+            return mixed.Z_rho_Y(rho, T_rho_args[0], A1_mix, Z_choice="T", Y_choice="s")
         else:
             raise ValueError("Entropy not implemented for this material type")
     else:
@@ -65,7 +72,9 @@ def T_rho(rho, T_rho_type_id, T_rho_args, mat_id):
 
 
 @njit
-def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
+def set_T_rho_args(
+    T, rho, T_rho_type_id, T_rho_args, mat_id, A1_mix=np.zeros(gv.num_mix)
+):
     """Set any parameters for the T-rho relation.
 
     Parameters
@@ -85,6 +94,9 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
     mat_id : int
         Material ID
 
+    A1_mix : [float] (opt.)
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
+
     Returns
     -------
     T_rho_args : [float]
@@ -102,21 +114,23 @@ def set_T_rho_args(T, rho, T_rho_type_id, T_rho_args, mat_id):
             # T_rho_args = [T rho^(1-gamma),]
             gamma = idg.idg_gamma(mat_id)
             T_rho_args[0] = T * rho ** (1 - gamma)
-
         elif mat_id == gv.id_HM80_HHe:
             # T_rho_args = [rho_prv, T_prv]
             T_rho_args[0] = rho
             T_rho_args[1] = T
-
         elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
             # T_rho_args = [s_adb,]
             T_rho_args[0] = sesame.s_rho_T(rho, T, mat_id)
+        elif mat_type == gv.type_mixed:
+            T_rho_args[0] = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="s")
 
     # Fixed entropy
     elif T_rho_type_id == gv.type_ent:
+        # T_rho_args = [s,]
         if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
-            # T_rho_args = [s,]
             T_rho_args[0] = sesame.s_rho_T(rho, T, mat_id)
+        elif mat_type == gv.type_mixed:
+            T_rho_args[0] = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="s")
 
     else:
         raise ValueError("T-rho relation not implemented")

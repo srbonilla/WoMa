@@ -142,6 +142,7 @@ Fp_ANEOS_forsterite = dir_data + "ANEOS_forsterite_S19.hdf5"
 Fp_ANEOS_iron = dir_data + "ANEOS_iron_S20.hdf5"
 Fp_ANEOS_Fe85Si15 = dir_data + "ANEOS_Fe85Si15_S20.hdf5"
 # Mixed tables
+num_mix = 3
 Fp_mixed_HHe_rock = dir_data + "mixed_HHe_rock.hdf5"
 Fp_mixed_HHe_water = dir_data + "mixed_HHe_water.hdf5"
 Fp_mixed_HHe_iron = dir_data + "mixed_HHe_iron.hdf5"

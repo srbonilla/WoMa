@@ -20,6 +20,7 @@ Di_hdf5_planet_label = {
     "num_layer": "Number of Layers",
     "mat_layer": "Layer Materials",
     "mat_id_layer": "Layer Material IDs",
+    "mixes_layer": "Layer material mix fractions",
     "T_rho_type": "Layer T-rho Type",
     "T_rho_type_id": "Layer T-rho Type ID",
     "T_rho_args": "Layer T-rho Internal Arguments",
@@ -39,6 +40,7 @@ Di_hdf5_planet_label = {
     "u": "Profile Specific Internal Energies",
     "P": "Profile Pressures",
     "mat_id": "Profile Material IDs",
+    "mixes": "Profile material mix fractions",
     # Misc
     "misc": "Miscellaneous parameters",
     "mix_rock": "Profile mix rock",
@@ -132,6 +134,18 @@ def get_planet_data(f, param):
     data : np.ndarray
         The array or attribute (std units).
     """
+    # Placeholder options for parameters that may not always be present
+    if param == "mixes_layer":
+        try:
+            return f["planet"].attrs[Di_hdf5_planet_label[param]]
+        except KeyError:
+            return [[0.0] * gv.num_mix] * get_planet_data(f, "num_layer")
+    elif param == "mixes":
+        try:
+            return f["planet/" + Di_hdf5_planet_label[param]][()]
+        except KeyError:
+            return np.zeros((len(get_planet_data(f, "r")), gv.num_mix))
+
     # Attributes
     try:
         return f["planet"].attrs[Di_hdf5_planet_label[param]]

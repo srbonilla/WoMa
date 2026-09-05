@@ -14,7 +14,18 @@ from woma.eos.T_rho import T_rho, set_T_rho_args
 
 
 @njit
-def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args):
+def L1_integrate(
+    num_prof,
+    R,
+    M,
+    P_s,
+    T_s,
+    rho_s,
+    mat_id,
+    T_rho_type_id,
+    T_rho_args,
+    A1_mix=[0] * gv.num_mix,
+):
     """Integration of a 1 layer spherical planet.
 
     Parameters
@@ -46,6 +57,9 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
     T_rho_args : [float]
         Extra arguments to determine the relation.
 
+    A1_mix : [float] (opt.)
+        For mixed HHe--heavy materials, the mixing mass fractions.
+
     Returns
     -------
     A1_r : [float]
@@ -68,19 +82,24 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
 
     A1_mat_id : [float]
         The ID of the material at each profile radius.
+
+    A1_A1_mix : [[float]]
+        The material mixes at each profile radius.
     """
     # Initialise the profile arrays
-    A1_r = np.linspace(R, 0, int(num_prof))
-    A1_m_enc = np.zeros(A1_r.shape)
-    A1_P = np.zeros(A1_r.shape)
-    A1_T = np.zeros(A1_r.shape)
-    A1_rho = np.zeros(A1_r.shape)
-    A1_u = np.zeros(A1_r.shape)
-    A1_mat_id = np.ones(A1_r.shape) * mat_id
+    num_prof = int(num_prof)
+    A1_r = np.linspace(R, 0, num_prof)
+    A1_m_enc = np.zeros(num_prof)
+    A1_P = np.zeros(num_prof)
+    A1_T = np.zeros(num_prof)
+    A1_rho = np.zeros(num_prof)
+    A1_u = np.zeros(num_prof)
+    A1_mat_id = np.ones(num_prof) * mat_id
+    A1_A1_mix = np.full((num_prof, gv.num_mix), A1_mix)
 
-    u_s = eos.u_rho_T(rho_s, T_s, mat_id)
+    u_s = eos.u_rho_T(rho_s, T_s, mat_id, A1_mix)
     # Set the T-rho relation parameters
-    T_rho_args = set_T_rho_args(T_s, rho_s, T_rho_type_id, T_rho_args, mat_id)
+    T_rho_args = set_T_rho_args(T_s, rho_s, T_rho_type_id, T_rho_args, mat_id, A1_mix)
 
     dr = A1_r[0] - A1_r[1]
 
@@ -108,8 +127,8 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
             A1_rho[i - 1],
             1.1 * A1_rho[i - 1],
         )
-        A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id)
-        A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id)
+        A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id, A1_mix)
+        A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id, A1_mix)
         # Update the T-rho parameters
         if mat_id == gv.id_HM80_HHe and T_rho_type_id == gv.type_adb:
             T_rho_args = set_T_rho_args(
@@ -120,7 +139,7 @@ def L1_integrate(num_prof, R, M, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_a
         if A1_m_enc[i] < 0:
             return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
 
-    return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
+    return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix
 
 
 @njit
@@ -261,6 +280,7 @@ def L1_find_M_given_R(
     mat_id,
     T_rho_type_id,
     T_rho_args,
+    A1_mix=[0] * gv.num_mix,
     num_attempt=40,
     tol=1e-7,
     verbosity=1,
@@ -297,6 +317,9 @@ def L1_find_M_given_R(
     T_rho_args : [float]
         Extra arguments to determine the relation.
 
+    A1_mix : [float] (opt.)
+        For mixed HHe--heavy materials, the mixing mass fractions.
+
     num_attempt : float
         Maximum number of iterations to perform.
 
@@ -328,7 +351,16 @@ def L1_find_M_given_R(
         M_try = (M_min + M_max) * 0.5
 
         A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
-            num_prof, R, M_try, P_s, T_s, rho_s, mat_id, T_rho_type_id, T_rho_args
+            num_prof,
+            R,
+            M_try,
+            P_s,
+            T_s,
+            rho_s,
+            mat_id,
+            T_rho_type_id,
+            T_rho_args,
+            A1_mix,
         )
 
         if A1_m_enc[-1] > 0.0:
@@ -373,6 +405,7 @@ def L1_find_R_given_M(
     mat_id,
     T_rho_type_id,
     T_rho_args,
+    A1_mix=[0] * gv.num_mix,
     num_attempt=40,
     tol=0.01,
     verbosity=1,
@@ -409,6 +442,9 @@ def L1_find_R_given_M(
     T_rho_args : [float]
         Extra arguments to determine the relation.
 
+    A1_mix : [float] (opt.)
+        For mixed HHe--heavy materials, the mixing mass fractions.
+
     num_attempt : float
         Maximum number of iterations to perform.
 
@@ -442,6 +478,7 @@ def L1_find_R_given_M(
             mat_id,
             T_rho_type_id,
             T_rho_args,
+            A1_mix,
         )
 
         if A1_m_enc[-1] > 0.0:
