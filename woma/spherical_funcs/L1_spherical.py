@@ -95,7 +95,8 @@ def L1_integrate(
     A1_rho = np.zeros(num_prof)
     A1_u = np.zeros(num_prof)
     A1_mat_id = np.ones(num_prof) * mat_id
-    A1_A1_mix = np.full((num_prof, gv.num_mix), A1_mix)
+    A1_A1_mix = np.empty((num_prof, gv.num_mix))
+    A1_A1_mix[:] = A1_mix
 
     u_s = eos.u_rho_T(rho_s, T_s, mat_id, A1_mix)
     # Set the T-rho relation parameters
@@ -126,6 +127,7 @@ def L1_integrate(
             T_rho_args,
             A1_rho[i - 1],
             1.1 * A1_rho[i - 1],
+            A1_mix,
         )
         A1_T[i] = T_rho(A1_rho[i], T_rho_type_id, T_rho_args, mat_id, A1_mix)
         A1_u[i] = eos.u_rho_T(A1_rho[i], A1_T[i], mat_id, A1_mix)
@@ -137,14 +139,25 @@ def L1_integrate(
 
         # Stop if run out of mass
         if A1_m_enc[i] < 0:
-            return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id
+            return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix
 
     return A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix
 
 
 @njit
 def L1_integrate_out(
-    r, dr, m_enc, P, T, u, mat_id, T_rho_type_id, T_rho_args, rho_min=0, P_min=0
+    r,
+    dr,
+    m_enc,
+    P,
+    T,
+    u,
+    mat_id,
+    T_rho_type_id,
+    T_rho_args,
+    A1_mix=[0] * gv.num_mix,
+    rho_min=0,
+    P_min=0,
 ):
     """Integrate a new layer of a spherical planet outwards.
 
@@ -213,11 +226,12 @@ def L1_integrate_out(
     A1_T = [T]
     A1_u = [u]
     A1_mat_id = [mat_id]
-    A1_rho = [eos.rho_P_T(A1_P[0], A1_T[0], mat_id)]
+    A1_A1_mix = [A1_mix]
+    A1_rho = [eos.rho_P_T(A1_P[0], A1_T[0], mat_id, A1_mix)]
 
     # Set the T-rho relation parameters
     T_rho_args = set_T_rho_args(
-        A1_T[0], A1_rho[0], T_rho_type_id, T_rho_args, A1_mat_id[0]
+        A1_T[0], A1_rho[0], T_rho_type_id, T_rho_args, A1_mat_id[0], A1_A1_mix[0]
     )
 
     # Integrate outwards until the minimum density (or zero pressure)
@@ -233,6 +247,7 @@ def L1_integrate_out(
             A1_T.append(0)
             A1_u.append(0)
             A1_mat_id.append(0)
+            A1_A1_mix.append([0] * gv.num_mix)
             break
         # Update the T-rho parameters
         if T_rho_type_id == gv.type_adb and mat_id == gv.id_HM80_HHe:
@@ -242,6 +257,7 @@ def L1_integrate_out(
                 T_rho_type_id,
                 T_rho_args,
                 mat_id,
+                A1_mix,
             )
 
         rho = eos.find_rho(
@@ -251,11 +267,13 @@ def L1_integrate_out(
             T_rho_args,
             0.9 * A1_rho[-1],
             A1_rho[-1],
+            A1_mix,
         )
         A1_rho.append(rho)
-        A1_T.append(T_rho(rho, T_rho_type_id, T_rho_args, mat_id))
-        A1_u.append(eos.u_rho_T(rho, A1_T[-1], mat_id))
+        A1_T.append(T_rho(rho, T_rho_type_id, T_rho_args, mat_id, A1_mix))
+        A1_u.append(eos.u_rho_T(rho, A1_T[-1], mat_id, A1_mix))
         A1_mat_id.append(mat_id)
+        A1_A1_mix.append(A1_mix)
 
     # Remove the duplicate first step and the final too-low density or too-low
     # pressure step
@@ -267,6 +285,7 @@ def L1_integrate_out(
         A1_rho[1:-1],
         A1_u[1:-1],
         A1_mat_id[1:-1],
+        A1_A1_mix[1:-1],
     )
 
 
@@ -350,7 +369,7 @@ def L1_find_M_given_R(
 
         M_try = (M_min + M_max) * 0.5
 
-        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix = L1_integrate(
             num_prof,
             R,
             M_try,
@@ -468,7 +487,7 @@ def L1_find_R_given_M(
 
         R_try = (R_min + R_max) * 0.5
 
-        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id = L1_integrate(
+        A1_r, A1_m_enc, A1_P, A1_T, A1_rho, A1_u, A1_mat_id, A1_A1_mix = L1_integrate(
             num_prof,
             R_try,
             M,

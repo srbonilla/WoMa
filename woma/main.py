@@ -195,6 +195,8 @@ class Planet:
             self.num_layer = 1
         if self.A1_A1_mix_layer is None:
             self.A1_A1_mix_layer = [None] * self.num_layer
+        else:
+            self.A1_A1_mix_layer = np.array(self.A1_A1_mix_layer).astype(float)
 
         # Temperature--density relation
         if self.A1_T_rho_type is not None:
@@ -695,6 +697,7 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             tol=tol,
             num_attempt=num_attempt,
             verbosity=verbosity,
@@ -724,6 +727,7 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             tol=tol_M_tweak,
             num_attempt=num_attempt,
             verbosity=verbosity_2,
@@ -741,6 +745,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L1_spherical.L1_integrate(
             self.num_prof,
             self.R,
@@ -795,6 +800,7 @@ class Planet:
             self.A1_mat_id_layer[0],
             self.A1_T_rho_type_id[0],
             self.A1_T_rho_args[0],
+            self.A1_A1_mix_layer[0],
             tol=tol,
             num_attempt=num_attempt,
             verbosity=verbosity,
@@ -809,6 +815,7 @@ class Planet:
             self.A1_rho,
             self.A1_u,
             self.A1_mat_id,
+            self.A1_A1_mix,
         ) = L1_spherical.L1_integrate(
             self.num_prof,
             self.R,
@@ -896,6 +903,7 @@ class Planet:
             A1_rho,
             A1_u,
             A1_mat_id,
+            A1_A1_mix,
         ) = L1_spherical.L1_integrate_out(
             self.A1_r[-1],
             self.A1_r[1],
@@ -918,6 +926,7 @@ class Planet:
         self.A1_rho = np.append(self.A1_rho, A1_rho)
         self.A1_u = np.append(self.A1_u, A1_u)
         self.A1_mat_id = np.append(self.A1_mat_id, A1_mat_id)
+        self.A1_A1_mix = np.append(self.A1_A1_mix, A1_A1_mix)
 
         self.update_attributes()
 
@@ -3798,6 +3807,12 @@ class ParticlePlanet:
                 Di_param_A1_misc_prof["mix_water"] = planet.A1_A1_mix[:, 1]
                 Di_param_A1_misc_prof["mix_iron"] = planet.A1_A1_mix[:, 2]
 
+            # Temporarily offset material IDs for separate layers of the same material
+            if np.any(np.array(planet.A1_mat_layer) == "mixed_HHe_heavy"):
+                id_offset = 10000
+                for idx in planet.A1_idx_layer:
+                    planet.A1_mat_id[:idx + 1] += id_offset
+
             # Generate all the particle positions and properties
             particles = seagen.GenSphere(
                 self.N_particles,
@@ -3814,6 +3829,11 @@ class ParticlePlanet:
                     for param in Di_param_A1_misc_prof.keys()
                 },
             )
+
+            # Reset material IDs
+            if np.any(np.array(planet.A1_mat_layer) == "mixed_HHe_heavy"):
+                planet.A1_mat_id %= id_offset
+                particles.A1_mat %= id_offset
 
             self.A1_x = particles.A1_x
             self.A1_y = particles.A1_y
