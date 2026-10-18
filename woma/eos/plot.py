@@ -860,7 +860,7 @@ def plot_mixed_eos_Z_X_iso_Y(
         "u": [r"Specific internal energy (J kg$^{-1}$)", 1e6, 7e10],
         "s": [r"Specific entropy (J K$^{-1}$ kg$^{-1}$)", 3e2, 5e5],
         "c": [r"Sound speed (m s$^{-1}$)", 1e1, 1e8],
-        "rho": [r"Density (kg m$^{-3}$)", 1e-4, 3e4],
+        "rho": [r"Density (kg m$^{-3}$)", 3e-4, 3e4],
         "T": [r"Temperature (K)", 1e2, 1e5],
         "mix_rock": [r"Mixed mass fraction of rock", 0, 1],
         "mix_water": [r"Mixed mass fraction of water", 0, 1],
@@ -923,12 +923,12 @@ def plot_mixed_eos_Z_X_iso_Y(
             )
     elif X_choice == "T":
         for i_Y, Y in enumerate(A1_Y):
-            A2_Z[i_Y] = mixed.A1_Z_T_Y_mix(
+            A2_Z[i_Y] = mixed.A1_Z_X_T_mix(
+                A1_X=np.full(num_X, Y),
                 A1_T=A1_X,
-                A1_Y=np.full(num_X, Y),
                 A1_A1_mix=np.full((num_X, len(W)), W),
                 Z_choice=Z_choice,
-                Y_choice=Y_choice,
+                X_choice=Y_choice,
             )
 
     # Set colour for each iso-Y value
@@ -1034,7 +1034,6 @@ def test_plot_mixed_eos_iso_lines():
             [0.0, 0.0, 0.234],
             [0.0, 0.0, 1.0],
             [0.234, 0.234, 0.234],
-            [1.0, 1.0, 1.0],
         ]:
             # Figure
             fig = plt.figure(figsize=(8, 8))

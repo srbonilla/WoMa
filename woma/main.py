@@ -3811,7 +3811,7 @@ class ParticlePlanet:
             if np.any(np.array(planet.A1_mat_layer) == "mixed_HHe_heavy"):
                 id_offset = 10000
                 for idx in planet.A1_idx_layer:
-                    planet.A1_mat_id[:idx + 1] += id_offset
+                    planet.A1_mat_id[: idx + 1] += id_offset
 
             # Generate all the particle positions and properties
             particles = seagen.GenSphere(
@@ -3858,6 +3858,9 @@ class ParticlePlanet:
             )
 
             self.N_particles = particles.A1_x.shape[0]
+            self.A1_r_shell = np.unique(
+                np.round(np.sqrt(self.A1_x**2 + self.A1_y**2 + self.A1_z**2), 7)
+            )
         else:
             (
                 self.A1_x,
@@ -3890,6 +3893,10 @@ class ParticlePlanet:
             )
 
             self.N_particles = self.A1_x.shape[0]
+            self.A1_R_shell = np.unique(
+                np.round(np.sqrt(self.A1_x**2 + self.A1_y**2), 7)
+            )
+            self.A1_Z_shell = np.unique(self.A1_z)
 
         # 2D position and velocity arrays
         self.A2_pos = np.transpose([self.A1_x, self.A1_y, self.A1_z])
@@ -4021,5 +4028,8 @@ class ParticlePlanet:
                 Di_param_A1_misc=Di_param_A1_misc,
                 boxsize=boxsize,
                 file_to_SI=file_to_SI,
+                A1_r_shell=self.A1_r_shell if hasattr(self, "A1_r_shell") else None,
+                A1_R_shell=self.A1_R_shell if hasattr(self, "A1_R_shell") else None,
+                A1_Z_shell=self.A1_Z_shell if hasattr(self, "A1_Z_shell") else None,
                 verbosity=verbosity,
             )

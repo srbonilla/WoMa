@@ -94,6 +94,9 @@ Di_hdf5_particle_label = {  # Type
     "phi": "Potentials",  # f
     "T": "Temperatures",  # f
     "mixes": "MaterialMixes",  # [f]
+    "r_shell": "ShellRadii",  # f
+    "R_shell": "ShellEquatorialRadii",  # f
+    "Z_shell": "ShellPolarRadii",  # f
 }
 Di_hdf5_eos_label = {
     # Attributes
@@ -249,6 +252,9 @@ def save_particle_data(
     Di_param_A1_misc=None,
     boxsize=0,
     file_to_SI=SI_to_SI,
+    A1_r_shell=None,
+    A1_R_shell=None,
+    A1_Z_shell=None,
     verbosity=1,
 ):
     """Save particle data to an hdf5 file.
@@ -281,6 +287,9 @@ def save_particle_data(
     file_to_SI : woma.Conversions (opt.)
         Simple unit conversion object from the file's units to SI. Defaults to
         staying in SI. See Conversions in misc/utils.py for more details.
+
+    A1_[r,R,Z]_shell : [float] (opt.)
+        The radii (or equatorial, polar radii) of the particle shells.
     """
     num_particle = len(A1_m)
     if A1_id is None:
@@ -358,6 +367,13 @@ def save_particle_data(
     grp.attrs["MassTable"] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     grp.attrs["Flag_Entropy_ICs"] = [0]
     grp.attrs["Dimension"] = [3]
+    # Extra header info
+    if A1_r_shell is not None:
+        grp.attrs[Di_hdf5_particle_label["r_shell"]] = A1_r_shell * SI_to_file.l
+    if A1_R_shell is not None:
+        grp.attrs[Di_hdf5_particle_label["R_shell"]] = A1_R_shell * SI_to_file.l
+    if A1_Z_shell is not None:
+        grp.attrs[Di_hdf5_particle_label["Z_shell"]] = A1_Z_shell * SI_to_file.l
 
     # Runtime parameters
     grp = f.create_group("/RuntimePars")
