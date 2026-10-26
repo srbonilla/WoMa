@@ -616,7 +616,7 @@ def T_u_rho(u, rho, mat_id, A1_mix=None):
     elif mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         T = sesame.T_u_rho(u, rho, mat_id)
     elif mat_type == gv.type_mixed:
-        T = mixed.Z_rho_Y(rho, u, A1_mix, Z_choice="T", Y_choice="u")
+        T = mixed.T_rho_Y(rho, u, A1_mix, Y_choice="u")
     else:
         raise ValueError("Invalid material ID")
     return T
@@ -773,7 +773,7 @@ def s_rho_T(rho, T, mat_id, A1_mix=None):
     if mat_type in [gv.type_SESAME, gv.type_ANEOS, gv.type_custom]:
         s = sesame.s_rho_T(rho, T, mat_id)
     elif mat_type == gv.type_mixed:
-        u = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="s")
+        s = mixed.Z_rho_T(rho, T, A1_mix, Z_choice="s")
     else:
         raise ValueError("Entropy not implemented for this material type.")
     return s

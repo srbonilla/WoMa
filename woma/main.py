@@ -3983,6 +3983,32 @@ class ParticlePlanet:
             print('Saving "%s"...' % filename[-60:], end=" ", flush=True)
 
         # Optional extra data
+        if hasattr(self, "Di_param_A1_misc"):
+            Di_param_A1_misc = self.Di_param_A1_misc
+        else:
+            Di_param_A1_misc = None
+
+        if Di_param_A1_misc is not None and any(
+            param[:4] == "mix_" for param in Di_param_A1_misc.keys()
+        ):
+            # Convert material mixes to combined array
+            self.A1_A1_mix = np.transpose(
+                [
+                    Di_param_A1_misc[param]
+                    for param in ["mix_rock", "mix_water", "mix_iron"]
+                ]
+            )
+
+            # Remove the no-longer-needed individual mix arrays
+            for param in list(Di_param_A1_misc.keys()):
+                if param[:4] == "mix_":
+                    del Di_param_A1_misc[param]
+        else:
+            self.A1_A1_mix = None
+
+        if self.A1_A1_mix is not None:
+            Di_param_A1_misc["mixes"] = self.A1_A1_mix
+
         if do_entropies:
             # Calculate the entropies if not already set
             if not hasattr(self, "A1_s"):
@@ -3990,26 +4016,6 @@ class ParticlePlanet:
             A1_s = self.A1_s
         else:
             A1_s = None
-        if hasattr(self, "Di_param_A1_misc"):
-            Di_param_A1_misc = self.Di_param_A1_misc
-
-            if any(param[:4] == "mix_" for param in Di_param_A1_misc.keys()):
-                # Convert material mixes to combined array
-                A1_A1_mix = np.transpose(
-                    [
-                        Di_param_A1_misc[param]
-                        for param in Di_param_A1_misc.keys()
-                        if param[:4] == "mix_"
-                    ]
-                )
-                Di_param_A1_misc["mixes"] = A1_A1_mix
-
-                # Remove the no-longer-needed individual mix arrays
-                for param in list(Di_param_A1_misc.keys()):
-                    if param[:4] == "mix_":
-                        del Di_param_A1_misc[param]
-        else:
-            Di_param_A1_misc = None
 
         # Save to file
         with h5py.File(filename, "w") as f:

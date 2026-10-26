@@ -106,148 +106,6 @@ A1_mixed_mat_id = np.array(
 # Generic
 # ========
 @njit
-def _Z_rho_T_single(rho, T, mat_id, mix, Z_choice):
-    """Compute an equation of state parameter from the density and temperature.
-
-    For a single heavy mixed component.
-
-    Parameters
-    ----------
-    rho : float
-        Density (kg m^-3).
-
-    T : float
-        Temperature (K).
-
-    mat_id : int
-        Material id.
-
-    mix : float
-        Mixing mass fraction.
-
-    Z_choice : str
-        The parameter to calculate, choose from:
-            P       Pressure (Pa).
-            u       Specific internal energy (J kg^-1).
-            c       Sound speed (m s^-1).
-            s       Specific entropy (J K^-1 kg^-1).
-
-    Returns
-    -------
-    Z : float
-        The chosen parameter (SI).
-    """
-    # Unpack the arrays of Z, mix, log(rho), and log(T)
-    A3_Z = np.zeros((2, 2, 2), dtype=np.float32)
-    if mat_id == gv.id_mixed_HHe_rock:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_rock,
-            A1_log_rho_mixed_HHe_rock,
-            A1_log_T_mixed_HHe_rock,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_rock
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_rock
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_rock
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_rock
-    elif mat_id == gv.id_mixed_HHe_water:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_water,
-            A1_log_rho_mixed_HHe_water,
-            A1_log_T_mixed_HHe_water,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_water
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_water
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_water
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_water
-    elif mat_id == gv.id_mixed_HHe_iron:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_iron,
-            A1_log_rho_mixed_HHe_iron,
-            A1_log_T_mixed_HHe_iron,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_iron
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_iron
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_iron
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_iron
-    else:
-        raise ValueError("Invalid material ID")
-
-    # Check necessary data loaded
-    if len(A1_log_rho) == 1 or A3_Z.shape == (2, 2, 2):
-        raise ValueError(
-            "Please load the corresponding EoS table. See woma.load_eos_tables()."
-        )
-
-    # Convert to log
-    log_rho = np.log(rho)
-    log_T = np.log(T * 1)  # why is numba so weird?
-
-    # 3D interpolation (linear with mix, log(rho), log(T)) to find Z(mix, rho, T).
-    # If rho and/or T are below or above the table, then use the interpolation
-    # formula to extrapolate using the edge and edge-but-one values.
-
-    # Mix
-    idx_mix_intp_mix = ut.find_index_and_interp(mix, A1_mix)
-    idx_mix = int(idx_mix_intp_mix[0])
-    intp_mix = idx_mix_intp_mix[1]
-
-    # Density
-    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
-    idx_rho = int(idx_rho_intp_rho[0])
-    intp_rho = idx_rho_intp_rho[1]
-
-    # Temperature
-    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
-    idx_T = int(idx_T_intp_T[0])
-    intp_T = idx_T_intp_T[1]
-
-    # Subarrays to interpolate
-    if mix == 0:
-        A1_A2_Z_mix = [A3_Z[0]]
-    elif mix == 1:
-        A1_A2_Z_mix = [A3_Z[-1]]
-    else:
-        A1_A2_Z_mix = [A3_Z[idx_mix], A3_Z[idx_mix + 1]]
-
-    A1_Z_mix = []
-    for A2_Z in A1_A2_Z_mix:
-        # Table values, interpolate with log values
-        Z_1 = np.log(A2_Z[idx_rho, idx_T])
-        Z_2 = np.log(A2_Z[idx_rho, idx_T + 1])
-        Z_3 = np.log(A2_Z[idx_rho + 1, idx_T])
-        Z_4 = np.log(A2_Z[idx_rho + 1, idx_T + 1])
-
-        # Z(rho, T)
-        Z = (1 - intp_rho) * ((1 - intp_T) * Z_1 + intp_T * Z_2) + intp_rho * (
-            (1 - intp_T) * Z_3 + intp_T * Z_4
-        )
-
-        # Record Z for each mix
-        A1_Z_mix.append(Z)
-
-    # Extract or interpolate
-    if mix in [0, 1]:
-        Z = A1_Z_mix[0]
-    else:
-        Z = (1 - intp_mix) * A1_Z_mix[0] + intp_mix * A1_Z_mix[1]
-
-    # Convert back from log
-    return np.exp(Z)
-
-
-@njit
 def Z_rho_T(rho, T, A1_mix, Z_choice):
     """Compute an equation of state parameter from the density and temperature.
 
@@ -280,21 +138,121 @@ def Z_rho_T(rho, T, A1_mix, Z_choice):
         raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
 
     mix_tot = sum(A1_mix)
+    num_mat = len(A1_mix)
 
-    # No heavy-element fraction
-    if mix_tot == 0:
-        return _Z_rho_T_single(rho, T, A1_mixed_mat_id[0], 0, Z_choice)
+    # Y arrays for each heavy material's mixes
+    if Z_choice == "P":
+        A3_Z_rock = A3_P_mixed_HHe_rock
+    elif Z_choice == "u":
+        A3_Z_rock = A3_u_mixed_HHe_rock
+    elif Z_choice == "c":
+        A3_Z_rock = A3_c_mixed_HHe_rock
+    elif Z_choice == "s":
+        A3_Z_rock = A3_s_mixed_HHe_rock
+    else:
+        raise ValueError("Invalid Z_choice")
 
-    # Accumulate contribution from each non-zero mix
-    Z = 0
-    for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
-        if mix > 0:
-            # Evaluate for this single heavy--HHe mix (total HHe fraction stays fixed)
-            Z_mat = _Z_rho_T_single(rho, T, mat_id, mix_tot, Z_choice)
+    if Z_choice == "P":
+        A3_Z_water = A3_P_mixed_HHe_water
+    elif Z_choice == "u":
+        A3_Z_water = A3_u_mixed_HHe_water
+    elif Z_choice == "c":
+        A3_Z_water = A3_c_mixed_HHe_water
+    elif Z_choice == "s":
+        A3_Z_water = A3_s_mixed_HHe_water
+    else:
+        raise ValueError("Invalid Z_choice")
 
-            Z += Z_mat * mix / mix_tot
+    if Z_choice == "P":
+        A3_Z_iron = A3_P_mixed_HHe_iron
+    elif Z_choice == "u":
+        A3_Z_iron = A3_u_mixed_HHe_iron
+    elif Z_choice == "c":
+        A3_Z_iron = A3_c_mixed_HHe_iron
+    elif Z_choice == "s":
+        A3_Z_iron = A3_s_mixed_HHe_iron
+    else:
+        raise ValueError("Invalid Z_choice")
 
-    return Z
+    # Check necessary data loaded
+    if (
+        A3_Z_rock.shape == (2, 2, 2)
+        or A3_Z_water.shape == (2, 2, 2)
+        or A3_Z_iron.shape == (2, 2, 2)
+    ):
+        raise ValueError(
+            "Please load the corresponding EoS table. See woma.load_eos_tables()."
+        )
+
+    # Check same table structure
+    # assert np.array_equal(A1_mix_mixed_HHe_rock, A1_mix_mixed_HHe_water)
+    # assert np.array_equal(A1_mix_mixed_HHe_rock, A1_mix_mixed_HHe_iron)
+    # assert np.array_equal(A1_log_rho_mixed_HHe_rock, A1_log_rho_mixed_HHe_water)
+    # assert np.array_equal(A1_log_rho_mixed_HHe_rock, A1_log_rho_mixed_HHe_iron)
+    # assert np.array_equal(A1_log_T_mixed_HHe_rock, A1_log_T_mixed_HHe_water)
+    # assert np.array_equal(A1_log_T_mixed_HHe_rock, A1_log_T_mixed_HHe_iron)
+
+    # Shared table axis arrays
+    A1_mix_table = A1_mix_mixed_HHe_rock
+    A1_log_rho = A1_log_rho_mixed_HHe_rock
+    A1_log_T = A1_log_T_mixed_HHe_rock
+
+    # Convert to log
+    log_rho = np.log(rho)
+    log_T = np.log(T)
+
+    # 3D interpolation (linear with mix, log(rho), log(T)) to find Z(mix, rho, T).
+    # If rho and/or T are below or above the table, then use the interpolation
+    # formula to extrapolate using the edge and edge-but-one values.
+
+    # Mix
+    idx_mix_intp_mix = ut.find_index_and_interp(mix_tot, A1_mix_table)
+    idx_mix = int(idx_mix_intp_mix[0])
+    intp_mix = idx_mix_intp_mix[1]
+
+    # Density
+    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
+    idx_rho = int(idx_rho_intp_rho[0])
+    intp_rho = idx_rho_intp_rho[1]
+
+    # Temperature
+    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
+    idx_T = int(idx_T_intp_T[0])
+    intp_T = idx_T_intp_T[1]
+
+    # Table values, interpolate with log values
+    log_Z_1 = 0
+    log_Z_2 = 0
+    log_Z_3 = 0
+    log_Z_4 = 0
+    for i_mix, A3_Z in enumerate([A3_Z_rock, A3_Z_water, A3_Z_iron]):
+        if mix_tot == 0:
+            f_mix = 1 / num_mat
+        else:
+            f_mix = A1_mix[i_mix] / mix_tot
+        log_Z_1 += f_mix * (
+            (1 - intp_mix) * np.log(A3_Z[idx_mix, idx_rho, idx_T])
+            + intp_mix * np.log(A3_Z[idx_mix + 1, idx_rho, idx_T])
+        )
+        log_Z_2 += f_mix * (
+            (1 - intp_mix) * np.log(A3_Z[idx_mix, idx_rho, idx_T + 1])
+            + intp_mix * np.log(A3_Z[idx_mix + 1, idx_rho, idx_T + 1])
+        )
+        log_Z_3 += f_mix * (
+            (1 - intp_mix) * np.log(A3_Z[idx_mix, idx_rho + 1, idx_T])
+            + intp_mix * np.log(A3_Z[idx_mix + 1, idx_rho + 1, idx_T])
+        )
+        log_Z_4 += f_mix * (
+            (1 - intp_mix) * np.log(A3_Z[idx_mix, idx_rho + 1, idx_T + 1])
+            + intp_mix * np.log(A3_Z[idx_mix + 1, idx_rho + 1, idx_T + 1])
+        )
+
+    # Z(rho, T)
+    log_Z = (1 - intp_rho) * ((1 - intp_T) * log_Z_1 + intp_T * log_Z_2) + intp_rho * (
+        (1 - intp_T) * log_Z_3 + intp_T * log_Z_4
+    )
+
+    return np.exp(log_Z)
 
 
 @njit
@@ -341,9 +299,9 @@ def A1_Z_rho_T(A1_rho, A1_T, A1_mix, Z_choice):
 
 
 @njit
-def _T_rho_Y_single(rho, Y, mat_id, mix, Y_choice):
+def T_rho_Y(rho, Y, A1_mix, Y_choice):
     """Compute the temperature from the density and another equation of state
-    parameter, for mixed EoS with a single mixed component.
+    parameter, for mixed EoS with (one or) multiple heavy mixed components.
 
     Parameters
     ----------
@@ -353,11 +311,8 @@ def _T_rho_Y_single(rho, Y, mat_id, mix, Y_choice):
     Y : float
         The chosen input parameter (SI).
 
-    mat_id : int
-        Material id.
-
-    mix : float
-        Mixing mass fraction.
+    A1_mix : [float]
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
     Y_choice : str
         The other input parameter, choose from:
@@ -371,154 +326,136 @@ def _T_rho_Y_single(rho, Y, mat_id, mix, Y_choice):
     T : float
         The temperature (K).
     """
-    # Unpack the arrays of Z, mix, log(rho), and log(T)
-    A3_Y = np.zeros((2, 2, 2), dtype=np.float32)
-    if mat_id == gv.id_mixed_HHe_rock:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_rock,
-            A1_log_rho_mixed_HHe_rock,
-            A1_log_T_mixed_HHe_rock,
-        )
-        if Y_choice == "P":
-            A3_Y = A3_P_mixed_HHe_rock
-        elif Y_choice == "u":
-            A3_Y = A3_u_mixed_HHe_rock
-        elif Y_choice == "c":
-            A3_Y = A3_c_mixed_HHe_rock
-        elif Y_choice == "s":
-            A3_Y = A3_s_mixed_HHe_rock
-    elif mat_id == gv.id_mixed_HHe_water:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_water,
-            A1_log_rho_mixed_HHe_water,
-            A1_log_T_mixed_HHe_water,
-        )
-        if Y_choice == "P":
-            A3_Y = A3_P_mixed_HHe_water
-        elif Y_choice == "u":
-            A3_Y = A3_u_mixed_HHe_water
-        elif Y_choice == "c":
-            A3_Y = A3_c_mixed_HHe_water
-        elif Y_choice == "s":
-            A3_Y = A3_s_mixed_HHe_water
-    elif mat_id == gv.id_mixed_HHe_iron:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_iron,
-            A1_log_rho_mixed_HHe_iron,
-            A1_log_T_mixed_HHe_iron,
-        )
-        if Y_choice == "P":
-            A3_Y = A3_P_mixed_HHe_iron
-        elif Y_choice == "u":
-            A3_Y = A3_u_mixed_HHe_iron
-        elif Y_choice == "c":
-            A3_Y = A3_c_mixed_HHe_iron
-        elif Y_choice == "s":
-            A3_Y = A3_s_mixed_HHe_iron
+    if A1_mix is None:
+        raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
+
+    num_mat = len(A1_mix)
+
+    # Y arrays for each heavy material's mixes
+    if Y_choice == "P":
+        A3_Y_rock = A3_P_mixed_HHe_rock
+    elif Y_choice == "u":
+        A3_Y_rock = A3_u_mixed_HHe_rock
+    elif Y_choice == "c":
+        A3_Y_rock = A3_c_mixed_HHe_rock
+    elif Y_choice == "s":
+        A3_Y_rock = A3_s_mixed_HHe_rock
     else:
-        raise ValueError("Invalid material ID")
+        raise ValueError("Invalid Y_choice")
+
+    if Y_choice == "P":
+        A3_Y_water = A3_P_mixed_HHe_water
+    elif Y_choice == "u":
+        A3_Y_water = A3_u_mixed_HHe_water
+    elif Y_choice == "c":
+        A3_Y_water = A3_c_mixed_HHe_water
+    elif Y_choice == "s":
+        A3_Y_water = A3_s_mixed_HHe_water
+    else:
+        raise ValueError("Invalid Y_choice")
+
+    if Y_choice == "P":
+        A3_Y_iron = A3_P_mixed_HHe_iron
+    elif Y_choice == "u":
+        A3_Y_iron = A3_u_mixed_HHe_iron
+    elif Y_choice == "c":
+        A3_Y_iron = A3_c_mixed_HHe_iron
+    elif Y_choice == "s":
+        A3_Y_iron = A3_s_mixed_HHe_iron
+    else:
+        raise ValueError("Invalid Y_choice")
 
     # Check necessary data loaded
-    if len(A1_log_rho) == 1 or A3_Y.shape == (2, 2, 2):
+    if (
+        A3_Y_rock.shape == (2, 2, 2)
+        or A3_Y_water.shape == (2, 2, 2)
+        or A3_Y_iron.shape == (2, 2, 2)
+    ):
         raise ValueError(
             "Please load the corresponding EoS table. See woma.load_eos_tables()."
         )
+
+    # Shared table axis arrays
+    A1_mix_table = A1_mix_mixed_HHe_rock
+    A1_log_rho = A1_log_rho_mixed_HHe_rock
+    A1_log_T = A1_log_T_mixed_HHe_rock
 
     # Convert to log
     log_rho = np.log(rho)
     log_Y = np.log(Y)
 
-    # 3D interpolation (linear with mix, log(rho), log(Y)) to find T(mix, rho, Y).
-    # If rho and/or Y are below or above the table, then use the interpolation
-    # formula to extrapolate using the edge and edge-but-one values.
+    # Mix fraction with respect to HHe rather than between heavy components
+    mix_tot = np.sum(A1_mix)
 
-    # Mix
-    idx_mix_intp_mix = ut.find_index_and_interp(mix, A1_mix)
+    # Find the relevant mixing fractions for interpolation
+    idx_mix_intp_mix = ut.find_index_and_interp(mix_tot, A1_mix_table)
     idx_mix = int(idx_mix_intp_mix[0])
     intp_mix = idx_mix_intp_mix[1]
-
-    # Subarrays to interpolate
-    if mix == 0:
-        A1_A2_Y_mix = [A3_Y[0]]
-    elif mix == 1:
-        A1_A2_Y_mix = [A3_Y[-1]]
-    else:
-        A1_A2_Y_mix = [A3_Y[idx_mix], A3_Y[idx_mix + 1]]
 
     # Density
     idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
     idx_rho = int(idx_rho_intp_rho[0])
     intp_rho = idx_rho_intp_rho[1]
 
-    # Y in this and the next density slice, for each mix-selected 2D Y array
-    A1_idx_Y_1_mix = []
-    A1_intp_Y_1_mix = []
-    A1_idx_Y_2_mix = []
-    A1_intp_Y_2_mix = []
-    for A2_Y in A1_A2_Y_mix:
-        A2_log_Y = np.log(A2_Y)
-        idx_Y_1_intp_Y_1 = ut.find_index_and_interp(log_Y, A2_log_Y[idx_rho])
-        idx_Y_1 = int(idx_Y_1_intp_Y_1[0])
-        intp_Y_1 = idx_Y_1_intp_Y_1[1]
-        idx_Y_2_intp_Y_2 = ut.find_index_and_interp(log_Y, A2_log_Y[idx_rho + 1])
-        idx_Y_2 = int(idx_Y_2_intp_Y_2[0])
-        intp_Y_2 = idx_Y_2_intp_Y_2[1]
+    # Do the mix interpolation and rho extraction to derive a single Y(rho, T) array
+    A2_log_Y = np.zeros((2, len(A1_log_T)))
+    for i_rho in [0, 1]:
+        for i_mix, A3_Y in enumerate([A3_Y_rock, A3_Y_water, A3_Y_iron]):
+            if mix_tot == 0:
+                A2_log_Y[i_rho] += np.log(A3_Y[0, idx_rho + i_rho]) / num_mat
+            elif mix_tot == 1:
+                A2_log_Y[i_rho] += (
+                    A1_mix[i_mix] / mix_tot * np.log(A3_Y[-1, idx_rho + i_rho])
+                )
+            else:
+                A2_log_Y[i_rho] += (
+                    A1_mix[i_mix]
+                    / mix_tot
+                    * (
+                        (1 - intp_mix) * np.log(A3_Y[idx_mix, idx_rho + i_rho])
+                        + intp_mix * np.log(A3_Y[idx_mix + 1, idx_rho + i_rho])
+                    )
+                )
 
-        # Record for each mix
-        A1_idx_Y_1_mix.append(idx_Y_1)
-        A1_intp_Y_1_mix.append(intp_Y_1)
-        A1_idx_Y_2_mix.append(idx_Y_2)
-        A1_intp_Y_2_mix.append(intp_Y_2)
+    # Y (in each density slice of the 2D u array)
+    idx_Y_1_intp_Y_1 = ut.find_index_and_interp(log_Y, A2_log_Y[0])
+    idx_Y_1 = int(idx_Y_1_intp_Y_1[0])
+    intp_Y_1 = idx_Y_1_intp_Y_1[1]
+    idx_Y_2_intp_Y_2 = ut.find_index_and_interp(log_Y, A2_log_Y[1])
+    idx_Y_2 = int(idx_Y_2_intp_Y_2[0])
+    intp_Y_2 = idx_Y_2_intp_Y_2[1]
 
-    # Interpolate for each mix table
-    A1_log_T_mix = []
-    for idx_Y_1, intp_Y_1, idx_Y_2, intp_Y_2 in zip(
-        A1_idx_Y_1_mix, A1_intp_Y_1_mix, A1_idx_Y_2_mix, A1_intp_Y_2_mix
-    ):
-        log_T_1 = A1_log_T[idx_Y_1]
-        log_T_2 = A1_log_T[idx_Y_1 + 1]
-        log_T_3 = A1_log_T[idx_Y_2]
-        log_T_4 = A1_log_T[idx_Y_2 + 1]
-
-        # T(rho, Y)
-        log_T = (1 - intp_rho) * (
-            (1 - intp_Y_1) * log_T_1 + intp_Y_1 * log_T_2
-        ) + intp_rho * ((1 - intp_Y_2) * log_T_3 + intp_Y_2 * log_T_4)
-
-        # Record Z for each mix
-        A1_log_T_mix.append(log_T)
-
-    # Extract or interpolate
-    if mix in [0, 1]:
-        log_T = A1_log_T_mix[0]
-    else:
-        log_T = (1 - intp_mix) * A1_log_T_mix[0] + intp_mix * A1_log_T_mix[1]
+    # Normal interpolation
+    log_T = (1 - intp_rho) * (
+        (1 - intp_Y_1) * A1_log_T[idx_Y_1] + intp_Y_1 * A1_log_T[idx_Y_1 + 1]
+    ) + intp_rho * (
+        (1 - intp_Y_2) * A1_log_T[idx_Y_2] + intp_Y_2 * A1_log_T[idx_Y_2 + 1]
+    )
 
     # Convert back from log
     return np.exp(log_T)
 
 
 @njit
-def _Z_rho_Y_single(rho, Y, mat_id, mix, Z_choice, Y_choice):
-    """Compute an equation of state parameter from the density and another
-    parameter, for mixed EoS with a single mixed component.
+def rho_X_T(X, T, A1_mix, X_choice):
+    """Compute the density from the temperature and another equation of state
+    parameter, for mixed EoS with (one or) multiple heavy mixed components.
+
+    ## Not yet fully tested
 
     Parameters
     ----------
-    rho : float
-        Density (kg m^-3).
-
-    Y : float
+    X : float
         The chosen input parameter (SI).
 
-    mat_id : int
-        Material id.
+    T : float
+        Temperature (K).
 
-    mix : float
-        Mixing mass fraction.
+    A1_mix : [float]
+        Mixing mass fraction of each heavy component, currently [rock, water, iron].
 
-    Z_choice, Y_choice : str
-        The parameter to calculate, and the other input parameter, choose from:
+    X_choice : str
+        The other input parameter, choose from:
             P       Pressure (Pa).
             u       Specific internal energy (J kg^-1).
             c       Sound speed (m s^-1).
@@ -526,167 +463,117 @@ def _Z_rho_Y_single(rho, Y, mat_id, mix, Z_choice, Y_choice):
 
     Returns
     -------
-    Z : float
-        The chosen parameter (SI).
+    rho : float
+        The Density (kg m^-3).
     """
-    if Y_choice == "T":
-        return _Z_rho_T_single(rho, Y, mat_id, mix, Z_choice)
-    elif Z_choice == "T":
-        return _T_rho_Y_single(rho, Y, mat_id, mix, Y_choice)
+    if A1_mix is None:
+        raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
 
-    # Unpack the arrays of Z, mix, log(rho), and log(T)
-    A3_Z = np.zeros((2, 2, 2), dtype=np.float32)
-    if mat_id == gv.id_mixed_HHe_rock:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_rock,
-            A1_log_rho_mixed_HHe_rock,
-            A1_log_T_mixed_HHe_rock,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_rock
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_rock
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_rock
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_rock
-        if Y_choice == "P":
-            A3_Y = A3_P_mixed_HHe_rock
-        elif Y_choice == "u":
-            A3_Y = A3_u_mixed_HHe_rock
-        elif Y_choice == "c":
-            A3_Y = A3_c_mixed_HHe_rock
-        elif Y_choice == "s":
-            A3_Y = A3_s_mixed_HHe_rock
-    elif mat_id == gv.id_mixed_HHe_water:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_water,
-            A1_log_rho_mixed_HHe_water,
-            A1_log_T_mixed_HHe_water,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_water
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_water
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_water
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_water
-        if Y_choice == "P":
-            A3_Y = A3_P_mixed_HHe_water
-        elif Y_choice == "u":
-            A3_Y = A3_u_mixed_HHe_water
-        elif Y_choice == "c":
-            A3_Y = A3_c_mixed_HHe_water
-        elif Y_choice == "s":
-            A3_Y = A3_s_mixed_HHe_water
-    elif mat_id == gv.id_mixed_HHe_iron:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_iron,
-            A1_log_rho_mixed_HHe_iron,
-            A1_log_T_mixed_HHe_iron,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_iron
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_iron
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_iron
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_iron
-        if Y_choice == "P":
-            A3_Y = A3_P_mixed_HHe_iron
-        elif Y_choice == "u":
-            A3_Y = A3_u_mixed_HHe_iron
-        elif Y_choice == "c":
-            A3_Y = A3_c_mixed_HHe_iron
-        elif Y_choice == "s":
-            A3_Y = A3_s_mixed_HHe_iron
+    num_mat = len(A1_mix)
+
+    # X arrays for each heavy material's mixes
+    if X_choice == "P":
+        A3_X_rock = A3_P_mixed_HHe_rock
+    elif X_choice == "u":
+        A3_X_rock = A3_u_mixed_HHe_rock
+    elif X_choice == "c":
+        A3_X_rock = A3_c_mixed_HHe_rock
+    elif X_choice == "s":
+        A3_X_rock = A3_s_mixed_HHe_rock
     else:
-        raise ValueError("Invalid material ID")
+        raise ValueError("Invalid X_choice")
+
+    if X_choice == "P":
+        A3_X_water = A3_P_mixed_HHe_water
+    elif X_choice == "u":
+        A3_X_water = A3_u_mixed_HHe_water
+    elif X_choice == "c":
+        A3_X_water = A3_c_mixed_HHe_water
+    elif X_choice == "s":
+        A3_X_water = A3_s_mixed_HHe_water
+    else:
+        raise ValueError("Invalid X_choice")
+
+    if X_choice == "P":
+        A3_X_iron = A3_P_mixed_HHe_iron
+    elif X_choice == "u":
+        A3_X_iron = A3_u_mixed_HHe_iron
+    elif X_choice == "c":
+        A3_X_iron = A3_c_mixed_HHe_iron
+    elif X_choice == "s":
+        A3_X_iron = A3_s_mixed_HHe_iron
+    else:
+        raise ValueError("Invalid X_choice")
 
     # Check necessary data loaded
-    if len(A1_log_rho) == 1 or A3_Z.shape == (2, 2, 2):
+    if (
+        A3_X_rock.shape == (2, 2, 2)
+        or A3_X_water.shape == (2, 2, 2)
+        or A3_X_iron.shape == (2, 2, 2)
+    ):
         raise ValueError(
             "Please load the corresponding EoS table. See woma.load_eos_tables()."
         )
 
+    # Shared table axis arrays
+    A1_mix_table = A1_mix_mixed_HHe_rock
+    A1_log_T = A1_log_T_mixed_HHe_rock
+    A1_log_rho = A1_log_rho_mixed_HHe_rock
+
     # Convert to log
-    log_rho = np.log(rho)
-    log_Y = np.log(Y)
+    log_T = np.log(T)
+    log_X = np.log(X)
 
-    # 3D interpolation (linear with mix, log(rho), log(Y)) to find Z(mix, rho, Y).
-    # If rho and/or Y are below or above the table, then use the interpolation
-    # formula to extrapolate using the edge and edge-but-one values.
+    # Mix fraction with respect to HHe rather than between heavy components
+    mix_tot = np.sum(A1_mix)
 
-    # Mix
-    idx_mix_intp_mix = ut.find_index_and_interp(mix, A1_mix)
+    # Find the relevant mixing fractions for interpolation
+    idx_mix_intp_mix = ut.find_index_and_interp(mix_tot, A1_mix_table)
     idx_mix = int(idx_mix_intp_mix[0])
     intp_mix = idx_mix_intp_mix[1]
 
-    # Subarrays to interpolate
-    if mix == 0:
-        A1_A2_Z_mix = [A3_Z[0]]
-        A1_A2_Y_mix = [A3_Y[0]]
-    elif mix == 1:
-        A1_A2_Z_mix = [A3_Z[-1]]
-        A1_A2_Y_mix = [A3_Y[-1]]
-    else:
-        A1_A2_Z_mix = [A3_Z[idx_mix], A3_Z[idx_mix + 1]]
-        A1_A2_Y_mix = [A3_Y[idx_mix], A3_Y[idx_mix + 1]]
+    # Temperature
+    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
+    idx_T = int(idx_T_intp_T[0])
+    intp_T = idx_T_intp_T[1]
 
-    # Density
-    idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho)
-    idx_rho = int(idx_rho_intp_rho[0])
-    intp_rho = idx_rho_intp_rho[1]
+    # Do the mix interpolation and T extraction to derive a single X(rho, T) array
+    A2_log_X = np.zeros((2, len(A1_log_rho)))
+    for i_T in [0, 1]:
+        for i_mix, A3_Y in enumerate([A3_X_rock, A3_X_water, A3_X_iron]):
+            if mix_tot == 0:
+                A2_log_X[i_T] += np.log(A3_Y[0, :, idx_T + i_T]) / num_mat
+            elif mix_tot == 1:
+                A2_log_X[i_T] += (
+                    A1_mix[i_mix] / mix_tot * np.log(A3_Y[-1, :, idx_T + i_T])
+                )
+            else:
+                A2_log_X[i_T] += (
+                    A1_mix[i_mix]
+                    / mix_tot
+                    * (
+                        (1 - intp_mix) * np.log(A3_Y[idx_mix, :, idx_T + i_T])
+                        + intp_mix * np.log(A3_Y[idx_mix + 1, :, idx_T + i_T])
+                    )
+                )
 
-    # Y in this and the next density slice, for each mix-selected 2D Y array
-    A1_idx_Y_1_mix = []
-    A1_intp_Y_1_mix = []
-    A1_idx_Y_2_mix = []
-    A1_intp_Y_2_mix = []
-    for A2_Y in A1_A2_Y_mix:
-        A2_log_Y = np.log(A2_Y)
-        idx_Y_1_intp_Y_1 = ut.find_index_and_interp(log_Y, A2_log_Y[idx_rho])
-        idx_Y_1 = int(idx_Y_1_intp_Y_1[0])
-        intp_Y_1 = idx_Y_1_intp_Y_1[1]
-        idx_Y_2_intp_Y_2 = ut.find_index_and_interp(log_Y, A2_log_Y[idx_rho + 1])
-        idx_Y_2 = int(idx_Y_2_intp_Y_2[0])
-        intp_Y_2 = idx_Y_2_intp_Y_2[1]
+    # X (in each temperature slice of the 2D u array)
+    idx_X_1_intp_X_1 = ut.find_index_and_interp(log_X, A2_log_X[0])
+    idx_X_1 = int(idx_X_1_intp_X_1[0])
+    intp_X_1 = idx_X_1_intp_X_1[1]
+    idx_X_2_intp_X_2 = ut.find_index_and_interp(log_X, A2_log_X[1])
+    idx_X_2 = int(idx_X_2_intp_X_2[0])
+    intp_X_2 = idx_X_2_intp_X_2[1]
 
-        # Record for each mix
-        A1_idx_Y_1_mix.append(idx_Y_1)
-        A1_intp_Y_1_mix.append(intp_Y_1)
-        A1_idx_Y_2_mix.append(idx_Y_2)
-        A1_intp_Y_2_mix.append(intp_Y_2)
-
-    # Interpolate for each mix table
-    A1_Z_mix = []
-    for A2_Z, idx_Y_1, intp_Y_1, idx_Y_2, intp_Y_2 in zip(
-        A1_A2_Z_mix, A1_idx_Y_1_mix, A1_intp_Y_1_mix, A1_idx_Y_2_mix, A1_intp_Y_2_mix
-    ):
-        # Table values, interpolate with log values
-        Z_1 = np.log(A2_Z[idx_rho, idx_Y_1])
-        Z_2 = np.log(A2_Z[idx_rho, idx_Y_1 + 1])
-        Z_3 = np.log(A2_Z[idx_rho + 1, idx_Y_2])
-        Z_4 = np.log(A2_Z[idx_rho + 1, idx_Y_2 + 1])
-
-        # Z(rho, Y)
-        Z = (1 - intp_rho) * ((1 - intp_Y_1) * Z_1 + intp_Y_1 * Z_2) + intp_rho * (
-            (1 - intp_Y_2) * Z_3 + intp_Y_2 * Z_4
-        )
-
-        # Record Z for each mix
-        A1_Z_mix.append(Z)
-
-    # Extract or interpolate
-    if mix in [0, 1]:
-        Z = A1_Z_mix[0]
-    else:
-        Z = (1 - intp_mix) * A1_Z_mix[0] + intp_mix * A1_Z_mix[1]
+    # Normal interpolation
+    log_rho = (1 - intp_T) * (
+        (1 - intp_X_1) * A1_log_rho[idx_X_1] + intp_X_1 * A1_log_rho[idx_X_1 + 1]
+    ) + intp_T * (
+        (1 - intp_X_2) * A1_log_rho[idx_X_2] + intp_X_2 * A1_log_rho[idx_X_2 + 1]
+    )
 
     # Convert back from log
-    return np.exp(Z)
+    return np.exp(log_rho)
 
 
 @njit
@@ -718,25 +605,17 @@ def Z_rho_Y(rho, Y, A1_mix, Z_choice, Y_choice):
     Z : float
         The chosen parameter (SI).
     """
+
     if A1_mix is None:
         raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
 
-    mix_tot = sum(A1_mix)
+    if Y_choice == "T":
+        return Z_rho_T(rho, Y, A1_mix, Z_choice)
+    elif Z_choice == "T":
+        return T_rho_Y(rho, Y, A1_mix, Y_choice)
 
-    # No heavy-element fraction
-    if mix_tot == 0:
-        return _Z_rho_Y_single(rho, Y, A1_mixed_mat_id[0], 0, Z_choice, Y_choice)
-
-    # Accumulate contribution from each non-zero mix
-    Z = 0
-    for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
-        if mix > 0:
-            # Evaluate for this single heavy--HHe mix (total HHe fraction stays fixed)
-            Z_mat = _Z_rho_Y_single(rho, Y, mat_id, mix_tot, Z_choice, Y_choice)
-
-            Z += Z_mat * mix / mix_tot
-
-    return Z
+    # Could instead duplicate most of T_rho_Y then use the idx and intp directly for Z
+    return Z_rho_T(rho, T_rho_Y(rho, Y, A1_mix, Y_choice), A1_mix, Z_choice)
 
 
 @njit
@@ -783,195 +662,6 @@ def A1_Z_rho_Y_mix(A1_rho, A1_Y, A1_A1_mix, Z_choice, Y_choice):
 
 
 @njit
-def _Z_X_T_single(X, T, mat_id, mix, Z_choice, X_choice):
-    """Compute an equation of state parameter from the temperature and another
-    parameter, for mixed EoS with a single mixed component.
-
-    Parameters
-    ----------
-    X : float
-        The chosen input parameter (SI).
-
-    T : float
-        Temperature (K).
-
-    mat_id : int
-        Material id.
-
-    mix : float
-        Mixing mass fraction.
-
-    Z_choice, X_choice : str
-        The parameter to calculate, and the other input parameter, choose from:
-            P       Pressure (Pa).
-            u       Specific internal energy (J kg^-1).
-            c       Sound speed (m s^-1).
-            s       Specific entropy (J K^-1 kg^-1).
-
-    Returns
-    -------
-    Z : float
-        The chosen parameter (SI).
-    """
-    if X_choice == "rho":
-        return _Z_rho_T_single(X, T, mat_id, mix, Z_choice)
-
-    # Unpack the arrays of Z, mix, log(rho), and log(T)
-    A3_Z = np.zeros((2, 2, 2), dtype=np.float32)
-    if mat_id == gv.id_mixed_HHe_rock:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_rock,
-            A1_log_rho_mixed_HHe_rock,
-            A1_log_T_mixed_HHe_rock,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_rock
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_rock
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_rock
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_rock
-        if X_choice == "P":
-            A3_X = A3_P_mixed_HHe_rock
-        elif X_choice == "u":
-            A3_X = A3_u_mixed_HHe_rock
-        elif X_choice == "c":
-            A3_X = A3_c_mixed_HHe_rock
-        elif X_choice == "s":
-            A3_X = A3_s_mixed_HHe_rock
-    elif mat_id == gv.id_mixed_HHe_water:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_water,
-            A1_log_rho_mixed_HHe_water,
-            A1_log_T_mixed_HHe_water,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_water
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_water
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_water
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_water
-        if X_choice == "P":
-            A3_X = A3_P_mixed_HHe_water
-        elif X_choice == "u":
-            A3_X = A3_u_mixed_HHe_water
-        elif X_choice == "c":
-            A3_X = A3_c_mixed_HHe_water
-        elif X_choice == "s":
-            A3_X = A3_s_mixed_HHe_water
-    elif mat_id == gv.id_mixed_HHe_iron:
-        A1_mix, A1_log_rho, A1_log_T = (
-            A1_mix_mixed_HHe_iron,
-            A1_log_rho_mixed_HHe_iron,
-            A1_log_T_mixed_HHe_iron,
-        )
-        if Z_choice == "P":
-            A3_Z = A3_P_mixed_HHe_iron
-        elif Z_choice == "u":
-            A3_Z = A3_u_mixed_HHe_iron
-        elif Z_choice == "c":
-            A3_Z = A3_c_mixed_HHe_iron
-        elif Z_choice == "s":
-            A3_Z = A3_s_mixed_HHe_iron
-        if X_choice == "P":
-            A3_X = A3_P_mixed_HHe_iron
-        elif X_choice == "u":
-            A3_X = A3_u_mixed_HHe_iron
-        elif X_choice == "c":
-            A3_X = A3_c_mixed_HHe_iron
-        elif X_choice == "s":
-            A3_X = A3_s_mixed_HHe_iron
-    else:
-        raise ValueError("Invalid material ID")
-
-    # Check necessary data loaded
-    if len(A1_log_rho) == 1 or A3_Z.shape == (2, 2, 2):
-        raise ValueError(
-            "Please load the corresponding EoS table. See woma.load_eos_tables()."
-        )
-
-    # Convert to log
-    log_T = np.log(T)
-    log_X = np.log(X)
-
-    # 3D interpolation (linear with mix, log(X), log(T)) to find Z(mix, X, T).
-    # If T and/or X are below or above the table, then use the interpolation
-    # formula to extrapolate using the edge and edge-but-one values.
-
-    # Mix
-    idx_mix_intp_mix = ut.find_index_and_interp(mix, A1_mix)
-    idx_mix = int(idx_mix_intp_mix[0])
-    intp_mix = idx_mix_intp_mix[1]
-
-    # Subarrays to interpolate
-    if mix == 0:
-        A1_A2_Z_mix = [A3_Z[0]]
-        A1_A2_X_mix = [A3_X[0]]
-    elif mix == 1:
-        A1_A2_Z_mix = [A3_Z[-1]]
-        A1_A2_X_mix = [A3_X[-1]]
-    else:
-        A1_A2_Z_mix = [A3_Z[idx_mix], A3_Z[idx_mix + 1]]
-        A1_A2_X_mix = [A3_X[idx_mix], A3_X[idx_mix + 1]]
-
-    # Density
-    idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T)
-    idx_T = int(idx_T_intp_T[0])
-    intp_T = idx_T_intp_T[1]
-
-    # X in this and the next temperature slice, for each mix-selected 2D X array
-    A1_idx_X_1_mix = []
-    A1_intp_X_1_mix = []
-    A1_idx_X_2_mix = []
-    A1_intp_X_2_mix = []
-    for A2_X in A1_A2_X_mix:
-        A2_log_X = np.log(A2_X)
-        idx_X_1_intp_X_1 = ut.find_index_and_interp(log_X, A2_log_X[:, idx_T])
-        idx_X_1 = int(idx_X_1_intp_X_1[0])
-        intp_X_1 = idx_X_1_intp_X_1[1]
-        idx_X_2_intp_X_2 = ut.find_index_and_interp(log_X, A2_log_X[:, idx_T + 1])
-        idx_X_2 = int(idx_X_2_intp_X_2[0])
-        intp_X_2 = idx_X_2_intp_X_2[1]
-
-        # Record for each mix
-        A1_idx_X_1_mix.append(idx_X_1)
-        A1_intp_X_1_mix.append(intp_X_1)
-        A1_idx_X_2_mix.append(idx_X_2)
-        A1_intp_X_2_mix.append(intp_X_2)
-
-    # Interpolate for each mix table
-    A1_Z_mix = []
-    for A2_Z, idx_X_1, intp_X_1, idx_X_2, intp_X_2 in zip(
-        A1_A2_Z_mix, A1_idx_X_1_mix, A1_intp_X_1_mix, A1_idx_X_2_mix, A1_intp_X_2_mix
-    ):
-        # Table values, interpolate with log values
-        Z_1 = np.log(A2_Z[idx_T, idx_X_1])
-        Z_2 = np.log(A2_Z[idx_T, idx_X_1 + 1])
-        Z_3 = np.log(A2_Z[idx_T + 1, idx_X_2])
-        Z_4 = np.log(A2_Z[idx_T + 1, idx_X_2 + 1])
-
-        # Z(T, X)
-        Z = (1 - intp_T) * ((1 - intp_X_1) * Z_1 + intp_X_1 * Z_2) + intp_T * (
-            (1 - intp_X_2) * Z_3 + intp_X_2 * Z_4
-        )
-
-        # Record Z for each mix
-        A1_Z_mix.append(Z)
-
-    # Extract or interpolate
-    if mix in [0, 1]:
-        Z = A1_Z_mix[0]
-    else:
-        Z = (1 - intp_mix) * A1_Z_mix[0] + intp_mix * A1_Z_mix[1]
-
-    # Convert back from log
-    return np.exp(Z)
-
-
-@njit
 def Z_X_T(X, T, A1_mix, Z_choice, X_choice):
     """Compute an equation of state parameter from the temperature and another
     parameter, for mixed EoS with (one or) multiple heavy mixed components.
@@ -1002,22 +692,7 @@ def Z_X_T(X, T, A1_mix, Z_choice, X_choice):
     if A1_mix is None:
         raise ValueError("A1_mix cannot be None for mixed_HHe_heavy")
 
-    mix_tot = sum(A1_mix)
-
-    # No heavy-element fraction
-    if mix_tot == 0:
-        return _Z_X_T_single(X, T, A1_mixed_mat_id[0], 0, Z_choice, X_choice)
-
-    # Accumulate contribution from each non-zero mix
-    Z = 0
-    for mix, mat_id in zip(A1_mix, A1_mixed_mat_id):
-        if mix > 0:
-            # Evaluate for this single heavy--HHe mix (total HHe fraction stays fixed)
-            Z_mat = _Z_X_T_single(X, T, mat_id, mix_tot, Z_choice, X_choice)
-
-            Z += Z_mat * mix / mix_tot
-
-    return Z
+    return Z_rho_T(rho_X_T(X, T, A1_mix, X_choice), T, A1_mix, Z_choice)
 
 
 @njit

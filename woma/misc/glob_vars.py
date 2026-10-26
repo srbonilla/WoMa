@@ -145,7 +145,8 @@ Fp_ANEOS_Fe85Si15 = dir_data + "ANEOS_Fe85Si15_S20.hdf5"
 num_mix = 3
 Fp_mixed_HHe_rock = dir_data + "mixed_HHe_rock.hdf5"
 Fp_mixed_HHe_water = dir_data + "mixed_HHe_water.hdf5"
-Fp_mixed_HHe_iron = dir_data + "mixed_HHe_iron.hdf5"
+# Fp_mixed_HHe_iron = dir_data + "mixed_HHe_iron.hdf5"
+Fp_mixed_HHe_iron = dir_data + "mixed_HHe_iron_regrid.hdf5"
 # Generic user-provided custom tables
 Fp_custom_0 = dir_data + "custom_0.hdf5"
 Fp_custom_1 = dir_data + "custom_1.hdf5"

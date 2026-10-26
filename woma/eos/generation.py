@@ -1574,7 +1574,7 @@ class Material_Chabrier_HHe:
             name = "Chabrier & Debras (2021) H-He Y=" + str(self.Y)
 
         # Save as SESAME-style table
-        write_table_SESAME(
+        sesame.write_table_SESAME(
             Fp_table,
             name,
             self.version_date,
@@ -1621,7 +1621,7 @@ class Material_Mixed_HHe_Heavy:
 
     @property
     def filename(self):
-        return "%s/%s.hdf5" % (self.dir, self.name)
+        return "%s/%s.hdf5" % (gv.dir_data, self.name)
 
     def _load_raw_table(self, mix):
         """Load data from a raw table file, for a single mix value.
@@ -1946,7 +1946,9 @@ class Material_Mixed_HHe_Heavy:
 
         return Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s
 
-    def gen_write_table(self, filename=None):
+    def write_table(
+        self, Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s, filename=None
+    ):
         """Load the raw tables and write the combined data to an HDF5 file.
 
         See io.Di_hdf5_eos_label.
@@ -1955,6 +1957,9 @@ class Material_Mixed_HHe_Heavy:
         ----------
         filename : str (opt.)
             The table file path, defaults to self.filename.
+
+        Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s : [float] or [[[float]]]
+            The data to write (see load_all_raw_tables).
 
         File contents
         -------------
@@ -1985,9 +1990,6 @@ class Material_Mixed_HHe_Heavy:
         """
         if filename is None:
             filename = self.filename
-
-        # Load and combine raw data
-        Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s = self.load_all_raw_tables()
 
         print("Writing %s..." % filename[-50:])
         with h5py.File(filename, "w") as f:
@@ -2020,6 +2022,136 @@ class Material_Mixed_HHe_Heavy:
 
         print("Done")
 
+    def gen_write_table(self, filename=None):
+        """Load the raw tables and write the combined data to an HDF5 file.
+
+        See write_table.
+        """
+        # Load and combine raw data
+        Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s = self.load_all_raw_tables()
+
+        # Write
+        self.write_table(Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s, filename)
+
+    def gen_write_table_regrid(self, A1_rho_new, A1_T_new, filename=None, filename_orig=None):
+        """Load the raw tables and write the combined data to an HDF5 file,
+        regridding to match different 1D density and temperature arrays.
+
+        See io.Di_hdf5_eos_label.
+
+        Parameters
+        ----------
+        A1_rho_new : [float]
+            The new array of densities (kg m^-3).
+
+        A1_T_new : [float]
+            The new array of temperatures (K).
+
+        filename : str (opt.)
+            The table file path, defaults to self.filename with _regrid suffix.
+        
+        filename_orig : str (opt.)
+            The original table file path, defaults to self.filename.
+
+        File contents
+        -------------
+        /Header
+            name : str
+                The material name.
+
+            version_date : int
+                The file version date (YYYYMMDD).
+
+            Y/X : float
+                The ratio of helium to hydrogen mass fraction.
+
+            num_mix, num_rho, num_T : int
+                Lengths of the 1D arrays (and thus the sizes of the 3D ones).
+
+        /table
+            A1_mix, A1_rho, A1_T : [float]
+                Heavy-element mass fraction, density (kg m^-3) and temperature (K).
+
+            A3_u, A3_P, A3_c, A3_s : [[[float]]]
+                Table arrays of sp. int. energy (J kg^-1), pressure (Pa), sound
+                speed (m s^-1), and sp. entropy (J K^-1 kg^-1). Dimensions in order
+                of mix, rho, T.
+
+        /Units
+            SI units for reference, matching SWIFT's hdf5 format.
+        """
+        if filename is None:
+            filename = "%s/%s_regrid.hdf5" % (gv.dir_data, self.name)
+        if filename_orig is None:
+            filename = "%s/%s.hdf5" % (gv.dir_data, self.name)
+
+        # Load the original data
+        with h5py.File(filename_orig, "r") as f:
+            # Header attributes
+            name = f["Header"].attrs[io.Di_hdf5_eos_label["name"]]
+            version_date = f["Header"].attrs[io.Di_hdf5_eos_label["version_date"]]
+            Y_X = f["Header"].attrs[io.Di_hdf5_eos_label["Y/X"]]
+            num_mix = f["Header"].attrs[io.Di_hdf5_eos_label["num_mix"]]
+            num_rho = f["Header"].attrs[io.Di_hdf5_eos_label["num_rho"]]
+            num_T = f["Header"].attrs[io.Di_hdf5_eos_label["num_T"]]
+
+            # Table data
+            A1_mix = f["Table/" + io.Di_hdf5_eos_label["mix"]][()]
+            A1_rho = f["Table/" + io.Di_hdf5_eos_label["rho"]][()]
+            A1_T = f["Table/" + io.Di_hdf5_eos_label["T"]][()]
+
+        # New table arrays
+        num_rho_new = len(A1_rho_new)
+        num_T_new = len(A1_T_new)
+        A3_P = np.empty((num_mix, num_rho_new, num_T_new))
+        A3_u = np.empty_like(A3_P)
+        A3_c = np.empty_like(A3_P)
+        A3_s = np.empty_like(A3_P)
+
+        # Compute the new table contents
+        ut.load_eos_tables("mixed_HHe_heavy")
+        for i_mix, mix in enumerate(A1_mix):
+            if self.name == "mixed_HHe_rock":
+                A1_mix_ = np.array([mix, 0, 0])
+            elif self.name == "mixed_HHe_water":
+                A1_mix_ = np.array([0, mix, 0])
+            elif self.name == "mixed_HHe_iron":
+                A1_mix_ = np.array([0, 0, mix])
+
+            for i_rho, rho in enumerate(A1_rho_new):
+                A1_rho_ = np.full_like(A1_T_new, rho)
+
+                A3_P[i_mix, i_rho] = mixed.A1_Z_rho_T(
+                    A1_rho_, A1_T_new, A1_mix_, Z_choice="P"
+                )
+                A3_u[i_mix, i_rho] = mixed.A1_Z_rho_T(
+                    A1_rho_, A1_T_new, A1_mix_, Z_choice="u"
+                )
+                A3_c[i_mix, i_rho] = mixed.A1_Z_rho_T(
+                    A1_rho_, A1_T_new, A1_mix_, Z_choice="c"
+                )
+                A3_s[i_mix, i_rho] = mixed.A1_Z_rho_T(
+                    A1_rho_, A1_T_new, A1_mix_, Z_choice="s"
+                )
+
+        # Write
+        self.write_table(
+            Y_X, A1_mix, A1_T_new, A1_rho_new, A3_P, A3_u, A3_c, A3_s, filename
+        )
+
+    def gen_write_table_regrid_match_rock_water(self, filename=None):
+        """Regrid the tables to match the rock and water densities and temperatures."""
+        # Load the rock and water data
+        with h5py.File(mat_mixed_HHe_rock.filename, "r") as f:
+            A1_rho = f["Table/" + io.Di_hdf5_eos_label["rho"]][()]
+            A1_T = f["Table/" + io.Di_hdf5_eos_label["T"]][()]
+        with h5py.File(mat_mixed_HHe_water.filename, "r") as f:
+            assert np.array_equal(A1_rho, f["Table/" + io.Di_hdf5_eos_label["rho"]][()])
+            assert np.array_equal(A1_T, f["Table/" + io.Di_hdf5_eos_label["T"]][()])
+
+        # Regrid this material to match
+        self.gen_write_table_regrid(A1_rho, A1_T, filename)
+
 
 mat_mixed_HHe_rock = Material_Mixed_HHe_Heavy(
     "mixed_HHe_rock",
@@ -2048,6 +2180,7 @@ if __name__ == "__main__":
     # mat_mixed_HHe_rock.gen_write_table(gv.Fp_mixed_HHe_rock)
     # mat_mixed_HHe_water.gen_write_table(gv.Fp_mixed_HHe_water)
     # mat_mixed_HHe_iron.gen_write_table(gv.Fp_mixed_HHe_iron)
+    # mat_mixed_HHe_iron.gen_write_table_regrid_match_rock_water()
 
     # mat_SESAME_iron.gen_write_table()
     # mat_SESAME_basalt.gen_write_table()
@@ -2060,3 +2193,4 @@ if __name__ == "__main__":
     # mat_ANEOS_forsterite.gen_write_table()
     # mat_ANEOS_iron.gen_write_table()
     # mat_ANEOS_Fe85Si15.gen_write_table()
+
