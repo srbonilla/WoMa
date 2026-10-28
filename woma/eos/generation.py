@@ -2033,7 +2033,9 @@ class Material_Mixed_HHe_Heavy:
         # Write
         self.write_table(Y_X, A1_mix, A1_T, A1_rho, A3_P, A3_u, A3_c, A3_s, filename)
 
-    def gen_write_table_regrid(self, A1_rho_new, A1_T_new, filename=None, filename_orig=None):
+    def gen_write_table_regrid(
+        self, A1_rho_new, A1_T_new, filename=None, filename_orig=None
+    ):
         """Load the raw tables and write the combined data to an HDF5 file,
         regridding to match different 1D density and temperature arrays.
 
@@ -2049,7 +2051,7 @@ class Material_Mixed_HHe_Heavy:
 
         filename : str (opt.)
             The table file path, defaults to self.filename with _regrid suffix.
-        
+
         filename_orig : str (opt.)
             The original table file path, defaults to self.filename.
 
@@ -2193,4 +2195,3 @@ if __name__ == "__main__":
     # mat_ANEOS_forsterite.gen_write_table()
     # mat_ANEOS_iron.gen_write_table()
     # mat_ANEOS_Fe85Si15.gen_write_table()
-
