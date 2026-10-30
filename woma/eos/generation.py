@@ -2085,7 +2085,7 @@ class Material_Mixed_HHe_Heavy:
         if filename is None:
             filename = "%s/%s_regrid.hdf5" % (gv.dir_data, self.name)
         if filename_orig is None:
-            filename = "%s/%s.hdf5" % (gv.dir_data, self.name)
+            filename_orig = "%s/%s.hdf5" % (gv.dir_data, self.name)
 
         # Load the original data
         with h5py.File(filename_orig, "r") as f:

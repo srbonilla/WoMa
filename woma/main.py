@@ -84,6 +84,10 @@ class Planet:
     num_prof : int
         The number of profile integration steps.
 
+    mix_layer_jump, rho_layer_jump : float
+        For a mixed-material profile, the jump in mix fraction and density required
+        to count as a new layer, to avoid splitting a profile into many layers.
+
     load_file : str (opt.)
         If provided, then load the attributes and profiles from an HDF5 file.
         See woma.Planet.save() and .load().
@@ -150,6 +154,8 @@ class Planet:
         rho_2=None,
         I_MR2=None,
         num_prof=1000,
+        mix_layer_jump=0.05,
+        rho_layer_jump=100,
         load_file=None,
         verbosity=1,
     ):
@@ -176,6 +182,8 @@ class Planet:
         self.rho_2 = rho_2
         self.I_MR2 = I_MR2
         self.num_prof = num_prof
+        self.mix_layer_jump = mix_layer_jump
+        self.rho_layer_jump = rho_layer_jump
 
         # Load eos tables
         utils.load_eos_tables(self.A1_mat_layer)
@@ -294,13 +302,32 @@ class Planet:
 
         # Index of the outer edge of each layer
         if np.all(np.array(self.A1_mat_layer) == "mixed_HHe_heavy"):
-            # Select layers by different mix fractions
+            self.A1_idx_layer = [self.num_prof - 1]
+
+            # Select layers by (significantly) different mix fractions
             A1_mix_diff = np.abs(np.diff(self.A1_A1_mix[:, 0]))
             for i in range(1, gv.num_mix):
                 A1_mix_diff += np.abs(np.diff(self.A1_A1_mix[:, i]))
-            self.A1_idx_layer = np.append(
-                np.where(A1_mix_diff > 2 * np.mean(A1_mix_diff))[0], self.num_prof - 1
-            )
+            # As a gradient with radius, in case have many steps over steep but not instant jump
+            A1_mix_grad = A1_mix_diff / (np.diff(self.A1_r) / self.A1_r[-1])
+
+            # Only include if accompanied by a density jump
+            A1_rho_diff = np.abs(np.diff(self.A1_rho))
+
+            # Select the most significant jumps that are also well-separated in radius
+            for i in range(9):
+                idx = np.argmax(A1_mix_grad)
+                if (
+                    A1_rho_diff[idx] > self.rho_layer_jump
+                    and self.A1_r[idx] < 0.95 * self.A1_r[-1]
+                ):
+                    self.A1_idx_layer = np.append(idx, self.A1_idx_layer)
+
+                # Ignore other jumps nearby in radius
+                A1_sel_r = np.abs(self.A1_r[1:] - self.A1_r[idx]) < 0.05 * self.A1_r[-1]
+                A1_mix_grad[A1_sel_r] = -abs(A1_mix_grad[A1_sel_r])
+
+            self.A1_idx_layer = np.sort(self.A1_idx_layer)
         else:
             self.A1_idx_layer = np.append(
                 np.where(np.diff(self.A1_mat_id) != 0)[0], self.num_prof - 1
