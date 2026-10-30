@@ -226,16 +226,17 @@ def _mix_weights(A1_mix):
 @njit
 def _log_Z_mixed(A3_Z, Z_choice, idx_mix, intp_mix, A1_f_mat, i_rho, i_T):
     """log(Z) at one table density index i_rho and/or temperature index i_T,
-    interpolated in mix and combined over the heavy components.
+    interpolated in mix (in log) within each heavy component, then combined
+    linearly over the heavy components.
 
     Pass i_rho or i_T as -1 to return the full array along that axis.
     """
     if i_rho == -1:
-        log_Z = np.zeros(A3_Z[0].shape[1])
+        Z = np.zeros(A3_Z[0].shape[1])
     elif i_T == -1:
-        log_Z = np.zeros(A3_Z[0].shape[2])
+        Z = np.zeros(A3_Z[0].shape[2])
     else:
-        log_Z = np.zeros(1)
+        Z = np.zeros(1)
 
     # Add contribution from each mixing component
     for i_mat in range(len(A1_f_mat)):
@@ -260,9 +261,9 @@ def _log_Z_mixed(A3_Z, Z_choice, idx_mix, intp_mix, A1_f_mat, i_rho, i_T):
             log_Z_1 = np.log(Z_1)
             log_Z_2 = np.log(Z_2)
 
-        log_Z += A1_f_mat[i_mat] * ((1 - intp_mix) * log_Z_1 + intp_mix * log_Z_2)
+        Z += A1_f_mat[i_mat] * np.exp((1 - intp_mix) * log_Z_1 + intp_mix * log_Z_2)
 
-    return log_Z
+    return np.log(Z)
 
 
 @njit
