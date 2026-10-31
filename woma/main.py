@@ -321,7 +321,7 @@ class Planet:
                     A1_rho_diff[idx] > self.rho_layer_jump
                     and self.A1_r[idx] < 0.95 * self.A1_r[-1]
                 ):
-                    self.A1_idx_layer = np.append(idx, self.A1_idx_layer)
+                    self.A1_idx_layer = np.append(idx + 1, self.A1_idx_layer)
 
                 # Ignore other jumps nearby in radius
                 A1_sel_r = np.abs(self.A1_r[1:] - self.A1_r[idx]) < 0.05 * self.A1_r[-1]
