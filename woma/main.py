@@ -202,7 +202,12 @@ class Planet:
             # Placeholder
             self.num_layer = 1
         if self.A1_A1_mix_layer is None:
-            self.A1_A1_mix_layer = [None] * self.num_layer
+            if "mixed_HHe_heavy" in self.A1_mat_layer and self.A1_mat_layer is not None:
+                raise ValueError(
+                    "A1_A1_mix_layer must be provided for mixed_HHe_heavy EoS"
+                )
+            # Placeholder
+            self.A1_A1_mix_layer = np.zeros((self.num_layer, gv.num_mix))
         else:
             self.A1_A1_mix_layer = np.array(self.A1_A1_mix_layer).astype(float)
 
@@ -243,7 +248,7 @@ class Planet:
                 )
         elif self.rho_s is not None:
             if do_T_from_fixed_s:
-                self.T_s = eos.sesame.T_rho_s(
+                self.T_s = eos.T_rho_s(
                     self.rho_s,
                     self.A1_T_rho_args[-1][0],
                     self.A1_mat_id_layer[-1],
@@ -288,6 +293,10 @@ class Planet:
     def update_attributes(self):
         """Set all planet information after making the profiles."""
         self.num_prof = len(self.A1_r)
+
+        # Placeholder mixes
+        if not hasattr(self, "A1_A1_mix") or len(self.A1_A1_mix) != self.num_prof:
+            self.A1_A1_mix = np.zeros((self.num_prof, gv.num_mix))
 
         # Reverse profile arrays to be ordered by increasing radius
         if self.A1_r[-1] < self.A1_r[0]:
@@ -861,7 +870,7 @@ class Planet:
             self.print_info()
 
     def gen_prof_given_inner_prof(
-        self, mat, T_rho_type, rho_min=0, P_min=0, verbosity=1
+        self, mat, T_rho_type, rho_min=0, P_min=0, A1_mix=None, verbosity=1
     ):
         """Add a new layer on top of existing profiles by integrating outwards.
 
@@ -891,10 +900,21 @@ class Planet:
 
         P_min : float
             The minimum pressure (must be >= 0) at which the new layer will stop.
+
+        A1_mix : [float] (opt.)
+            For a mixed_HHe_heavy material, the mixing mass fractions of each
+            heavy component, currently [rock, water, iron].
         """
+        if A1_mix is None:
+            if mat == "mixed_HHe_heavy":
+                raise ValueError("A1_mix must be provided for mixed_HHe_heavy")
+            A1_mix = np.zeros(gv.num_mix)
+        A1_mix = np.array(A1_mix, dtype=float)
+
         # Append the new layer info to the existing profiles
         self.num_layer += 1
-        self.A1_mat_layer = np.append(self.A1_mat_layer, mat)
+        self.A1_mat_layer = list(self.A1_mat_layer) + [mat]
+        self.A1_A1_mix_layer = np.append(self.A1_A1_mix_layer, [A1_mix], axis=0)
         mat_id = gv.Di_mat_id[mat]
         utils.load_eos_tables(self.A1_mat_layer)  # load new material table
         self.A1_mat_id_layer = np.append(self.A1_mat_id_layer, mat_id)
@@ -920,6 +940,7 @@ class Planet:
             self.A1_rho = self.A1_rho[::-1]
             self.A1_u = self.A1_u[::-1]
             self.A1_mat_id = self.A1_mat_id[::-1]
+            self.A1_A1_mix = self.A1_A1_mix[::-1]
 
         # Integrate the profiles outwards
         (
@@ -943,6 +964,7 @@ class Planet:
             self.A1_T_rho_args[-1],
             rho_min=self.rho_min,
             P_min=self.P_min,
+            A1_mix=A1_mix,
         )
 
         # Apppend the new layer to the full profiles
@@ -953,7 +975,9 @@ class Planet:
         self.A1_rho = np.append(self.A1_rho, A1_rho)
         self.A1_u = np.append(self.A1_u, A1_u)
         self.A1_mat_id = np.append(self.A1_mat_id, A1_mat_id)
-        self.A1_A1_mix = np.append(self.A1_A1_mix, A1_A1_mix)
+        self.A1_A1_mix = np.append(
+            self.A1_A1_mix, np.reshape(A1_A1_mix, (-1, gv.num_mix)), axis=0
+        )
 
         self.update_attributes()
 
@@ -3875,7 +3899,7 @@ class ParticlePlanet:
             self.A1_P = particles.A1_P
             self.A1_mat_id = particles.A1_mat
             self.A1_id = np.arange(self.A1_m.shape[0])
-            if Di_param_A1_misc_prof is not None:
+            if Di_param_A1_misc_prof:
                 self.Di_param_A1_misc = particles.Di_param_A1_misc
 
             # Smoothing lengths, crudely estimated from the densities

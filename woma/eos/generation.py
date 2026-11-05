@@ -746,7 +746,7 @@ class Material_SESAME:
 
                 # Temperature
                 idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
-                idx_T = int(idx_T_intp_T[0])
+                idx_T = int(idx_T_intp_T[0]) + 1  # offset from the [1:] search
                 intp_T = idx_T_intp_T[1]
 
                 # Density (in this and the next temperature slice of the 2D T array)
@@ -994,7 +994,7 @@ mat_SS08_water = Material_SESAME(
 )
 mat_AQUA_H2O = Material_SESAME(
     name="AQUA_H2O",
-    version_date="20260518",
+    version_date="20261105",
     reference="Haldemann et al. (2020); Cano Amoros et al. (2026)",
 )
 mat_CMS19_H = Material_SESAME(
@@ -2188,7 +2188,7 @@ if __name__ == "__main__":
     # mat_SESAME_basalt.gen_write_table()
     # mat_SESAME_water.gen_write_table()
     # mat_SS08_water.gen_write_table()
-    # mat_AQUA_H2O.gen_write_table()
+    mat_AQUA_H2O.gen_write_table()
     # mat_CMS19_H.gen_write_table()
     # mat_CMS19_He.gen_write_table()
     # mat_CD21_HHe.gen_write_table()

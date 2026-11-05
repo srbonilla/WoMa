@@ -1339,7 +1339,7 @@ def Z_rho_Y(rho, Y, mat_id, Z_choice, Y_choice):
 
     # Density
     idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
-    idx_rho = int(idx_rho_intp_rho[0])
+    idx_rho = int(idx_rho_intp_rho[0]) + 1  # offset from the [1:] search
     intp_rho = idx_rho_intp_rho[1]
 
     # Y (in this and the next density slice of the 2D Y array)
@@ -1763,7 +1763,7 @@ def Z_X_T(X, T, mat_id, Z_choice, X_choice):
 
     # Temperature
     idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
-    idx_T = int(idx_T_intp_T[0])
+    idx_T = int(idx_T_intp_T[0]) + 1  # offset from the [1:] search
     intp_T = idx_T_intp_T[1]
 
     # X (in this and the next temperature slice of the 2D X array)
@@ -1968,7 +1968,7 @@ def P_u_rho(u, rho, mat_id):
 
     # Density
     idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
-    idx_rho = int(idx_rho_intp_rho[0])
+    idx_rho = int(idx_rho_intp_rho[0]) + 1  # offset from the [1:] search
     intp_rho = idx_rho_intp_rho[1]
 
     # u (in this and the next density slice of the 2D u array)
@@ -2632,12 +2632,12 @@ def u_rho_T(rho, T, mat_id):
 
     # Density
     idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
-    idx_rho = int(idx_rho_intp_rho[0])
+    idx_rho = int(idx_rho_intp_rho[0]) + 1  # offset from the [1:] search
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
     idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
-    idx_T = int(idx_T_intp_T[0])
+    idx_T = int(idx_T_intp_T[0]) + 1  # offset from the [1:] search
     intp_T = idx_T_intp_T[1]
 
     u_1 = A2_u[idx_rho, idx_T]
@@ -2813,7 +2813,7 @@ def s_u_rho(u, rho, mat_id):
 
     # Density
     idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
-    idx_rho = int(idx_rho_intp_rho[0])
+    idx_rho = int(idx_rho_intp_rho[0]) + 1  # offset from the [1:] search
     intp_rho = idx_rho_intp_rho[1]
 
     # u (in this and the next density slice of the 2D u array)
@@ -2999,12 +2999,12 @@ def s_rho_T(rho, T, mat_id):
 
     # Density
     idx_rho_intp_rho = ut.find_index_and_interp(log_rho, A1_log_rho[1:])
-    idx_rho = int(idx_rho_intp_rho[0])
+    idx_rho = int(idx_rho_intp_rho[0]) + 1  # offset from the [1:] search
     intp_rho = idx_rho_intp_rho[1]
 
     # Temperature
     idx_T_intp_T = ut.find_index_and_interp(log_T, A1_log_T[1:])
-    idx_T = int(idx_T_intp_T[0])
+    idx_T = int(idx_T_intp_T[0]) + 1  # offset from the [1:] search
     intp_T = idx_T_intp_T[1]
 
     s_1 = A2_s[idx_rho, idx_T]

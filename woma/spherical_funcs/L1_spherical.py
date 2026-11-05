@@ -247,7 +247,7 @@ def L1_integrate_out(
             A1_T.append(0)
             A1_u.append(0)
             A1_mat_id.append(0)
-            A1_A1_mix.append([0] * gv.num_mix)
+            A1_A1_mix.append(A1_mix)
             break
         # Update the T-rho parameters
         if T_rho_type_id == gv.type_adb and mat_id == gv.id_HM80_HHe:
